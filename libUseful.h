@@ -9,7 +9,7 @@
 #define TRUE 1
 #endif
 
-#define __LIBUSEFUL_VERSION__ "3.0"
+#define __LIBUSEFUL_VERSION__ "3.1"
 #define __LIBUSEFUL_BUILD_DATE__ __DATE__
 #define __LIBUSEFUL_BUILD_TIME__ __TIME__
 

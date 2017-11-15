@@ -126,7 +126,9 @@ char *RAWDATAEncode(char *RetStr, RAWDATA *RD, char *Encoding, size_t offset, si
 
 char RAWDATAGetChar(RAWDATA *RD, size_t pos)
 {
+		if (pos==-1) pos=RD->pos;
     if (pos > RD->BuffLen) return(0);
+		RD->pos=pos+1;
     return(RD->Buffer[pos]);
 }
 
@@ -134,16 +136,20 @@ int RAWDATASetChar(RAWDATA *RD, size_t pos, char value)
 {
     int epos;
 
+		if (pos==-1) pos=RD->pos;
     epos=pos+sizeof(char);
     if (epos > RD->BuffLen) return(FALSE);
     RD->Buffer[pos]=value;
+		RD->pos=pos+1;
     if (RD->DataLen <= epos) RD->DataLen=epos+1;
     return(TRUE);
 }
 
 int16_t RAWDATAGetInt16(RAWDATA *RD, size_t pos)
 {
+		if (pos==-1) pos=RD->pos;
     if (pos > RD->BuffLen) return(0);
+		RD->pos=pos+sizeof(int16_t);
     return(* (int16_t *) (RD->Buffer+pos));
 }
 
@@ -151,8 +157,10 @@ int RAWDATASetInt16(RAWDATA *RD, size_t pos, int16_t value)
 {
     int epos;
 
+		if (pos==-1) pos=RD->pos;
     epos=pos+sizeof(int16_t);
     if (epos > RD->BuffLen) return(FALSE);
+		RD->pos=pos+sizeof(int16_t);
     *(int16_t *) (RD->Buffer+pos)=value;
     if (RD->DataLen <= epos) RD->DataLen=epos+1;
     return(TRUE);
@@ -160,7 +168,9 @@ int RAWDATASetInt16(RAWDATA *RD, size_t pos, int16_t value)
 
 int32_t RAWDATAGetInt32(RAWDATA *RD, size_t pos)
 {
-    if (pos > RD->BuffLen) return(0);
+		if (pos==-1) pos=RD->pos;
+    if (pos > RD->BuffLen) return(FALSE);
+		RD->pos=pos+sizeof(int32_t);
     return(* (int32_t *) (RD->Buffer+pos));
 }
 
@@ -168,8 +178,10 @@ int RAWDATASetInt32(RAWDATA *RD, size_t pos, int32_t value)
 {
     int epos;
 
+		if (pos==-1) pos=RD->pos;
     epos=pos+sizeof(int32_t);
     if (epos > RD->BuffLen) return(FALSE);
+		RD->pos=pos+sizeof(int32_t);
     *(int32_t *) (RD->Buffer+pos)=value;
     if (RD->DataLen <= epos) RD->DataLen=epos+1;
     return(TRUE);
@@ -180,8 +192,44 @@ long RAWDATAFindChar(RAWDATA *RD, size_t offset, char Char)
 {
     const char *ptr;
 
+		if (offset==-1) offset=RD->pos;
     if (offset > RD->DataLen) return(-1);
     ptr=memchr(RD->Buffer+offset, Char, RD->DataLen-offset);
     if (! ptr) return(-1);
     return(ptr-RD->Buffer);
 }
+
+char *RAWDATACopyStr(char *RetStr, RAWDATA *RD)
+{
+const char *ptr, *end;
+int len=0;
+
+RetStr=CopyStr(RetStr, "");
+end=RD->Buffer+RD->DataLen;
+for (ptr=RD->Buffer + RD->pos; ptr < end; ptr++)
+{
+if (*ptr == '\0') break;
+RetStr=AddCharToBuffer(RetStr, len++, *ptr);
+}
+
+return(RetStr);
+}
+
+char *RAWDATACopyStrLen(char *RetStr, RAWDATA *RD, int max)
+{
+const char *ptr, *end;
+int len=0;
+
+RetStr=CopyStr(RetStr, "");
+ptr=RD->Buffer+RD->pos;
+if (max > RD->DataLen) max=RD->DataLen;
+end=RD->Buffer + max;
+for (ptr=RD->Buffer + RD->pos; ptr < end; ptr++)
+{
+RetStr=AddCharToBuffer(RetStr, len++, *ptr);
+}
+
+return(RetStr);
+
+}
+

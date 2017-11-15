@@ -1,5 +1,5 @@
 CC = gcc
-VERSION = 0.0.1
+VERSION = 3.1
 CFLAGS = -g -O2 -mmmx -msse -msse2
 LIBS = -lcrypto -lssl -lc -lc -lc -lc -lc -lc 
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -D_FILE_OFFSET_BITS=64 -DHAVE_LIBC=1 -DHAVE_PTSNAME_R=1 -DHAVE_LIBC=1 -DHAVE_UNSHARE=1 -DHAVE_LIBC=1 -DHAVE_UMOUNT2=1 -DHAVE_LIBC=1 -DHAVE_UMOUNT=1 -DHAVE_LIBC=1 -DHAVE_MKOSTEMP=1 -DHAVE_LIBC=1 -DHAVE_XATTR=1 -DHAVE_LIBSSL=1 -DHAVE_LIBCRYPTO=1 -DHAVE_EVP_BF_CBC=1 -DHAVE_EVP_RC2_CBC=1 -DHAVE_EVP_RC4=1 -DHAVE_EVP_DES_CBC=1 -DHAVE_EVP_DESX_CBC=1 -DHAVE_EVP_CAST5_CBC=1 -DHAVE_EVP_IDEA_CBC=1 -DHAVE_EVP_AES_128_CBC=1 -DHAVE_EVP_AES_256_CBC=1 -DHAVE_X509_CHECK_HOST=1 -DHAVE_DECL_OPENSSL_ADD_ALL_ALGORITHMS=1 -DHAVE_OPENSSL_ADD_ALL_ALGORITHMS=1 -DHAVE_DECL_SSL_SET_TLSEXT_HOST_NAME=1 -DHAVE_SSL_SET_TLSEXT_HOST_NAME=1 -DHAVE_MADVISE -DHAVE_MADVISE_NOFORK -DHAVE_MADVISE_DONTDUMP -DHAVE_MLOCK
@@ -8,9 +8,12 @@ OBJ=String.o List.o Socket.o UnixSocket.o Stream.o Errors.o Terminal.o FileSyste
 
 
 all: $(OBJ)
-	$(CC) $(FLAGS) -shared -o libUseful-3.0.so $(OBJ) $(LIBS) 
-	#ld -i -o libUseful-3.0.a $(OBJ)
-	ar rcs libUseful-3.0.a $(OBJ)
+	$(CC) $(FLAGS) -shared -o libUseful-$(VERSION).so $(OBJ) $(LIBS) 
+	ar rcs libUseful-$(VERSION).a $(OBJ)
+	-ln -s libUseful-$(VERSION).so libUseful-3.so
+	-ln -s libUseful-$(VERSION).a libUseful-3.a
+	-ln -s libUseful-$(VERSION).so libUseful.so
+	-ln -s libUseful-$(VERSION).a libUseful.a
 
 
 String.o: String.h String.c
@@ -145,7 +148,9 @@ clean:
 	-rm -r autom4te.cache config.cache
 
 install:
-	@ln -s libUseful-3.0.so libUseful.so
-	@ln -s libUseful-3.0.a libUseful.a
-	@mkdir -p $(prefix)/lib; cp *.so *.a $(prefix)/lib ; mkdir -p $(prefix)/include/libUseful-$(VERSION) ; cp *.h $(prefix)/include/libUseful-$(VERSION)
+	-mkdir -p $(prefix)/lib; cp *.so *.a $(prefix)/lib  
+	-mkdir -p $(prefix)/include/libUseful-$(VERSION)
+	cp *.h $(prefix)/include/libUseful-$(VERSION)
+	-mkdir -p $(prefix)/include/libUseful-3
+	cp *.h $(prefix)/include/libUseful-3
 

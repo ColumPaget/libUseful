@@ -10,13 +10,14 @@ character by character or as Int16 or Int32 types
 */
 
 #define RAWDATARead(RD, S, len) (RAWDATAReadAt(RD, S, 0, len))
-#define RAWDATASave(RD, S) (RAWDATAReadAt(RD, S, 0, 0))
+#define RAWDATASave(RD, S) (RAWDATAWriteAt(RD, S, 0, 0))
 
 typedef struct
 {
-    int BuffLen;
-    int DataLen;
+    size_t BuffLen;
+    size_t DataLen;
     char *Buffer;
+		size_t pos;
 } RAWDATA;
 
 
@@ -34,5 +35,7 @@ int32_t RAWDATAGetInt32(RAWDATA *RD, size_t pos);
 int RAWDATASetInt32(RAWDATA *RD, size_t pos, int32_t value);
 long RAWDATAFindChar(RAWDATA *RD, size_t offset, char Char);
 
+char *RAWDATACopyStr(char *RetStr, RAWDATA *RD);
+char *RAWDATACopyStrLen(char *RetStr, RAWDATA *RD, int len);
 
 #endif
