@@ -1147,7 +1147,9 @@ int STREAMDirectConnect(STREAM *S, const char *URL, int Flags)
     ParseURL(URL, &Proto, &Host, &Token,NULL, NULL,&Path,NULL);
     S->Path=CopyStr(S->Path,URL);
     if (StrValid(Token)) Port=strtoul(Token,0,10);
-    result=STREAMProtocolConnect(S, Proto, Host, Port, Flags);
+		if (strcmp(Proto, "unix")==0) result=STREAMProtocolConnect(S, Proto, URL+5, 0, Flags);
+		else if (strcmp(Proto, "unixdgram")==0) result=STREAMProtocolConnect(S, Proto, URL+9, 0, Flags);
+    else result=STREAMProtocolConnect(S, Proto, Host, Port, Flags);
 
     DestroyString(Token);
     DestroyString(Proto);
