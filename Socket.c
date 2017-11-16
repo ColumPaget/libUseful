@@ -832,26 +832,26 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
     int result;
     struct sockaddr_in sa;
 
-    *LocalPort=0;
-    *RemotePort=0;
-    *LocalAddress=CopyStr(*LocalAddress,"");
-    *RemoteAddress=CopyStr(*RemoteAddress,"");
+    if (LocalPort) *LocalPort=0;
+    if (RemotePort) *RemotePort=0;
+    if (LocalAddress) *LocalAddress=CopyStr(*LocalAddress,"");
+    if (RemoteAddress) *RemoteAddress=CopyStr(*RemoteAddress,"");
 
     salen=sizeof(struct sockaddr_in);
     result=getsockname(sock, (struct sockaddr *) &sa, &salen);
 
     if (result==0)
     {
-        *LocalAddress=CopyStr(*LocalAddress,IPtoStr(sa.sin_addr.s_addr));
-        *LocalPort=ntohs(sa.sin_port);
+        if (LocalAddress) *LocalAddress=CopyStr(*LocalAddress,IPtoStr(sa.sin_addr.s_addr));
+        if (LocalPort) *LocalPort=ntohs(sa.sin_port);
 
         //Set Address to be the same as control sock, as it might not be INADDR_ANY
         result=getpeername(sock, (struct sockaddr *) &sa, &salen);
 
         if (result==0)
         {
-            *RemoteAddress=CopyStr(*RemoteAddress,IPtoStr(sa.sin_addr.s_addr));
-            *RemotePort=ntohs(sa.sin_port);
+            if (RemoteAddress) *RemoteAddress=CopyStr(*RemoteAddress,IPtoStr(sa.sin_addr.s_addr));
+            if (RemotePort) *RemotePort=ntohs(sa.sin_port);
         }
 
         //We've got the local sock, so lets still call it a success
