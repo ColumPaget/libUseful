@@ -675,12 +675,12 @@ STREAM *STREAMServerInit(const char *URL)
         }
         else if (strcmp(Proto,"unix")==0)
         {
-            fd=UnixServerInit(SOCK_STREAM,Host);
+            fd=UnixServerInit(SOCK_STREAM,URL+5);
             Type=STREAM_TYPE_UNIX_SERVER;
         }
         else if (strcmp(Proto,"unixdgram")==0)
         {
-            fd=UnixServerInit(SOCK_DGRAM,Host);
+            fd=UnixServerInit(SOCK_DGRAM,URL+5);
             Type=STREAM_TYPE_UNIX_DGRAM;
         }
         break;
