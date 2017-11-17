@@ -151,7 +151,8 @@ double FromSIUnit(const char *Data, int Base)
 
 const char *ToSIUnit(double Value, int Base, int Precision)
 {
-    static char *Str=NULL, *Fmt=NULL;
+    static char *Str=NULL;
+		char *Fmt=NULL;
     double next;
 //Set to 0 to keep valgrind happy
     int i=0;
