@@ -55,10 +55,15 @@ char *GetRandomData(char *RetBuff, int len, char *AllowedChars);
 //get a random string of alphanumeric characters
 char *GetRandomAlphabetStr(char *RetBuff, int len);
 
+const char *ToSIUnit(double Value, int Base, int Precision);
+#define ToIEC(Value, Precision) (ToSIUnit((Value), 1024, Precision))
+#define ToMetric(Value, Precision) (ToSIUnit((Value), 1000, Precision))
 
 //Convert to and from metric
-double FromMetric(const char *Data, int Type);
-const char *ToMetric(double Size, int Type);
+double FromSIUnit(const char *Data, int BAse);
+#define FromIEC(Value, Precision) (FromSIUnit((Value), 1024))
+#define FromMetric(Value, Precision) (FromSIUnit((Value), 1000))
+
 
 //lookup uid for User
 int LookupUID(const char *User);

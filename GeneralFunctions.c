@@ -109,7 +109,7 @@ double ToPower(double val, double power)
 }
 
 
-double FromMetric(const char *Data, int Type)
+double FromSIUnit(const char *Data, int Base)
 {
     double val;
     char *ptr=NULL;
@@ -119,28 +119,28 @@ double FromMetric(const char *Data, int Type)
     switch (*ptr)
     {
     case 'k':
-        val=val * 1000;
+        val=val * Base;
         break;
     case 'M':
-        val=val * ToPower(1000,2);
+        val=val * ToPower(Base,2);
         break;
     case 'G':
-        val=val * ToPower(1000,3);
+        val=val * ToPower(Base,3);
         break;
     case 'T':
-        val=val * ToPower(1000,4);
+        val=val * ToPower(Base,4);
         break;
     case 'P':
-        val=val * ToPower(1000,5);
+        val=val * ToPower(Base,5);
         break;
     case 'E':
-        val=val * ToPower(1000,6);
+        val=val * ToPower(Base,6);
         break;
     case 'Z':
-        val=val * ToPower(1000,7);
+        val=val * ToPower(Base,7);
         break;
     case 'Y':
-        val=val * ToPower(1000,8);
+        val=val * ToPower(Base,8);
         break;
     }
 
@@ -149,37 +149,43 @@ double FromMetric(const char *Data, int Type)
 
 
 
-const char *ToMetric(double Size, int Type)
+const char *ToSIUnit(double Value, int Base, int Precision)
 {
-    static char *Str=NULL;
-    double val=0, next;
+    static char *Str=NULL, *Fmt=NULL;
+    double next;
 //Set to 0 to keep valgrind happy
     int i=0;
     char suffix=' ', *sufflist=" kMGTPEZY";
 
-    val=Size;
 
     for (i=0; sufflist[i] !='\0'; i++)
     {
-        next=ToPower(1000,i+1);
-        if (next > val) break;
+        next=ToPower(Base, i+1);
+        if (next > Value) break;
     }
 
     if ((i > 0) && (sufflist[i] !='\0'))
     {
-        val=val / ToPower(1000,i);
+        Value=Value / ToPower(Base, i);
         suffix=sufflist[i];
-        Str=FormatStr(Str,"%0.1f%c",(float) val,suffix);
+        Str=FormatStr(Str,"%0.1f%c",(float) Value,suffix);
     }
     else
     {
-        //here 'next' is the remainder
-        next=val-(long) val;
-        if (next < 0.01) Str=FormatStr(Str,"%ld",(long) val);
-        else Str=FormatStr(Str,"%0.1f",(float) val);
+        //here 'next' is the remainder, by casting 'Value' to a long we remove the 
+				//decimal component, then subtract from Value. This leaves us with *only* 
+				//the decimal places
+        next=Value - (long) Value; 
+				if (Precision==0) Str=FormatStr(Str,"%ld",(long) Value);
+				else
+				{
+				Fmt=FormatStr(Fmt, "%d", Precision);
+        Str=FormatStr(Str,Fmt,(float) Value);
+				}
     }
 
 
+		DestroyString(Fmt);
     return(Str);
 }
 
