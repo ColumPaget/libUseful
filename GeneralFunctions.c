@@ -179,7 +179,7 @@ const char *ToSIUnit(double Value, int Base, int Precision)
 				if (Precision==0) Str=FormatStr(Str,"%ld",(long) Value);
 				else
 				{
-				Fmt=FormatStr(Fmt, "%d", Precision);
+				Fmt=FormatStr(Fmt, "%%0.%d", Precision);
         Str=FormatStr(Str,Fmt,(float) Value);
 				}
     }
