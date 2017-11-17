@@ -392,6 +392,9 @@ unsigned long OSSysInfoLong(int Info)
     case OSINFO_FREEMEM:
         return((unsigned long) SysInfo.freeram);
         break;
+    case OSINFO_BUFFERMEM:
+        return((unsigned long) SysInfo.bufferram);
+        break;
     case OSINFO_PROCS:
         return((unsigned long) SysInfo.procs);
         break;
