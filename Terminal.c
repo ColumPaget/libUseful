@@ -915,9 +915,12 @@ TERMBAR *TB;
 		Curr=ListGetNext(Curr);
 		}
 
-		if (top > -1) STREAMSetValue(S, "Terminal:top","1");
+		if ((top > 0) || (bottom > 0))
+		{
+		if (top > 0) STREAMSetValue(S, "Terminal:top","1");
     TerminalCommand(TERM_SCROLL_REGION, top+2, rows-(top+bottom), S);
     TerminalCommand(TERM_CURSOR_MOVE, 0, top+2, S);
+		}
 }
 
 
@@ -925,8 +928,6 @@ int TerminalInit(STREAM *S, int Flags)
 {
     int cols, rows;
     char *Tempstr=NULL;
-    TERMBAR *TB;
-
 
     TerminalGeometry(S, &cols, &rows);
     Tempstr=FormatStr(Tempstr,"%d",cols);
@@ -936,7 +937,7 @@ int TerminalInit(STREAM *S, int Flags)
     STREAMSetValue(S, "Terminal:top", "0");
 
     if (Flags & TERM_HIDECURSOR) TerminalCursorHide(S);
-    if ((Flags & TERM_RAWKEYS) && isatty(S->in_fd)) TTYConfig(S->in_fd, 0, TTYFLAG_CRLF);
+    if ((Flags & TERM_RAWKEYS) && isatty(S->in_fd)) TTYConfig(S->in_fd, 0, TTYFLAG_CRLF_KEEP);
 		TerminalBarsInit(S);
 
     DestroyString(Tempstr);
@@ -949,13 +950,12 @@ int Flags=0, FColor, BColor;
 
 TerminalInternalConfig(Config, &FColor, &BColor, &Flags);
 TerminalInit(S, Flags);
-
 }
 
 
 void TerminalReset(STREAM *S)
 {
-	STREAMWriteLine("\x1b[m\x1b[r", S);
+	if (atoi(STREAMGetValue(S, "Terminal:top")) > 0) STREAMWriteLine("\x1b[m\x1b[r", S);
   if (isatty(S->in_fd)) TTYReset(S->in_fd);
 }
 

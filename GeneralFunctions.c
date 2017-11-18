@@ -169,7 +169,8 @@ const char *ToSIUnit(double Value, int Base, int Precision)
     {
         Value=Value / ToPower(Base, i);
         suffix=sufflist[i];
-        Str=FormatStr(Str,"%0.1f%c",(float) Value,suffix);
+				Fmt=FormatStr(Fmt, "%%0.%df%%c", Precision);
+        Str=FormatStr(Str,Fmt,(float) Value,suffix);
     }
     else
     {
@@ -180,7 +181,7 @@ const char *ToSIUnit(double Value, int Base, int Precision)
 				if (Precision==0) Str=FormatStr(Str,"%ld",(long) Value);
 				else
 				{
-				Fmt=FormatStr(Fmt, "%%0.%d", Precision);
+				Fmt=FormatStr(Fmt, "%%0.%df", Precision);
         Str=FormatStr(Str,Fmt,(float) Value);
 				}
     }

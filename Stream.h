@@ -20,6 +20,8 @@ udp:192.168.2.1:53                       udp network connection
 tcp:192.168.2.1:25                       tcp network connection
 ssl:192.168.2.1:443                      tcp network connection with encryption
 tls:192.168.2.1:443                      tcp network connection with encryption
+unix:/tmp/socket                         unix socket
+unixdgram:/tmp/socket                    unix datagram socket
 http:user:password@www.google.com        http network connection
 https:www.google.com                     https network connection
 cmd:cat /etc/hosts                       run command 'cat /etc/hosts' and read/write to/from it
