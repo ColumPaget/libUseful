@@ -70,15 +70,17 @@ void TTYConfig(int tty, int LineSpeed, int Flags)
     if (! TTYAttribs) TTYAttribs=ListCreate();
     Curr=ListFindNamedItem(TTYAttribs,Tempstr);
 
+		if (Flags & TTYFLAG_SAVE)
+		{
     if (! Curr)
     {
         old_tty_data=(struct termios *) calloc(1,sizeof(struct termios));
         ListAddNamedItem(TTYAttribs,Tempstr,old_tty_data);
     }
     else old_tty_data=(struct termios *) Curr->Item;
-
     tcgetattr(tty,old_tty_data);
-//tcgetattr(tty,&tty_data);
+		}
+
     memset(&tty_data,0,sizeof(struct termios));
 
 //ignore break characters and parity errors
@@ -88,19 +90,18 @@ void TTYConfig(int tty, int LineSpeed, int Flags)
     if (! (Flags & TTYFLAG_CRLF_KEEP))
     {
         //translate carriage-return to newline
-
-        if (Flags & TTYFLAG_CRLF) tty_data.c_iflag |= ICRNL;
+        if (Flags & TTYFLAG_IN_CRLF) tty_data.c_iflag |= ICRNL;
         else tty_data.c_iflag &= ~ICRNL;
 
         //translate newline to carriage return
-        if (Flags & TTYFLAG_LFCR)
+        if (Flags & TTYFLAG_IN_LFCR)
         {
             tty_data.c_iflag |= INLCR;
         }
         else tty_data.c_iflag &= ~INLCR;
 
         //postprocess and translate newline to cr-nl
-        if (Flags & TTYFLAG_LFCR)
+        if (Flags & TTYFLAG_OUT_CRLF)
         {
             tty_data.c_oflag |= ONLCR | OPOST;
         }
@@ -286,8 +287,9 @@ int TTYParseConfig(const char *Config, int *Speed)
         else if (strcasecmp(Token,"hw")==0) Flags |= TTYFLAG_HARDWARE_FLOW;
         else if (strcasecmp(Token,"nb")==0) Flags |= TTYFLAG_NONBLOCK;
         else if (strcasecmp(Token,"nonblock")==0) Flags |= TTYFLAG_NONBLOCK;
-        else if (strcasecmp(Token,"lfcr")==0) Flags |= TTYFLAG_LFCR;
-        else if (strcasecmp(Token,"crlf")==0) Flags |= TTYFLAG_CRLF;
+        else if (strcasecmp(Token,"ilfcr")==0) Flags |= TTYFLAG_IN_LFCR;
+        else if (strcasecmp(Token,"icrlf")==0) Flags |= TTYFLAG_IN_CRLF;
+        else if (strcasecmp(Token,"ocrlf")==0) Flags |= TTYFLAG_OUT_CRLF;
         else if (strcasecmp(Token,"nosig")==0) Flags |= TTYFLAG_IGNSIG;
         else if (isnum(Token) && Speed) *Speed=atoi(Token);
 

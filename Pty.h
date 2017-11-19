@@ -10,9 +10,11 @@
 #define TTYFLAG_CRLF_KEEP 32768
 #define TTYFLAG_IGNSIG 65536
 #define TTYFLAG_ECHO 131072
-#define TTYFLAG_CRLF 262144
-#define TTYFLAG_LFCR 524288
-#define TTYFLAG_NONBLOCK 1048576
+#define TTYFLAG_IN_CRLF 262144
+#define TTYFLAG_IN_LFCR 524288
+#define TTYFLAG_OUT_CRLF 1048576
+#define TTYFLAG_NONBLOCK 2097152
+#define TTYFLAG_SAVE     4194304
 
 #define STREAMConfigTTY(S,speed,flags) ((S && istty(S->in_fd)) ? TTYConfig(S->in_fd,speed,flags))
 #define STREAMResetTTY(S) ((S && istty(S->in_fd)) ? TTYReset(S->in_fd))

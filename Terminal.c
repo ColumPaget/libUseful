@@ -83,6 +83,115 @@ int ANSIParseColor(const char *Str)
 }
 
 
+const char *TerminalTranslateKeyCode(int key)
+{
+static char KeyStr[2];
+switch (key)
+{
+case 0: return("NUL");
+case ESCAPE: return("ESC"); break; 
+case KEY_F1: return("F1"); break; 
+case KEY_F2: return("F2"); break; 
+case KEY_F3: return("F3"); break;
+case KEY_F4: return("F4"); break;
+case KEY_F5: return("F5"); break;
+case KEY_F6: return("F6"); break;
+case KEY_F7: return("F7"); break;
+case KEY_F8: return("F8"); break; 
+case KEY_F9: return("F9"); break;
+case KEY_F10: return("F10"); break;
+case KEY_F11: return("F11"); break;
+case KEY_F12: return("F12"); break;
+case KEY_F13: return("F13"); break;
+case KEY_F14: return("F14"); break;
+
+case KEY_SHIFT_F1: return("SHIFT_F1"); break; 
+case KEY_SHIFT_F2: return("SHIFT_F2"); break; 
+case KEY_SHIFT_F3: return("SHIFT_F3"); break;
+case KEY_SHIFT_F4: return("SHIFT_F4"); break;
+case KEY_SHIFT_F5: return("SHIFT_F5"); break;
+case KEY_SHIFT_F6: return("SHIFT_F6"); break;
+case KEY_SHIFT_F7: return("SHIFT_F7"); break;
+case KEY_SHIFT_F8: return("SHIFT_F8"); break; 
+case KEY_SHIFT_F9: return("SHIFT_F9"); break;
+case KEY_SHIFT_F10: return("SHIFT_F10"); break;
+case KEY_SHIFT_F11: return("SHIFT_F11"); break;
+case KEY_SHIFT_F12: return("SHIFT_F12"); break;
+case KEY_SHIFT_F13: return("SHIFT_F13"); break;
+case KEY_SHIFT_F14: return("SHIFT_F14"); break;
+
+case KEY_CTRL_F1: return("CTRL_F1"); break; 
+case KEY_CTRL_F2: return("CTRL_F2"); break; 
+case KEY_CTRL_F3: return("CTRL_F3"); break;
+case KEY_CTRL_F4: return("CTRL_F4"); break;
+case KEY_CTRL_F5: return("CTRL_F5"); break;
+case KEY_CTRL_F6: return("CTRL_F6"); break;
+case KEY_CTRL_F7: return("CTRL_F7"); break;
+case KEY_CTRL_F8: return("CTRL_F8"); break; 
+case KEY_CTRL_F9: return("CTRL_F9"); break;
+case KEY_CTRL_F10: return("CTRL_F10"); break;
+case KEY_CTRL_F11: return("CTRL_F11"); break;
+case KEY_CTRL_F12: return("CTRL_F12"); break;
+case KEY_CTRL_F13: return("CTRL_F13"); break;
+case KEY_CTRL_F14: return("CTRL_F14"); break;
+
+case KEY_UP: return("UP"); break;
+case KEY_DOWN: return("DOWN"); break;
+case KEY_LEFT: return("LEFT"); break;
+case KEY_RIGHT: return("RIGHT"); break;
+case KEY_HOME: return("HOME"); break;
+case KEY_END: return("END"); break;
+case KEY_PAUSE: return("PAUSE"); break;
+case KEY_FOCUS_IN: return("FOCUS_IN"); break;
+case KEY_FOCUS_OUT: return("FOCUS_OUT"); break;
+case KEY_INSERT: return("INSERT"); break;
+case KEY_DELETE: return("DELETE"); break;
+case KEY_PGUP: return("PGUP"); break;
+case KEY_PGDN: return("PGDN"); break;
+case KEY_WIN: return("WIN"); break;
+case KEY_MENU: return("MENU"); break;
+
+case KEY_SHIFT_UP: return("SHIFT_UP"); break;
+case KEY_SHIFT_DOWN: return("SHIFT_DOWN"); break;
+case KEY_SHIFT_LEFT: return("SHIFT_LEFT"); break;
+case KEY_SHIFT_RIGHT: return("SHIFT_RIGHT"); break;
+case KEY_SHIFT_HOME: return("SHIFT_HOME"); break;
+case KEY_SHIFT_END: return("SHIFT_END"); break;
+case KEY_SHIFT_PAUSE: return("SHIFT_PAUSE"); break;
+case KEY_SHIFT_FOCUS_IN: return("SHIFT_FOCUS_IN"); break;
+case KEY_SHIFT_FOCUS_OUT: return("SHIFT_FOCUS_OUT"); break;
+case KEY_SHIFT_INSERT: return("SHIFT_INSERT"); break;
+case KEY_SHIFT_DELETE: return("SHIFT_DELETE"); break;
+case KEY_SHIFT_PGUP: return("SHIFT_PGUP"); break;
+case KEY_SHIFT_PGDN: return("SHIFT_PGDN"); break;
+case KEY_SHIFT_WIN: return("SHIFT_WIN"); break;
+case KEY_SHIFT_MENU: return("SHIFT_MENU"); break;
+
+case KEY_CTRL_UP: return("CTRL_UP"); break;
+case KEY_CTRL_DOWN: return("CTRL_DOWN"); break;
+case KEY_CTRL_LEFT: return("CTRL_LEFT"); break;
+case KEY_CTRL_RIGHT: return("CTRL_RIGHT"); break;
+case KEY_CTRL_HOME: return("CTRL_HOME"); break;
+case KEY_CTRL_END: return("CTRL_END"); break;
+case KEY_CTRL_PAUSE: return("CTRL_PAUSE"); break;
+case KEY_CTRL_FOCUS_IN: return("CTRL_FOCUS_IN"); break;
+case KEY_CTRL_FOCUS_OUT: return("CTRL_FOCUS_OUT"); break;
+case KEY_CTRL_INSERT: return("CTRL_INSERT"); break;
+case KEY_CTRL_DELETE: return("CTRL_DELETE"); break;
+case KEY_CTRL_PGUP: return("CTRL_PGUP"); break;
+case KEY_CTRL_PGDN: return("CTRL_PGDN"); break;
+case KEY_CTRL_WIN: return("CTRL_WIN"); break;
+case KEY_CTRL_MENU: return("CTRL_MENU"); break;
+}
+
+KeyStr[0]='?';
+KeyStr[1]='\0';
+if ((key > 31) && (key < 127)) KeyStr[0]=key & 0xFF;
+return(KeyStr);
+}
+
+
+
 void TerminalGeometry(STREAM *S, int *wid, int *len)
 {
     struct winsize w;
@@ -820,7 +929,14 @@ int TerminalReadChar(STREAM *S)
 }
 
 
-
+int TerminalTextConfig(const char *Config)
+{
+if (! StrValid(Config)) return(0);
+if (strcasecmp(Config, "hidetext")==0) return(TERM_HIDETEXT);
+if (strcasecmp(Config, "stars")==0) return(TERM_SHOWSTARS);
+if (strcasecmp(Config, "stars+1")==0) return(TERM_SHOWTEXTSTARS);
+return(0);
+}
 
 
 char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
@@ -928,6 +1044,7 @@ int TerminalInit(STREAM *S, int Flags)
 {
     int cols, rows;
     char *Tempstr=NULL;
+		int ttyflags=0;
 
     TerminalGeometry(S, &cols, &rows);
     Tempstr=FormatStr(Tempstr,"%d",cols);
@@ -937,7 +1054,12 @@ int TerminalInit(STREAM *S, int Flags)
     STREAMSetValue(S, "Terminal:top", "0");
 
     if (Flags & TERM_HIDECURSOR) TerminalCursorHide(S);
-    if ((Flags & TERM_RAWKEYS) && isatty(S->in_fd)) TTYConfig(S->in_fd, 0, TTYFLAG_CRLF_KEEP);
+		if (isatty(S->in_fd))
+		{
+			if (Flags & TERM_SAVEATTRIBS) ttyflags=TTYFLAG_SAVE;
+			if (Flags & TERM_RAWKEYS) ttyflags |= TTYFLAG_IN_CRLF | TTYFLAG_OUT_CRLF; 
+			if (ttyflags) TTYConfig(S->in_fd, 0, ttyflags);
+		}
 		TerminalBarsInit(S);
 
     DestroyString(Tempstr);

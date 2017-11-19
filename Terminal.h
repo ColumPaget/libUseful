@@ -65,6 +65,7 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TERM_RAWKEYS 64      //switch a terminal into 'raw' mode rather than canonical (usually you want this)
 #define TERMBAR_UPPER 128
 #define TERMBAR_LOWER 256
+#define TERM_SAVEATTRIBS 512
 
 //These flags can be passed in the Flags argument of ANSICode
 #define ANSI_HIDE			65536
@@ -135,12 +136,12 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define KEY_PAUSE 0x147
 #define KEY_FOCUS_IN 0x148
 #define KEY_FOCUS_OUT 0x149
-#define KEY_INSERT 0x149
-#define KEY_DELETE 0x14A
-#define KEY_PGUP   0x14B
-#define KEY_PGDN   0x14C
-#define KEY_WIN    0x14D
-#define KEY_MENU   0x14E
+#define KEY_INSERT 0x14A
+#define KEY_DELETE 0x14B
+#define KEY_PGUP   0x14C
+#define KEY_PGDN   0x14D
+#define KEY_WIN    0x14E
+#define KEY_MENU   0x14F
 
 #define KEY_SHIFT_UP 0x151
 #define KEY_SHIFT_DOWN 0x152
@@ -151,12 +152,12 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define KEY_SHIFT_PAUSE 0x157
 #define KEY_SHIFT_FOCUS_IN 0x158
 #define KEY_SHIFT_FOCUS_OUT 0x159
-#define KEY_SHIFT_INSERT 0x149
-#define KEY_SHIFT_DELETE 0x14A
-#define KEY_SHIFT_PGUP   0x14B
-#define KEY_SHIFT_PGDN   0x14C
-#define KEY_SHIFT_WIN    0x14D
-#define KEY_SHIFT_MENU   0x14E
+#define KEY_SHIFT_INSERT 0x15A
+#define KEY_SHIFT_DELETE 0x15B
+#define KEY_SHIFT_PGUP   0x15C
+#define KEY_SHIFT_PGDN   0x15D
+#define KEY_SHIFT_WIN    0x15E
+#define KEY_SHIFT_MENU   0x15F
 
 #define KEY_CTRL_UP 0x161
 #define KEY_CTRL_DOWN 0x162
@@ -167,12 +168,12 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define KEY_CTRL_PAUSE 0x167
 #define KEY_CTRL_FOCUS_IN 0x168
 #define KEY_CTRL_FOCUS_OUT 0x169
-#define KEY_CTRL_INSERT 0x149
-#define KEY_CTRL_DELETE 0x14A
-#define KEY_CTRL_PGUP   0x14B
-#define KEY_CTRL_PGDN   0x14C
-#define KEY_CTRL_WIN    0x14D
-#define KEY_CTRL_MENU   0x14E
+#define KEY_CTRL_INSERT 0x16A
+#define KEY_CTRL_DELETE 0x16B
+#define KEY_CTRL_PGUP   0x16C
+#define KEY_CTRL_PGDN   0x16D
+#define KEY_CTRL_WIN    0x16E
+#define KEY_CTRL_MENU   0x16F
 
 
 typedef struct
@@ -258,6 +259,17 @@ int TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S);
 //read a single character from the terminal. In addition to the normal ANSI characters this returns the KEY_ values listed above
 //provided the terminal has been initialized with TERM_RAWKEYS. This allows reading keystrokes for use in games etc
 int TerminalReadChar(STREAM *S);
+
+
+/* 
+converts a key to a string. For non-printable key values these strings are the same as the #defined keys above, except without
+the leading 'KEY_'. So 'ESC', 'F1' 'SHIFT_F1' 'UP' 'DOWN' etc etc */
+const char *TerminalTranslateKeyCode(int key);
+
+//translates a config string into the flags TERM_HIDETEXT, TERM_SHOWSTARS, TERM_SHOWTEXTSTARS
+//You will probably use those flags directly, this function is intended for bindings to programming languages
+//without good support for bitflags (e.g. lua)
+int TerminalTextConfig(const char *Config);
 
 //read a line of text from the terminal. This command reads keystrokes and optionally echoes them. It supports backspace to delete typed
 //characters. When enter/newline is pressed the whole string of typed characters is returned. 
