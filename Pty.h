@@ -3,18 +3,19 @@
 
 #include "defines.h"
 
+//These are passed to TTYConfig
 #define TTYFLAG_PTY 1
 #define TTYFLAG_CANON 4096
-#define TTYFLAG_HARDWARE_FLOW 8192
-#define TTYFLAG_SOFTWARE_FLOW 16324
+#define TTYFLAG_HARDWARE_FLOW 8192  //enable hardware flow control
+#define TTYFLAG_SOFTWARE_FLOW 16324 //enable software flow control
 #define TTYFLAG_CRLF_KEEP 32768
 #define TTYFLAG_IGNSIG 65536
-#define TTYFLAG_ECHO 131072
-#define TTYFLAG_IN_CRLF 262144
-#define TTYFLAG_IN_LFCR 524288
-#define TTYFLAG_OUT_CRLF 1048576
+#define TTYFLAG_ECHO 131072        //enable input echo
+#define TTYFLAG_IN_CRLF 262144     //change CarriageReturn to LineFeed on input
+#define TTYFLAG_IN_LFCR 524288     //change LineFeed to CarriageReturn on input
+#define TTYFLAG_OUT_CRLF 1048576   //change LineFeed to CarriageReturn-Linefeed on output
 #define TTYFLAG_NONBLOCK 2097152
-#define TTYFLAG_SAVE     4194304
+#define TTYFLAG_SAVE     4194304   //save attributes for later use with TTYReset
 
 #define STREAMConfigTTY(S,speed,flags) ((S && istty(S->in_fd)) ? TTYConfig(S->in_fd,speed,flags))
 #define STREAMResetTTY(S) ((S && istty(S->in_fd)) ? TTYReset(S->in_fd))
@@ -40,7 +41,7 @@ void TTYConfig(int tty, int LineSpeed, int Flags);
 //TTYOpen except accepting text config, not flags. Intended for bindings to languages like lua that don't handle
 //bit-flags well. possible config text options are:
 
-// 'pty'
+// 'pty'  this is a noop in these functions, but is used in the Spawn functions
 // 'canon' turn on canonical processing
 // 'echo' turn on tty echo
 // 'xon' software flow control
@@ -48,9 +49,11 @@ void TTYConfig(int tty, int LineSpeed, int Flags);
 // 'hw' hardware flow control
 // 'nonblock'  nonblocking
 // 'nb'  nonblocking
-// 'lfcr' change linefeed to linefeed carriage return
-// 'lfcr' change carriage return linefeed
+// 'ilfcr' input: change linefeed to carriage return
+// 'icrlf' input: change carriage return to linefeed
+// 'ocrlf' output: change linefeed to carriagereturn-linefeed
 // 'nosig' no signals
+// 'save'  save current attributes (saved attributes can be restored by using TTYReset)
 // numeric values are taken as tty linespeeds
 
 int TTYConfigOpen(const char *Dev, const char *Config);

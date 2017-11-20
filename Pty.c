@@ -291,6 +291,7 @@ int TTYParseConfig(const char *Config, int *Speed)
         else if (strcasecmp(Token,"icrlf")==0) Flags |= TTYFLAG_IN_CRLF;
         else if (strcasecmp(Token,"ocrlf")==0) Flags |= TTYFLAG_OUT_CRLF;
         else if (strcasecmp(Token,"nosig")==0) Flags |= TTYFLAG_IGNSIG;
+        else if (strcasecmp(Token,"save")==0) Flags |= TTYFLAG_SAVE;
         else if (isnum(Token) && Speed) *Speed=atoi(Token);
 
         ptr=GetToken(ptr," |,",&Token,GETTOKEN_MULTI_SEP);
