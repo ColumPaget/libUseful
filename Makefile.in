@@ -1,5 +1,5 @@
 CC = @CC@
-VERSION = 3.1
+VERSION = 3.2
 CFLAGS = @CFLAGS@ @SIMD_CFLAGS@
 LIBS = @LIBS@
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC @DEFS@ -DHAVE_MADVISE -DHAVE_MADVISE_NOFORK -DHAVE_MADVISE_DONTDUMP -DHAVE_MLOCK
@@ -10,10 +10,10 @@ OBJ=String.o List.o Socket.o UnixSocket.o Stream.o Errors.o Terminal.o FileSyste
 all: $(OBJ)
 	$(CC) $(FLAGS) -shared -o libUseful-$(VERSION).so $(OBJ) $(LIBS) 
 	ar rcs libUseful-$(VERSION).a $(OBJ)
-	-ln -s libUseful-$(VERSION).so libUseful-3.so
-	-ln -s libUseful-$(VERSION).a libUseful-3.a
-	-ln -s libUseful-$(VERSION).so libUseful.so
-	-ln -s libUseful-$(VERSION).a libUseful.a
+	-ln -s libUseful-$(VERSION).so libUseful-3.so &>/dev/null
+	-ln -s libUseful-$(VERSION).a libUseful-3.a &>/dev/null
+	-ln -s libUseful-$(VERSION).so libUseful.so &>/dev/null
+	-ln -s libUseful-$(VERSION).a libUseful.a &>/dev/null
 
 
 String.o: String.h String.c
