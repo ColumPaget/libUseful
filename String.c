@@ -542,7 +542,7 @@ int MatchTokenFromList(const char *Token,const char **List, int Flags)
 
             if (Flags & MATCH_TOKEN_PART)
             {
-                if (tlen > ilen) continue;
+                if (tlen < ilen) continue;
                 if (Flags & MATCH_TOKEN_CASE)
                 {
                     if (strncmp(Token,Item,ilen)==0) return(count);
