@@ -26,7 +26,7 @@
 
 const char *HTTP_AUTH_BY_TOKEN="AuthTokenType";
 ListNode *Cookies=NULL;
-int g_Flags=0;
+int g_HTTPFlags=0;
 
 
 
@@ -363,7 +363,7 @@ HTTPInfoStruct *HTTPInfoCreate(const char *Protocol, const char *Host, int Port,
     Info->CustomSendHeaders=ListCreate();
     SetVar(Info->CustomSendHeaders,"Accept","*/*");
 
-    if (g_Flags) Info->Flags=g_Flags;
+    if (g_HTTPFlags) Info->Flags=g_HTTPFlags;
 
     ptr=LibUsefulGetValue("HTTP:Proxy");
     if (StrValid(ptr))
@@ -1160,12 +1160,12 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
     STREAM *S=NULL;
 
     if (
-        (g_Flags & HTTP_REQ_HTTPS) ||
-        (g_Flags & HTTP_TRY_HTTPS)
+        (g_HTTPFlags & HTTP_REQ_HTTPS) ||
+        (g_HTTPFlags & HTTP_TRY_HTTPS)
     )
     {
         S=HTTPSetupConnection(Info, TRUE);
-        if (g_Flags & HTTP_REQ_HTTPS) return(S);
+        if (g_HTTPFlags & HTTP_REQ_HTTPS) return(S);
     }
 
     if (!S) S=HTTPSetupConnection(Info, FALSE);
@@ -1327,12 +1327,12 @@ int HTTPDownload(char *URL, STREAM *S)
 
 void HTTPSetFlags(int Flags)
 {
-    g_Flags=Flags;
+    g_HTTPFlags=Flags;
 }
 
 int HTTPGetFlags()
 {
-    return(g_Flags);
+    return(g_HTTPFlags);
 }
 
 

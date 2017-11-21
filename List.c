@@ -128,7 +128,7 @@ void ListSetNoOfItems(ListNode *LastItem, unsigned long val)
     Head=ListGetHead(LastItem);
     if (LastItem->Next==NULL) Head->Prev=LastItem; /* The head Item has its Prev as being the last item! */
 
-    Head->Stats->Hits=val;
+    if (Head->Stats) Head->Stats->Hits=val;
 }
 
 
