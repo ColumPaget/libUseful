@@ -245,9 +245,9 @@ int LogFileInternalWrite(TLogFile *LF, STREAM *S, int Flags, const char *Str)
     if (LF) S=LogFileInternalDoRotate(LF);
     if (! S) return(FALSE);
 
-
-
-    Now=GetTime(TIME_CACHED);
+		if (Flags & LOGFILE_CACHETIME) Now=GetTime(TIME_CACHED);
+    else Now=GetTime(0);
+	
     if (Flags & LOGFILE_TIMESTAMP)
     {
         TimeStruct=localtime(&Now);

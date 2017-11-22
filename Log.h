@@ -25,7 +25,8 @@ For most people only the function LogToFile will be relevant and perhaps LogFile
 #define LOGFILE_TIMESTAMP 32   // include a timestamp in the log message
 #define LOGFILE_MILLISECS 64   // include milliseconds in the timestamp
 #define LOGFILE_HARDEN 512     // harden logfile against tampering (uses appendonly and immutable flags on filesystems that support it)
-#define LOGFILE_REPEATS  4096  // don't write repeat lines, instead count them and write 'last message repeated %d times'
+#define LOGFILE_REPEATS   4096  // don't write repeat lines, instead count them and write 'last message repeated %d times'
+#define LOGFILE_CACHETIME 8192  // use cached time in logfiles. This means user must called 'GetTime(0)' themselves to update time
 #define LOGFILE_PLAIN 536870912
 
 #define LOGFLUSH_FORCE 1
