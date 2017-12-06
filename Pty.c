@@ -70,16 +70,11 @@ void TTYConfig(int tty, int LineSpeed, int Flags)
     if (! TTYAttribs) TTYAttribs=ListCreate();
     Curr=ListFindNamedItem(TTYAttribs,Tempstr);
 
-    if (Flags & TTYFLAG_SAVE)
-    {
-        if (! Curr)
-        {
-            old_tty_data=(struct termios *) calloc(1,sizeof(struct termios));
-            ListAddNamedItem(TTYAttribs,Tempstr,old_tty_data);
-        }
-        else old_tty_data=(struct termios *) Curr->Item;
-        tcgetattr(tty,old_tty_data);
-    }
+		if (! Curr) old_tty_data=(struct termios *) calloc(1,sizeof(struct termios));
+    else old_tty_data=(struct termios *) Curr->Item;
+
+    if (Flags & TTYFLAG_SAVE) ListAddNamedItem(TTYAttribs,Tempstr,old_tty_data);
+    tcgetattr(tty,old_tty_data);
 
     memset(&tty_data,0,sizeof(struct termios));
 
