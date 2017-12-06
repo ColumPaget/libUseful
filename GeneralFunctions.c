@@ -13,7 +13,7 @@
 
 void Destroy(void *Obj)
 {
-if (Obj) free(Obj);
+    if (Obj) free(Obj);
 }
 
 //xmemset uses a 'volatile' pointer so that it won't be optimized out
@@ -152,7 +152,7 @@ double FromSIUnit(const char *Data, int Base)
 const char *ToSIUnit(double Value, int Base, int Precision)
 {
     static char *Str=NULL;
-		char *Fmt=NULL;
+    char *Fmt=NULL;
     double next;
 //Set to 0 to keep valgrind happy
     int i=0;
@@ -169,25 +169,25 @@ const char *ToSIUnit(double Value, int Base, int Precision)
     {
         Value=Value / ToPower(Base, i);
         suffix=sufflist[i];
-				Fmt=FormatStr(Fmt, "%%0.%df%%c", Precision);
+        Fmt=FormatStr(Fmt, "%%0.%df%%c", Precision);
         Str=FormatStr(Str,Fmt,(float) Value,suffix);
     }
     else
     {
-        //here 'next' is the remainder, by casting 'Value' to a long we remove the 
-				//decimal component, then subtract from Value. This leaves us with *only* 
-				//the decimal places
-        next=Value - (long) Value; 
-				if (Precision==0) Str=FormatStr(Str,"%ld",(long) Value);
-				else
-				{
-				Fmt=FormatStr(Fmt, "%%0.%df", Precision);
-        Str=FormatStr(Str,Fmt,(float) Value);
-				}
+        //here 'next' is the remainder, by casting 'Value' to a long we remove the
+        //decimal component, then subtract from Value. This leaves us with *only*
+        //the decimal places
+        next=Value - (long) Value;
+        if (Precision==0) Str=FormatStr(Str,"%ld",(long) Value);
+        else
+        {
+            Fmt=FormatStr(Fmt, "%%0.%df", Precision);
+            Str=FormatStr(Str,Fmt,(float) Value);
+        }
     }
 
 
-		DestroyString(Fmt);
+    DestroyString(Fmt);
     return(Str);
 }
 

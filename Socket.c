@@ -772,26 +772,26 @@ STREAM *STREAMServerAccept(STREAM *Serv)
 
 void IP6AddresssFromSA(struct sockaddr_storage *sa, char **ReturnAddr, int *ReturnPort)
 {
-int salen;
-char *Tempstr=NULL, *PortStr=NULL;
-const char *ptr;
+    int salen;
+    char *Tempstr=NULL, *PortStr=NULL;
+    const char *ptr;
 
-salen=sizeof(struct sockaddr_storage);
+    salen=sizeof(struct sockaddr_storage);
 
-Tempstr=SetStrLen(Tempstr,NI_MAXHOST);
-PortStr=SetStrLen(PortStr,NI_MAXSERV);
-getnameinfo((struct sockaddr *) sa, salen, Tempstr, NI_MAXHOST, PortStr, NI_MAXSERV, NI_NUMERICHOST|NI_NUMERICSERV);
-if (ReturnPort) *ReturnPort=atoi(PortStr);
+    Tempstr=SetStrLen(Tempstr,NI_MAXHOST);
+    PortStr=SetStrLen(PortStr,NI_MAXSERV);
+    getnameinfo((struct sockaddr *) sa, salen, Tempstr, NI_MAXHOST, PortStr, NI_MAXSERV, NI_NUMERICHOST|NI_NUMERICSERV);
+    if (ReturnPort) *ReturnPort=atoi(PortStr);
 
-if (ReturnAddr)
-{
-if ((strncmp(Tempstr,"::ffff:",7)==0) && strchr(Tempstr,'.')) ptr=Tempstr+7;
-else ptr=Tempstr;
-*ReturnAddr=CopyStr(*ReturnAddr, ptr);
-}
+    if (ReturnAddr)
+    {
+        if ((strncmp(Tempstr,"::ffff:",7)==0) && strchr(Tempstr,'.')) ptr=Tempstr+7;
+        else ptr=Tempstr;
+        *ReturnAddr=CopyStr(*ReturnAddr, ptr);
+    }
 
-DestroyString(Tempstr);
-DestroyString(PortStr);
+    DestroyString(Tempstr);
+    DestroyString(PortStr);
 }
 
 
@@ -812,16 +812,16 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
     result=getsockname(sock, (struct sockaddr *) &sa, &salen);
     if (result==0) IP6AddresssFromSA(&sa, LocalAddress, LocalPort);
 
-        //Set Address to be the same as control sock, as it might not be INADDR_ANY
+    //Set Address to be the same as control sock, as it might not be INADDR_ANY
     result=getpeername(sock, (struct sockaddr *) &sa, &salen);
-	  if (result==0) IP6AddresssFromSA(&sa, RemoteAddress, RemotePort);
+    if (result==0) IP6AddresssFromSA(&sa, RemoteAddress, RemotePort);
 
-      //We've got the local sock, so lets still call it a success
-      result=0;
-    }
+    //We've got the local sock, so lets still call it a success
+    result=0;
+}
 
-    if (result==0) return(TRUE);
-    return(FALSE);
+if (result==0) return(TRUE);
+return(FALSE);
 }
 
 #else
@@ -1147,8 +1147,8 @@ int STREAMDirectConnect(STREAM *S, const char *URL, int Flags)
     ParseURL(URL, &Proto, &Host, &Token,NULL, NULL,&Path,NULL);
     S->Path=CopyStr(S->Path,URL);
     if (StrValid(Token)) Port=strtoul(Token,0,10);
-		if (strcmp(Proto, "unix")==0) result=STREAMProtocolConnect(S, Proto, URL+5, 0, Flags);
-		else if (strcmp(Proto, "unixdgram")==0) result=STREAMProtocolConnect(S, Proto, URL+9, 0, Flags);
+    if (strcmp(Proto, "unix")==0) result=STREAMProtocolConnect(S, Proto, URL+5, 0, Flags);
+    else if (strcmp(Proto, "unixdgram")==0) result=STREAMProtocolConnect(S, Proto, URL+9, 0, Flags);
     else result=STREAMProtocolConnect(S, Proto, Host, Port, Flags);
 
     DestroyString(Token);

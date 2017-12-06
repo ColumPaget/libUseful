@@ -493,20 +493,20 @@ char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)
             if (*sptr==*cptr)
             {
                 RetStr=AddCharToBuffer(RetStr,olen, '\\');
-								switch (*sptr)
-								{
-								case '\n': 
-        				RetStr=AddCharToBuffer(RetStr,olen,'n');
-								break;
+                switch (*sptr)
+                {
+                case '\n':
+                    RetStr=AddCharToBuffer(RetStr,olen,'n');
+                    break;
 
-								case '\r': 
-        				RetStr=AddCharToBuffer(RetStr,olen,'r');
-								break;
+                case '\r':
+                    RetStr=AddCharToBuffer(RetStr,olen,'r');
+                    break;
 
-								default:
-        				RetStr=AddCharToBuffer(RetStr,olen,*sptr);
-								break;
-								}
+                default:
+                    RetStr=AddCharToBuffer(RetStr,olen,*sptr);
+                    break;
+                }
 
                 olen++;
                 break;

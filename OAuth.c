@@ -425,11 +425,11 @@ int OAuthSave(OAUTH *Ctx, const char *Path)
     char *Tempstr=NULL;
     int i;
 
-    if (! StrValid(Path)) 
-		{
-			if (! StrValid(Ctx->SavePath)) return(FALSE);
-			S=STREAMOpen(Ctx->SavePath,"aE");
-		}
+    if (! StrValid(Path))
+    {
+        if (! StrValid(Ctx->SavePath)) return(FALSE);
+        S=STREAMOpen(Ctx->SavePath,"aE");
+    }
     else S=STREAMOpen(Path,"aE");
     if (S)
     {
@@ -447,7 +447,7 @@ int OAuthSave(OAUTH *Ctx, const char *Path)
 
     DestroyString(Tempstr);
 
-	return(TRUE);
+    return(TRUE);
 }
 
 

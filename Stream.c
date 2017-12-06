@@ -291,6 +291,8 @@ STREAM *STREAMSelect(ListNode *Streams, struct timeval *tv)
             S=(STREAM *) Curr->Item;
             if (S && FD_ISSET(S->in_fd,&SelectSet))
             {
+                //this stream has had it's turn, move it to the bottom of the list
+                //so it can't lock others out
                 if (Curr->Next !=NULL)
                 {
                     ListUnThreadNode(Curr);
@@ -408,6 +410,7 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
     }
 
 
+    if (result < 0) return(STREAM_CLOSED);
 //memmove any remaining data so that we add onto the end of it
     S->OutEnd -= count;
     if (S->OutEnd > 0) memmove(S->OutputBuff,S->OutputBuff+count, S->OutEnd);
@@ -781,7 +784,7 @@ int STREAMParseConfig(const char *Config)
             case 'F':
                 Flags |= SF_FOLLOW;
                 break;
-						case 'S':
+            case 'S':
                 Flags |= SF_SORTED;
                 break;
             case 't':
@@ -1438,7 +1441,7 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 //thus the calling application always believes all data is written
 //Thus we only report errors if len==0;
     if (len > 0) result=STREAMInternalQueueBytes(S, i_data, len);
-    else if (S->OutEnd > S->StartPoint) STREAMInternalFinalWriteBytes(S, S->OutputBuff, S->OutEnd);
+    else if (S->OutEnd > S->StartPoint) result=STREAMInternalFinalWriteBytes(S, S->OutputBuff, S->OutEnd);
 
     DestroyString(TempBuff);
 
@@ -2030,6 +2033,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
             }
 
             result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,len);
+            if (result==STREAM_CLOSED) return(STREAM_CLOSED);
 
             In->InStart+=len;
             bytes_transferred+=len;

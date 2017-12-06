@@ -116,7 +116,7 @@ void ListNodeSetTime(ListNode *Node, time_t When);
 void ListNodeSetHits(ListNode *Node, int Hits);
 
 //add to number of hits on a listnode
-void ListNodeAddHits(ListNode *Node, int Hits);
+int ListNodeAddHits(ListNode *Node, int Hits);
 
 
 //create a map

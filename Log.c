@@ -124,6 +124,26 @@ void LogFileClose(const char *Path)
 }
 
 
+void LogFileCloseAll()
+{
+    ListNode *Curr, *Next;
+    TLogFile *LogFile;
+
+    Curr=ListGetNext(LogFiles);
+    while (Curr)
+    {
+        Next=ListGetNext(Curr);
+        LogFile=(TLogFile *) Curr->Item;
+        ListDeleteNode(Curr);
+        DestroyString(LogFile->Path);
+        STREAMClose(LogFile->S);
+        free(LogFile);
+        Curr=Next;
+    }
+
+}
+
+
 char *LogFileInternalGetRotateDestinationPath(char *RetStr, TLogFile *LogFile)
 {
     char *Tempstr=NULL;
@@ -245,9 +265,9 @@ int LogFileInternalWrite(TLogFile *LF, STREAM *S, int Flags, const char *Str)
     if (LF) S=LogFileInternalDoRotate(LF);
     if (! S) return(FALSE);
 
-		if (Flags & LOGFILE_CACHETIME) Now=GetTime(TIME_CACHED);
+    if (Flags & LOGFILE_CACHETIME) Now=GetTime(TIME_CACHED);
     else Now=GetTime(0);
-	
+
     if (Flags & LOGFILE_TIMESTAMP)
     {
         TimeStruct=localtime(&Now);
@@ -312,34 +332,34 @@ int LogFileInternalWrite(TLogFile *LF, STREAM *S, int Flags, const char *Str)
 
 int LogFileInternalPush(TLogFile *LF, STREAM *S, int Flags, const char *Str)
 {
-char *Tempstr=NULL;
-int result=TRUE;
+    char *Tempstr=NULL;
+    int result=TRUE;
 
-if (LF->Flags & LOGFILE_REPEATS)
-{
-	if (strcmp(LF->LastMessage, Str)==0)
-	{
-		//LF->LastMessageTime=Now;
-		LF->RepeatCount++;
-	}
-	else if (LF->RepeatCount > 0)
-	{
-		if (LF->RepeatCount==1) LogFileInternalWrite(LF, S, Flags, LF->LastMessage);
-		else
-		{
-		Tempstr=FormatStr(Tempstr, "Last message repeated %d times", LF->RepeatCount);
-		LogFileInternalWrite(LF, S, Flags, Tempstr);
-		}
-		LF->RepeatCount=0;
-		LF->LastMessage=CopyStr(LF->LastMessage, Str);
-		result=LogFileInternalWrite(LF, S, Flags, Str);
-	}
-}	
-else result=LogFileInternalWrite(LF, S, Flags, Str);
+    if (LF->Flags & LOGFILE_REPEATS)
+    {
+        if (strcmp(LF->LastMessage, Str)==0)
+        {
+            //LF->LastMessageTime=Now;
+            LF->RepeatCount++;
+        }
+        else if (LF->RepeatCount > 0)
+        {
+            if (LF->RepeatCount==1) LogFileInternalWrite(LF, S, Flags, LF->LastMessage);
+            else
+            {
+                Tempstr=FormatStr(Tempstr, "Last message repeated %d times", LF->RepeatCount);
+                LogFileInternalWrite(LF, S, Flags, Tempstr);
+            }
+            LF->RepeatCount=0;
+            LF->LastMessage=CopyStr(LF->LastMessage, Str);
+            result=LogFileInternalWrite(LF, S, Flags, Str);
+        }
+    }
+    else result=LogFileInternalWrite(LF, S, Flags, Str);
 
-DestroyString(Tempstr);
+    DestroyString(Tempstr);
 
-return(result);
+    return(result);
 }
 
 

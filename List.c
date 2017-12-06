@@ -72,10 +72,11 @@ void ListNodeSetHits(ListNode *Node, int val)
 }
 
 
-void ListNodeAddHits(ListNode *Node, int val)
+int ListNodeAddHits(ListNode *Node, int val)
 {
     if (! Node->Stats) Node->Stats=(ListStats *) calloc(1,sizeof(ListStats));
     Node->Stats->Hits+=val;
+    return(Node->Stats->Hits);
 }
 
 void ListNodeSetTime(ListNode *Node, time_t When)
@@ -335,10 +336,10 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 
 ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
 {
-    ListNode *Prev, *Curr;
+    ListNode *Prev, *Curr, *Next;
     int result=0, count=0;
     int hops=0, jumps=0, miss=0;
-    unsigned int val;
+    unsigned long long val;
 
     if (! Head) return(Head);
     if (! StrLen(Name)) return(Head);
@@ -363,6 +364,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
     Prev=Head;
     while (Curr)
     {
+        Next=Curr->Next;
         if (Curr->Tag)
         {
             if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Curr->Tag,Name);
@@ -373,9 +375,18 @@ ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
                 if (Head->Flags & LIST_FLAG_SELFORG) ListSwapItems(Curr->Prev, Curr);
                 return(Curr);
             }
-            if ((result > 0) && (Head->Flags & LIST_FLAG_ORDERED))
+
+            if ((result > 0) && (Head->Flags & LIST_FLAG_ORDERED)) return(Prev);
+
+            //Can only get here if it's not a match
+            if (Head->Flags & LIST_FLAG_TIMEOUT)
             {
-                return(Prev);
+                val=ListNodeGetTime(Curr);
+                if ((val > 0) && (val < GetTime(TIME_CACHED)))
+                {
+                    Destroy(Curr->Item);
+                    ListDeleteNode(Curr);
+                }
             }
         }
 
@@ -384,7 +395,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
 
 
         Prev=Curr;
-        Curr=Curr->Next;
+        Curr=Next;
     }
 
     return(Prev);

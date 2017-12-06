@@ -84,6 +84,10 @@ void LogFileFlushAll(int Force);
 //Close a specific logfile if it's open. 
 void LogFileClose(const char *Path);
 
+//Close all currently open logfiles
+void LogFileCloseAll();
+
+
 //This writes a log message to a stream, rather than an internally managed logfile object. 
 int LogToSTREAM(STREAM *S, int Flags, const char *Str);
 
