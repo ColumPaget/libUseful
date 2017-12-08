@@ -115,7 +115,6 @@ int OAuthParseReply(OAUTH *Ctx, const char *ContentType, const char *Reply)
         Curr=ListGetNext(Curr);
     }
 
-
     ptr=ParserGetValue(P, "access_token");
     if (StrValid(ptr)) Ctx->AccessToken=CopyStr(Ctx->AccessToken, ptr);
 
@@ -197,7 +196,13 @@ int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
         {
             S=STREAMFromFD(0);
             Tempstr=STREAMReadLine(Tempstr, S);
-            OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
+						if ( (strncmp(Tempstr, "http:", 5)==0) || (strncmp(Tempstr, "https:", 6)==0) ) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
+						else 
+						{
+							StripTrailingWhitespace(Tempstr);
+    					Ctx->VerifyCode=HTTPQuote(Ctx->VerifyCode, Tempstr);
+							SetVar(Ctx->Vars, "code", Ctx->VerifyCode);
+						}
             STREAMDestroy(S);
         }
         OAuthFinalize(Ctx, URL);
@@ -382,17 +387,19 @@ void OAuthParse(OAUTH *Ctx, const char *Line)
 }
 
 
-int OAuthLoad(OAUTH *Ctx, const char *Name, const char *Path)
+int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *Path)
 {
     STREAM *S;
-    char *Tempstr=NULL, *Token=NULL;
+    char *Tempstr=NULL, *Token=NULL, *Name=NULL;
     const char *ptr;
     int result=FALSE;
 
+		if (StrValid(ReqName)) Name=CopyStr(Name, ReqName);
+		else Name=CopyStr(Name, Ctx->Name);
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
-    if (! StrValid(Path)) S=STREAMOpen(Ctx->SavePath,"r");
-    else S=STREAMOpen(Path,"r");
+    if (! StrValid(Path)) S=STREAMOpen(Ctx->SavePath,"rl");
+    else S=STREAMOpen(Path,"rl");
     if (S)
     {
         Tempstr=STREAMReadLine(Tempstr, S);
@@ -411,6 +418,7 @@ int OAuthLoad(OAUTH *Ctx, const char *Name, const char *Path)
 
     DestroyString(Tempstr);
     DestroyString(Token);
+    DestroyString(Name);
 
     return(result);
 }
@@ -428,9 +436,9 @@ int OAuthSave(OAUTH *Ctx, const char *Path)
     if (! StrValid(Path))
     {
         if (! StrValid(Ctx->SavePath)) return(FALSE);
-        S=STREAMOpen(Ctx->SavePath,"aE");
+        S=STREAMOpen(Ctx->SavePath,"aEL");
     }
-    else S=STREAMOpen(Path,"aE");
+    else S=STREAMOpen(Path,"aEL");
     if (S)
     {
         Tempstr=MCopyStr(Tempstr, "'", Ctx->Name,"' ",NULL);
