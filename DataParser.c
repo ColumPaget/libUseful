@@ -433,6 +433,7 @@ ListNode *ParserParseDocument(const char *TypeStr, const char *Doc)
     ptr=Doc;
     while (isspace(*ptr)) ptr++;
     if (*ptr=='{') ptr++;
+    if (*ptr=='[') ptr++;
     ParserParseItems(Type, ptr, Items, 0);
 
     fflush(NULL);

@@ -3,6 +3,7 @@
 #include "ConnectionChain.h"
 #include "Hash.h"
 #include "URL.h"
+#include "OAuth.h"
 #include "Time.h"
 #include "base64.h"
 #include "SecureMem.h"
@@ -406,13 +407,13 @@ void HTTPInfoPOSTSetContent(HTTPInfoStruct *Info, const char *ContentType, const
 
             Info->PostData=SetStrLen(Info->PostData,ContentLength);
             memcpy(Info->PostData, ContentData, ContentLength);
+        		Info->PostContentLength=StrLen(Info->PostData);
         }
 
         if (StrValid(ContentType)) Info->PostContentType=CopyStr(Info->PostContentType,ContentType);
         else if (ContentLength > 0) Info->PostContentType=CopyStr(Info->PostContentType,"application/x-www-form-urlencoded; charset=UTF-8");
 
         if (ContentLength) Info->PostContentLength=ContentLength;
-        else Info->PostContentLength=StrLen(Info->PostData);
     }
     else if (StrValid(ContentData))
     {
@@ -454,6 +455,8 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
             Info->AuthFlags |= HTTP_AUTH_OAUTH;
             Info->Credentials=CopyStr(Info->Credentials, Args);
         }
+        else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Args);
+        else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Args);
         else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Args);
         else SetVar(Info->CustomSendHeaders, Token, Args);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Args);

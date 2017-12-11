@@ -841,13 +841,13 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
             (strncmp(Proto,"https",6)==0)
         )
         {
+            Token=MCopyStr(Token, URL, " ", Config, NULL);
             if (Flags & SF_WRONLY)
             {
-                S=HTTPMethod("POST", URL, "","", 0);
+                S=HTTPMethod("POST", Token, "","", 0);
             }
             else
             {
-                Token=MCopyStr(Token, URL, " ", Config, NULL);
                 S=HTTPGet(Token);
             }
         }

@@ -136,6 +136,7 @@ void OAuthSetUserCreds(OAUTH *Ctx, const char *UserName, const char *Password);
 
 int OAuthConnectBack(OAUTH *Ctx, int sock);
 int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags);
+const char *OAuthLookup(const char *Name, int Refresh);
 
 #ifdef __cplusplus
 }
