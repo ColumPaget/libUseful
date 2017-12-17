@@ -488,13 +488,12 @@ char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)
 
     for (sptr=String; *sptr !='\0'; sptr++)
     {
-        for (cptr=QuoteChars; *cptr !='\0'; cptr++)
+        if (strchr(QuoteChars, *sptr))
         {
-            if (*sptr==*cptr)
-            {
-                RetStr=AddCharToBuffer(RetStr,olen, '\\');
-                switch (*sptr)
-                {
+          RetStr=AddCharToBuffer(RetStr,olen, '\\');
+					olen++;
+          switch (*sptr)
+          {
                 case '\n':
                     RetStr=AddCharToBuffer(RetStr,olen,'n');
                     break;
@@ -502,17 +501,15 @@ char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)
                 case '\r':
                     RetStr=AddCharToBuffer(RetStr,olen,'r');
                     break;
-
+				
                 default:
                     RetStr=AddCharToBuffer(RetStr,olen,*sptr);
                     break;
-                }
-
-                olen++;
-                break;
-            }
-        }
-        olen++;
+          }
+       }
+		  //if we didn't find a matching char in QuoteChars then just add to string
+		  else RetStr=AddCharToBuffer(RetStr,olen,*sptr);
+      olen++;
     }
 
     return(RetStr);

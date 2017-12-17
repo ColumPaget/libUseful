@@ -4,7 +4,7 @@ CFLAGS = @CFLAGS@ @SIMD_CFLAGS@
 LIBS = @LIBS@
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC @DEFS@ -DHAVE_MADVISE -DHAVE_MADVISE_NOFORK -DHAVE_MADVISE_DONTDUMP -DHAVE_MLOCK
 prefix=@prefix@
-OBJ=String.o List.o Socket.o UnixSocket.o Stream.o Errors.o Terminal.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o Http.o inet.o Expect.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o Hash.o Ssh.o Compression.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Process.o Encodings.o RawData.o SecureMem.o
+OBJ=String.o List.o Socket.o UnixSocket.o Stream.o Errors.o Terminal.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o Http.o Smtp.o inet.o Expect.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o Hash.o Ssh.o Compression.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Process.o Encodings.o RawData.o SecureMem.o
 
 
 all: $(OBJ)
@@ -30,6 +30,9 @@ Pty.o: Pty.h Pty.c
 
 Http.o: Http.h Http.c
 	$(CC) $(FLAGS) -c Http.c
+
+Smtp.o: Smtp.h Smtp.c
+	$(CC) $(FLAGS) -c Smtp.c
 
 Stream.o: Stream.h Stream.c
 	$(CC) $(FLAGS) -c Stream.c

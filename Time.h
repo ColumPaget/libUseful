@@ -39,6 +39,8 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
 //signal handler (SIGNAL_HANDLER_FUNC is of the form 'void MyHandler(int sig)' )
 void SetTimeout(int timeout, SIGNAL_HANDLER_FUNC);
 
+long TimezoneOffset(const char *TimeZone);
+
 #ifdef __cplusplus
 }
 #endif

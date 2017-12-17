@@ -6,6 +6,7 @@
 #include "Time.h"
 #include <time.h>
 
+
 //we cache seconds because we expect most questions about
 //time to be in seconds, and this avoids multiplying millisecs up
 time_t LU_CachedTime=0;
@@ -41,7 +42,7 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
 #define DATE_BUFF_LEN 255
 
 
-    if (StrLen(TimeZone))
+    if (StrValid(TimeZone))
     {
         if (getenv("TZ")) Tempstr=CopyStr(Tempstr,getenv("TZ"));
         setenv("TZ",TimeZone,TRUE);
@@ -60,16 +61,17 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
 
     val=Secs;
     TMS=localtime(&val);
-    if (StrLen(TimeZone))
+
+    val=StrLen(DateFormat)+ DATE_BUFF_LEN;
+    Buffer=SetStrLen(Buffer,val);
+    strftime(Buffer,val,DateFormat,TMS);
+
+    if (StrValid(TimeZone))
     {
         if (! Tempstr) unsetenv("TZ");
         else setenv("TZ",Tempstr,TRUE);
         tzset();
     }
-
-    val=StrLen(DateFormat)+ DATE_BUFF_LEN;
-    Buffer=SetStrLen(Buffer,val);
-    strftime(Buffer,val,DateFormat,TMS);
 
     DestroyString(Tempstr);
     return(Buffer);
@@ -89,21 +91,22 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
     struct tm TMS;
     char *Tempstr=NULL;
 
-    if (StrLen(DateFormat)==0) return(0);
-    if (StrLen(Str)==0) return(0);
+    if (StrEnd(DateFormat)) return(0);
+    if (StrEnd(Str)) return(0);
 
-    if (StrLen(TimeZone))
+    if (StrValid(TimeZone))
     {
         if (getenv("TZ")) Tempstr=CopyStr(Tempstr,getenv("TZ"));
         setenv("TZ",TimeZone,TRUE);
         tzset();
     }
 
+		memset(&TMS,0,sizeof(struct tm));
     strptime(Str,DateFormat,&TMS);
     TMS.tm_isdst=-1;
     Secs=mktime(&TMS);
 
-    if (StrLen(TimeZone))
+    if (StrValid(TimeZone))
     {
         if (! Tempstr) unsetenv("TZ");
         else setenv("TZ",Tempstr,TRUE);
@@ -112,6 +115,29 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
     return(Secs);
 }
 
+long TimezoneOffset(const char *TimeZone)
+{
+    long Secs=0;
+    char *Tempstr=NULL;
+
+    if (StrValid(TimeZone))
+    {
+        if (getenv("TZ")) Tempstr=CopyStr(Tempstr,getenv("TZ"));
+        setenv("TZ",TimeZone,TRUE);
+        tzset();
+    }
+
+		Secs=timezone;
+
+    if (StrValid(TimeZone))
+    {
+        if (! Tempstr) unsetenv("TZ");
+        else setenv("TZ",Tempstr,TRUE);
+        tzset();
+    }
+
+    return(Secs);
+}
 
 
 /* A general 'Set Timer' function, Useful for timing out */
