@@ -20,6 +20,7 @@
 //these must be compatible with PROC_ defines
 #define SPAWN_NOSHELL 8192
 #define SPAWN_TRUST_COMMAND 16384
+#define SPAWN_ARG0 32768
 
 
 #ifdef __cplusplus

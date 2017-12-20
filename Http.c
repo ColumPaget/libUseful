@@ -345,7 +345,7 @@ void HTTPInfoSetValues(HTTPInfoStruct *Info, const char *Host, int Port, const c
     Info->PostContentLength=ContentLength;
     Info->UserName=CopyStr(Info->UserName, Logon);
 
-    if (StrLen(Password)) CredsStoreAdd(Host, Logon, Password);
+    if (StrValid(Password)) CredsStoreAdd(Host, Logon, Password);
 }
 
 
@@ -455,12 +455,15 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
             Info->AuthFlags |= HTTP_AUTH_OAUTH;
             Info->Credentials=CopyStr(Info->Credentials, Args);
         }
+        else if (strcasecmp(Token, "hostauth")==0) Info->AuthFlags |= HTTP_AUTH_HOST;
         else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Args);
         else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Args);
         else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Args);
         else SetVar(Info->CustomSendHeaders, Token, Args);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Args);
     }
+
+    if (StrValid(Pass)) CredsStoreAdd(Info->Host, User, Pass);
 
     DestroyString(User);
     DestroyString(Pass);
@@ -796,6 +799,7 @@ char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info
     ptr=GetToken(ptr,":",&Nonce,0);
 
     passlen=CredsStoreLookup(Realm, Info->UserName, &p_Password);
+
     if (! passlen) passlen=CredsStoreLookup(Info->Host, Info->UserName, &p_Password);
 
     if (Info->AuthFlags & (HTTP_AUTH_TOKEN | HTTP_AUTH_OAUTH)) SendStr=MCatStr(SendStr,AuthHeader,": ",AuthInfo,"\r\n",NULL);
@@ -873,6 +877,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, FALSE), NULL);
     }
     if (Info->Authorization) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
+    else if (Info->AuthFlags & HTTP_AUTH_HOST) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Host);
     if (Info->ProxyAuthorization) SendStr=HTTPHeadersAppendAuth(SendStr, "Proxy-Authorization", Info, Info->ProxyAuthorization);
 
     if (Info->Flags & HTTP_NOCACHE) SendStr=CatStr(SendStr,"Pragma: no-cache\r\nCache-control: no-cache\r\n");

@@ -499,6 +499,7 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"trust")==0) Flags |= SPAWN_TRUST_COMMAND;
         else if (strcasecmp(Name,"noshell")==0) Flags |= SPAWN_NOSHELL;
+        else if (strcasecmp(Name,"arg0")==0) Flags |= SPAWN_ARG0;
         else if (strcasecmp(Name,"mem")==0)
         {
             val=(rlim_t) FromMetric(Value, 0);

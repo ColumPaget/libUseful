@@ -46,6 +46,7 @@
 #include "Http.h"
 #include "OAuth.h"
 #include "Ssh.h"
+#include "Smtp.h"
 #include "Terminal.h"
 #include "Process.h"
 #include "SecureMem.h"

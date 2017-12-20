@@ -77,6 +77,7 @@ where 'myhost-oauth' is the name of an oauth session previously set up using the
 #define HTTP_AUTH_DIGEST 2
 #define HTTP_AUTH_TOKEN 4
 #define HTTP_AUTH_OAUTH 8
+#define HTTP_AUTH_HOST 16
 #define HTTP_AUTH_PROXY 64
 #define HTTP_AUTH_SENT 128
 #define HTTP_AUTH_RETURN 256

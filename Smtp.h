@@ -4,11 +4,15 @@
 #include "includes.h"
 #include "defines.h"
 
+#define SMTP_NOSSL 1
+#define SMTP_NOHEADER 2
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int SendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body);
+int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags);
+int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path, int Flags);
 
 #ifdef __cplusplus
 }

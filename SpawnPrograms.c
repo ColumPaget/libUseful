@@ -45,10 +45,20 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
     {
         argv=(char **) calloc(101,sizeof(char *));
         ptr=FinalCommand;
+	      ptr=GetToken(FinalCommand,"\\S",&Token,GETTOKEN_QUOTES);
+        argv[0]=CopyStr(argv[0],Token);
+				i=0;
+			
+				if (! Flags & SPAWN_ARG0)
+				{
+        argv[1]=CopyStr(argv[1],Token);
+				i=1;
+				}
+
         for (i=0; i < 100; i++)
         {
-            ptr=GetToken(ptr,"\\S",&Token,GETTOKEN_QUOTES);
             if (! ptr) break;
+            ptr=GetToken(ptr,"\\S",&Token,GETTOKEN_QUOTES);
             argv[i]=CopyStr(argv[i],Token);
         }
         execv(argv[0],argv);
