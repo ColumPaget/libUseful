@@ -839,18 +839,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         if (
             (strncmp(Proto,"http",5)==0)  ||
             (strncmp(Proto,"https",6)==0)
-        )
-        {
-            Token=MCopyStr(Token, URL, " ", Config, NULL);
-            if (Flags & SF_WRONLY)
-            {
-                S=HTTPMethod("POST", Token, "","", 0);
-            }
-            else
-            {
-                S=HTTPGet(Token);
-            }
-        }
+        ) S=HTTPWithConfig(URL, Config);
         //the 'write only' and 'read only' flags normally result in one or another
         //buffer not being allocated (as it's not expected to be needed). However
         //with HTTP 'write' means 'POST', and we still need both read and write

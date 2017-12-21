@@ -30,9 +30,35 @@ S=STREAMOpen("https://user:password@myhost.com/","r");
 Or if using oauth
 
 
-S=STREAMOpen("https://myhost.com/ oauth='myhost-oauth'","r");
+S=STREAMOpen("https://myhost.com/","r oauth='myhost-oauth'");
 
 where 'myhost-oauth' is the name of an oauth session previously set up using the functions in 'OAuth.h'
+
+
+The second argument for 'STREAMOpen' is a config argument. For http/https urls this has the form of an initiaol method indicator, followed by a number of name-value pairs.
+
+
+The 'method' indicator uses a format similar to 'fopen', which character flags (only one will be honored) specifiying the transaction method
+
+r    GET method (default if no method specified)
+w    POST method
+W    PUT method
+D    DELETE method
+P    PATCH method
+H    HEAD  method
+
+after this initial argument come name-value pairs with the following values
+
+oauth=<oauth config to use>
+content-type=<content type>
+content-length=<content length>
+user=<username>
+useragent=<user agent>
+user-agent=<user agent>
+hostauth
+
+Note, 'hostauth' is not a name/value pair, just a config flag that enables sending authentication without waiting for a 401 Response from the server. This means that we can't know the authentication realm for the server, and so internally use the hostname as the realm for looking up logon credentials. This is mostly useful for the github api.
+
 */
 
 
@@ -118,6 +144,7 @@ typedef struct
     char *Authorization;
     char *ProxyAuthorization;
     char *ConnectionChain;
+		char *UserAgent;
     STREAM *S;
 } HTTPInfoStruct;
 
@@ -160,6 +187,9 @@ STREAM *HTTPMethod(const char *Method, const char *URL, const char *ContentType,
 
 //Does a POST. Expectes textual data and calculates the ContentLength internally
 STREAM *HTTPPost(const char *URL, const char *ContentType, const char *Content);
+
+//this is called by STREAMOpen when passed an http or https url, and you should really use that
+STREAM *HTTPWithConfig(const char *URL, const char *Config);
 
 STREAM *HTTPConnect(HTTPInfoStruct *Info);
 STREAM *HTTPTransact(HTTPInfoStruct *Info);

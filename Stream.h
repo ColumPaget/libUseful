@@ -47,6 +47,27 @@ t     make a unique temporary file name. the file path must be a mktemp style te
 S     file contents are sorted
 z     compress/uncompress with gzip
 
+for 'http' and 'https' URLs the first argument is a haracter list (though only one character long) with the following values
+
+r    GET method (default if no method specified)
+w    POST method
+W    PUT method
+D    DELETE method
+P    PATCH method
+H    HEAD  method
+
+after this initial argument come name-value pairs with the following values
+
+oauth=<oauth config to use>
+content-type=<content type>
+content-length=<content length>
+user=<username>
+useragent=<user agent>
+user-agent=<user agent>
+hostauth
+
+Note, 'hostauth' is not a name/value pair, just a config flag that enables sending authentication without waiting for a 401 Response from the server. This means that we can't know the authentication realm for the server, and so internally use the hostname as the realm for looking up logon credentials. This is mostly useful for the github api.
+
 
 For 'cmd' type URLs the config options are those detailed in "SpawnPrograms.h"
 For 'tty' type URLs the config options are those detailed in "Pty.h" for "TTYConfigOpen"

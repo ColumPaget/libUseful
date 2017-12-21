@@ -376,6 +376,8 @@ HTTPInfoStruct *HTTPInfoCreate(const char *Protocol, const char *Host, int Port,
         else Info->Flags=HTTP_TUNNEL;
     }
 
+    Info->UserAgent=CopyStr(Info->UserAgent, LibUsefulGetValue("HTTP:UserAgent"));
+
     return(Info);
 }
 
@@ -459,6 +461,8 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Args);
         else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Args);
         else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Args);
+        else if (strcasecmp(Token, "useragent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Args);
+        else if (strcasecmp(Token, "user-agent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Args);
         else SetVar(Info->CustomSendHeaders, Token, Args);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Args);
     }
@@ -937,8 +941,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=CatStr(SendStr,"Connection: close\r\n");
     }
 
-    ptr=LibUsefulGetValue("HTTP:UserAgent");
-    if (StrValid(ptr)) SendStr=MCatStr(SendStr,"User-Agent: ",ptr, "\r\n",NULL);
+    if (StrValid(ptr)) SendStr=MCatStr(SendStr,"User-Agent: ",Info->UserAgent, "\r\n",NULL);
 
     Curr=ListGetNext(Info->CustomSendHeaders);
     while (Curr)
@@ -1304,6 +1307,41 @@ STREAM *HTTPPost(const char *URL, const char *ContentType, const char *Content)
 {
     return(HTTPMethod("POST", URL, ContentType, Content, StrLen(Content)));
 }
+
+
+STREAM *HTTPWithConfig(const char *URL, const char *Config)
+{
+char *Token=NULL;
+const char *ptr, *cptr, *p_Method="GET";
+STREAM *S;
+int Flags=0;
+
+
+ptr=GetToken(Config,"\\S",&Token, 0);
+
+//if the first arg contains '=' then they've forgotten to supply a method specifier, so go with 'GET' and
+//treat all the args as name=value pairs that are dealt with in HTTPInfoSetURL
+if (strchr(Token,'=')) ptr=Config;
+else
+{
+for (cptr=Token; *cptr !='\0'; cptr++)
+{
+	if (*cptr=='w') p_Method="POST";
+	else if (*cptr=='W') p_Method="PUT";
+	else if (*cptr=='P') p_Method="PATCH";
+	else if (*cptr=='D') p_Method="DELETE";
+	else if (*cptr=='H') p_Method="HEAD";
+}
+}
+
+Token=MCopyStr(Token, URL, " ", ptr, NULL);
+S=HTTPMethod(p_Method, Token, "","", 0);
+
+DestroyString(Token);
+
+return(S);
+}
+
 
 
 int HTTPCopyToSTREAM(STREAM *Con, STREAM *S)
