@@ -4,6 +4,34 @@
 
 const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
+unsigned int UnicodeDecode(const char **ptr)
+{
+unsigned int val=0;
+
+/*
+    if (Code > 0x7FF) Tempstr=FormatStr(Tempstr,"%c%c%c",128 + 64 + 32 + ((Code & 61440) >> 12), 128 + ((Code & 4032) >>6), 128 + (Code & 63));
+    else Tempstr=FormatStr(Tempstr,"%c%c",128+64+((Code & 1984) >> 6), 128 + (Code & 63));
+*/
+
+//unicode bit pattern 110
+if ((**ptr) & 224 == 192)
+{
+	val=((**ptr) & 31) << 6;
+	if (incr_ptr(*ptr, 1) != 1) return('?');
+	val |= (**ptr) & 127;
+}
+else //if ((**ptr) & 224 == 192)
+{
+	val=((**ptr) & 31) << 12;
+	if (incr_ptr(*ptr, 1) != 1) return('?');
+	val |= ((**ptr) & 31) << 6;
+	if (incr_ptr(*ptr, 1) != 1) return('?');
+	val |= (**ptr) & 127;
+}
+
+return(val);
+}
+
 
 int TerminalStrLen(const char *Str)
 {
@@ -669,6 +697,12 @@ char *TerminalFormatStr(char *RetStr, const char *Str)
                 break;
             }
         }
+				//if top bit is set then this is unicode
+				else if (*ptr & 128)
+				{
+					val=UnicodeDecode(&ptr);
+					RetStr=TerminalCommandStr(RetStr, TERM_UNICODE, val, 0);
+				}
         else RetStr=AddCharToStr(RetStr, *ptr);
     }
 
