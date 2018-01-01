@@ -941,7 +941,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=CatStr(SendStr,"Connection: close\r\n");
     }
 
-    if (StrValid(ptr)) SendStr=MCatStr(SendStr,"User-Agent: ",Info->UserAgent, "\r\n",NULL);
+    SendStr=MCatStr(SendStr,"User-Agent: ",Info->UserAgent, "\r\n",NULL);
 
     Curr=ListGetNext(Info->CustomSendHeaders);
     while (Curr)
