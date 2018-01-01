@@ -410,17 +410,18 @@ int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End,
     P_Ptr=(*P_PtrPtr)+1;
     if (*P_Ptr=='\0')
     {
-        //we have a terminating '*' so consule all string
+        //we have a terminating '*' so consume all string
         while (**S_PtrPtr != '\0') (*S_PtrPtr)++;
         *P_PtrPtr=P_Ptr;
         return(MATCH_ONE);
     }
-    S_Ptr=*S_PtrPtr;
 
     for (S_Ptr=*S_PtrPtr; *S_Ptr != '\0'; S_Ptr++)
     {
-        //out of pattern, must be a match!
-        result=pmatch_search(&P_Ptr, &S_Ptr, S_End, MatchStart, MatchEnd, Flags);
+    	P_Ptr=(*P_PtrPtr)+1;
+      //out of pattern, must be a match!
+      result=pmatch_search(&P_Ptr, &S_Ptr, S_End, MatchStart, MatchEnd, Flags);
+
 
         if (result == MATCH_ONE)
         {
@@ -441,6 +442,12 @@ int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
 
     if (MatchStart) *MatchStart=NULL;
     if (MatchEnd) *MatchEnd=NULL;
+
+		if (*Flags & PMATCH_SUBSTR) 
+		{
+			(*Flags) &= ~PMATCH_SUBSTR;
+			(*Flags) |= PMATCH_SHORT;
+		}
 
     S_Start=*S_PtrPtr;
     result=pmatch_char(P_PtrPtr, S_PtrPtr, Flags);
@@ -531,7 +538,7 @@ int pmatch_one(const char *Pattern, const char *String, int len, const char **St
     result=pmatch_search(&P_Ptr, &S_Ptr, S_End, Start, End, &Flags);
     if ((result == MATCH_ONE) || (result == MATCH_FOUND))
     {
-        if ((Flags & PMATCH_SUBSTR) || (*S_Ptr=='\0')) return(TRUE);
+        if ((Flags & PMATCH_SHORT) || (*S_Ptr=='\0')) return(TRUE);
     }
 
     return(FALSE);

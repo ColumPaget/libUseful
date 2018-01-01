@@ -809,17 +809,19 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
     if (RemoteAddress) *RemoteAddress=CopyStr(*RemoteAddress,"");
 
     salen=sizeof(struct sockaddr_storage);
-    if (getsockname(sock, (struct sockaddr *) &sa, &salen) != 0)
-		{
-      RaiseError(ERRFLAG_ERRNO, "GetSockDetails", "failed to get local endpoint");
-			return(FALSE);
-		}
+    result=getsockname(sock, (struct sockaddr *) &sa, &salen);
+    if (result==0) IP6AddresssFromSA(&sa, LocalAddress, LocalPort);
 
-		IP6AddresssFromSA(&sa, LocalAddress, LocalPort);
     //Set Address to be the same as control sock, as it might not be INADDR_ANY
-    if (getpeername(sock, (struct sockaddr *) &sa, &salen) == 0) IP6AddresssFromSA(&sa, RemoteAddress, RemotePort);
+    result=getpeername(sock, (struct sockaddr *) &sa, &salen);
+    if (result==0) IP6AddresssFromSA(&sa, RemoteAddress, RemotePort);
 
-return(TRUE);
+    //We've got the local sock, so lets still call it a success
+    result=0;
+}
+
+if (result==0) return(TRUE);
+return(FALSE);
 }
 
 #else

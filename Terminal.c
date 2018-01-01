@@ -3,29 +3,30 @@
 #include <sys/ioctl.h>
 
 const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
+int UnicodeLevel=0;
+
+void TerminalSetUTF8(int level)
+{
+UnicodeLevel=level;
+}
 
 unsigned int UnicodeDecode(const char **ptr)
 {
 unsigned int val=0;
 
-/*
-    if (Code > 0x7FF) Tempstr=FormatStr(Tempstr,"%c%c%c",128 + 64 + 32 + ((Code & 61440) >> 12), 128 + ((Code & 4032) >>6), 128 + (Code & 63));
-    else Tempstr=FormatStr(Tempstr,"%c%c",128+64+((Code & 1984) >> 6), 128 + (Code & 63));
-*/
-
 //unicode bit pattern 110
 if ((**ptr) & 224 == 192)
 {
 	val=((**ptr) & 31) << 6;
-	if (incr_ptr(*ptr, 1) != 1) return('?');
+	if (ptr_incr(ptr, 1) != 1) return(0);
 	val |= (**ptr) & 127;
 }
 else //if ((**ptr) & 224 == 192)
 {
 	val=((**ptr) & 31) << 12;
-	if (incr_ptr(*ptr, 1) != 1) return('?');
+	if (ptr_incr(ptr, 1) != 1) return(0);
 	val |= ((**ptr) & 31) << 6;
-	if (incr_ptr(*ptr, 1) != 1) return('?');
+	if (ptr_incr(ptr, 1) != 1) return(0);
 	val |= (**ptr) & 127;
 }
 
@@ -481,8 +482,16 @@ char *UnicodeStr(char *RetStr, int Code)
 {
     char *Tempstr=NULL;
 
-    if (Code > 0x7FF) Tempstr=FormatStr(Tempstr,"%c%c%c",128 + 64 + 32 + ((Code & 61440) >> 12), 128 + ((Code & 4032) >>6), 128 + (Code & 63));
-    else Tempstr=FormatStr(Tempstr,"%c%c",128+64+((Code & 1984) >> 6), 128 + (Code & 63));
+    if (UnicodeLevel == 0) return(AddCharToStr(RetStr, '?'));
+		if (Code < 0x800) 
+		{
+			Tempstr=FormatStr(Tempstr,"%c%c",128+64+((Code & 1984) >> 6), 128 + (Code & 63));
+		}
+		else
+		{
+		Tempstr=CopyStr(Tempstr, "?");
+    if ((UnicodeLevel > 1) && (Code < 0x10000)) Tempstr=FormatStr(Tempstr,"%c%c%c", (Code >> 12) | 224, ((Code >> 6) & 63) | 128, (Code & 63) | 128);
+		}
     RetStr=CatStr(RetStr,Tempstr);
     DestroyString(Tempstr);
 
@@ -566,34 +575,79 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
     case TERM_UNICODE:
         switch (Arg1)
         {
+
         //non-breaking space
         case 0x00a0:
             RetStr=AddCharToStr(RetStr,' ');
             break;
             break;
 
-        //left and right double quote. We simplify down to just double quote
-        case 0x201c:
-        case 0x201d:
-            RetStr=AddCharToStr(RetStr,'"');
-            break;
-            break;
-
+				
         //en-dash and em-dash
+        case 0x2010:
+        case 0x2011:
+        case 0x2012:
         case 0x2013:
         case 0x2014:
+        case 0x2015:
             RetStr=AddCharToStr(RetStr,'-');
             break;
 
         //2019 is apostrophe in unicode. presumably it gives you as special, pretty apostrophe, but it causes hell with
         //straight ansi terminals, so we remap it here
+        case 0x2018:
         case 0x2019:
             RetStr=AddCharToStr(RetStr,'\'');
             break;
 
+
+				case 0x201a:
+            RetStr=AddCharToStr(RetStr,',');
+            break;
+
+
+				case 0x201b:
+            RetStr=AddCharToStr(RetStr,'`');
+            break;
+
+
+        //left and right double quote. We simplify down to just double quote
+        case 0x201c:
+        case 0x201d:
+				case 0x201e:
+            RetStr=AddCharToStr(RetStr,'"');
+            break;
+
+	    	case 0x2024:
+            RetStr=CatStr(RetStr,".");
+            break;
+
+	    	case 0x2025:
+            RetStr=CatStr(RetStr,"..");
+            break;
+
+
         case 0x2026:
             RetStr=CatStr(RetStr,"...");
             break;
+
+        case 0x2039:
+            RetStr=CatStr(RetStr,"<");
+            break;
+
+        case 0x203A:
+            RetStr=CatStr(RetStr,">");
+            break;
+
+				case 0x2044:
+            RetStr=AddCharToStr(RetStr,'/');
+            break;
+
+				case 0x204e:
+				case 0x2055:
+            RetStr=AddCharToStr(RetStr,'*');
+            break;
+
 
         default:
             RetStr=UnicodeStr(RetStr, Arg1);
@@ -701,7 +755,7 @@ char *TerminalFormatStr(char *RetStr, const char *Str)
 				else if (*ptr & 128)
 				{
 					val=UnicodeDecode(&ptr);
-					RetStr=TerminalCommandStr(RetStr, TERM_UNICODE, val, 0);
+					if (val > 0) RetStr=TerminalCommandStr(RetStr, TERM_UNICODE, val, 0);
 				}
         else RetStr=AddCharToStr(RetStr, *ptr);
     }

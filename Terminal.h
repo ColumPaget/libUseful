@@ -201,11 +201,17 @@ char *ANSICode(int Color, int BgColor, int Flags);
 //parse a color name ('red', 'yellow' etc) and return the equivalent ANSI_ flag
 int ANSIParseColor(const char *Str);
 
-
 // initialize STREAM to be a terminal. This captures terminal width and height (rows and columns) and sets up the scrolling area.
 // Flags can include TERM_HIDECURSOR, to start with cursor hidden, TERM_RAWKEYS to disable 'canonical' mode and get raw keystrokes
 // and TERM_BOTTOMBAR to create a region at the bottom of the screen to hold an information or input bar
 int TerminalInit(STREAM *S, int Flags);
+
+// Specify if system supports utf8. This is global for all terminals. 'level' can be
+//   0 - not supported
+//   1 - unicode values below 0x8000 supported
+//   2 - unicode values below 0x10000 supported
+void TerminalSetUTF8(int level);
+
 
 //reset terminal values to what they were before 'TerminalInit'. You should call this before exit if you don't want a messed up console.
 void TerminalReset(STREAM *S);

@@ -55,6 +55,7 @@ Please note that, without the PMATCH_SUBSTR flag being passed, the whole string 
 #define PMATCH_NOTSTART 32
 #define PMATCH_NOTEND   64
 #define PMATCH_OVERLAP 128
+#define PMATCH_SHORT 256
 
 
 #include "includes.h"
