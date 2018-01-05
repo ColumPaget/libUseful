@@ -54,7 +54,7 @@ extern "C" {
 
 
 //Quote some standard chars in a string with '\'. 
-#define EnquoteStr(Dest, Src) (QuoteCharsInStr((Out), (In), "'\"\r\n");
+#define EnquoteStr(Dest, Src) (QuoteCharsInStr((Dest), (Src), "'\"\r\n"))
 
 
 //allocate or reallocate 'Len' bytes of memory to a resizeable string

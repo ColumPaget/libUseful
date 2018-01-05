@@ -1181,8 +1181,11 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
 
     if (!S) S=HTTPSetupConnection(Info, FALSE);
 
-    if (S) S->Path=FormatStr(S->Path,"%s://%s:%d/%s",Info->Protocol,Info->Host,Info->Port,Info->Doc);
-
+    if (S) 
+		{
+			S->Path=FormatStr(S->Path,"%s://%s:%d/%s",Info->Protocol,Info->Host,Info->Port,Info->Doc);
+			STREAMSetItem(S, "HTTP:InfoStruct", Info);
+		}
     return(S);
 }
 
@@ -1291,8 +1294,6 @@ STREAM *HTTPMethod(const char *Method, const char *URL, const char *ContentType,
     Info=HTTPInfoFromURL(Method, URL);
     HTTPInfoPOSTSetContent(Info, ContentType, ContentData, ContentLength, HTTP_POSTARGS);
     S=HTTPTransact(Info);
-
-    HTTPInfoDestroy(Info);
     return(S);
 }
 

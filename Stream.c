@@ -997,6 +997,8 @@ void STREAMClose(STREAM *S)
             tmpS=(STREAM *) Curr->Item;
             STREAMClose(tmpS);
         }
+				else if (strcmp(Curr->Tag, "HTTP:InfoStruct")==0) HTTPInfoDestroy(Curr->Item);
+				
         Curr=ListGetNext(Curr);
     }
 
@@ -2024,8 +2026,8 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
             result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,len);
             if (result==STREAM_CLOSED) return(STREAM_CLOSED);
 
-            In->InStart+=len;
-            bytes_transferred+=len;
+            In->InStart+=result;
+            bytes_transferred+=result;
         }
 
 
@@ -2055,3 +2057,15 @@ int STREAMCopy(STREAM *Src, const char *DestPath)
 }
 
 
+int STREAMCommit(STREAM *S)
+{
+void *Item;
+
+Item=STREAMGetItem(S, "HTTP:InfoStruct");
+if (Item) 
+{
+	if (HTTPTransact((HTTPInfoStruct *) Item)) return(TRUE);
+}
+
+return(FALSE);
+}

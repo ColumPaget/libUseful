@@ -400,6 +400,12 @@ void STREAMReAllocBuffer(STREAM *S, int size, int Flags);
 //stream buffers through it. Most users will never use this.
 void STREAMResetInputBuffers(STREAM *S);
 
+
+//This is used in communication types that require a 'commit' after a transaction. This differs from a 'flush' which just writes
+//data to the stream. Currently the only use of this is with HTTP POST, to declare that all uploaded data has been written and that
+//the server should process it and send a reply
+int STREAMCommit(STREAM *S);
+
 #ifdef __cplusplus
 }
 #endif
