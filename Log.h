@@ -67,7 +67,7 @@ TLogFile *LogFileGetEntry(const char *FileName);
 //Set the default values for all logfiles. 'MaxSize' is the maxium size a file can be before it's rotated. 'MaxRotate' is the number of
 //rotated archive files to keep. 'FlushInterval' is the maximum number of seconds that a log message should be held in buffers until
 //it's written to disk.
-int LogFileSetDefaults(int Flags, int MaxSize, int MaxRotate, int FlushInterval);
+void LogFileSetDefaults(int Flags, int MaxSize, int MaxRotate, int FlushInterval);
 
 //set values for a specific logfile
 void LogFileSetValues(TLogFile *LogFile, int Flags, int MaxSize, int MaxRotate, int FlushInterval);

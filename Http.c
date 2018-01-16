@@ -409,7 +409,7 @@ void HTTPInfoPOSTSetContent(HTTPInfoStruct *Info, const char *ContentType, const
 
             Info->PostData=SetStrLen(Info->PostData,ContentLength);
             memcpy(Info->PostData, ContentData, ContentLength);
-        		Info->PostContentLength=StrLen(Info->PostData);
+            Info->PostContentLength=StrLen(Info->PostData);
         }
 
         if (StrValid(ContentType)) Info->PostContentType=CopyStr(Info->PostContentType,ContentType);
@@ -1181,11 +1181,11 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
 
     if (!S) S=HTTPSetupConnection(Info, FALSE);
 
-    if (S) 
-		{
-			S->Path=FormatStr(S->Path,"%s://%s:%d/%s",Info->Protocol,Info->Host,Info->Port,Info->Doc);
-			STREAMSetItem(S, "HTTP:InfoStruct", Info);
-		}
+    if (S)
+    {
+        S->Path=FormatStr(S->Path,"%s://%s:%d/%s",Info->Protocol,Info->Host,Info->Port,Info->Doc);
+        STREAMSetItem(S, "HTTP:InfoStruct", Info);
+    }
     return(S);
 }
 
@@ -1274,6 +1274,9 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                 (StrEnd(Info->ProxyAuthorization))
             ) break;
 
+
+            //must do this or STREAMClose destroys Info object!
+            STREAMSetItem(Info->S, "HTTP:InfoStruct", NULL);
             STREAMClose(Info->S);
             Info->S=NULL;
         }
@@ -1312,35 +1315,35 @@ STREAM *HTTPPost(const char *URL, const char *ContentType, const char *Content)
 
 STREAM *HTTPWithConfig(const char *URL, const char *Config)
 {
-char *Token=NULL;
-const char *ptr, *cptr, *p_Method="GET";
-STREAM *S;
-int Flags=0;
+    char *Token=NULL;
+    const char *ptr, *cptr, *p_Method="GET";
+    STREAM *S;
+    int Flags=0;
 
 
-ptr=GetToken(Config,"\\S",&Token, 0);
+    ptr=GetToken(Config,"\\S",&Token, 0);
 
 //if the first arg contains '=' then they've forgotten to supply a method specifier, so go with 'GET' and
 //treat all the args as name=value pairs that are dealt with in HTTPInfoSetURL
-if (strchr(Token,'=')) ptr=Config;
-else
-{
-for (cptr=Token; *cptr !='\0'; cptr++)
-{
-	if (*cptr=='w') p_Method="POST";
-	else if (*cptr=='W') p_Method="PUT";
-	else if (*cptr=='P') p_Method="PATCH";
-	else if (*cptr=='D') p_Method="DELETE";
-	else if (*cptr=='H') p_Method="HEAD";
-}
-}
+    if (strchr(Token,'=')) ptr=Config;
+    else
+    {
+        for (cptr=Token; *cptr !='\0'; cptr++)
+        {
+            if (*cptr=='w') p_Method="POST";
+            else if (*cptr=='W') p_Method="PUT";
+            else if (*cptr=='P') p_Method="PATCH";
+            else if (*cptr=='D') p_Method="DELETE";
+            else if (*cptr=='H') p_Method="HEAD";
+        }
+    }
 
-Token=MCopyStr(Token, URL, " ", ptr, NULL);
-S=HTTPMethod(p_Method, Token, "","", 0);
+    Token=MCopyStr(Token, URL, " ", ptr, NULL);
+    S=HTTPMethod(p_Method, Token, "","", 0);
 
-DestroyString(Token);
+    DestroyString(Token);
 
-return(S);
+    return(S);
 }
 
 

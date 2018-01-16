@@ -69,6 +69,8 @@ int SecureLockMem(char *Mem, int Size, int Flags)
     if (Flags & SMEM_NOACCESS) mprotect(Mem, Size, PROT_NONE);
     else if (Flags & SMEM_WRONLY) mprotect(Mem, Size, PROT_WRITE);
     else if (Flags & SMEM_RDONLY) mprotect(Mem, Size, PROT_READ);
+
+    return(TRUE);
 }
 
 
@@ -296,7 +298,7 @@ int CredsStoreAdd(const char *Realm, const char *User, const char *Cred)
     ptr=SecureStoreWriteField(ptr, Cred, CredsStore->Divisor);
     *ptr='\n';
     SecureLockMem(CredsStore->Data, len, SMEM_NOACCESS);
-		CredsStore->Size=len;
+    CredsStore->Size=len;
 
     return(TRUE);
 }

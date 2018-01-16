@@ -22,7 +22,7 @@ ListNode *LogFilesGetList()
     return(LogFiles);
 }
 
-int LogFileSetDefaults(int Flags, int MaxSize, int MaxRotate, int FlushInterval)
+void LogFileSetDefaults(int Flags, int MaxSize, int MaxRotate, int FlushInterval)
 {
     LogFileDefaults=(TLogFile *) calloc(1,sizeof(TLogFile));
     LogFileDefaults->Flags=Flags;
@@ -37,9 +37,9 @@ int LogFileSetDefaults(int Flags, int MaxSize, int MaxRotate, int FlushInterval)
 STREAM *LogFileOpen(const char *Path, int Flags)
 {
     STREAM *S;
-    int StreamFlags=SF_CREAT | SF_APPEND | SF_WRONLY | SF_NOCACHE;
+    int StreamFlags=SF_CREAT | STREAM_APPEND | SF_WRONLY | SF_NOCACHE;
 
-    if (Flags & LOGFILE_HARDEN) StreamFlags |= SF_APPENDONLY;
+    if (Flags & LOGFILE_HARDEN) StreamFlags |= STREAM_APPENDONLY;
     MakeDirPath(Path, 0770);
     S=STREAMFileOpen(Path, StreamFlags);
     if (S)
@@ -195,13 +195,13 @@ STREAM *LogFileInternalDoRotate(TLogFile *LogFile)
             if (LogFile->S)
             {
                 //turn off append only sw we can do reanmae
-                if (LogFile->Flags & LOGFILE_HARDEN) STREAMSetFlags(LogFile->S, 0, SF_APPENDONLY);
+                if (LogFile->Flags & LOGFILE_HARDEN) STREAMSetFlags(LogFile->S, 0, STREAM_APPENDONLY);
             }
             if (PrevPath) rename(LogFile->Path,PrevPath);
             if (LogFile->S)
             {
                 //turn off append only sw we can do reanmae
-                if (LogFile->Flags & LOGFILE_HARDEN) STREAMSetFlags(LogFile->S, SF_IMMUTABLE, 0);
+                if (LogFile->Flags & LOGFILE_HARDEN) STREAMSetFlags(LogFile->S, STREAM_IMMUTABLE, 0);
             }
 
             if (LogFile->S) STREAMClose(LogFile->S);

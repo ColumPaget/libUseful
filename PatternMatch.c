@@ -418,9 +418,9 @@ int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End,
 
     for (S_Ptr=*S_PtrPtr; *S_Ptr != '\0'; S_Ptr++)
     {
-    	P_Ptr=(*P_PtrPtr)+1;
-      //out of pattern, must be a match!
-      result=pmatch_search(&P_Ptr, &S_Ptr, S_End, MatchStart, MatchEnd, Flags);
+        P_Ptr=(*P_PtrPtr)+1;
+        //out of pattern, must be a match!
+        result=pmatch_search(&P_Ptr, &S_Ptr, S_End, MatchStart, MatchEnd, Flags);
 
 
         if (result == MATCH_ONE)
@@ -443,11 +443,11 @@ int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
     if (MatchStart) *MatchStart=NULL;
     if (MatchEnd) *MatchEnd=NULL;
 
-		if (*Flags & PMATCH_SUBSTR) 
-		{
-			(*Flags) &= ~PMATCH_SUBSTR;
-			(*Flags) |= PMATCH_SHORT;
-		}
+    if (*Flags & PMATCH_SUBSTR)
+    {
+        (*Flags) &= ~PMATCH_SUBSTR;
+        (*Flags) |= PMATCH_SHORT;
+    }
 
     S_Start=*S_PtrPtr;
     result=pmatch_char(P_PtrPtr, S_PtrPtr, Flags);

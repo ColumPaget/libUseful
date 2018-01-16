@@ -27,12 +27,6 @@ then
 AC_DEFINE([HAVE_PTSNAME_R])
 fi
 
-AC_CHECK_LIB(c,unshare,,)
-cf_have_unshare=$ac_cv_lib_c_unshare
-if test "$cf_have_unshare" = "yes"
-then
-AC_DEFINE([HAVE_UNSHARE])
-fi
 
 AC_CHECK_LIB(c,umount2,,)
 cf_have_umount2=$ac_cv_lib_c_umount2
@@ -78,14 +72,31 @@ fi
 
 
 
-
-
-
 AC_ARG_ENABLE(ip6, [  --enable-ip6       enable IPv6 support], cf_use_ip6=$enableval )
 
 if test "$cf_use_ip6" = "yes"
 then
 AC_DEFINE([USE_INET6],1)
+fi
+
+
+AC_ARG_ENABLE(namespaces, [  --enable-namespaces       enable linux namespace support], cf_use_namespaces=$enableval )
+
+if test "$cf_use_namespaces" = "yes"
+then
+	AC_CHECK_LIB(c,unshare,,)
+	cf_have_unshare=$ac_cv_lib_c_unshare
+	if test "$cf_have_unshare" = "yes"
+	then
+		AC_DEFINE([HAVE_UNSHARE])
+	fi
+
+	AC_CHECK_LIB(c,setns,,)
+	cf_have_setns=$ac_cv_lib_c_setns
+	if test "$cf_have_setns" = "yes"
+	then
+		AC_DEFINE([HAVE_SETNS])
+	fi
 fi
 
 
@@ -198,4 +209,10 @@ else
 echo "zlib NOT enabled"
 fi
 
+if test "$cf_have_unshare" = "yes" -o "$cf_have_setns" = "yes"
+then
+echo "linux namespace support enabled"
+else
+echo "linux namespace support NOT enabled"
+fi
 

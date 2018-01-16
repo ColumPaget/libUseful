@@ -166,6 +166,8 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
 
     DestroyString(Tempstr);
     DestroyString(Token);
+    if (result > -1) return(TRUE);
+    return(FALSE);
 }
 
 
@@ -196,13 +198,13 @@ int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
         {
             S=STREAMFromFD(0);
             Tempstr=STREAMReadLine(Tempstr, S);
-						if ( (strncmp(Tempstr, "http:", 5)==0) || (strncmp(Tempstr, "https:", 6)==0) ) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
-						else 
-						{
-							StripTrailingWhitespace(Tempstr);
-    					Ctx->VerifyCode=HTTPQuote(Ctx->VerifyCode, Tempstr);
-							SetVar(Ctx->Vars, "code", Ctx->VerifyCode);
-						}
+            if ( (strncmp(Tempstr, "http:", 5)==0) || (strncmp(Tempstr, "https:", 6)==0) ) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
+            else
+            {
+                StripTrailingWhitespace(Tempstr);
+                Ctx->VerifyCode=HTTPQuote(Ctx->VerifyCode, Tempstr);
+                SetVar(Ctx->Vars, "code", Ctx->VerifyCode);
+            }
             STREAMDestroy(S);
         }
         OAuthFinalize(Ctx, URL);
@@ -234,6 +236,8 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
     }
 
     DestroyString(Tempstr);
+
+    return(result);
 }
 
 
@@ -394,8 +398,8 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *Path)
     const char *ptr;
     int result=FALSE;
 
-		if (StrValid(ReqName)) Name=CopyStr(Name, ReqName);
-		else Name=CopyStr(Name, Ctx->Name);
+    if (StrValid(ReqName)) Name=CopyStr(Name, ReqName);
+    else Name=CopyStr(Name, Ctx->Name);
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
     if (! StrValid(Path)) S=STREAMOpen(Ctx->SavePath,"rl");

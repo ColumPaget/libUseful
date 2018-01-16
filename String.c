@@ -490,26 +490,26 @@ char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)
     {
         if (strchr(QuoteChars, *sptr))
         {
-          RetStr=AddCharToBuffer(RetStr,olen, '\\');
-					olen++;
-          switch (*sptr)
-          {
-                case '\n':
-                    RetStr=AddCharToBuffer(RetStr,olen,'n');
-                    break;
+            RetStr=AddCharToBuffer(RetStr,olen, '\\');
+            olen++;
+            switch (*sptr)
+            {
+            case '\n':
+                RetStr=AddCharToBuffer(RetStr,olen,'n');
+                break;
 
-                case '\r':
-                    RetStr=AddCharToBuffer(RetStr,olen,'r');
-                    break;
-				
-                default:
-                    RetStr=AddCharToBuffer(RetStr,olen,*sptr);
-                    break;
-          }
-       }
-		  //if we didn't find a matching char in QuoteChars then just add to string
-		  else RetStr=AddCharToBuffer(RetStr,olen,*sptr);
-      olen++;
+            case '\r':
+                RetStr=AddCharToBuffer(RetStr,olen,'r');
+                break;
+
+            default:
+                RetStr=AddCharToBuffer(RetStr,olen,*sptr);
+                break;
+            }
+        }
+        //if we didn't find a matching char in QuoteChars then just add to string
+        else RetStr=AddCharToBuffer(RetStr,olen,*sptr);
+        olen++;
     }
 
     return(RetStr);

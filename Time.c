@@ -101,7 +101,7 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
         tzset();
     }
 
-		memset(&TMS,0,sizeof(struct tm));
+    memset(&TMS,0,sizeof(struct tm));
     strptime(Str,DateFormat,&TMS);
     TMS.tm_isdst=-1;
     Secs=mktime(&TMS);
@@ -127,7 +127,10 @@ long TimezoneOffset(const char *TimeZone)
         tzset();
     }
 
-		Secs=timezone;
+//TO DO: portable offset calculation
+#ifdef linux
+    Secs=timezone;
+#endif
 
     if (StrValid(TimeZone))
     {

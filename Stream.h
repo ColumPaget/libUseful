@@ -115,7 +115,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_WRONLY 32       //open stream write only
 #define SF_CREAT 64        //create stream if it doesn't exist
 #define SF_CREATE 64       //create stream if it doesn't exist
-#define SF_APPEND 128      //append to file
+#define STREAM_APPEND 128      //append to file
 #define SF_TRUNC 256       //truncate file to zero bytes on open
 #define SF_MMAP  512       //create a memory mapped file
 #define SF_WRLOCK 1024     //lock file on every write
@@ -129,8 +129,8 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_SYMLINK_OK 262144    //don't raise a logging entry if opening a symlink
 #define SF_NOCACHE 524288       //don't cache file data in filesystem cache
 #define SF_SORTED  1048576      //file is sorted, this is a hint to 'STREAMFind'
-#define SF_IMMUTABLE  2097152   //file is immutable (if supported by fs)
-#define SF_APPENDONLY  4194304  //file is append-only (if supported by fs)
+#define STREAM_IMMUTABLE  2097152   //file is immutable (if supported by fs)
+#define STREAM_APPENDONLY  4194304  //file is append-only (if supported by fs)
 #define SF_COMPRESSED  8388608  //enable compression
 #define SF_TMPNAME  16777216    //file path is a template to create a temporary file name (must end in 'XXXXXX')
 

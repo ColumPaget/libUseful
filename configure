@@ -678,6 +678,7 @@ enable_option_checking
 enable_largefile
 enable_sendfile
 enable_ip6
+enable_namespaces
 enable_zlib
 enable_ssl
 enable_simd
@@ -1301,6 +1302,7 @@ Optional Features:
   --disable-largefile     omit support for large files
   --enable-sendfile       enable 'fastcopy' sendfile support
   --enable-ip6       enable IPv6 support
+  --enable-namespaces       enable linux namespace support
   --enable-zlib       use ZLib Compression
   --enable-ssl       use Secure Sockets Layer
   --enable-simd=<level>       use SIMD cpu extensions, 'level' can be one of mmx, sse, sse2
@@ -3614,57 +3616,6 @@ $as_echo "#define HAVE_PTSNAME_R 1" >>confdefs.h
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for unshare in -lc" >&5
-$as_echo_n "checking for unshare in -lc... " >&6; }
-if ${ac_cv_lib_c_unshare+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lc  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char unshare ();
-int
-main ()
-{
-return unshare ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_c_unshare=yes
-else
-  ac_cv_lib_c_unshare=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_unshare" >&5
-$as_echo "$ac_cv_lib_c_unshare" >&6; }
-if test "x$ac_cv_lib_c_unshare" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBC 1
-_ACEOF
-
-  LIBS="-lc $LIBS"
-
-fi
-
-cf_have_unshare=$ac_cv_lib_c_unshare
-if test "$cf_have_unshare" = "yes"
-then
-$as_echo "#define HAVE_UNSHARE 1" >>confdefs.h
-
-fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for umount2 in -lc" >&5
 $as_echo_n "checking for umount2 in -lc... " >&6; }
@@ -3919,9 +3870,6 @@ fi
 
 
 
-
-
-
 # Check whether --enable-ip6 was given.
 if test "${enable_ip6+set}" = set; then :
   enableval=$enable_ip6; cf_use_ip6=$enableval
@@ -3932,6 +3880,120 @@ if test "$cf_use_ip6" = "yes"
 then
 $as_echo "#define USE_INET6 1" >>confdefs.h
 
+fi
+
+
+# Check whether --enable-namespaces was given.
+if test "${enable_namespaces+set}" = set; then :
+  enableval=$enable_namespaces; cf_use_namespaces=$enableval
+fi
+
+
+if test "$cf_use_namespaces" = "yes"
+then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for unshare in -lc" >&5
+$as_echo_n "checking for unshare in -lc... " >&6; }
+if ${ac_cv_lib_c_unshare+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char unshare ();
+int
+main ()
+{
+return unshare ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_c_unshare=yes
+else
+  ac_cv_lib_c_unshare=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_unshare" >&5
+$as_echo "$ac_cv_lib_c_unshare" >&6; }
+if test "x$ac_cv_lib_c_unshare" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBC 1
+_ACEOF
+
+  LIBS="-lc $LIBS"
+
+fi
+
+	cf_have_unshare=$ac_cv_lib_c_unshare
+	if test "$cf_have_unshare" = "yes"
+	then
+		$as_echo "#define HAVE_UNSHARE 1" >>confdefs.h
+
+	fi
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for setns in -lc" >&5
+$as_echo_n "checking for setns in -lc... " >&6; }
+if ${ac_cv_lib_c_setns+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char setns ();
+int
+main ()
+{
+return setns ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_c_setns=yes
+else
+  ac_cv_lib_c_setns=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_setns" >&5
+$as_echo "$ac_cv_lib_c_setns" >&6; }
+if test "x$ac_cv_lib_c_setns" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBC 1
+_ACEOF
+
+  LIBS="-lc $LIBS"
+
+fi
+
+	cf_have_setns=$ac_cv_lib_c_setns
+	if test "$cf_have_setns" = "yes"
+	then
+		$as_echo "#define HAVE_SETNS 1" >>confdefs.h
+
+	fi
 fi
 
 
@@ -5410,4 +5472,10 @@ else
 echo "zlib NOT enabled"
 fi
 
+if test "$cf_have_unshare" = "yes" -o "$cf_have_setns" = "yes"
+then
+echo "linux namespace support enabled"
+else
+echo "linux namespace support NOT enabled"
+fi
 

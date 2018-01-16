@@ -439,7 +439,7 @@ int FileSystemUnMount(const char *MountPoint, const char *Args)
 #elif HAVE_UNMOUNT
     result=unmount(MountPoint,0);
 #else
-    result=-1
+    result=-1;
 #endif
 
     if (ExtraFlags & UMOUNT_RMDIR) rmdir(MountPoint);

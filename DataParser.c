@@ -332,13 +332,13 @@ const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Parent, in
                 else Name=CopyStr(Name, Token);
                 break;
 
-						case '!':
-						if (strncmp(ptr,"[CDATA[",7)==0)
-						{
-            	ptr=GetToken(ptr+7, "]]", &Token,0);
-            	PrevToken=CatStr(PrevToken, Token);
-						}
-						break;
+            case '!':
+                if (strncmp(ptr,"[CDATA[",7)==0)
+                {
+                    ptr=GetToken(ptr+7, "]]", &Token,0);
+                    PrevToken=CatStr(PrevToken, Token);
+                }
+                break;
 
             default:
                 PrevToken=CopyStr(PrevToken,"");

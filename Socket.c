@@ -811,15 +811,15 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
     salen=sizeof(struct sockaddr_storage);
     if (getsockname(sock, (struct sockaddr *) &sa, &salen) != 0)
     {
-      RaiseError(ERRFLAG_ERRNO, "GetSockDetails", "failed to get local endpoint");
-      return(FALSE);
+        RaiseError(ERRFLAG_ERRNO, "GetSockDetails", "failed to get local endpoint");
+        return(FALSE);
     }
 
     IP6AddresssFromSA(&sa, LocalAddress, LocalPort);
     //Set Address to be the same as control sock, as it might not be INADDR_ANY
     if (getpeername(sock, (struct sockaddr *) &sa, &salen) == 0) IP6AddresssFromSA(&sa, RemoteAddress, RemotePort);
 
-return(TRUE);
+    return(TRUE);
 }
 
 #else
