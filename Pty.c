@@ -313,8 +313,6 @@ int PseudoTTYGrab(int *pty, int *tty, int TermFlags)
     char c1,c2;
     char *Tempstr=NULL;
 
-#ifdef __GNU_LIBRARY__
-#ifdef HAVE_PTSNAME_R
 //first try unix98 style
     *pty=open("/dev/ptmx",O_RDWR);
     if (*pty > -1)
@@ -322,7 +320,11 @@ int PseudoTTYGrab(int *pty, int *tty, int TermFlags)
         if (grantpt(*pty)==-1) RaiseError(ERRFLAG_ERRNO, "pty", "grantpt failed");
         if (unlockpt(*pty)==-1) RaiseError(ERRFLAG_ERRNO, "pty", "unlockpt failed");
         SetStrLen(Tempstr,100);
-        if (ptsname_r(*pty,Tempstr,100) != 0) Tempstr=CopyStr(Tempstr,ptsname(*pty));
+	
+#ifdef HAVE_PTSNAME_R
+        if (ptsname_r(*pty,Tempstr,100) != 0) 
+#endif
+	Tempstr=CopyStr(Tempstr,ptsname(*pty));
         if (StrLen(Tempstr))
         {
             if ( (*tty=open(Tempstr,O_RDWR)) >-1)
@@ -339,8 +341,6 @@ int PseudoTTYGrab(int *pty, int *tty, int TermFlags)
     {
         RaiseError(ERRFLAG_ERRNO, "pty", "failed to open /dev/ptmx");
     }
-#endif
-#endif
 
 //if unix98 fails, try old BSD style
 

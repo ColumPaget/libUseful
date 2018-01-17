@@ -1,7 +1,11 @@
+/*
+Copyright (C) 2000-2001, 2003, 2005-2006, 2008-2011 Free Software Foundation, Inc.
+* SPDX-License-Identifier: GPL-3.0
+*/
+
 /* Declarations of functions and data types used for SHA1 sum
    library functions.
-   Copyright (C) 2000-2001, 2003, 2005-2006, 2008-2011 Free Software
-   Foundation, Inc.
+   Copyright (C) 2000-2001, 2003, 2005-2006, 2008-2011 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by the

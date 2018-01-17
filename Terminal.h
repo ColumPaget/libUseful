@@ -1,3 +1,8 @@
+/*
+Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
 /* 
 This module provides various functions related to terminal input and output, particularly terminal colors.
 

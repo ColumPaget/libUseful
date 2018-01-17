@@ -68,22 +68,22 @@ void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
     Curr=ListGetNext(LibUsefulValuesGetHead());
     while (Curr)
     {
-        if ((StrLen(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:CertFile")==0))
+        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:CertFile")==0))
         {
             SSL_CTX_use_certificate_chain_file(ctx,(char *) Curr->Item);
         }
 
-        if ((StrLen(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:KeyFile")==0))
+        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:KeyFile")==0))
         {
             SSL_CTX_use_PrivateKey_file(ctx,(char *) Curr->Item,SSL_FILETYPE_PEM);
         }
 
-        if ((StrLen(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0))
+        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0))
         {
             VerifyPath=CopyStr(VerifyPath,(char *) Curr->Item);
         }
 
-        if ((StrLen(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0))
+        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0))
         {
             VerifyFile=CopyStr(VerifyFile,(char *) Curr->Item);
         }
@@ -95,22 +95,22 @@ void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
     Curr=ListGetNext(S->Values);
     while (Curr)
     {
-        if ((StrLen(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:CertFile")==0))
+        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:CertFile")==0))
         {
             SSL_CTX_use_certificate_chain_file(ctx,(char *) Curr->Item);
         }
 
-        if ((StrLen(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:KeyFile")==0))
+        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:KeyFile")==0))
         {
             SSL_CTX_use_PrivateKey_file(ctx,(char *) Curr->Item,SSL_FILETYPE_PEM);
         }
 
-        if ((StrLen(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0))
+        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0))
         {
             VerifyPath=CopyStr(VerifyPath,(char *) Curr->Item);
         }
 
-        if ((StrLen(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0))
+        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0))
         {
             VerifyFile=CopyStr(VerifyFile,(char *) Curr->Item);
         }
@@ -271,7 +271,7 @@ int OpenSSLVerifyCertificate(STREAM *S)
         ptr=GetNameValuePair(ptr,"/","=",&Name,&Value);
         while (ptr)
         {
-            if (StrLen(Name) && (strcmp(Name,"CN")==0)) STREAMSetValue(S,"SSL:CertificateCommonName",Value);
+            if (StrValid(Name) && (strcmp(Name,"CN")==0)) STREAMSetValue(S,"SSL:CertificateCommonName",Value);
             ptr=GetNameValuePair(ptr,"/","=",&Name,&Value);
         }
 
@@ -541,7 +541,7 @@ void OpenSSLSetupDH(SSL_CTX *ctx)
     else
     {
         ptr=LibUsefulGetValue("SSL:DHParams-File");
-        if (StrLen(ptr)) Tempstr=CopyStr(Tempstr,ptr);
+        if (StrValid(ptr)) Tempstr=CopyStr(Tempstr,ptr);
 
         paramfile = fopen(Tempstr, "r");
         if (paramfile)
@@ -608,7 +608,7 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                 SSL_set_fd(ssl,S->in_fd);
                 STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",ssl);
                 ptr=LibUsefulGetValue("SSL:PermittedCiphers");
-                if (ptr) SSL_set_cipher_list(ssl, ptr);
+                if (StrValid(ptr)) SSL_set_cipher_list(ssl, ptr);
                 SSL_set_accept_state(ssl);
 
                 while (1)

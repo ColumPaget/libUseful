@@ -1,3 +1,8 @@
+/*
+Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
 #ifndef LIB_USEFUL_H
 #define LIB_USEFUL_H
 
@@ -9,7 +14,7 @@
 #define TRUE 1
 #endif
 
-#define __LIBUSEFUL_VERSION__ "3.10"
+#define __LIBUSEFUL_VERSION__ "3.11"
 #define __LIBUSEFUL_BUILD_DATE__ __DATE__
 #define __LIBUSEFUL_BUILD_TIME__ __TIME__
 

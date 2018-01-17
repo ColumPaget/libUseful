@@ -1,3 +1,9 @@
+/*
+Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
+
 #ifndef LIBUSEFUL_MARKUP_H
 #define LIBUSEFUL_MARKUP_H
 

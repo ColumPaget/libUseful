@@ -1,3 +1,9 @@
+/*
+Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
+
 #ifndef LIBUSEFUL_PROCESS_H
 #define LIBUSEFUL_PROCESS_H
 
