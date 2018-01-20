@@ -863,7 +863,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=CatStr(SendStr,Tempstr);
     }
 
-    if (strcasecmp(Info->Method,"POST")==0)
+    if ((strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0))
     {
         Tempstr=FormatStr(Tempstr,"Content-Length: %d\r\n",Info->PostContentLength);
         SendStr=CatStr(SendStr,Tempstr);
