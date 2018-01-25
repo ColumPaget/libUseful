@@ -44,6 +44,7 @@ OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, con
     Tempstr=HTTPQuote(Tempstr, Scopes);
     SetVar(Ctx->Vars,"scope",Tempstr);
     SetVar(Ctx->Vars,"redirect_uri","urn:ietf:wg:oauth:2.0:oob");
+		SetVar(Ctx->Vars,"connect_back_page","<html><body><h1>Code Accepted By Application</h1><body></html>");
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
     Ctx->RefreshURL=CopyStr(Ctx->RefreshURL, RefreshURL);
@@ -160,7 +161,8 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
             }
         }
 
-        STREAMWriteLine("200 OKAY HTTP/1.0\r\nconnection:close\r\n\r\n", S);
+        Tempstr=MCopyStr(Tempstr, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n",GetVar(Ctx->Vars,"connect_back_page"),NULL);
+        STREAMWriteLine(Tempstr, S);
         STREAMClose(S);
     }
 
