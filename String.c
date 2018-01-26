@@ -1,5 +1,6 @@
 #include "includes.h"
 #include <ctype.h>
+#include "Unicode.h"
 
 #ifndef va_copy
 #define va_copy(dest, src) (dest) = (src)
@@ -571,7 +572,7 @@ char *UnQuoteStr(char *Buffer, const char *Line)
 {
     char *out, *in;
     size_t olen=0;
-    char hex[3];
+    char hex[10];
 
     if (Line==NULL) return(NULL);
     out=CopyStr(Buffer,"");
@@ -605,15 +606,26 @@ char *UnQuoteStr(char *Buffer, const char *Line)
                 olen++;
                 break;
 
+						//hexadecimal
             case 'x':
-                in++;
+								ptr_incr(&in, 1);
                 hex[0]=*in;
-                in++;
+								ptr_incr(&in, 1);
                 hex[1]=*in;
                 hex[2]='\0';
                 out=AddCharToBuffer(out,olen,strtol(hex,NULL,16) & 0xFF);
                 olen++;
                 break;
+
+						//unicode
+						case 'u':
+								ptr_incr(&in, 1);
+								strncpy(hex, in, 4);
+								hex[4]='\0';
+								ptr_incr(&in, 3);
+							  out=StrAddUnicodeChar(out, strtol(hex,NULL,16));	
+								olen++;
+								break;
 
             case '\\':
             default:

@@ -52,6 +52,7 @@ Can be used to get the length of the string that will actually be displayed (wit
 #define LIBUSEFUL_ANSI_H
 
 #include "includes.h"
+#include "Unicode.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -194,6 +195,9 @@ typedef struct
 		char *MenuCursorRight;
     STREAM *Term;
 } TERMBAR;
+
+
+#define TerminalSetUTF8(level) (UnicodeSetUTF8(level))
 
 //Commands available via the 'terminal command' function. Normally you wouldn't use these, but use the equivalent macros below
 typedef enum {TERM_NORM, TERM_TEXT, TERM_COLOR, TERM_CLEAR_SCREEN, TERM_CLEAR_ENDLINE, TERM_CLEAR_STARTLINE, TERM_CLEAR_LINE, TERM_CURSOR_HOME, TERM_CURSOR_MOVE, TERM_CURSOR_SAVE, TERM_CURSOR_UNSAVE, TERM_CURSOR_HIDE, TERM_CURSOR_SHOW, TERM_SCROLL, TERM_SCROLL_REGION, TERM_UNICODE} ETerminalCommands;
