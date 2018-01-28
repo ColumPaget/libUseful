@@ -2024,10 +2024,9 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
             }
 
             result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,len);
-            if (result==STREAM_CLOSED) return(STREAM_CLOSED);
 
-            In->InStart+=result;
-            bytes_transferred+=result;
+            In->InStart+=len;
+            bytes_transferred+=len;
         }
 
 
