@@ -387,7 +387,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
     char *Host=NULL, *User=NULL, *Pass=NULL;
     STREAM *tmpS;
     int result=FALSE, val, i;
-    unsigned int Port=22, DPort=0;
+    unsigned int Port=0, DPort=0;
 
 
     ParseConnectDetails(ProxyURL, NULL, &Host, &Token, &User, &Pass, NULL);
@@ -459,7 +459,7 @@ int STREAMProcessConnectHops(STREAM *S, const char *HopList)
     int val, result=FALSE;
     char *Dest=NULL, *HopURL=NULL, *NextHop=NULL, *Token=NULL;
     const char *ptr;
-    int Port=0, count=0;
+    int count=0;
 
 
     ptr=GetToken(HopList, ",", &HopURL,0);
