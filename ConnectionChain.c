@@ -405,7 +405,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
         {
             if (! S->Items) S->Items=ListCreate();
             ListAddNamedItem(S->Items, "LU:AssociatedStream", tmpS);
-            for (i=0; i < 30; i++)
+            for (i=0; i < 60; i++)
             {
                 S->in_fd=TCPConnect("127.0.0.1",DPort,0);
                 if (S->in_fd > -1)
