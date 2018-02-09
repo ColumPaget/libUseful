@@ -481,3 +481,28 @@ void LogFileCheckRotate(const char *FileName)
         LogFileInternalDoRotate(LogFile);
     }
 }
+
+void LogFilesHousekeep()
+{
+  TLogFile *LogFile;
+  ListNode *Curr;
+  time_t Now;
+
+  Now=GetTime(0);
+  Curr=ListGetNext(LogFiles);
+  while (Curr)
+  {
+  LogFile=(TLogFile *) Curr->Item;
+  if ((LogFile->MarkInterval > 0) && (LogFile->NextMarkTime < Now))
+  {
+    if (LogFile->NextMarkTime > 0)
+    {
+      LogFileInternalWrite(LogFile, LogFile->S, LogFile->Flags | LOGFILE_CACHETIME, "----- MARK ----");
+    }
+    LogFile->NextMarkTime=Now+LogFile->MarkInterval;
+  }
+
+  LogFileInternalDoRotate(LogFile);
+  Curr=ListGetNext(Curr);
+  }
+}

@@ -241,8 +241,9 @@ int FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRES
 
 int FileGetBinaryXAttr(char **RetStr, const char *Path, const char *Name)
 {
-    int len;
+    int len=0;
 
+    *RetStr=CopyStr(*RetStr, "");
 #ifdef HAVE_XATTR
     len=getxattr(Path, Name, NULL, 0);
     if (len > 0)
@@ -250,7 +251,6 @@ int FileGetBinaryXAttr(char **RetStr, const char *Path, const char *Name)
         *RetStr=SetStrLen(*RetStr,len);
         getxattr(Path, Name, *RetStr, len);
     }
-    else *RetStr=CopyStr(*RetStr, "");
 #else
     RaiseError(0, "FileGetXAttr", "xattr support not compiled in");
 #endif
@@ -263,7 +263,8 @@ char *FileGetXAttr(char *RetStr, const char *Path, const char *Name)
     int len;
 
     len=FileGetBinaryXAttr(&RetStr, Path, Name);
-    RetStr[len]=0;
+    if (len > 0) RetStr[len]=0;
+
     return(RetStr);
 }
 

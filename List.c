@@ -188,9 +188,15 @@ void ListUnThreadNode(ListNode *Node)
 {
     ListNode *Head, *Prev, *Next;
 
+    Prev=Node->Prev;
+    Next=Node->Next;
+    if (Prev !=NULL) Prev->Next=Next;
+    if (Next !=NULL) Next->Prev=Prev;
+
 //avoid a function call by not calling ListGetHead
     Head=Node->Head;
-
+		if (Head)
+		{
 //prev node of head points to LAST item in list
     if (Head->Prev==Node)
     {
@@ -198,13 +204,11 @@ void ListUnThreadNode(ListNode *Node)
         if (Head->Prev==Head) Head->Prev=NULL;
     }
 
-    Prev=Node->Prev;
-    Next=Node->Next;
-    if (Prev !=NULL) Prev->Next=Next;
-    if (Next !=NULL) Next->Prev=Prev;
+		if (Head->Side==Node) Head->Side=NULL;
     if (Head->Next==Node) Head->Next=Next;
     if (Head->Prev==Node) Head->Prev=Prev;
     ListDecrNoOfItems(Node);
+		}
 
     Node->Head=NULL;
     Node->Prev=NULL;
@@ -222,7 +226,6 @@ void MapClear(ListNode *Map, LIST_ITEM_DESTROY_FUNC ItemDestroyer)
     {
         for (Node=(ListNode *) Map->Item; Node->Flags & LIST_FLAG_MAP_CHAIN; Node++) ListClear(Node, ItemDestroyer);
     }
-
 }
 
 
@@ -272,7 +275,7 @@ void ListAppendItems(ListNode *Dest, ListNode *Src, LIST_ITEM_CLONE_FUNC ItemClo
         if (ItemCloner)
         {
             Item=ItemCloner(Curr->Item);
-            ListAddNamedItem(Dest,Curr->Tag,Item);
+            ListAddNamedItem(Dest, Curr->Tag, Item);
         }
         else ListAddNamedItem(Dest, Curr->Tag, Curr->Item);
         Curr=ListGetNext(Curr);
@@ -403,12 +406,18 @@ ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
 
 
 
-ListNode *ListFindTypedItem(ListNode *Head, int Type, const char *Name)
+ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 {
-    ListNode *Node;
+    ListNode *Node, *Head;
     int result;
 
-    if (! Head) return(NULL);
+    if (! Root) return(NULL);
+    Node=ListFindNamedItemInsert(Root, Name);
+    if ((! Node) || (Node==Head) || (! Node->Tag)) return(NULL);
+		
+		//'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
+		//insert chain
+		Head=Node->Head;
     if ((Head->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
     {
         Node=Head->Side;
@@ -424,8 +433,6 @@ ListNode *ListFindTypedItem(ListNode *Head, int Type, const char *Name)
         }
     }
 
-    Node=ListFindNamedItemInsert(Head, Name);
-    if ((! Node) || (Node==Head) || (! Node->Tag)) return(NULL);
     if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
     else result=strcasecmp(Node->Tag,Name);
 
@@ -690,7 +697,7 @@ void *ListDeleteNode(ListNode *Node)
     ListUnThreadNode(Node);
     if (Node->Stats) free(Node->Stats);
     Contents=Node->Item;
-    DestroyString(Node->Tag);
+    Destroy(Node->Tag);
     free(Node);
     return(Contents);
 }
