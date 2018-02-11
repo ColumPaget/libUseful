@@ -209,6 +209,7 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
     if (! StrValid(PortStr)) PortStr=CopyStr(PortStr, "25");
     Tempstr=MCopyStr(Tempstr,"tcp:",Host,":",PortStr,NULL);
 //syslog(LOG_DEBUG, "mailto: %s [%s] [%s] [%s]",Tempstr,Proto,Host,PortStr);
+
     S=STREAMOpen(Tempstr, "");
     if (S)
     {
@@ -222,13 +223,13 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
                 if ((! (Flags & SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S)) DoSSLClientNegotiation(S, 0);
 
                 if (
-                    (Caps & (CAP_AUTH_LOGIN | CAP_AUTH_PLAIN)) ||
+                    (Caps & (CAP_AUTH_LOGIN | CAP_AUTH_PLAIN)) &&
                     (StrValid(User) && StrValid(Pass))
                 ) SMTPLogin(S, Caps, User, Pass);
 
                 //Whether login was needed or not,  worked or not, let's try to send a mail
                 Tempstr=MCopyStr(Tempstr, "MAIL FROM: ", Sender, "\r\n", NULL);
-                if (! SMTPInteract(MailFrom, S)) RaiseError(0,"SendMail","mailserver refused sender");
+                if (! SMTPInteract(Tempstr, S)) RaiseError(0,"SendMail","mailserver refused sender");
                 else if (! SmtpSendRecipients(Recipients, S)) RaiseError(0,"SendMail","No recipients accepted by mailserver");
                 else if (! SMTPInteract("DATA\r\n", S)) RaiseError(0,"SendMail","mailserver refused mail");
                 else

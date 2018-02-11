@@ -10,87 +10,87 @@ void UnicodeSetUTF8(int level)
 
 char *StrAddUnicodeChar(char *RetStr, int uchar)
 {
-switch (uchar)
-{
-        //non-breaking space
-        case 0x00a0:
-            RetStr=AddCharToStr(RetStr,' ');
-            break;
-            break;
+    switch (uchar)
+    {
+    //non-breaking space
+    case 0x00a0:
+        RetStr=AddCharToStr(RetStr,' ');
+        break;
+        break;
 
 
-        //en-dash and em-dash
-        case 0x2010:
-        case 0x2011:
-        case 0x2012:
-        case 0x2013:
-        case 0x2014:
-        case 0x2015:
-            RetStr=AddCharToStr(RetStr,'-');
-            break;
+    //en-dash and em-dash
+    case 0x2010:
+    case 0x2011:
+    case 0x2012:
+    case 0x2013:
+    case 0x2014:
+    case 0x2015:
+        RetStr=AddCharToStr(RetStr,'-');
+        break;
 
-        //2019 is apostrophe in unicode. presumably it gives you as special, pretty apostrophe, but it causes hell with
-        //straight ansi terminals, so we remap it here
-        case 0x2018:
-        case 0x2019:
-            RetStr=AddCharToStr(RetStr,'\'');
-            break;
-
-
-        case 0x201a:
-            RetStr=AddCharToStr(RetStr,',');
-            break;
+    //2019 is apostrophe in unicode. presumably it gives you as special, pretty apostrophe, but it causes hell with
+    //straight ansi terminals, so we remap it here
+    case 0x2018:
+    case 0x2019:
+        RetStr=AddCharToStr(RetStr,'\'');
+        break;
 
 
-        case 0x201b:
-            RetStr=AddCharToStr(RetStr,'`');
-            break;
+    case 0x201a:
+        RetStr=AddCharToStr(RetStr,',');
+        break;
 
 
-        //left and right double quote. We simplify down to just double quote
-        case 0x201c:
-        case 0x201d:
-        case 0x201e:
-            RetStr=AddCharToStr(RetStr,'"');
-            break;
-
-        case 0x2024:
-            RetStr=CatStr(RetStr,".");
-            break;
-
-        case 0x2025:
-            RetStr=CatStr(RetStr,"..");
-            break;
+    case 0x201b:
+        RetStr=AddCharToStr(RetStr,'`');
+        break;
 
 
-        case 0x2026:
-            RetStr=CatStr(RetStr,"...");
-            break;
+    //left and right double quote. We simplify down to just double quote
+    case 0x201c:
+    case 0x201d:
+    case 0x201e:
+        RetStr=AddCharToStr(RetStr,'"');
+        break;
 
-        case 0x2039:
-            RetStr=CatStr(RetStr,"<");
-            break;
+    case 0x2024:
+        RetStr=CatStr(RetStr,".");
+        break;
 
-        case 0x203A:
-            RetStr=CatStr(RetStr,">");
-            break;
-
-        case 0x2044:
-            RetStr=AddCharToStr(RetStr,'/');
-            break;
-
-        case 0x204e:
-        case 0x2055:
-            RetStr=AddCharToStr(RetStr,'*');
-            break;
+    case 0x2025:
+        RetStr=CatStr(RetStr,"..");
+        break;
 
 
-        default:
-            RetStr=UnicodeStr(RetStr, uchar);
-            break;
-        }
+    case 0x2026:
+        RetStr=CatStr(RetStr,"...");
+        break;
 
-return(RetStr);
+    case 0x2039:
+        RetStr=CatStr(RetStr,"<");
+        break;
+
+    case 0x203A:
+        RetStr=CatStr(RetStr,">");
+        break;
+
+    case 0x2044:
+        RetStr=AddCharToStr(RetStr,'/');
+        break;
+
+    case 0x204e:
+    case 0x2055:
+        RetStr=AddCharToStr(RetStr,'*');
+        break;
+
+
+    default:
+        RetStr=UnicodeStr(RetStr, uchar);
+        break;
+    }
+
+    return(RetStr);
 }
 
 

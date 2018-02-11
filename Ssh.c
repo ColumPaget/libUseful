@@ -55,31 +55,6 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
         }
     }
 
-    /*
-    STREAMSetTimeout(S,100);
-
-    Tempstr=FormatStr(Tempstr,"okay %d %d\n",getpid(),time(NULL));
-    STREAMWriteString("echo ",S);
-    STREAMWriteLine(Tempstr,S);
-    STREAMFlush(S);
-
-    StripTrailingWhitespace(Tempstr);
-    for (i=0; i < 3; i++)
-    {
-    Token=STREAMReadLine(Token,S);
-    StripTrailingWhitespace(Token);
-
-    printf("SRL: [%s]\n",Token);
-    if ( StrLen(Token) && (strcmp(Tempstr,Token) ==0) ) break;
-    }
-
-    if (i==3)
-    {
-      printf("Mismatch! [%s] [%s]\n",Token,Tempstr);
-      STREAMClose(S);
-      S=NULL;
-    }
-    */
 
     DestroyString(Tempstr);
     DestroyString(KeyFile);

@@ -538,10 +538,10 @@ int pmatch_one(const char *Pattern, const char *String, int len, const char **St
     result=pmatch_search(&P_Ptr, &S_Ptr, S_End, Start, End, &Flags);
     if ((result == MATCH_ONE) || (result == MATCH_FOUND))
     {
-        if ((Flags & PMATCH_SHORT) || (*S_Ptr=='\0')) 
-				{
-					return(TRUE);
-				}
+        if ((Flags & PMATCH_SHORT) || (*S_Ptr=='\0'))
+        {
+            return(TRUE);
+        }
     }
 
     return(FALSE);

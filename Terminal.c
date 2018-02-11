@@ -527,7 +527,7 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
         break;
 
     case TERM_UNICODE:
-				RetStr=StrAddUnicodeChar(RetStr, Arg1);
+        RetStr=StrAddUnicodeChar(RetStr, Arg1);
         break;
     }
 

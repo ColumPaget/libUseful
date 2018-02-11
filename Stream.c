@@ -1474,7 +1474,29 @@ int STREAMReadChar(STREAM *S)
     return((int) inchar);
 }
 
+int STREAMReadUint32(STREAM *S, long *RetVal)
+{
+    uint32_t value;
+    int result;
 
+    result=STREAMReadBytes(S, (unsigned char *) &value,sizeof(uint32_t));
+    if (result < 0) return(result);
+    if (result==0) return(STREAM_NODATA);
+    *RetVal=(long) value;
+    return(result);
+}
+
+int STREAMReadUint16(STREAM *S, long *RetVal)
+{
+    uint16_t value;
+    int result;
+
+    result=STREAMReadBytes(S, (unsigned char *) &value,sizeof(uint16_t));
+    if (result < 0) return(result);
+    if (result==0) return(STREAM_NODATA);
+    *RetVal=(long) value;
+    return(result);
+}
 
 int STREAMPeekChar(STREAM *S)
 {

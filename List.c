@@ -195,20 +195,20 @@ void ListUnThreadNode(ListNode *Node)
 
 //avoid a function call by not calling ListGetHead
     Head=Node->Head;
-		if (Head)
-		{
-//prev node of head points to LAST item in list
-    if (Head->Prev==Node)
+    if (Head)
     {
-        Head->Prev=Node->Prev;
-        if (Head->Prev==Head) Head->Prev=NULL;
-    }
+//prev node of head points to LAST item in list
+        if (Head->Prev==Node)
+        {
+            Head->Prev=Node->Prev;
+            if (Head->Prev==Head) Head->Prev=NULL;
+        }
 
-		if (Head->Side==Node) Head->Side=NULL;
-    if (Head->Next==Node) Head->Next=Next;
-    if (Head->Prev==Node) Head->Prev=Prev;
-    ListDecrNoOfItems(Node);
-		}
+        if (Head->Side==Node) Head->Side=NULL;
+        if (Head->Next==Node) Head->Next=Next;
+        if (Head->Prev==Node) Head->Prev=Prev;
+        ListDecrNoOfItems(Node);
+    }
 
     Node->Head=NULL;
     Node->Prev=NULL;
@@ -304,7 +304,7 @@ ListNode *ListInsertTypedItem(ListNode *InsertNode, uint16_t Type, const char *N
     ListThreadNode(InsertNode, NewNode);
     NewNode->Item=Item;
     NewNode->ItemType=Type;
-    if (StrLen(Name)) NewNode->Tag=CopyStr(NewNode->Tag,Name);
+    if (StrValid(Name)) NewNode->Tag=CopyStr(NewNode->Tag,Name);
     if (InsertNode->Head->Flags & LIST_FLAG_STATS)
     {
         NewNode->Stats=(ListStats *) calloc(1,sizeof(ListStats));
@@ -337,23 +337,39 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 
 
 
-ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
+ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 {
-    ListNode *Prev, *Curr, *Next;
+    ListNode *Prev, *Curr, *Next, *Head;
     int result=0, count=0;
     int hops=0, jumps=0, miss=0;
     unsigned long long val;
 
-    if (! Head) return(Head);
-    if (! StrLen(Name)) return(Head);
+    if (! Root) return(Root);
+    if (! StrValid(Name)) return(Root);
 
-    if (Head->Flags & LIST_FLAG_MAP_HEAD) Head=MapGetChain(Head, Name);
+    if (Root->Flags & LIST_FLAG_MAP_HEAD) Head=MapGetChain(Root, Name);
+    else Head=Root;
 
-//Dont use 'ListGetNext' internally
+
+    //Dont use 'ListGetNext' internally
     Curr=Head->Next;
     if (! Curr) return(Head);
 
-//Check last item in list
+    //if LIST_FLAG_CACHE is set, then the general purpose 'Side' pointer of the head node points to a cached item
+    if ((Root->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
+    {
+        //use next to hold Head->Side for less typing!
+        Next=Head->Side;
+        if (Root->Flags & LIST_FLAG_CASE) result=strcmp(Next->Tag,Name);
+        else result=strcasecmp(Next->Tag,Name);
+
+        if (result==0) return(Next);
+        //if result < 0 then it means the cached item is ahead of our insert point, so we might as well jump to it
+        else if (result < 0) Curr=Next;
+    }
+
+
+    //Check last item in list
     Prev=Head->Prev;
     if (Prev && (Prev != Head) && Prev->Tag)
     {
@@ -370,19 +386,19 @@ ListNode *ListFindNamedItemInsert(ListNode *Head, const char *Name)
         Next=Curr->Next;
         if (Curr->Tag)
         {
-            if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Curr->Tag,Name);
+            if (Root->Flags & LIST_FLAG_CASE) result=strcmp(Curr->Tag,Name);
             else result=strcasecmp(Curr->Tag,Name);
 
             if (result==0)
             {
-                if (Head->Flags & LIST_FLAG_SELFORG) ListSwapItems(Curr->Prev, Curr);
+                if (Root->Flags & LIST_FLAG_SELFORG) ListSwapItems(Curr->Prev, Curr);
                 return(Curr);
             }
 
-            if ((result > 0) && (Head->Flags & LIST_FLAG_ORDERED)) return(Prev);
+            if ((result > 0) && (Root->Flags & LIST_FLAG_ORDERED)) return(Prev);
 
             //Can only get here if it's not a match
-            if (Head->Flags & LIST_FLAG_TIMEOUT)
+            if (Root->Flags & LIST_FLAG_TIMEOUT)
             {
                 val=ListNodeGetTime(Curr);
                 if ((val > 0) && (val < GetTime(TIME_CACHED)))
@@ -414,24 +430,10 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
     if (! Root) return(NULL);
     Node=ListFindNamedItemInsert(Root, Name);
     if ((! Node) || (Node==Head) || (! Node->Tag)) return(NULL);
-		
-		//'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
-		//insert chain
-		Head=Node->Head;
-    if ((Head->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
-    {
-        Node=Head->Side;
-        if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
-        else result=strcasecmp(Node->Tag,Name);
-        if (
-            (result==0) &&
-            ( (Type==ANYTYPE) || (Type==Node->ItemType) )
-        )
-        {
-            if (Node->Stats) Node->Stats->Hits++;
-            return(Node);
-        }
-    }
+
+    //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
+    //insert chain
+    Head=Node->Head;
 
     if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
     else result=strcasecmp(Node->Tag,Name);

@@ -606,26 +606,26 @@ char *UnQuoteStr(char *Buffer, const char *Line)
                 olen++;
                 break;
 
-						//hexadecimal
+            //hexadecimal
             case 'x':
-								ptr_incr(&in, 1);
+                ptr_incr(&in, 1);
                 hex[0]=*in;
-								ptr_incr(&in, 1);
+                ptr_incr(&in, 1);
                 hex[1]=*in;
                 hex[2]='\0';
                 out=AddCharToBuffer(out,olen,strtol(hex,NULL,16) & 0xFF);
                 olen++;
                 break;
 
-						//unicode
-						case 'u':
-								ptr_incr(&in, 1);
-								strncpy(hex, in, 4);
-								hex[4]='\0';
-								ptr_incr(&in, 3);
-							  out=StrAddUnicodeChar(out, strtol(hex,NULL,16));	
-								olen++;
-								break;
+            //unicode
+            case 'u':
+                ptr_incr(&in, 1);
+                strncpy(hex, in, 4);
+                hex[4]='\0';
+                ptr_incr(&in, 3);
+                out=StrAddUnicodeChar(out, strtol(hex,NULL,16));
+                olen++;
+                break;
 
             case '\\':
             default:

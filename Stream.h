@@ -279,6 +279,9 @@ uint64_t STREAMSeek(STREAM *Stream, int64_t offset, int whence);
 //value is a stream error like STREAM_TIMEOUT and friends. Actual chars are always positive values
 int STREAMReadChar(STREAM *);
 
+int STREAMReadUint16(STREAM *S, long *RetVal);
+int STREAMReadUint32(STREAM *S, long *RetVal);
+
 //same as STREAMReadChar except this doesn't remove a character from the stream buffer, leaving it
 //there to be read again
 int STREAMPeekChar(STREAM *);

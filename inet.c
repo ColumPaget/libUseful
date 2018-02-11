@@ -115,7 +115,6 @@ int IPGeoLocate(const char *IP, ListNode *Vars)
     const char *DesiredTags[]= {"CountryCode","CountryName","City","RegionName","Latitude","Longitude","TimeZone",NULL};
     int result=FALSE;
 
-    printf("GEOZ: %s\n",IP);
     if (! StrValid(IP)) return(FALSE);
 
     if (! IsIPAddress(IP)) Token=CopyStr(Token, LookupHostIP(IP));
@@ -124,12 +123,10 @@ int IPGeoLocate(const char *IP, ListNode *Vars)
     Tempstr=MCopyStr(Tempstr,"http://freegeoip.net/csv/",Token,NULL);
 
     S=HTTPGet(Tempstr);
-    printf("GEOX: %d %s\n",S, Tempstr);
     if (S)
     {
         STREAMSetTimeout(S,100);
         Tempstr=STREAMReadDocument(Tempstr,S);
-        printf("GEO2: %s\n",Tempstr);
         ptr=GetToken(Tempstr, ",", &Token,0); //IP
         ptr=GetToken(ptr, ",", &Token,0); //CountryCode
         strlwr(Token);

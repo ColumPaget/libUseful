@@ -8,11 +8,11 @@ ListNode *SetDetailVar(ListNode *Vars, const char *Name, const char *Data, int I
     ListNode *Node;
 
     if (! Vars) return(NULL);
-    Node=ListFindNamedItem(Vars,Name);
+    Node=ListFindTypedItem(Vars,ItemType,Name);
     if (Node) Node->Item=(void *) CopyStr((char *) Node->Item,Data);
-    else Node=ListAddNamedItem(Vars,Name,CopyStr(NULL,Data));
+    else Node=ListAddTypedItem(Vars,ItemType,Name,CopyStr(NULL,Data));
 
-    Node->ItemType=ItemType;
+//    Node->ItemType=ItemType;
     if (Time) ListNodeSetTime(Node, Time);
     return(Node);
 }

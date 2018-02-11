@@ -320,11 +320,11 @@ int PseudoTTYGrab(int *pty, int *tty, int TermFlags)
         if (grantpt(*pty)==-1) RaiseError(ERRFLAG_ERRNO, "pty", "grantpt failed");
         if (unlockpt(*pty)==-1) RaiseError(ERRFLAG_ERRNO, "pty", "unlockpt failed");
         SetStrLen(Tempstr,100);
-	
+
 #ifdef HAVE_PTSNAME_R
-        if (ptsname_r(*pty,Tempstr,100) != 0) 
+        if (ptsname_r(*pty,Tempstr,100) != 0)
 #endif
-	Tempstr=CopyStr(Tempstr,ptsname(*pty));
+            Tempstr=CopyStr(Tempstr,ptsname(*pty));
         if (StrLen(Tempstr))
         {
             if ( (*tty=open(Tempstr,O_RDWR)) >-1)
