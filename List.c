@@ -2,13 +2,25 @@
 #include "List.h"
 #include "Time.h"
 
+unsigned long ListSize(ListNode *Node) 
+{
+ListNode *Head;
+
+Head=ListGetHead(Node);
+if (Head && Head->Stats) return(Head->Stats->Hits);
+return(0);
+}
+
+
 void MapDumpSizes(ListNode *Head)
 {
     int i;
+		ListNode *Chain;
 
     for (i=0; i < MapChainCount(Head); i++)
     {
-        printf("%d %d\n",i,ListSize(MapGetNthChain(Head, i)));
+        Chain=MapGetNthChain(Head, i);
+        printf("%d %d %d\n",i,Chain,ListSize(Chain));
     }
 }
 
@@ -40,11 +52,13 @@ ListNode *MapCreate(int Buckets, int Flags)
     Node=ListCreate();
     Node->Flags |= LIST_FLAG_MAP_HEAD | Flags;
     Node->ItemType=Buckets;
+
+		//we allocate one more than we will use, so the last one acts as a terminator
     Node->Item=calloc(Buckets+1, sizeof(ListNode));
     SubNode=(ListNode *) Node->Item;
     for (i=0; i < Buckets; i++)
     {
-        SubNode->Head=SubNode;
+        SubNode->Head=Node;
         SubNode->Prev=SubNode;
         SubNode->Flags |= LIST_FLAG_MAP_CHAIN | Flags;
         SubNode->Stats=(ListStats *) calloc(1,sizeof(ListStats));
@@ -121,6 +135,11 @@ ListNode *MapGetChain(ListNode *Map, const char *Key)
 
 
 
+/* 
+Number of items is stored in the 'Stats->Hits' value of the head listnode. For normal nodes this would be
+a counter of how many times the node has been accessed with 'ListFindNamedItem etc, 
+but the head node is never directly accessed this way, so we store the count of list items in this instead
+*/
 
 void ListSetNoOfItems(ListNode *LastItem, unsigned long val)
 {
@@ -138,24 +157,38 @@ unsigned long ListIncrNoOfItems(ListNode *List)
 {
     ListNode *Head;
 
-//avoid a function call by not calling ListGetHead
-    Head=List->Head;
+		if (List->Flags & LIST_FLAG_MAP_CHAIN) List->Stats->Hits++;
 
-    if (List->Next==NULL) Head->Prev=List; /* The head Item has its Prev as being the last item! */
+    Head=List->Head;
+		if (Head->Flags & LIST_FLAG_MAP_CHAIN) 
+		{
+			Head->Stats->Hits++;
+
+			//get map head, rather than chain head
+    	Head=Head->Head;
+		}
     Head->Stats->Hits++;
 
     return(Head->Stats->Hits);
 }
 
+
+
 unsigned long ListDecrNoOfItems(ListNode *List)
 {
     ListNode *Head;
 
-//avoid a function call by not calling ListGetHead
+		if (List->Flags & LIST_FLAG_MAP_CHAIN) List->Stats->Hits--;
     Head=List->Head;
+		if (Head->Flags & LIST_FLAG_MAP_CHAIN) 
+		{
+			Head->Stats->Hits--;
+			//get map head, rather than chain head
+    	Head=Head->Head;
+		}
 
-    if (List->Next==NULL) Head->Prev=List->Prev; /* The head Item has its Prev as being the last item! */
-    if (Head->Stats->Hits > 0) Head->Stats->Hits--;
+    Head->Stats->Hits--;
+
     return(Head->Stats->Hits);
 }
 
@@ -172,8 +205,7 @@ void ListThreadNode(ListNode *Prev, ListNode *Node)
     Prev->Next=Node;
     Node->Next=Next;
 
-//avoid a function call by not calling ListGetHead
-    Head=Prev->Head;
+    Head=ListGetHead(Prev);
     Node->Head=Head;
 
 // Next might be NULL! If it is, then our new node is last
@@ -188,13 +220,13 @@ void ListUnThreadNode(ListNode *Node)
 {
     ListNode *Head, *Prev, *Next;
 
+    ListDecrNoOfItems(Node);
     Prev=Node->Prev;
     Next=Node->Next;
     if (Prev !=NULL) Prev->Next=Next;
     if (Next !=NULL) Next->Prev=Prev;
 
-//avoid a function call by not calling ListGetHead
-    Head=Node->Head;
+    Head=ListGetHead(Node);
     if (Head)
     {
 //prev node of head points to LAST item in list
@@ -207,9 +239,9 @@ void ListUnThreadNode(ListNode *Node)
         if (Head->Side==Node) Head->Side=NULL;
         if (Head->Next==Node) Head->Next=Next;
         if (Head->Prev==Node) Head->Prev=Prev;
-        ListDecrNoOfItems(Node);
     }
 
+		//make our unthreaded node a singleton
     Node->Head=NULL;
     Node->Prev=NULL;
     Node->Next=NULL;
@@ -319,13 +351,7 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 {
     ListNode *Curr;
 
-    if (ListStart->Flags & LIST_FLAG_MAP_HEAD)
-    {
-        //There's no real way for MapGetChain to fail, so we update stats
-        //here
-        if (ListStart->Stats) ListStart->Stats->Hits++;
-        ListStart=MapGetChain(ListStart, Name);
-    }
+    if (ListStart->Flags & LIST_FLAG_MAP_HEAD) ListStart=MapGetChain(ListStart, Name);
 
     Curr=ListGetLast(ListStart);
     if (Curr==NULL) return(Curr);
@@ -364,10 +390,9 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
         else result=strcasecmp(Next->Tag,Name);
 
         if (result==0) return(Next);
-        //if result < 0 then it means the cached item is ahead of our insert point, so we might as well jump to it
-        else if (result < 0) Curr=Next;
+        //if result < 0 AND ITS AN ORDERED LIST then it means the cached item is ahead of our insert point, so we might as well jump to it
+        else if ((Root->Flags & LIST_FLAG_ORDERED) && (result < 0)) Curr=Next;
     }
-
 
     //Check last item in list
     Prev=Head->Prev;
@@ -376,9 +401,9 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
         if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag,Name);
         else result=strcasecmp(Prev->Tag,Name);
 
+        if (result == 0) return(Prev);
         if ((Head->Flags & LIST_FLAG_ORDERED) && (result < 1)) return(Prev);
     }
-
 
     Prev=Head;
     while (Curr)
@@ -501,14 +526,14 @@ ListNode *MapGetNext(ListNode *CurrItem)
         return(CurrItem->Next);
     }
 
-//'Head' here points to a BUCKET HEADER. These are marked with this flag, except the last one
-//so we know when we've reached the end
     if (CurrItem->Flags & LIST_FLAG_MAP_HEAD)
     {
         CurrItem=(ListNode *) CurrItem->Item;
         if (CurrItem->Next) return(CurrItem->Next);
     }
 
+//'Head' here points to a BUCKET HEADER. These are marked with this flag, except the last one
+//so we know when we've reached the end
     Head=ListGetHead(CurrItem);
     while (Head->Flags & LIST_FLAG_MAP_CHAIN)
     {
@@ -539,7 +564,8 @@ ListNode *ListGetLast(ListNode *CurrItem)
     Head=ListGetHead(CurrItem);
     if (! Head) return(CurrItem);
     /* the dummy header has a 'Prev' entry that points to the last item! */
-    return(Head->Prev);
+    if (Head->Prev) return(Head->Prev);
+		return(Head);
 }
 
 

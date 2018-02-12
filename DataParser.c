@@ -62,6 +62,7 @@ const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Parent, i
         {
         case '[':
             ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ARRAY, Name, IndentLevel+1);
+						Name=CopyStr(Name,"");
             break;
 
         case ']':
@@ -71,6 +72,7 @@ const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Parent, i
 
         case '{':
             ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, Name, IndentLevel+1);
+						Name=CopyStr(Name,"");
             break;
 
         case '}':

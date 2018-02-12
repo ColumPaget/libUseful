@@ -47,6 +47,7 @@ typedef struct
     unsigned long Hits;
 } ListStats;
 
+
 //attempt to order items in likely use order, this *might* help the L1 cache
 //is 32 bytes, so should fit in one cache line
 typedef struct lnode
@@ -54,9 +55,9 @@ typedef struct lnode
     struct lnode *Next;
     struct lnode *Prev;
     char *Tag;
-//in map heads ItemType is used to hold the number of buckets
     uint16_t ItemType;
     uint16_t Flags;
+//in map heads ItemType is used to hold the number of buckets
     struct lnode *Head;
     void *Item;
     struct lnode *Side;
@@ -69,10 +70,11 @@ typedef struct lnode
 //this allows 'ListCreate' to be called with flags or without
 #define ListCreate(F) (ListInit(F + 0))
 
-//if L isn't NULL then return L->Head, it's fine if L->Head is null
-#define ListGetHead(Node) ((Node) ? (Node)->Head : NULL)
+#define MapChainGetHead(Node) (((Node)->Flags & LIST_FLAG_MAP_CHAIN) ? (Node) : Node->Head)
 
-#define ListSize(node) (((node) && (node)->Head && (node)->Head->Stats) ? (node)->Head->Stats->Hits : 0)
+//if L isn't NULL then return L->Head, it's fine if L->Head is null
+#define ListGetHead(Node) ((Node) ? MapChainGetHead(Node) : NULL)
+
 #define ListNodeGetHits(node) ((node)->Stats ? (node)->Stats->Hits : 0)
 #define ListNodeGetTime(node) ((node)->Stats ? (node)->Stats->Time : 0)
 
@@ -104,6 +106,7 @@ extern "C" {
 typedef void (*LIST_ITEM_DESTROY_FUNC)(void *);
 typedef void *(*LIST_ITEM_CLONE_FUNC)(void *);
 
+unsigned long ListSize(ListNode *Node);
 
 //Dump stats on hash distribution in a map
 void MapDumpSizes(ListNode *Head);
