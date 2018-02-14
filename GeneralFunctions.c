@@ -83,7 +83,7 @@ char *CommaList(char *RetStr, const char *AddStr)
 void *ArrayGetItem(void *array[], int pos)
 {
     int i;
-    for (i=0; i < pos; i++)
+    for (i=0; i <= pos; i++)
     {
         if (array[i]==NULL) return(NULL);
         if (i==pos) return(array[i]);
