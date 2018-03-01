@@ -49,13 +49,13 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
         argv[0]=CopyStr(argv[0],Token);
         i=0;
 
-        if (! Flags & SPAWN_ARG0)
+        if (! (Flags & SPAWN_ARG0))
         {
             argv[1]=CopyStr(argv[1],Token);
             i=1;
         }
 
-        for (i=0; i < 100; i++)
+        for (; i < 100; i++)
         {
             if (! ptr) break;
             ptr=GetToken(ptr,"\\S",&Token,GETTOKEN_QUOTES);
