@@ -863,7 +863,8 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=CatStr(SendStr,Tempstr);
     }
 
-    if ((strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0))
+		//probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
+    if ((strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0) || (strcasecmp(Info->Method,"PATCH")==0))
     {
         Tempstr=FormatStr(Tempstr,"Content-Length: %d\r\n",Info->PostContentLength);
         SendStr=CatStr(SendStr,Tempstr);
@@ -1218,6 +1219,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                 {
                     if (strcasecmp(Info->Method,"POST")==0) break;
                     if (strcasecmp(Info->Method,"PUT")==0) break;
+                    if (strcasecmp(Info->Method,"PATCH")==0) break;
                 }
             }
 
