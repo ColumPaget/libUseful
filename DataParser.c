@@ -314,6 +314,7 @@ const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Parent, in
             {
             case '/':
                 if (strcasecmp(Token,"/item")==0) BreakOut=TRUE;
+								else if (strcasecmp(Token,"/image")==0) BreakOut=TRUE;
                 else if (strcasecmp(Token,"/channel")==0) /*ignore */ ;
                 else if (strcasecmp(Token,"/rss")==0) /*ignore */ ;
                 //if this is a 'close' for a previous 'open' then add all the data we collected
@@ -330,6 +331,10 @@ const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Parent, in
                 if (strcasecmp(Token,"item")==0)
                 {
                     ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, NULL, IndentLevel+1);
+                }
+								else if (strcasecmp(Token,"image")==0)
+                {
+                    ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, Token, IndentLevel+1);
                 }
                 else Name=CopyStr(Name, Token);
                 break;
