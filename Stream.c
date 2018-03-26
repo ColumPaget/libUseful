@@ -372,6 +372,7 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
         {
 #ifdef HAVE_LIBSSL
             result=SSL_write((SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:CTX"), Data + count, DataLen - count);
+						if (result < 0) result=STREAM_CLOSED;
 #endif
         }
         else
@@ -381,17 +382,27 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
                 FD_ZERO(&selectset);
                 FD_SET(S->out_fd, &selectset);
                 result=(S->Timeout % 100);
-                tv.tv_usec=result * 10000;
+                tv.tv_usec=result * 100000;
                 tv.tv_sec=S->Timeout / 100;
                 result=select(S->out_fd+1,NULL,&selectset,NULL,&tv);
-                if (result==-1)  return(STREAM_CLOSED);
-                if (result == 0) return(STREAM_TIMEOUT);
+                if (result < 1) 
+								{
+                	if ((result == 0) || (errno==EAGAIN)) result=STREAM_TIMEOUT;
+									else result=STREAM_CLOSED;
+									break;
+								}
             }
 
             if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_EX);
             result=DataLen-count;
             //if (S->BlockSize && (S->BlockSize < (DataLen-count))) result=S->BlockSize;
             result=write(S->out_fd, Data + count, result);
+						if (result < 0) 
+						{
+							if (errno==EINTR) result=0;
+							else if (errno==EAGAIN) result=STREAM_TIMEOUT;
+							else result=STREAM_CLOSED;
+						}
             if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_UN);
 
             //yes, we neglect to do a sync. The idea here is to work opportunisitically, flushing out those pages
@@ -402,19 +413,16 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
 
         }
 
-
-        if (result < 1 && (errno !=EINTR) ) break;
-        if (result < 0) result=0;
+				if (result < 0) break;
         count+=result;
-        S->BytesWritten+=result;
     }
 
-
-    if (result < 0) return(STREAM_CLOSED);
-//memmove any remaining data so that we add onto the end of it
+    S->BytesWritten+=count;
+		//memmove any remaining data so that we add onto the end of it
     S->OutEnd -= count;
     if (S->OutEnd > 0) memmove(S->OutputBuff,S->OutputBuff+count, S->OutEnd);
 
+		if (result < 0) return(result);
 
     return(count);
 }
@@ -769,6 +777,9 @@ int STREAMParseConfig(const char *Config)
             case 'm':
                 Flags |= SF_MMAP;
                 break;
+						case 'n':
+								Flags |= SF_NONBLOCK;
+								break;
             case 's':
                 Flags |= SF_SECURE;
                 break;
@@ -816,11 +827,12 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     const char *ptr;
     int Port=0, Flags=0;
 
-    //if we've got a chain of connections, then get the LAST one to analyze. The others are all proxies we
-    //go via
-    ptr=strrchr(URL, ',');
+    //if we've got a chain of connections, then get the LAST one to analyze. 
+		//The others are all proxies we go via
+    ptr=strrchr(URL, '|');
     if (ptr) ptr++;
     else ptr=URL;
+
     Proto=CopyStr(Proto,"file");
     ParseURL(ptr, &Proto, &Host, &Token, &User, &Pass, &Path, &Args);
     if (StrValid(Token)) Port=strtoul(Token,NULL,10);
@@ -837,8 +849,8 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
 
     case 'h':
         if (
-            (strncmp(Proto,"http",5)==0)  ||
-            (strncmp(Proto,"https",6)==0)
+            (strcmp(Proto,"http")==0) ||
+            (strcmp(Proto,"https")==0)
         ) S=HTTPWithConfig(URL, Config);
         //the 'write only' and 'read only' flags normally result in one or another
         //buffer not being allocated (as it's not expected to be needed). However
@@ -1436,7 +1448,8 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 
     DestroyString(TempBuff);
 
-    return(result);
+		if (result < 0) return(result);
+		else return(DataLen);
 }
 
 
@@ -1960,8 +1973,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 //between two long values. However, use of 'long long' resulted in an
 //unsigned value, which caused all manner of problems, so a long is the
 //best we can manage
-    long val, len;
-
+    long val, len, towrite;
 
 
     if (Max==0) len=BUFSIZ;
@@ -2012,43 +2024,57 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 
         if (! UseSendFile)
         {
-            //How much still left to transfer?
+						//How much do we have queued in the in-stream?
+            towrite=In->InEnd - In->InStart;
 
-            //if outbuff is full do some flushing
+
+            //only read if we don't already have some in inbuff
+            if ((towrite < len) && (! (Flags & SENDFILE_NOREAD)))
+            {
+                result=STREAMReadCharsToBuffer(In);
+                towrite=In->InEnd - In->InStart;
+								if ((result==STREAM_CLOSED) && (towrite==0))
+								{
+									STREAMFlush(Out);
+									return(STREAM_CLOSED);
+								}
+            }
+
+ 						//if it's more than we've been told to get then adjust
+						if (towrite > len) towrite=len;
+
+           //if outbuff hasn't enough space to take the transfer, then do some flushing
             val=Out->BuffSize - Out->OutEnd;
             if (val < 1)
             {
-                STREAMFlush(Out);
-                sleep(0);
-                break;
-                val=Out->BuffSize - Out->OutEnd;
+							val=BUFSIZ;
+							if (val > Out->OutEnd) val=Out->OutEnd;
+							STREAMInternalFinalWriteBytes(Out, Out->OutputBuff, val);
+            	sleep(0);
+            	val=Out->BuffSize - Out->OutEnd;
             }
 
+
+						//if we still haven't got enough room then adjust our expectations
+						if (towrite > val) towrite=val;
             result=0;
 
 
-            val=In->InEnd - In->InStart;
-            //only read if we don't already have some in inbuff
-            if ((val < 1) && (! (Flags & SENDFILE_NOREAD)))
-            {
-                result=STREAMReadCharsToBuffer(In);
-                val=In->InEnd - In->InStart;
-            }
-
-            if (len > val) len=val;
-
             //nothing to write!
-            if (len < 1)
+            if (towrite < 1)
             {
                 //nothing in either buffer! Stream empty. Is it closed?
                 if ((Out->OutEnd==0) && (result==STREAM_CLOSED)) break;
-                len=0;
+                break;
             }
 
-            result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,len);
+            result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,towrite);
 
-            In->InStart+=len;
-            bytes_transferred+=len;
+						if (result > 0)
+						{
+            In->InStart+=result;
+            bytes_transferred+=result;
+						}
         }
 
 

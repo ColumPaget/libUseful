@@ -9,11 +9,18 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "includes.h"
 
 /*
+
+-------------------------------------- PLEASE NOTE ------------------------------------
+ Separation character has had to be changed from ',' to '|' because commas can occur validly in URLS
+---------------------------------------------------------------------------------------
+
+
 The only function a user should be concerned with here is 'SetGlobalConnectionChain'. This allows setting
-a comma-seperated list of 'connection hops' (proxy servers) that are to be used for all connections in
+a PIPE-seperated list of 'connection hops' (proxy servers) that are to be used for all connections in
 the program. e.g.
 
-if (! SetGlobalConnectionChain("socks5:127.0.0.1,https:89.40.24.6:8080,socks5:16.22.22.1:1080))
+
+if (! SetGlobalConnectionChain("socks5:127.0.0.1|https:89.40.24.6:8080|socks5:16.22.22.1:1080))
 {
 printf("ERROR! Failed to SetGlobalConnectionChain\n");
 }
@@ -47,12 +54,12 @@ Http.h also use connection chains.
 If you only want to use a proxy chain on a particular connection instead of setting a global connection chain,
 then open the connection with 'STREAMOpen' or 'STREAMConnect' and list all the hops before the connection URL. e.g.
 
-S=STREAMOpen("socks5:user:password@127.0.0.1,https:89.40.24.6:1080,tcp:mail.test.com:25");
+S=STREAMOpen("socks5:user:password@127.0.0.1|https:89.40.24.6:1080|tcp:mail.test.com:25");
 
 or
 
 S=STREAMCreate();
-S=STREAMConnect(S,"socks5:user:password@127.0.0.1,https:89.40.24.6:1080,tcp:mail.test.com:25", 0);
+S=STREAMConnect(S,"socks5:user:password@127.0.0.1|https:89.40.24.6:1080|tcp:mail.test.com:25", 0);
 
 these will first connect to a socks5 proxy at 127.0.0.1, then an https CONNECT proxy at 89.40.24.6, and finally
 to the destiation host 'mail.test.com'.

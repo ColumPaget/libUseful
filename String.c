@@ -608,9 +608,9 @@ char *UnQuoteStr(char *Buffer, const char *Line)
 
             //hexadecimal
             case 'x':
-                ptr_incr(&in, 1);
+                ptr_incr((const char **) &in, 1);
                 hex[0]=*in;
-                ptr_incr(&in, 1);
+                ptr_incr((const char **) &in, 1);
                 hex[1]=*in;
                 hex[2]='\0';
                 out=AddCharToBuffer(out,olen,strtol(hex,NULL,16) & 0xFF);
@@ -619,10 +619,10 @@ char *UnQuoteStr(char *Buffer, const char *Line)
 
             //unicode
             case 'u':
-                ptr_incr(&in, 1);
+                ptr_incr((const char **) &in, 1);
                 strncpy(hex, in, 4);
                 hex[4]='\0';
-                ptr_incr(&in, 3);
+                ptr_incr((const char **) &in, 3);
                 out=StrAddUnicodeChar(out, strtol(hex,NULL,16));
                 olen++;
                 break;

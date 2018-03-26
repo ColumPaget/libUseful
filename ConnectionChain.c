@@ -18,13 +18,13 @@ int SetGlobalConnectionChain(const char *Chain)
     const char *ptr;
     int result=TRUE, count=0;
 
-    ptr=GetToken(Chain, ",", &Token, 0);
+    ptr=GetToken(Chain, "|", &Token, 0);
     while (ptr)
     {
         GetToken(Token,":",&Type,0);
         if (MatchTokenFromList(Type, HopTypes, 0)==-1) result=FALSE;
         count++;
-        ptr=GetToken(ptr, ",", &Token, 0);
+        ptr=GetToken(ptr, "|", &Token, 0);
     }
 
     GlobalConnectionChain=CopyStr(GlobalConnectionChain, Chain);
@@ -462,13 +462,13 @@ int STREAMProcessConnectHops(STREAM *S, const char *HopList)
     int count=0;
 
 
-    ptr=GetToken(HopList, ",", &HopURL,0);
+    ptr=GetToken(HopList, "|", &HopURL,0);
 
 //Note we check 'StrValid' not just whether ptr is null. This is because ptr will be an empty string
 //for the last token, and we don't want to process th last token, which will be the 'actual' connection
     while (StrValid(ptr))
     {
-        ptr=GetToken(ptr, ",", &NextHop,0);
+        ptr=GetToken(ptr, "|", &NextHop,0);
         ParseConnectDetails(NextHop, NULL, &Dest, &Token, NULL, NULL, NULL);
         Dest=MCatStr(Dest,":",Token,NULL);
 

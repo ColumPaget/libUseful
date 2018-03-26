@@ -430,14 +430,13 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
     const char *p_URL, *ptr;
 
     ptr=GetToken(iURL, "\\S", &URL, 0);
-    p_URL=strrchr(URL,',');
+    p_URL=strrchr(URL,'|');
     if (p_URL)
     {
         Info->ConnectionChain=CopyStrLen(Info->ConnectionChain, URL, p_URL - URL);
         p_URL++;
     }
     else p_URL=URL;
-
 
     if (strcasecmp(Method,"POST")==0) ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, &Args);
     else ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, NULL);
@@ -1141,7 +1140,7 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
         }
     }
 
-    if (StrValid(Info->ConnectionChain)) Tempstr=FormatStr(Tempstr,"%s,%s:%s:%d/",Info->ConnectionChain,Proto,Host,Port);
+    if (StrValid(Info->ConnectionChain)) Tempstr=FormatStr(Tempstr,"%s|%s:%s:%d/",Info->ConnectionChain,Proto,Host,Port);
     else Tempstr=FormatStr(Tempstr,"%s:%s:%d/",Proto,Host,Port);
 
     if (STREAMConnect(S,Tempstr,""))

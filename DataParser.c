@@ -180,6 +180,45 @@ const char *ParserYAMLItems(int ParserType, const char *Doc, ListNode *Parent, i
 
 
 
+/*
+ Parse callbacks for config files of the form:
+
+name=value
+name value
+name: value
+
+type name
+{
+	name=value
+	name value
+	name: value
+}
+*/
+
+#define CONFIG_FILE_TOKENS " |	|#|=|:|;|{|}|\r|\n"
+
+int ParserConfigCheckForBrace(const char **Data)
+{
+char *Token=NULL;
+const char *ptr;
+int result=FALSE;
+
+ptr=*Data;
+if (! ptr) return(FALSE);
+
+while (isspace(*ptr)) ptr++;
+GetToken(ptr, CONFIG_FILE_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
+if (strcmp(Token, "{")==0)
+{
+	*Data=ptr;
+	result=TRUE;
+}
+DestroyString(Token);
+
+return(result);
+}
+
+
 
 const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel)
 {
@@ -188,14 +227,14 @@ const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *Parent,
     ListNode *Node;
     int BreakOut=FALSE;
 
-#define CONFIG_FILE_TOKENS " |	|#|=|:|;|{|}|\r|\n"
 
     ptr=Doc;
     while (ptr && (! BreakOut))
     {
-        while (isspace(*ptr)) ptr++;
+        //while (isspace(*ptr)) ptr++;
         ptr=GetToken(ptr, CONFIG_FILE_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
 
+printf("CFT: %s\n",Token);
         switch (*Token)
         {
         case '#':
@@ -210,16 +249,9 @@ const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *Parent,
             BreakOut=TRUE;
             break;
 
-        case '\r':
-        case '\n':
-        case ';':
-            //just ignore
-            break;
 
         case ' ':
         case '	':
-            while (isspace(*ptr)) ptr++;
-
             // if it's not a knowwn token next then it must be a config line of the form
             //"name value", so we fall through
             if (strchr(CONFIG_FILE_TOKENS, *ptr)) break;
@@ -227,6 +259,19 @@ const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *Parent,
         case ':':
         case '=':
             ptr=GetToken(ptr,"\n|;|}",&Token,GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP | GETTOKEN_HONOR_QUOTES);
+				break;
+
+        case '\r':
+        case '\n':
+printf("EOL\n");
+						if (ParserConfigCheckForBrace(&ptr)) 
+						{
+							PrevToken=MCatStr(PrevToken, " ", Token, NULL);
+							break;
+						}
+						
+
+        case ';':
             StripLeadingWhitespace(Token);
             StripTrailingWhitespace(Token);
             Node=ListAddNamedItem(Parent, PrevToken, CopyStr(NULL, Token));
