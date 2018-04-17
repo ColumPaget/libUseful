@@ -18,6 +18,7 @@ extern "C" {
 
 void CommandLineParserInit(CMDLINE *CmdLine, int argc, char *argv[]);
 CMDLINE *CommandLineParserCreate(int argc, char *argv[]);
+const char *CommandLineCurr(CMDLINE *CmdLine);
 const char *CommandLineNext(CMDLINE *CmdLine);
 
 #ifdef __cplusplus

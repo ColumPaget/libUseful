@@ -234,7 +234,6 @@ const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *Parent,
         //while (isspace(*ptr)) ptr++;
         ptr=GetToken(ptr, CONFIG_FILE_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
 
-printf("CFT: %s\n",Token);
         switch (*Token)
         {
         case '#':
@@ -242,46 +241,57 @@ printf("CFT: %s\n",Token);
             break;
 
         case '{':
-            ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, PrevToken, IndentLevel+1);
+            StripLeadingWhitespace(Name);
+            StripTrailingWhitespace(Name);
+
+            ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, Name, IndentLevel+1);
+						Name=CopyStr(Name,"");
+						Token=CopyStr(Token,"");
             break;
 
         case '}':
             BreakOut=TRUE;
             break;
 
-
         case ' ':
         case '	':
-            // if it's not a knowwn token next then it must be a config line of the form
-            //"name value", so we fall through
-            if (strchr(CONFIG_FILE_TOKENS, *ptr)) break;
-
         case ':':
         case '=':
-            ptr=GetToken(ptr,"\n|;|}",&Token,GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP | GETTOKEN_HONOR_QUOTES);
+					  Name=CopyStr(Name, PrevToken);
+            ptr=GetToken(ptr,"\n|;|}|{",&Token,GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP | GETTOKEN_HONOR_QUOTES);
 				break;
 
         case '\r':
+				break;
+
         case '\n':
-printf("EOL\n");
 						if (ParserConfigCheckForBrace(&ptr)) 
 						{
-							PrevToken=MCatStr(PrevToken, " ", Token, NULL);
+							Name=MCatStr(Name, " ", PrevToken, NULL);
 							break;
 						}
 						
 
         case ';':
-            StripLeadingWhitespace(Token);
-            StripTrailingWhitespace(Token);
-            Node=ListAddNamedItem(Parent, PrevToken, CopyStr(NULL, Token));
+						if (StrValid(PrevToken))
+						{
+            StripLeadingWhitespace(PrevToken);
+            StripTrailingWhitespace(PrevToken);
+						if (StrValid(Name))
+						{
+            Node=ListAddNamedItem(Parent, Name, CopyStr(NULL, PrevToken));
             Node->ItemType=ITEM_VALUE;
+						}
+						Name=CopyStr(Name,"");
+						//we don't want \r \n or ; tokens included in anything
+						Token=CopyStr(Token,"");
+						}
             break;
 
         default:
-            PrevToken=CopyStr(PrevToken, Token);
             break;
         }
+        PrevToken=CopyStr(PrevToken, Token);
     }
 
     DestroyString(PrevToken);

@@ -164,19 +164,27 @@ char *ParseVar(char *Buff, const char **Line, ListNode *LocalVars, int Flags)
     if (! (Flags & SUBS_CASE_VARNAMES)) strlwr(VarName);
 
     vptr=GetVar(LocalVars,VarName);
+		if (vptr)
+		{
 
-    if (Flags & SUBS_QUOTE_VARS) OutStr=CatStr(OutStr,"'");
+		if (Flags & SUBS_SHELL_SAFE) 
+		{
+			//naughty reuse of VarName to hold altered string
+			VarName=MakeShellSafeString(VarName, vptr, 0);
+			vptr=VarName;
+		}
 
     if (Flags & SUBS_STRIP_VARS_WHITESPACE)
     {
         Tempstr=CopyStr(Tempstr,vptr);
         StripTrailingWhitespace(Tempstr);
         StripLeadingWhitespace(Tempstr);
-        OutStr=CatStr(OutStr,Tempstr);
+				vptr=Tempstr;
     }
-    else OutStr=CatStr(OutStr, vptr);
 
-    if (Flags & SUBS_QUOTE_VARS) OutStr=CatStr(OutStr,"'");
+    if (Flags & SUBS_QUOTE_VARS) OutStr=MCatStr(OutStr,"'",vptr,"'",NULL);
+    else OutStr=CatStr(OutStr, vptr);
+		}
 
     DestroyString(VarName);
     DestroyString(Tempstr);

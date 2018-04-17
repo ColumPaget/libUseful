@@ -193,8 +193,6 @@ const char *ToSIUnit(double Value, int Base, int Precision)
 
 
 
-
-
 int LookupUID(const char *User)
 {
     struct passwd *pwent;
@@ -217,6 +215,29 @@ int LookupGID(const char *Group)
     if (! grent) return(-1);
     return(grent->gr_gid);
 }
+
+
+const char *LookupUserName(uid_t uid)
+{
+    struct passwd *pwent;
+    char *ptr;
+
+    pwent=getpwuid(uid);
+    if (! pwent) return("");
+    return(pwent->pw_name);
+}
+
+
+const char *LookupGroupName(gid_t gid)
+{
+    struct group *grent;
+    char *ptr;
+
+    grent=getgrgid(gid);
+    if (! grent) return("");
+    return(grent->gr_name);
+}
+
 
 
 int GenerateRandomBytes(char **RetBuff, int ReqLen, int Encoding)
@@ -306,6 +327,27 @@ char *GetRandomHexStr(char *RetBuff, int len)
 char *GetRandomAlphabetStr(char *RetBuff, int len)
 {
     return(GetRandomData(RetBuff,len,ALPHA_CHARS));
+}
+
+
+//This Function eliminates characters from a string that can be used to trivially achieve code-exec via the shell
+char *MakeShellSafeString(char *RetStr, const char *String, int SafeLevel)
+{
+    char *Tempstr=NULL;
+    char *BadChars=";|&`";
+
+    if (SafeLevel==SHELLSAFE_BLANK)
+    {
+        Tempstr=CopyStr(RetStr,String);
+        strmrep(Tempstr,BadChars,' ');
+    }
+    else Tempstr=QuoteCharsInStr(RetStr,String,BadChars);
+
+    if (strcmp(Tempstr,String) !=0)
+    {
+        //if (EventCallback) EventCallback(String);
+    }
+    return(Tempstr);
 }
 
 

@@ -2065,7 +2065,6 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
             {
                 //nothing in either buffer! Stream empty. Is it closed?
                 if ((Out->OutEnd==0) && (result==STREAM_CLOSED)) break;
-                break;
             }
 
             result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,towrite);
@@ -2077,7 +2076,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 						}
         }
 
-
+				if (Flags & SENDFILE_FLUSH) STREAMFlush(Out);
         if (! (Flags & SENDFILE_LOOP)) break;
 
         if (Max==0) len=BUFSIZ;

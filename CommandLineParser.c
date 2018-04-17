@@ -19,6 +19,19 @@ CommandLineParserInit(CmdLine, argc, argv);
 return(CmdLine);
 }
 
+const char *CommandLineCurr(CMDLINE *CmdLine)
+{
+const char *ptr=NULL;
+
+if (CmdLine->curr < CmdLine->argc)
+{
+ptr=CmdLine->argv[CmdLine->curr];
+}
+
+return(ptr);
+}
+
+
 
 const char *CommandLineNext(CMDLINE *CmdLine)
 {
@@ -26,8 +39,8 @@ const char *ptr=NULL;
 
 if (CmdLine->curr < CmdLine->argc)
 {
-ptr=CmdLine->argv[CmdLine->curr];
 CmdLine->curr++;
+ptr=CmdLine->argv[CmdLine->curr];
 }
 
 return(ptr);

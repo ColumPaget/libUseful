@@ -23,6 +23,83 @@ char *TitleBuffer=NULL;
 int TitleLen=0;
 
 
+
+#ifdef USE_CAPABILITIES
+#ifdef HAVE_LIBCAP
+#include <sys/capability.h>
+
+int CapabilitySet(cap_t caps, cap_value_t Cap)
+{
+
+cap_set_flag(caps, CAP_EFFECTIVE, 1, &Cap, CAP_SET);
+cap_set_flag(caps, CAP_PERMITTED, 1, &Cap, CAP_SET);
+cap_set_flag(caps, CAP_INHERITABLE, 1, &Cap, CAP_SET);
+
+return(TRUE);
+}
+#endif
+#endif
+
+int ProcessSetCapabilities(const char *CapNames)
+{
+#ifdef USE_CAPABILITIES
+#ifdef HAVE_LIBCAP
+
+char *Token=NULL;
+const char *ptr;
+cap_t caps;
+
+caps=cap_get_proc();
+cap_clear(caps);
+ptr=GetToken(CapNames, ",",&Token,0);
+while (ptr)
+{
+if (strcasecmp(Token, "net-bind")==0) CapabilitySet(caps,  CAP_NET_BIND_SERVICE);
+else if (strcasecmp(Token, "net-admin")==0) CapabilitySet(caps,  CAP_NET_ADMIN);
+else if (strcasecmp(Token, "net-raw")==0) CapabilitySet(caps,  CAP_NET_RAW);
+else if (strcasecmp(Token, "net-bcast")==0) CapabilitySet(caps,  CAP_NET_BROADCAST);
+else if (strcasecmp(Token, "setuid")==0) CapabilitySet(caps,  CAP_SETUID);
+else if (strcasecmp(Token, "setgid")==0) CapabilitySet(caps,  CAP_SETGID);
+else if (strcasecmp(Token, "fsetid")==0) CapabilitySet(caps,  CAP_FSETID);
+else if (strcasecmp(Token, "chown")==0) CapabilitySet(caps,  CAP_CHOWN);
+else if (strcasecmp(Token, "mknod")==0) CapabilitySet(caps,  CAP_MKNOD);
+else if (strcasecmp(Token, "kill")==0) CapabilitySet(caps,  CAP_KILL);
+else if (strcasecmp(Token, "chroot")==0) CapabilitySet(caps,  CAP_SYS_CHROOT);
+else if (strcasecmp(Token, "reboot")==0) CapabilitySet(caps,  CAP_SYS_BOOT);
+else if (strcasecmp(Token, "nice")==0) CapabilitySet(caps,  CAP_SYS_NICE);
+else if (strcasecmp(Token, "time")==0) CapabilitySet(caps,  CAP_SYS_TIME);
+else if (strcasecmp(Token, "sys-admin")==0) CapabilitySet(caps,  CAP_SYS_ADMIN);
+else if (strcasecmp(Token, "rawio")==0) CapabilitySet(caps,  CAP_SYS_RAWIO);
+else if (strcasecmp(Token, "file-access")==0) CapabilitySet(caps,  CAP_DAC_OVERRIDE);
+else if (strcasecmp(Token, "audit")==0) 
+{
+CapabilitySet(caps,  CAP_AUDIT_CONTROL);
+CapabilitySet(caps,  CAP_AUDIT_READ);
+CapabilitySet(caps,  CAP_AUDIT_WRITE);
+}
+else if (strcasecmp(Token, "audit")==0) 
+{
+CapabilitySet(caps,  CAP_AUDIT_CONTROL);
+CapabilitySet(caps,  CAP_AUDIT_READ);
+CapabilitySet(caps,  CAP_AUDIT_WRITE);
+}
+
+
+
+ptr=GetToken(ptr, ",",&Token,0);
+}
+
+cap_set_proc(caps);
+setresuid(99,99,99);
+
+Destroy(Token);
+
+#endif
+#endif
+}
+
+
+
 //The command-line args that we've been passed (argv) will occupy a block of contiguous memory that
 //contains these args and the environment strings. In order to change the command-line args we isolate
 //this block of memory by iterating through all the strings in it, and making copies of them. The
@@ -163,6 +240,7 @@ void CloseOpenFiles()
 int SwitchUID(int uid)
 {
     const char *ptr;
+		struct passwd *pw;
 
     if ((uid==-1) || (setresuid(uid,uid,uid) !=0))
     {
@@ -170,6 +248,13 @@ int SwitchUID(int uid)
         if (LibUsefulGetBool("SwitchUserAllowFail")) return(FALSE);
         exit(1);
     }
+		pw=getpwuid(uid);
+		if (pw) 
+		{
+			setenv("HOME",pw->pw_dir,TRUE);
+			setenv("USER",pw->pw_name,TRUE);
+		}
+
     return(TRUE);
 }
 
@@ -238,7 +323,7 @@ void InitSigHandler(int sig)
 
 
 
-void ProcessContainerInit(int tunfd, int linkfd, pid_t Child)
+void ProcessContainerInit(int tunfd, int linkfd, pid_t Child, int RemoveRootDir)
 {
     int i;
     ListNode *Connections=NULL;
@@ -247,6 +332,7 @@ void ProcessContainerInit(int tunfd, int linkfd, pid_t Child)
     const char *ptr;
     struct sigaction sa;
 
+		/* //this feature not working yet
     if ((linkfd > -1) && (tunfd > -1))
     {
         Connections=ListCreate();
@@ -258,6 +344,7 @@ void ProcessContainerInit(int tunfd, int linkfd, pid_t Child)
         STREAMSetFlushType(TunS, FLUSH_ALWAYS, 0, 0);
         if (TunS) ListAddItem(Connections, TunS);
     }
+		*/
 
 
     //this process is init, the child will carry on executation
@@ -279,7 +366,12 @@ void ProcessContainerInit(int tunfd, int linkfd, pid_t Child)
     waitpid(Child,NULL,0);
 
     FileSystemUnMount("/proc","rmdir");
-    FileSystemUnMount("/","recurse,rmdir");
+    if (RemoveRootDir) FileSystemUnMount("/","recurse,rmdir");
+		else 
+		{
+			FileSystemUnMount("/","subdirs,rmdir");
+			FileSystemUnMount("/","recurse");
+		}
 
     STREAMClose(TunS);
     STREAMClose(LinkS);
@@ -334,27 +426,21 @@ int JoinNamespace(const char *Namespace, int type)
 }
 
 
-void ProcessContainer(const char *Config)
-{
-    char *ROMounts=NULL, *RWMounts=NULL;
-    char *Links=NULL, *PLinks=NULL;
-    char *HostName=NULL, *Dir=NULL;
-    char *Name=NULL, *Value=NULL;
-    char *Tempstr=NULL;
-    char *Namespace=NULL;
-    const char *ptr;
-    int i, val, Flags=0;
-    pid_t pid, child;
 
-    ROMounts=CopyStr(ROMounts, "/etc,/bin,/usr/bin,/lib,/usr/lib");
+void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
+{
+pid_t pid;
+char *Tempstr=NULL, *Name=NULL, *Value=NULL;
+char *ROMounts=NULL, *RWMounts=NULL;
+char *Links=NULL, *PLinks=NULL, *FileClones=NULL;
+const char *ptr, *tptr;
+struct stat Stat;
+
+
     ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
     while (ptr)
     {
-        if (strcasecmp(Name,"hostname")==0) HostName=CopyStr(HostName, Value);
-        else if (strcasecmp(Name,"dir")==0) Dir=CopyStr(Dir, Value);
-        else if (strcasecmp(Name,"ns")==0) Namespace=CopyStr(Namespace, Value);
-        else if (strcasecmp(Name,"namespace")==0) Namespace=CopyStr(Namespace, Value);
-        else if (strcasecmp(Name,"+net")==0) Flags |= PROC_CONTAINER_NET;
+        if (strcasecmp(Name,"+mnt")==0) ROMounts=MCatStr(ROMounts,",",Value,NULL);
         else if (strcasecmp(Name,"+mnt")==0) ROMounts=MCatStr(ROMounts,",",Value,NULL);
         else if (strcasecmp(Name,"mnt")==0) ROMounts=CopyStr(ROMounts,Value);
         else if (strcasecmp(Name,"+wmnt")==0) RWMounts=MCatStr(RWMounts,",",Value,NULL);
@@ -363,35 +449,89 @@ void ProcessContainer(const char *Config)
         else if (strcasecmp(Name,"link")==0) Links=CopyStr(Links,Value);
         else if (strcasecmp(Name,"+plink")==0) PLinks=MCatStr(PLinks,",",Value,NULL);
         else if (strcasecmp(Name,"plink")==0) PLinks=CopyStr(PLinks,Value);
-        else if (strcasecmp(Name,"container")==0)
-        {
-            if (StrValid(Value)) Dir=CopyStr(Dir, Value);
-        }
-
+        else if (strcasecmp(Name,"pclone")==0) FileClones=CopyStr(FileClones,Value);
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
 
     pid=getpid();
 
-#ifdef HAVE_UNSHARE
-#ifdef CLONE_NEWPID
-    if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWPID);
-    else unshare(CLONE_NEWPID);
-#endif
+    if (StrValid(Dir)) Tempstr=FormatStr(Tempstr,Dir,pid);
+    else Tempstr=FormatStr(Tempstr,"%d.container",pid);
 
-//fork again because CLONE_NEWPID only takes effect after another fork, and creates an 'init' process
-    child=fork();
-    if (child==0)
-    {
+    mkdir(Tempstr,0755);
+		if (Flags & PROC_ISOCUBE)	FileSystemMount("",Tempstr,"tmpfs","");
+    chdir(Tempstr);
+
+     ptr=GetToken(ROMounts,",",&Value,GETTOKEN_QUOTES);
+     while (ptr)
+     {
+         FileSystemMount(Value,"","bind","ro perms=755");
+         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
+     }
+
+     ptr=GetToken(RWMounts,",",&Value,GETTOKEN_QUOTES);
+     while (ptr)
+     {
+         FileSystemMount(Value,"","bind","perms=777");
+         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
+     }
+
+     ptr=GetToken(Links,",",&Value,GETTOKEN_QUOTES);
+     while (ptr)
+     {
+         link(Value,GetBasename(Value));
+         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
+     }
+
+     ptr=GetToken(PLinks,",",&Value,GETTOKEN_QUOTES);
+     while (ptr)
+     {
+				 tptr=Value;
+				 if (*tptr=='/') tptr++;
+         MakeDirPath(tptr,0755);
+         link(Value, tptr);
+         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
+     }
+
+     ptr=GetToken(FileClones,",",&Value,GETTOKEN_QUOTES);
+     while (ptr)
+     {
+				 tptr=Value;
+				 if (*tptr=='/') tptr++;
+         MakeDirPath(tptr,0755);
+				 FileCopy(Value, tptr);
+				 stat(Value, &Stat);
+				 chmod(tptr, Stat.st_mode);
+         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
+     }
+
+
+Destroy(Name);
+Destroy(Value);
+Destroy(Tempstr);
+Destroy(ROMounts);
+Destroy(RWMounts);
+Destroy(Links);
+Destroy(PLinks);
+Destroy(FileClones);
+}
+
+
+void ProcessContainerNamespace(const char *Namespace, const char *HostName, int Flags)
+{
+int val;
+
 #ifdef CLONE_NEWNET
         if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWNET);
         else if (! (Flags & PROC_CONTAINER_NET)) unshare(CLONE_NEWNET);
 #endif
 
+				if (Flags & PROC_CONTAINER)
+				{
         //do these all individually because any one of them might be rejected
 #ifdef CLONE_NEWIPC
-        if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWIPC);
-        else unshare(CLONE_NEWIPC);
+//        if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWIPC);
+//        else unshare(CLONE_NEWIPC);
 #endif
 
 #ifdef CLONE_NEWUTS
@@ -414,74 +554,134 @@ void ProcessContainer(const char *Config)
         if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWNS);
         else unshare(CLONE_NEWNS);
 #endif
+				}
+}
+
+
+
+void ProcessContainerSetEnvs(const char *Envs)
+{
+char *Name=NULL, *Value=NULL;
+const char *ptr;
+
+ptr=GetNameValuePair(Envs, ",","=", &Name, &Value);
+while (ptr)
+{
+setenv(Name, Value, TRUE);
+ptr=GetNameValuePair(ptr, ",","=", &Name, &Value);
+}
+Destroy(Name);
+Destroy(Value);
+}
+
+void ProcessContainer(const char *Config)
+{
+    char *HostName=NULL, *Dir=NULL, *SetupScript=NULL, *Namespace=NULL, *Envs=NULL;
+    char *Name=NULL, *Value=NULL;
+    char *Tempstr=NULL;
+    const char *ptr;
+    int i, val, Flags=0;
+    pid_t child;
+
+    ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
+    while (ptr)
+    {
+        if (strcasecmp(Name,"hostname")==0) HostName=CopyStr(HostName, Value);
+        else if (strcasecmp(Name,"dir")==0) Dir=CopyStr(Dir, Value);
+        else if (strcasecmp(Name,"+net")==0) Flags |= PROC_CONTAINER_NET;
+        else if (strcasecmp(Name,"-net")==0) Flags &= ~PROC_CONTAINER_NET;
+    		else if (strcasecmp(Name,"jailsetup")==0) SetupScript=CopyStr(SetupScript, Value);
+        else if ( 
+									(strcasecmp(Name,"ns")==0) ||
+        					(strcasecmp(Name,"namespace")==0) 
+								)
+				{
+						Namespace=CopyStr(Namespace, Value);
+        		Flags |= PROC_CONTAINER;
+				}
+        else if (strcasecmp(Name,"container")==0) 
+				{
+						if (StrValid(Value)) Dir=CopyStr(Dir, Value);
+        		Flags |= PROC_CONTAINER;
+				}
+        else if (strcasecmp(Name,"container+net")==0) 
+				{
+						if (StrValid(Value)) Dir=CopyStr(Dir, Value);
+        		Flags |= PROC_CONTAINER | PROC_CONTAINER_NET;
+				}
+				else if (strcasecmp(Name,"isocube")==0) 
+				{
+						if (StrValid(Value)) Dir=CopyStr(Dir, Value);
+						Flags |= PROC_ISOCUBE | PROC_CONTAINER;
+				}
+        else if (strcasecmp(Name,"setenv")==0)
+				{
+					Tempstr=QuoteCharsInStr(Tempstr, Value, ",");
+					Envs=MCatStr(Envs, Tempstr, ",",NULL);
+				}
+
+
+        ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
-    else if (! StrLen(Namespace)) ProcessContainerInit(-1, -1, child);
+
+
+		if (Flags & PROC_CONTAINER)
+		{
+#ifdef HAVE_UNSHARE
+#ifdef CLONE_NEWPID
+    if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWPID);
+    else unshare(CLONE_NEWPID);
+#endif
+#endif
+		ProcessContainerFilesys(Config, Dir, Flags);
+		}
+
+//fork again because CLONE_NEWPID only takes effect after another fork, and creates an 'init' process
+    child=fork();
+    if (child==0)
+    {
+		//must do proc after the fork so that CLONE_NEWPID takes effect
+	  mkdir("proc",0755);
+    FileSystemMount("","proc","proc","");
+
+	  if (StrValid(SetupScript)) system(SetupScript);
+
+
+#ifdef HAVE_UNSHARE
+		ProcessContainerNamespace(Namespace, HostName, Flags);
 #endif
 
-    if (! StrLen(Namespace))
-    {
-        if (StrValid(Dir)) Tempstr=FormatStr(Tempstr,Dir,pid);
-        else Tempstr=FormatStr(Tempstr,"%d.container",pid);
-
-        mkdir(Tempstr,700);
-        FileSystemMount("",Tempstr,"tmpfs","");
-        chdir(Tempstr);
-
-        ptr=GetToken(ROMounts,",",&Value,GETTOKEN_QUOTES);
-        while (ptr)
-        {
-            FileSystemMount(Value,"","bind","ro");
-            ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
-        }
-
-        ptr=GetToken(RWMounts,",",&Value,GETTOKEN_QUOTES);
-        while (ptr)
-        {
-            FileSystemMount(Value,"","bind","");
-            ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
-        }
-
-        ptr=GetToken(Links,",",&Value,GETTOKEN_QUOTES);
-        while (ptr)
-        {
-            link(Value,GetBasename(Value));
-            ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
-        }
-
-        ptr=GetToken(PLinks,",",&Value,GETTOKEN_QUOTES);
-        while (ptr)
-        {
-            MakeDirPath(Value,0777);
-            link(Value,Value);
-            ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
-        }
-
-
-        mkdir("proc",0700);
-        FileSystemMount("","proc","proc","");
-
-        if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
-        if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
-        LibUsefulFlags |= LU_CONTAINER | LU_ATEXIT_REGISTERED;
+			clearenv();
+			setenv("LD_LIBRARY_PATH","/lib:/usr/lib",TRUE);
+			ProcessContainerSetEnvs(Envs);
+					
+	    if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+	 	   if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
+ 		   LibUsefulFlags |= LU_CONTAINER | LU_ATEXIT_REGISTERED;
     }
+		//if we are given a namespace we assume there is already an init for it
+    else if (! StrValid(Namespace)) 
+		{
 
-    DestroyString(ROMounts);
-    DestroyString(RWMounts);
+			if ((! (Flags & PROC_ISOCUBE)) &&StrValid(Dir)) ProcessContainerInit(-1, -1, child, FALSE);
+			else ProcessContainerInit(-1, -1, child, TRUE);
+		}
+
     DestroyString(Tempstr);
+    DestroyString(SetupScript);
     DestroyString(HostName);
     DestroyString(Namespace);
     DestroyString(Name);
     DestroyString(Value);
-    DestroyString(Links);
-    DestroyString(PLinks);
     DestroyString(Dir);
 }
+
 
 
 int ProcessApplyConfig(const char *Config)
 {
     char *Chroot=NULL;
-    char *Name=NULL, *Value=NULL;
+    char *Name=NULL, *Value=NULL, *Capabilities=NULL;
     const char *ptr;
     struct rlimit limit;
     rlim_t val;
@@ -492,6 +692,7 @@ int ProcessApplyConfig(const char *Config)
     ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
     while (ptr)
     {
+
         if (strcasecmp(Name,"nice")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"prio")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"priority")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
@@ -507,12 +708,18 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
         else if (strcasecmp(Name,"jail")==0) Flags |= PROC_JAIL;
-        else if (strcasecmp(Name,"container")==0) Flags |= PROC_CONTAINER;
-        else if (strcasecmp(Name,"ns")==0) Flags |= PROC_CONTAINER;
-        else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"trust")==0) Flags |= SPAWN_TRUST_COMMAND;
         else if (strcasecmp(Name,"noshell")==0) Flags |= SPAWN_NOSHELL;
         else if (strcasecmp(Name,"arg0")==0) Flags |= SPAWN_ARG0;
+//container flags will be parsed again in ContainerInit, so we just se them all to 'PROC_CONTAINER' here
+        else if (strcasecmp(Name,"container")==0) Flags |= PROC_CONTAINER;
+        else if (strcasecmp(Name,"container+net")==0) Flags |= PROC_CONTAINER;
+				else if (strcasecmp(Name,"isocube")==0) Flags |= PROC_CONTAINER;
+        else if (strcasecmp(Name,"-net")==0) Flags |= PROC_CONTAINER;
+        else if (strcasecmp(Name,"ns")==0) Flags |= PROC_CONTAINER;
+        else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
+        else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
+        else if (strcasecmp(Name,"caps")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"mem")==0)
         {
             val=(rlim_t) FromMetric(Value, 0);
@@ -548,6 +755,7 @@ int ProcessApplyConfig(const char *Config)
             limit.rlim_max=val;
             setrlimit(RLIMIT_NPROC, &limit);
         }
+
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
 
@@ -617,9 +825,22 @@ int ProcessApplyConfig(const char *Config)
         if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
     }
 
+		if (StrValid(Capabilities)) 
+		{
+			ProcessSetCapabilities(Capabilities);
+
+#ifdef PR_SET_NO_NEW_PRIVS
+			#include <sys/prctl.h>
+			prctl(PR_SET_NO_NEW_PRIVS, 0, 0, 0, 0);
+#endif
+
+		}
+
+
     DestroyString(Value);
     DestroyString(Name);
     DestroyString(Chroot);
+    DestroyString(Capabilities);
 
     return(Flags);
 }

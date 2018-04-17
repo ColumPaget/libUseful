@@ -455,11 +455,12 @@ const char *GetNameValuePair(const char *Input, const char *PairDelim, const cha
     {
         if ((Token[0]=='"') || (Token[0]=='\''))
         {
-            StripQuotes(Token);
+           // StripQuotes(Token);
         }
-        ptr2=GetToken(Token,NameValueDelim,Name,GETTOKEN_HONOR_QUOTES);
+        ptr2=GetToken(Token,NameValueDelim,Name,GETTOKEN_QUOTES);
 //ptr2=GetToken(ptr2,PairDelim,Value,GETTOKEN_HONOR_QUOTES);
         *Value=CopyStr(*Value,ptr2);
+
         StripQuotes(*Name);
         StripQuotes(*Value);
     }

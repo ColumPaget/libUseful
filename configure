@@ -682,6 +682,7 @@ enable_namespaces
 enable_zlib
 enable_ssl
 enable_simd
+enable_capabilities
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1306,6 +1307,7 @@ Optional Features:
   --enable-zlib       use ZLib Compression
   --enable-ssl       use Secure Sockets Layer
   --enable-simd=<level>       use SIMD cpu extensions, 'level' can be one of mmx, sse, sse2
+  --enable-capabilities       enable linux capabilities support (default=no)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4275,6 +4277,80 @@ sse2) SIMD_CFLAGS="-mmmx -msse -msse2"
 esac
 
 
+cf_have_capabilities=no
+# Check whether --enable-capabilities was given.
+if test "${enable_capabilities+set}" = set; then :
+  enableval=$enable_capabilities; cf_use_capabilities=$enableval
+fi
+
+if test "$cf_use_capabilities" != "no"
+then
+ac_fn_c_check_header_mongrel "$LINENO" "sys/capability.h" "ac_cv_header_sys_capability_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_capability_h" = xyes; then :
+  cf_have_capabilities=yes
+fi
+
+
+ac_fn_c_check_header_mongrel "$LINENO" "linux/capability.h" "ac_cv_header_linux_capability_h" "$ac_includes_default"
+if test "x$ac_cv_header_linux_capability_h" = xyes; then :
+  cf_have_capabilities=yes
+fi
+
+
+fi
+
+if test "$cf_have_capabilities" = "yes"
+then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cap_init in -lcap" >&5
+$as_echo_n "checking for cap_init in -lcap... " >&6; }
+if ${ac_cv_lib_cap_cap_init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcap  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char cap_init ();
+int
+main ()
+{
+return cap_init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_cap_cap_init=yes
+else
+  ac_cv_lib_cap_cap_init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_cap_cap_init" >&5
+$as_echo "$ac_cv_lib_cap_cap_init" >&6; }
+if test "x$ac_cv_lib_cap_cap_init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBCAP 1
+_ACEOF
+
+  LIBS="-lcap $LIBS"
+
+fi
+
+$as_echo "#define USE_CAPABILITIES 1" >>confdefs.h
+
+fi
+
+
 ac_config_files="$ac_config_files Makefile"
 
 cat >confcache <<\_ACEOF
@@ -5477,5 +5553,12 @@ then
 echo "linux namespace support enabled"
 else
 echo "linux namespace support NOT enabled"
+fi
+
+if test "$cf_have_capabilities" = "yes"
+then
+echo "linux capabilities support enabled"
+else
+echo "linux capabilities support NOT enabled"
 fi
 

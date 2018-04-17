@@ -393,48 +393,34 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
 
 #define UMOUNT_RECURSE 1
 #define UMOUNT_RMDIR   2
+#define UMOUNT_SUBDIRS 4
 
-int FileSystemUnMount(const char *MountPoint, const char *Args)
+int FileSystemUnMountFlags(const char *MountPoint, int UnmountFlags, int ExtraFlags)
 {
-    int Flags=UMOUNT_NOFOLLOW;
-    int ExtraFlags=0;
-    char *Token=NULL;
-    const char *ptr;
-    struct stat FStat;
-    int i, result;
-    glob_t Glob;
+int result, i;
+char *Path=NULL;
+struct stat FStat;
+glob_t Glob;
 
-    ptr=GetToken(Args, " |,", &Token, GETTOKEN_MULTI_SEP);
-    while (ptr)
-    {
-        if (strcmp(Token,"follow")==0) Flags &= ~UMOUNT_NOFOLLOW;
-        if (strcmp(Token,"lazy")==0) Flags |= MNT_DETACH;
-        if (strcmp(Token,"detach")==0) Flags |= MNT_DETACH;
-        if (strcmp(Token,"recurse")==0) ExtraFlags |= UMOUNT_RECURSE;
-        if (strcmp(Token,"rmdir")==0) ExtraFlags |= UMOUNT_RMDIR;
-
-        ptr=GetToken(ptr, " |,", &Token, GETTOKEN_MULTI_SEP);
+if (ExtraFlags & UMOUNT_RECURSE)
+{
+   Path=MCopyStr(Path,MountPoint,"/*",NULL);
+   glob(Path, 0, 0, &Glob);
+   for (i=0; i < Glob.gl_pathc; i++)
+   {
+       stat(Glob.gl_pathv[i],&FStat);
+       if (S_ISDIR(FStat.st_mode))
+       {
+           FileSystemUnMountFlags(Glob.gl_pathv[i], UnmountFlags, ExtraFlags & ~UMOUNT_SUBDIRS);
+       }
     }
+globfree(&Glob);
+}
 
-    if (ExtraFlags & UMOUNT_RECURSE)
-    {
-        Token=MCopyStr(Token,MountPoint,"/*",NULL);
-        glob(Token, 0, 0, &Glob);
-        for (i=0; i < Glob.gl_pathc; i++)
-        {
-            stat(Glob.gl_pathv[i],&FStat);
-            if (S_ISDIR(FStat.st_mode))
-            {
-                FileSystemUnMount(Glob.gl_pathv[i], Args);
-            }
-        }
-        globfree(&Glob);
-    }
-
-
+if (ExtraFlags & UMOUNT_SUBDIRS) return(0);
 
 #ifdef HAVE_UMOUNT2
-    result=umount2(MountPoint, Flags);
+    result=umount2(MountPoint, UnmountFlags);
 #elif HAVE_UMOUNT
     result=umount(MountPoint);
 #elif HAVE_UNMOUNT
@@ -443,7 +429,35 @@ int FileSystemUnMount(const char *MountPoint, const char *Args)
     result=-1;
 #endif
 
-    if (ExtraFlags & UMOUNT_RMDIR) rmdir(MountPoint);
+if (ExtraFlags & UMOUNT_RMDIR) rmdir(MountPoint);
+
+Destroy(Path);
+return(result);
+}
+
+
+int FileSystemUnMount(const char *MountPoint, const char *Args)
+{
+    int Flags=UMOUNT_NOFOLLOW;
+    int ExtraFlags=0;
+    char *Token=NULL;
+    const char *ptr;
+    int result;
+
+    ptr=GetToken(Args, " |,", &Token, GETTOKEN_MULTI_SEP);
+    while (ptr)
+    {
+        if (strcmp(Token,"follow")==0) Flags &= ~UMOUNT_NOFOLLOW;
+        if (strcmp(Token,"lazy")==0) Flags |= MNT_DETACH;
+        if (strcmp(Token,"detach")==0) Flags |= MNT_DETACH;
+        if (strcmp(Token,"recurse")==0) ExtraFlags |= UMOUNT_RECURSE;
+        if (strcmp(Token,"subdirs")==0) ExtraFlags |= UMOUNT_SUBDIRS | UMOUNT_RECURSE;
+        if (strcmp(Token,"rmdir")==0) ExtraFlags |= UMOUNT_RMDIR;
+
+        ptr=GetToken(ptr, " |,", &Token, GETTOKEN_MULTI_SEP);
+    }
+
+		result=FileSystemUnMountFlags(MountPoint, Flags, ExtraFlags);
     DestroyString(Token);
 
     return(result);

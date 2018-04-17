@@ -17,6 +17,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define SUBS_STRIP_VARS_WHITESPACE 4
 #define SUBS_INTERPRET_BACKSLASH   8
 #define SUBS_QUOTES  16
+#define SUBS_SHELL_SAFE  32
 
 
 #ifdef __cplusplus

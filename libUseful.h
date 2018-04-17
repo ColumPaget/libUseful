@@ -45,6 +45,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "ConnectionChain.h"
 #include "SpawnPrograms.h"
 #include "DataParser.h"
+#include "CommandLineParser.h"
 #include "URL.h"
 #include "Pty.h"
 #include "Log.h"

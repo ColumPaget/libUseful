@@ -71,9 +71,6 @@ procs=value      resource limit for max number of processes ON A PER USER BASIS.
 extern "C" {
 #endif
 
-#define SHELLSAFE_BLANK 1
-
-char *MakeShellSafeString(char *RetStr, const char *String, int SafeLevel);
 
 //call exec ON THE CURRENT PROCESS, switching it to be a different program (this doesn't spawn, it changes the process you're running)
 void SwitchProgram(const char *CommandLine, const char *Config);

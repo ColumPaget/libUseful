@@ -9,25 +9,6 @@
 #include <sys/ioctl.h>
 
 
-//This Function eliminates characters from a string that can be used to trivially achieve code-exec via the shell
-char *MakeShellSafeString(char *RetStr, const char *String, int SafeLevel)
-{
-    char *Tempstr=NULL;
-    char *BadChars=";|&`";
-
-    if (SafeLevel==SHELLSAFE_BLANK)
-    {
-        Tempstr=CopyStr(RetStr,String);
-        strmrep(Tempstr,BadChars,' ');
-    }
-    else Tempstr=QuoteCharsInStr(RetStr,String,BadChars);
-
-    if (strcmp(Tempstr,String) !=0)
-    {
-        //if (EventCallback) EventCallback(String);
-    }
-    return(Tempstr);
-}
 
 
 //This is the function we call in the child process for 'SpawnCommand'

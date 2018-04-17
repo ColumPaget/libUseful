@@ -167,6 +167,21 @@ sse2) AC_SUBST(SIMD_CFLAGS,"-mmmx -msse -msse2");;
 esac
 
 
+cf_have_capabilities=no
+AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval )
+if test "$cf_use_capabilities" != "no"
+then
+AC_CHECK_HEADER(sys/capability.h,cf_have_capabilities=yes,,)
+AC_CHECK_HEADER(linux/capability.h,cf_have_capabilities=yes,,)
+fi
+
+if test "$cf_have_capabilities" = "yes"
+then
+AC_CHECK_LIB(cap,cap_init,,)
+AC_DEFINE([USE_CAPABILITIES])
+fi
+
+
 dnl read Makefile.in and write Makefile 
 AC_OUTPUT(Makefile)
 
@@ -214,5 +229,12 @@ then
 echo "linux namespace support enabled"
 else
 echo "linux namespace support NOT enabled"
+fi
+
+if test "$cf_have_capabilities" = "yes"
+then
+echo "linux capabilities support enabled"
+else
+echo "linux capabilities support NOT enabled"
 fi
 

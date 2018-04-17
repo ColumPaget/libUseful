@@ -168,6 +168,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SENDFILE_KERNEL 1   //enables use of the 'sendfile' kernel syscall
 #define SENDFILE_LOOP   2   //keep copying bytes until required number transfered
 #define SENDFILE_NOREAD 4   //
+#define SENDFILE_FLUSH  8   //
 
 
 

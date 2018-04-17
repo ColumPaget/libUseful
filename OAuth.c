@@ -136,7 +136,7 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
 {
     int result;
     char *Tempstr=NULL, *Token=NULL;
-    const char *ptr;
+    const char *ptr, *tptr;
     STREAM *S;
 
     result=IPServerAccept(sock, NULL);
@@ -151,7 +151,14 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
             ptr=GetToken(Tempstr,"\\S", &Token,0);
             //URL
             ptr=GetToken(ptr,"\\S", &Token,0);
-            if (ptr) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Token);
+            if (ptr) 
+						{
+							tptr=strchr(Token, '?');
+							if (tptr) tptr++;
+							else tptr=Token;
+							OAuthParseReply(Ctx, "application/x-www-form-urlencoded", tptr);
+						}
+
 
             while (Tempstr)
             {
@@ -199,6 +206,7 @@ int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
         else if (FD_ISSET(0, &fds))
         {
             S=STREAMFromFD(0);
+						STREAMSetTimeout(S,0);
             Tempstr=STREAMReadLine(Tempstr, S);
             if ( (strncmp(Tempstr, "http:", 5)==0) || (strncmp(Tempstr, "https:", 6)==0) ) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
             else

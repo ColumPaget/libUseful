@@ -312,6 +312,7 @@ int PseudoTTYGrab(int *pty, int *tty, int TermFlags)
 {
     char c1,c2;
     char *Tempstr=NULL;
+		struct termios tty_conf;
 
 //first try unix98 style
     *pty=open("/dev/ptmx",O_RDWR);
@@ -330,7 +331,7 @@ int PseudoTTYGrab(int *pty, int *tty, int TermFlags)
         {
             if ( (*tty=open(Tempstr,O_RDWR)) >-1)
             {
-                TTYConfig(*tty,0,TermFlags);
+                if (TermFlags !=0) TTYConfig(*tty,0,TermFlags);
                 DestroyString(Tempstr);
                 return(1);
             }

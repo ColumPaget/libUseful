@@ -257,9 +257,17 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
     {
         if (strchr(CharList,*ptr))
         {
+						if (*ptr==' ')
+						{
+            RetStr=AddCharToBuffer(RetStr,olen,'+');
+						olen++;
+						}
+						else
+						{
             Token=FormatStr(Token,"%%%02X",*ptr);
             RetStr=CatStr(RetStr,Token);
             olen+=StrLen(Token);
+						}
         }
         else
         {
@@ -278,57 +286,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
 
 char *HTTPQuote(char *RetBuff, const char *Str)
 {
-    char *RetStr=NULL, *Token=NULL;
-    const char *ptr;
-    int olen=0, ilen;
-
-    RetStr=CopyStr(RetStr,"");
-    ilen=StrLen(Str);
-
-    for (ptr=Str; ptr < (Str+ilen); ptr++)
-    {
-        switch (*ptr)
-        {
-        case ' ':
-            RetStr=AddCharToStr(RetStr,'+');
-            break;
-
-        case '%':
-        case '(':
-        case ')':
-        case '[':
-        case ']':
-        case '{':
-        case '}':
-        case '\t':
-        case '?':
-        case '&':
-        case '!':
-        case ',':
-        case '+':
-        case '\'':
-        case ':':
-        case ';':
-        case '/':
-        case '\r':
-        case '\n':
-        case '"':
-            Token=FormatStr(Token,"%%%02X",*ptr);
-            RetStr=CatStr(RetStr,Token);
-            olen+=StrLen(Token);
-            break;
-
-        default:
-            //	 RetStr=AddCharToBuffer(RetStr,olen,*ptr);
-            RetStr=AddCharToStr(RetStr,*ptr);
-            olen++;
-            break;
-        }
-
-    }
-
-    DestroyString(Token);
-    return(RetStr);
+return(HTTPQuoteChars(RetBuff, Str, " \t\r\n\"#%()[]{}?&!,+':;/"));
 }
 
 
@@ -440,6 +398,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
 
     if (strcasecmp(Method,"POST")==0) ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, &Args);
     else ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, NULL);
+
     if (StrValid(Token)) Info->Port=atoi(Token);
 
     if (StrValid(User) || StrValid(Pass)) Info->UserName=CopyStr(Info->UserName, User);
@@ -795,6 +754,7 @@ char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info
     int len, passlen;
 
     if (StrEnd(AuthInfo)) return(RetStr);
+    if (Info->AuthFlags & (HTTP_AUTH_TOKEN | HTTP_AUTH_OAUTH)) return(MCatStr(RetStr, AuthHeader,": ",AuthInfo,"\r\n",NULL));
 
     SendStr=CatStr(RetStr,"");
 
@@ -805,8 +765,9 @@ char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info
 
     if (! passlen) passlen=CredsStoreLookup(Info->Host, Info->UserName, &p_Password);
 
-    if (Info->AuthFlags & (HTTP_AUTH_TOKEN | HTTP_AUTH_OAUTH)) SendStr=MCatStr(SendStr,AuthHeader,": ",AuthInfo,"\r\n",NULL);
-    else if (Info->AuthFlags & HTTP_AUTH_DIGEST)
+		if (passlen)
+		{
+    if (Info->AuthFlags & HTTP_AUTH_DIGEST)
     {
         Tempstr=HTTPDigest(Tempstr, Info->Method, Info->UserName, p_Password, Realm, Info->Doc, Nonce);
         SendStr=MCatStr(SendStr,AuthHeader,": Digest ", Tempstr, "\r\n",NULL);
@@ -829,6 +790,7 @@ char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info
     }
 
     Info->AuthFlags |= HTTP_AUTH_SENT;
+		}
 
     DestroyString(Tempstr);
     DestroyString(Logon);
@@ -880,7 +842,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
     {
         Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, FALSE), NULL);
     }
-    if (Info->Authorization) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
+    if (StrValid(Info->Authorization)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
     else if (Info->AuthFlags & HTTP_AUTH_HOST) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Host);
     if (Info->ProxyAuthorization) SendStr=HTTPHeadersAppendAuth(SendStr, "Proxy-Authorization", Info, Info->ProxyAuthorization);
 
