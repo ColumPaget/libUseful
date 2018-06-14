@@ -76,17 +76,17 @@ extern "C" {
 void SwitchProgram(const char *CommandLine, const char *Config);
 
 //fork, except with the options described above. Returns pid as per 'fork'.
-int xfork(const char *Config);
-
+pid_t xfork(const char *Config);
 
 //fork, setting stdin, stdout and stderr to the supplied file descriptors
-int xforkio(int StdIn, int StdOut, int StdErr);
+pid_t xforkio(int StdIn, int StdOut, int StdErr);
 
 //fork then run a program with the options described above, and settings StdIn, StdOut and StdErr to the supplied file descriptors
-int SpawnWithIO(const char *CommandLine, const char *Config, int StdIn, int StdOut, int StdErr);
+pid_t SpawnWithIO(const char *CommandLine, const char *Config, int StdIn, int StdOut, int StdErr);
 
 //fork, then run progam with options described above
-int Spawn(const char *ProgName, const char *Config);
+#define Spawn(ProgName, Config) SpawnWithIO((ProgName), (Config), 0, 1, 2)
+
 
 /* This creates a child process that we can talk to using a couple of pipes*/
 pid_t PipeSpawnFunction(int *infd,int  *outfd,int  *errfd, BASIC_FUNC Func, void *Data, const char *Config);

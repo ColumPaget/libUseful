@@ -74,6 +74,9 @@ double FromSIUnit(const char *Data, int BAse);
 #define FromMetric(Value, Precision) (FromSIUnit((Value), 1000))
 
 
+int fd_remap(int fd, int newfd);
+int fd_remap_path(int fd, const char *Path, int Flags);
+
 //lookup uid for User
 int LookupUID(const char *User);
 

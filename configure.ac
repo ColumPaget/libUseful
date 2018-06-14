@@ -13,11 +13,13 @@ AC_SYS_LARGEFILE
 cf_have_libssl=no
 cf_have_libcrypto=no
 cf_have_libz=no
+
+cf_have_ptsname_r=no
+cf_have_clearenv=no
+
 cf_use_simd=no
 cf_use_sendfile=no
-cf_have_ptsname_r=no
-cf_have_setxattr=no
-cf_have_getxattr=no
+cf_use_xattr=no
 
 
 AC_CHECK_LIB(c,ptsname_r,,)
@@ -25,6 +27,13 @@ cf_have_ptsname_r=$ac_cv_lib_c_ptsname_r
 if test "$cf_have_ptsname_r" = "yes"
 then
 AC_DEFINE([HAVE_PTSNAME_R])
+fi
+
+AC_CHECK_LIB(c,clearenv,,)
+cf_have_clearenv=$ac_cv_lib_c_clearenv
+if test "$cf_have_clearenv" = "yes"
+then
+AC_DEFINE([HAVE_CLEARENV])
 fi
 
 
@@ -49,13 +58,6 @@ then
 AC_DEFINE([HAVE_MKOSTEMP])
 fi
 
-AC_CHECK_LIB(c,getxattr,,)
-cf_have_getxattr=$ac_cv_lib_c_getxattr
-if test "$cf_have_getxattr" = "yes"
-then
-AC_DEFINE([HAVE_XATTR])
-fi
-
 
 
 AC_ARG_ENABLE(sendfile, [  --enable-sendfile       enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval )
@@ -77,6 +79,19 @@ AC_ARG_ENABLE(ip6, [  --enable-ip6       enable IPv6 support], cf_use_ip6=$enabl
 if test "$cf_use_ip6" = "yes"
 then
 AC_DEFINE([USE_INET6],1)
+fi
+
+
+AC_ARG_ENABLE(xattr, [  --enable-xattr       enable filesystem xattr support], cf_use_xattr=$enableval )
+
+if test "$cf_use_xattr" = "yes"
+then
+AC_CHECK_LIB(c,getxattr,,)
+cf_have_getxattr=$ac_cv_lib_c_getxattr
+if test "$cf_have_getxattr" = "yes"
+then
+AC_DEFINE([HAVE_XATTR])
+fi
 fi
 
 
@@ -194,6 +209,14 @@ echo "Largefiles ( > 2GB ) enabled"
 else
 echo "Largefiles ( > 2GB ) NOT enabled"
 fi
+
+if test "$cf_have_getxattr" = "yes"
+then
+echo "Filesystem attribues (xattr) enabled"
+else
+echo "Filesystem attribues (xattr) NOT enabled"
+fi
+
 
 if test "$cf_use_sendfile" = "yes"
 then

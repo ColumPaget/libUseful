@@ -711,23 +711,16 @@ int PBK2DF2(char **Return, char *Type, char *Bytes, int Len, char *Salt, int Sal
 }
 
 
-int HashFile(char **Return, const char *Type, const char *Path, int Encoding)
+int HashSTREAM(char **Return, const char *Type, STREAM *S, int Encoding)
 {
     HASH *Hash;
-    STREAM *S;
     char *Tempstr=NULL;
     int result;
 
-    S=STREAMOpen(Path,"r");
     if (! S) return(FALSE);
 
     Hash=HashInit(Type);
-    if (! Hash)
-    {
-        STREAMClose(S);
-        return(FALSE);
-    }
-
+    if (! Hash) return(FALSE);
 
     Tempstr=SetStrLen(Tempstr,4096);
     result=STREAMReadBytes(S,Tempstr,4096);
@@ -738,7 +731,6 @@ int HashFile(char **Return, const char *Type, const char *Path, int Encoding)
     }
 
     DestroyString(Tempstr);
-    STREAMClose(S);
 
     result=HashFinish(Hash, Encoding, Return);
 
@@ -746,5 +738,19 @@ int HashFile(char **Return, const char *Type, const char *Path, int Encoding)
 }
 
 
+int HashFile(char **Return, const char *Type, const char *Path, int Encoding)
+{
+int result=FALSE;
+STREAM *S;
+
+S=STREAMOpen(Path,"r");
+if (S) 
+{
+	result=HashSTREAM(Return, Type, S, Encoding);
+	STREAMClose(S);
+}
+
+return(result);
+}
 
 

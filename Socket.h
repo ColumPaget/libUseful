@@ -30,6 +30,15 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define BIND_CLOEXEC 2
 #define BIND_RAW 4
 
+//This is not defined on all systems, so add it here
+#ifndef HOST_NAME_MAX
+#if defined(__APPLE__)
+#define HOST_NAME_MAX 255
+#else
+#define HOST_NAME_MAX 64
+#endif /* __APPLE__ */
+#endif /* HOST_NAME_MAX */
+
 
 #ifdef __cplusplus
 extern "C" {

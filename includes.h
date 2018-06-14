@@ -7,6 +7,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define LIBUSEFUL_INCLUDES_H
 
 #define _GNU_SOURCE
+#define _USE_POSIX
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -24,6 +25,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include <stdlib.h>
 #include <limits.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "defines.h"
 #include "String.h"

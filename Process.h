@@ -29,6 +29,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define SPAWN_TRUST_COMMAND 16384
 #define SPAWN_ARG0 32768
 
+#define PROC_SETUP_FAIL 65536
+
 
 #ifdef __cplusplus
 extern "C" {

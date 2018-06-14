@@ -129,6 +129,7 @@ int FindFilesInPath(const char *File, const char *Path, ListNode *Files)
         ptr=""; //so we execute once below
     }
     else ptr=GetToken(Path,":",&CurrPath,0);
+
     while (ptr)
     {
         CurrPath=SlashTerminateDirectoryPath(CurrPath);
@@ -395,30 +396,45 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
 #define UMOUNT_RMDIR   2
 #define UMOUNT_SUBDIRS 4
 
-int FileSystemUnMountFlags(const char *MountPoint, int UnmountFlags, int ExtraFlags)
+
+int FileSystemUnMountFlagsDepth(const char *MountPoint, int UnmountFlags, int ExtraFlags, int Depth, int MaxDepth)
 {
 int result, i;
 char *Path=NULL;
 struct stat FStat;
 glob_t Glob;
 
+if (strcmp(MountPoint,"/proc")==0) MaxDepth=10;
+if (strcmp(MountPoint,"/sys")==0) MaxDepth=10;
+if (strcmp(MountPoint,"/dev")==0) MaxDepth=10;
+
+
+
 if (ExtraFlags & UMOUNT_RECURSE)
 {
+	if ((MaxDepth ==0) || (Depth <= MaxDepth))
+	{
    Path=MCopyStr(Path,MountPoint,"/*",NULL);
    glob(Path, 0, 0, &Glob);
    for (i=0; i < Glob.gl_pathc; i++)
    {
-       stat(Glob.gl_pathv[i],&FStat);
+       if (stat(Glob.gl_pathv[i],&FStat)==0)
+			 {
        if (S_ISDIR(FStat.st_mode))
        {
-           FileSystemUnMountFlags(Glob.gl_pathv[i], UnmountFlags, ExtraFlags & ~UMOUNT_SUBDIRS);
+           FileSystemUnMountFlagsDepth(Glob.gl_pathv[i], UnmountFlags, ExtraFlags & ~UMOUNT_SUBDIRS, Depth+1, MaxDepth);
        }
+			 }
     }
-globfree(&Glob);
+		globfree(&Glob);
+	}
 }
 
 if (ExtraFlags & UMOUNT_SUBDIRS) return(0);
 
+result=0;
+while (result > -1)
+{
 #ifdef HAVE_UMOUNT2
     result=umount2(MountPoint, UnmountFlags);
 #elif HAVE_UMOUNT
@@ -428,6 +444,7 @@ if (ExtraFlags & UMOUNT_SUBDIRS) return(0);
 #else
     result=-1;
 #endif
+}
 
 if (ExtraFlags & UMOUNT_RMDIR) rmdir(MountPoint);
 
@@ -435,6 +452,11 @@ Destroy(Path);
 return(result);
 }
 
+
+int FileSystemUnMountFlags(const char *MountPoint, int UnmountFlags, int ExtraFlags)
+{
+return(FileSystemUnMountFlagsDepth(MountPoint, UnmountFlags, ExtraFlags, 0, 0));
+}
 
 int FileSystemUnMount(const char *MountPoint, const char *Args)
 {

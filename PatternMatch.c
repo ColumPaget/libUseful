@@ -273,6 +273,7 @@ int pmatch_repeat(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
 
     SubPattern=CopyStrLen(SubPattern,ptr,*P_PtrPtr - ptr);
 
+		/*
     sp_ptr=strchr(SubPattern,'|');
     if (sp_ptr)
     {
@@ -286,6 +287,7 @@ int pmatch_repeat(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
             if (result==MATCH_FAIL) break;
         }
     }
+		*/
 
     (*S_PtrPtr)--;
     (*P_PtrPtr)++;
@@ -330,9 +332,6 @@ int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
     switch (P_Char)
     {
     case '\0':
-        result=MATCH_FOUND;
-        break;
-    case '|':
         result=MATCH_FOUND;
         break;
     case '*':
@@ -421,8 +420,6 @@ int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End,
         P_Ptr=(*P_PtrPtr)+1;
         //out of pattern, must be a match!
         result=pmatch_search(&P_Ptr, &S_Ptr, S_End, MatchStart, MatchEnd, Flags);
-
-
         if (result == MATCH_ONE)
         {
             *P_PtrPtr=P_Ptr;
@@ -583,7 +580,7 @@ int pmatch_process(const char **Compiled, const char *String, int len, ListNode 
 void pmatch_compile(const char *Pattern, const char ***Compiled)
 {
     int NoOfRecords=0, NoOfItems=0;
-    const char *ptr;
+    const char *ptr, *start;
 
     ptr=Pattern;
 
@@ -596,8 +593,9 @@ void pmatch_compile(const char *Pattern, const char ***Compiled)
             NoOfRecords+=10;
             *Compiled=(const char **) realloc(*Compiled,NoOfRecords*sizeof(char *));
         }
-        (*Compiled)[NoOfItems-1]=ptr;
+				start=ptr;
         while ((*ptr !='\0') && (*ptr != '|')) ptr++;
+        (*Compiled)[NoOfItems-1]=CopyStrLen(NULL, start, ptr-start);
         if (*ptr=='|') ptr++;
     }
 
@@ -611,7 +609,7 @@ int pmatch(const char *Pattern, const char *String, int Len, ListNode *Matches, 
 {
     const char **Compiled=NULL;
     const char *s_ptr, *s_end;
-    int result=0;
+    int result=0, i;
 
     pmatch_compile(Pattern,&Compiled);
 
@@ -638,6 +636,10 @@ int pmatch(const char *Pattern, const char *String, int Len, ListNode *Matches, 
     				}
     */
 
-    if (Compiled) free(Compiled);
+    if (Compiled) 
+		{
+			for (i=0; Compiled[i] !=NULL; i++) Destroy(Compiled[i]);
+			free(Compiled);
+		}
     return(result);
 }

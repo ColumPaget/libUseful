@@ -20,10 +20,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 //__TIME__
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <stdio.h>
+#include "includes.h"
 #include "memory.h"
 #include "Socket.h"
 #include "UnixSocket.h"

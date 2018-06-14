@@ -93,6 +93,26 @@ void *ArrayGetItem(void *array[], int pos)
 
 
 
+//remap one fd to another, usually used to change stdin, stdout or stderr
+int fd_remap(int fd, int newfd)
+{
+	close(fd);
+	dup(newfd);
+	return(TRUE);
+}
+
+int fd_remap_path(int fd, const char *Path, int Flags)
+{
+int newfd;
+int result;
+
+newfd=open(Path, Flags);
+if (newfd==-1) return(FALSE);
+result=fd_remap(fd, newfd);
+close(newfd);
+}
+
+
 
 double ToPower(double val, double power)
 {

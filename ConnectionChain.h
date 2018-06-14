@@ -20,7 +20,7 @@ a PIPE-seperated list of 'connection hops' (proxy servers) that are to be used f
 the program. e.g.
 
 
-if (! SetGlobalConnectionChain("socks5:127.0.0.1|https:89.40.24.6:8080|socks5:16.22.22.1:1080))
+if (! SetGlobalConnectionChain("socks5:127.0.0.1|https:89.40.24.6:8080|socks5:16.22.22.1:1080"))
 {
 printf("ERROR! Failed to SetGlobalConnectionChain\n");
 }

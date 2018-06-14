@@ -678,6 +678,7 @@ enable_option_checking
 enable_largefile
 enable_sendfile
 enable_ip6
+enable_xattr
 enable_namespaces
 enable_zlib
 enable_ssl
@@ -1303,6 +1304,7 @@ Optional Features:
   --disable-largefile     omit support for large files
   --enable-sendfile       enable 'fastcopy' sendfile support
   --enable-ip6       enable IPv6 support
+  --enable-xattr       enable filesystem xattr support
   --enable-namespaces       enable linux namespace support
   --enable-zlib       use ZLib Compression
   --enable-ssl       use Secure Sockets Layer
@@ -3559,11 +3561,13 @@ fi
 cf_have_libssl=no
 cf_have_libcrypto=no
 cf_have_libz=no
+
+cf_have_ptsname_r=no
+cf_have_clearenv=no
+
 cf_use_simd=no
 cf_use_sendfile=no
-cf_have_ptsname_r=no
-cf_have_setxattr=no
-cf_have_getxattr=no
+cf_use_xattr=no
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ptsname_r in -lc" >&5
@@ -3615,6 +3619,58 @@ cf_have_ptsname_r=$ac_cv_lib_c_ptsname_r
 if test "$cf_have_ptsname_r" = "yes"
 then
 $as_echo "#define HAVE_PTSNAME_R 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for clearenv in -lc" >&5
+$as_echo_n "checking for clearenv in -lc... " >&6; }
+if ${ac_cv_lib_c_clearenv+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char clearenv ();
+int
+main ()
+{
+return clearenv ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_c_clearenv=yes
+else
+  ac_cv_lib_c_clearenv=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_clearenv" >&5
+$as_echo "$ac_cv_lib_c_clearenv" >&6; }
+if test "x$ac_cv_lib_c_clearenv" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBC 1
+_ACEOF
+
+  LIBS="-lc $LIBS"
+
+fi
+
+cf_have_clearenv=$ac_cv_lib_c_clearenv
+if test "$cf_have_clearenv" = "yes"
+then
+$as_echo "#define HAVE_CLEARENV 1" >>confdefs.h
 
 fi
 
@@ -3775,58 +3831,6 @@ $as_echo "#define HAVE_MKOSTEMP 1" >>confdefs.h
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getxattr in -lc" >&5
-$as_echo_n "checking for getxattr in -lc... " >&6; }
-if ${ac_cv_lib_c_getxattr+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lc  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char getxattr ();
-int
-main ()
-{
-return getxattr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_c_getxattr=yes
-else
-  ac_cv_lib_c_getxattr=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_getxattr" >&5
-$as_echo "$ac_cv_lib_c_getxattr" >&6; }
-if test "x$ac_cv_lib_c_getxattr" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBC 1
-_ACEOF
-
-  LIBS="-lc $LIBS"
-
-fi
-
-cf_have_getxattr=$ac_cv_lib_c_getxattr
-if test "$cf_have_getxattr" = "yes"
-then
-$as_echo "#define HAVE_XATTR 1" >>confdefs.h
-
-fi
-
 
 
 # Check whether --enable-sendfile was given.
@@ -3882,6 +3886,68 @@ if test "$cf_use_ip6" = "yes"
 then
 $as_echo "#define USE_INET6 1" >>confdefs.h
 
+fi
+
+
+# Check whether --enable-xattr was given.
+if test "${enable_xattr+set}" = set; then :
+  enableval=$enable_xattr; cf_use_xattr=$enableval
+fi
+
+
+if test "$cf_use_xattr" = "yes"
+then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for getxattr in -lc" >&5
+$as_echo_n "checking for getxattr in -lc... " >&6; }
+if ${ac_cv_lib_c_getxattr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lc  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char getxattr ();
+int
+main ()
+{
+return getxattr ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_c_getxattr=yes
+else
+  ac_cv_lib_c_getxattr=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_c_getxattr" >&5
+$as_echo "$ac_cv_lib_c_getxattr" >&6; }
+if test "x$ac_cv_lib_c_getxattr" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBC 1
+_ACEOF
+
+  LIBS="-lc $LIBS"
+
+fi
+
+cf_have_getxattr=$ac_cv_lib_c_getxattr
+if test "$cf_have_getxattr" = "yes"
+then
+$as_echo "#define HAVE_XATTR 1" >>confdefs.h
+
+fi
 fi
 
 
@@ -5518,6 +5584,14 @@ echo "Largefiles ( > 2GB ) enabled"
 else
 echo "Largefiles ( > 2GB ) NOT enabled"
 fi
+
+if test "$cf_have_getxattr" = "yes"
+then
+echo "Filesystem attribues (xattr) enabled"
+else
+echo "Filesystem attribues (xattr) NOT enabled"
+fi
+
 
 if test "$cf_use_sendfile" = "yes"
 then

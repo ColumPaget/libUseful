@@ -1,5 +1,4 @@
 #include "Process.h"
-#define _GNU_SOURCE
 #include "errno.h"
 #include "includes.h"
 #include "Time.h"
@@ -360,10 +359,10 @@ void ProcessContainerInit(int tunfd, int linkfd, pid_t Child, int RemoveRootDir)
         S=STREAMSelect(Connections, NULL);
         if (S==TunS) STREAMSendFile(S, LinkS, BUFSIZ, SENDFILE_KERNEL);
         else if (S==LinkS) STREAMSendFile(S, TunS, BUFSIZ, SENDFILE_KERNEL);
-        if (waitpid(Child,NULL,WNOHANG) == -1) break;
+        if (waitpid(-1, NULL,WNOHANG) == -1) break;
     }
 
-    waitpid(Child,NULL,0);
+    while (waitpid(-1,NULL,0) != -1);
 
     FileSystemUnMount("/proc","rmdir");
     if (RemoveRootDir) FileSystemUnMount("/","recurse,rmdir");
@@ -462,6 +461,9 @@ struct stat Stat;
 		if (Flags & PROC_ISOCUBE)	FileSystemMount("",Tempstr,"tmpfs","");
     chdir(Tempstr);
 
+		//always make a tmp directory
+	  mkdir("tmp",0777);
+
      ptr=GetToken(ROMounts,",",&Value,GETTOKEN_QUOTES);
      while (ptr)
      {
@@ -499,9 +501,13 @@ struct stat Stat;
 				 tptr=Value;
 				 if (*tptr=='/') tptr++;
          MakeDirPath(tptr,0755);
-				 FileCopy(Value, tptr);
 				 stat(Value, &Stat);
+				 if (S_ISCHR(Stat.st_mode) || S_ISBLK(Stat.st_mode)) mknod(tptr, Stat.st_mode, Stat.st_rdev);
+				 else
+				 {
+				 FileCopy(Value, tptr);
 				 chmod(tptr, Stat.st_mode);
+				 }
          ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
      }
 
@@ -564,6 +570,12 @@ void ProcessContainerSetEnvs(const char *Envs)
 char *Name=NULL, *Value=NULL;
 const char *ptr;
 
+#ifdef HAVE_CLEARENV
+clearenv();
+#endif
+
+setenv("LD_LIBRARY_PATH","/lib:/usr/lib",TRUE);
+
 ptr=GetNameValuePair(Envs, ",","=", &Name, &Value);
 while (ptr)
 {
@@ -574,13 +586,17 @@ Destroy(Name);
 Destroy(Value);
 }
 
-void ProcessContainer(const char *Config)
+
+
+int ProcessContainer(const char *Config)
 {
-    char *HostName=NULL, *Dir=NULL, *SetupScript=NULL, *Namespace=NULL, *Envs=NULL;
+    char *HostName=NULL, *SetupScript=NULL, *Namespace=NULL, *Envs=NULL;
+		char *Dir=NULL, *ChRoot=NULL;
     char *Name=NULL, *Value=NULL;
     char *Tempstr=NULL;
     const char *ptr;
     int i, val, Flags=0;
+		int result=TRUE;
     pid_t child;
 
     ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
@@ -601,17 +617,17 @@ void ProcessContainer(const char *Config)
 				}
         else if (strcasecmp(Name,"container")==0) 
 				{
-						if (StrValid(Value)) Dir=CopyStr(Dir, Value);
+						if (StrValid(Value)) ChRoot=CopyStr(ChRoot, Value);
         		Flags |= PROC_CONTAINER;
 				}
         else if (strcasecmp(Name,"container+net")==0) 
 				{
-						if (StrValid(Value)) Dir=CopyStr(Dir, Value);
+						if (StrValid(Value)) ChRoot=CopyStr(ChRoot, Value);
         		Flags |= PROC_CONTAINER | PROC_CONTAINER_NET;
 				}
 				else if (strcasecmp(Name,"isocube")==0) 
 				{
-						if (StrValid(Value)) Dir=CopyStr(Dir, Value);
+						if (StrValid(Value)) ChRoot=CopyStr(ChRoot, Value);
 						Flags |= PROC_ISOCUBE | PROC_CONTAINER;
 				}
         else if (strcasecmp(Name,"setenv")==0)
@@ -633,10 +649,16 @@ void ProcessContainer(const char *Config)
     else unshare(CLONE_NEWPID);
 #endif
 #endif
-		ProcessContainerFilesys(Config, Dir, Flags);
+
+		if (! StrValid(ChRoot)) 
+		{
+				ChRoot=CopyStr(ChRoot, Dir);
+				Dir=CopyStr(Dir,"");
 		}
+		ProcessContainerFilesys(Config, ChRoot, Flags);
 
 //fork again because CLONE_NEWPID only takes effect after another fork, and creates an 'init' process
+
     child=fork();
     if (child==0)
     {
@@ -651,20 +673,40 @@ void ProcessContainer(const char *Config)
 		ProcessContainerNamespace(Namespace, HostName, Flags);
 #endif
 
-			clearenv();
-			setenv("LD_LIBRARY_PATH","/lib:/usr/lib",TRUE);
-			ProcessContainerSetEnvs(Envs);
-					
-	    if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
-	 	   if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
- 		   LibUsefulFlags |= LU_CONTAINER | LU_ATEXIT_REGISTERED;
-    }
+		ProcessContainerSetEnvs(Envs);
 		//if we are given a namespace we assume there is already an init for it
-    else if (! StrValid(Namespace)) 
+    if (! StrValid(Namespace)) 
 		{
+			//as we are going to create an init for a namespace it needs to be session leader
+			setsid();
 
+			//fork again! Honestly.
+    	child=fork();
+			if (child !=0)
+			{
+			//ProcessContainerInit will never return, it will exit when finished
 			if ((! (Flags & PROC_ISOCUBE)) &&StrValid(Dir)) ProcessContainerInit(-1, -1, child, FALSE);
 			else ProcessContainerInit(-1, -1, child, TRUE);
+			}
+		}
+
+	    if (chroot(".") == -1) 
+			{
+				RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+				result=FALSE;
+			}
+
+
+			if (result)
+			{	
+	 	  if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
+ 		  LibUsefulFlags |= LU_CONTAINER | LU_ATEXIT_REGISTERED;
+
+			if (StrValid(Dir)) chdir(Dir);
+			}
+		}
+		//we no longer need the parent thread, as the child thread, now completely in the CLONE_NEWPID jail, is our new thread
+		else _exit(0);
 		}
 
     DestroyString(Tempstr);
@@ -673,7 +715,10 @@ void ProcessContainer(const char *Config)
     DestroyString(Namespace);
     DestroyString(Name);
     DestroyString(Value);
+    DestroyString(ChRoot);
     DestroyString(Dir);
+
+		return(result);
 }
 
 
@@ -707,6 +752,11 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"daemon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
+        else if (strcasecmp(Name,"outnull")==0)  
+				{
+								fd_remap_path(1, "/dev/null", O_WRONLY);
+								fd_remap_path(2, "/dev/null", O_WRONLY);
+				}
         else if (strcasecmp(Name,"jail")==0) Flags |= PROC_JAIL;
         else if (strcasecmp(Name,"trust")==0) Flags |= SPAWN_TRUST_COMMAND;
         else if (strcasecmp(Name,"noshell")==0) Flags |= SPAWN_NOSHELL;
@@ -767,13 +817,17 @@ int ProcessApplyConfig(const char *Config)
         for (i =0; i < NSIG; i++) signal(i,SIG_DFL);
     }
 
-//Set controlling tty to be stdin. This means that CTRL-C, SIGWINCH etc is handled for the
-//stdin file descriptor, not for any oher
     if (Flags & PROC_DAEMON) demonize();
     else
     {
         if (Flags & PROC_SETSID) setsid();
-        if (Flags & PROC_CTRL_TTY) tcsetpgrp(0, getpgrp());
+        if (Flags & PROC_CTRL_TTY) 
+				{
+//Set controlling tty to be stdin. This means that CTRL-C, SIGWINCH etc is handled for the
+//stdin file descriptor, not for any other
+					ioctl(0,TIOCSCTTY,0);
+					//tcsetpgrp(0, getpgrp());
+				}
     }
 
 
@@ -782,17 +836,29 @@ int ProcessApplyConfig(const char *Config)
 // password file etc
     if (StrValid(Chroot))
     {
-        if (chdir(Chroot) != 0) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chdir to directory");
-        if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+        if (chdir(Chroot) != 0) 
+				{
+					RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chdir to directory");
+					Flags |= PROC_SETUP_FAIL;
+				}
+				else if (chroot(".") == -1) 
+				{
+					RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+					Flags |= PROC_SETUP_FAIL;
+				}
     }
 
 
+if (! (Flags & PROC_SETUP_FAIL))
+{
 //these are things that, if we've Chroot-ed, happen *within* the Chroot. But not within a Jail.
     ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
     while (ptr)
     {
         if (strcasecmp(Name,"User")==0) uid=LookupUID(Value);
         else if (strcasecmp(Name,"Group")==0) gid=LookupGID(Value);
+				else if (strcasecmp(Name,"UID")==0) uid=atoi(Value);
+        else if (strcasecmp(Name,"GID")==0) gid=atoi(Value);
         else if (strcasecmp(Name,"Dir")==0) chdir(Value);
 
         else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
@@ -810,7 +876,11 @@ int ProcessApplyConfig(const char *Config)
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
 
-    if (Flags & PROC_CONTAINER) ProcessContainer(Config);
+    if (Flags & PROC_CONTAINER) 
+		{
+			if (! ProcessContainer(Config)) Flags |= PROC_SETUP_FAIL;
+		}
+
 
 //Always do group first, otherwise we'll lose ability to switch user/group
     if (gid > 0) SwitchGID(gid);
@@ -822,7 +892,11 @@ int ProcessApplyConfig(const char *Config)
 //SwitchUser that will need access to /etc/passwd
     if (Flags & PROC_JAIL)
     {
-        if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+        if (chroot(".") == -1) 
+				{
+					RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+					Flags |= PROC_SETUP_FAIL;
+				}
     }
 
 		if (StrValid(Capabilities)) 
@@ -835,7 +909,7 @@ int ProcessApplyConfig(const char *Config)
 #endif
 
 		}
-
+}
 
     DestroyString(Value);
     DestroyString(Name);
@@ -870,14 +944,14 @@ pid_t demonize()
     /* closed files that we need! Alternatively, the user may have used shell redirection */
     /* to send output for a file, and I'm sure they don't want us to close that file */
 
-//for (i=0; i < 3; i++)
+		for (i=0; i < 3; i++)
     {
         if (isatty(i))
         {
-            close(i);
-            /* reopen to /dev/null so that any output gets thrown away */
-            /* but the program still has somewhere to write to         */
-            open("/dev/null",O_RDWR);
+				/* reopen to /dev/null so that any output gets thrown away */
+        /* but the program still has somewhere to write to         */
+
+						fd_remap_path(i, "/dev/null", O_RDWR);
         }
     }
 
