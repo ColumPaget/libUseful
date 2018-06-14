@@ -100,6 +100,8 @@ Destroy(Token);
 
 #endif
 #endif
+
+return(1);
 }
 
 
