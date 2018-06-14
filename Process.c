@@ -89,7 +89,12 @@ ptr=GetToken(ptr, ",",&Token,0);
 }
 
 cap_set_proc(caps);
+
+#ifdef HAVE_SETRESUID
 setresuid(99,99,99);
+#else
+setreuid(99,99);
+#endif
 
 Destroy(Token);
 
@@ -241,7 +246,11 @@ int SwitchUID(int uid)
     const char *ptr;
 		struct passwd *pw;
 
+#ifdef HAVE_SETRESUID
     if ((uid==-1) || (setresuid(uid,uid,uid) !=0))
+#else
+    if ((uid==-1) || (setreuid(uid,uid) !=0))
+#endif
     {
         RaiseError(ERRFLAG_ERRNO, "SwitchUID", "Switch user failed. uid=%d",uid);
         if (LibUsefulGetBool("SwitchUserAllowFail")) return(FALSE);

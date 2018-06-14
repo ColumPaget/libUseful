@@ -15,6 +15,7 @@ cf_have_libcrypto=no
 cf_have_libz=no
 
 cf_have_ptsname_r=no
+cf_have_setresuid=no
 cf_have_clearenv=no
 
 cf_use_simd=no
@@ -34,6 +35,13 @@ cf_have_clearenv=$ac_cv_lib_c_clearenv
 if test "$cf_have_clearenv" = "yes"
 then
 AC_DEFINE([HAVE_CLEARENV])
+fi
+
+AC_CHECK_LIB(c,setresuid,,)
+cf_have_setresuid=$ac_cv_lib_c_setresuid
+if test "$cf_have_setresuid" = "yes"
+then
+AC_DEFINE([HAVE_SETRESUID])
 fi
 
 

@@ -2,6 +2,7 @@
 #include "Unicode.h"
 #include "Pty.h"
 #include <sys/ioctl.h>
+#include <termios.h>
 
 const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
