@@ -641,7 +641,7 @@ char *TerminalFormatStr(char *RetStr, const char *Str)
 
 
 
-int TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S)
+void TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S)
 {
     char *Tempstr=NULL;
 

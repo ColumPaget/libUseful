@@ -368,7 +368,7 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
     result=mount(Dev,p_MountPoint,p_Type,Flags,NULL);
 #else
 //assume BSD if not linux
-    result=mount(p_Type,p_MountPoint,Flags,Dev);
+    result=mount(p_Type,p_MountPoint,Flags,(void *) Dev);
 #endif
 
 

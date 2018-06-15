@@ -184,18 +184,6 @@ void SockSetOptions(int sock, int SetFlags, int UnsetFlags)
 
 
 
-int SockSetAttribute(int sock, int Attrib, int Value)
-{
-
-
-}
-
-int SockGetAttribute(int sock, int Attrib, int Value)
-{
-
-
-}
-
 
 int IP6SockAddrCreate(struct sockaddr **ret_sa, const char *Addr, int Port)
 {

@@ -239,7 +239,7 @@ void HashInitCRC(HASH *Hash, int Len)
 
 void HashUpdateMD5(HASH *Hash, const char *Data, int Len)
 {
-    MD5Update((MD5_CTX *) Hash->Ctx, Data, Len);
+    MD5Update((MD5_CTX *) Hash->Ctx, (const unsigned char *) Data, Len);
 }
 
 
@@ -707,7 +707,7 @@ int PBK2DF2(char **Return, char *Type, char *Bytes, int Len, char *Salt, int Sal
     DestroyString(Tempstr);
     DestroyString(Hash);
 
-    StrLen(*Return);
+    return(StrLen(*Return));
 }
 
 

@@ -9,6 +9,8 @@
 #include "Log.h"
 #include <sched.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 #include <glob.h>
 
 //needed for 'flock' used by CreatePidFile and CreateLockFile

@@ -61,7 +61,7 @@ int Radix64tobits(char *out, const char *in, const char *base64digits, char pad)
     register unsigned char digit1, digit2, digit3, digit4;
     const unsigned char *ptr, *end;
 
-    for (ptr=base64digits; *ptr !='\0'; ptr++)
+    for (ptr=(const unsigned char *) base64digits; *ptr !='\0'; ptr++)
     {
         base64vals[*ptr]=i;
         i++;

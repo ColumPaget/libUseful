@@ -110,6 +110,8 @@ newfd=open(Path, Flags);
 if (newfd==-1) return(FALSE);
 result=fd_remap(fd, newfd);
 close(newfd);
+
+return(result);
 }
 
 

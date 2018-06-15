@@ -269,7 +269,7 @@ int TerminalStrLen(const char *Str);
 
 
 //Perform various commands on the terminal (normally you'd just use the macros listed above)
-int TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S);
+void TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S);
 
 //read a single character from the terminal. In addition to the normal ANSI characters this returns the KEY_ values listed above
 //provided the terminal has been initialized with TERM_RAWKEYS. This allows reading keystrokes for use in games etc

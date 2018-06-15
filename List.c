@@ -20,7 +20,7 @@ void MapDumpSizes(ListNode *Head)
     for (i=0; i < MapChainCount(Head); i++)
     {
         Chain=MapGetNthChain(Head, i);
-        printf("%d %d %d\n",i,Chain,ListSize(Chain));
+        printf("%d %lu\n",i, ListSize(Chain));
     }
 }
 

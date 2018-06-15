@@ -638,7 +638,7 @@ int pmatch(const char *Pattern, const char *String, int Len, ListNode *Matches, 
 
     if (Compiled) 
 		{
-			for (i=0; Compiled[i] !=NULL; i++) Destroy(Compiled[i]);
+			for (i=0; Compiled[i] !=NULL; i++) Destroy((void *) Compiled[i]);
 			free(Compiled);
 		}
     return(result);

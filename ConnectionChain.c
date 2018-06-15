@@ -227,7 +227,7 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
 
 //Horrid binary protocol.
     Tempstr=SetStrLen(Tempstr, StrLen(User) + 20 + StrLen(Destination));
-    ptr=Tempstr;
+    ptr=(uint8_t *) Tempstr;
 
 //version
     if (SocksLevel==CONNECT_HOP_SOCKS5) *ptr=5;
