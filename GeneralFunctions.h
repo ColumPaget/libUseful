@@ -8,6 +8,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 #include <stdio.h>
 #include "defines.h"
+#include "includes.h"
 
 /*
 A number of general functions that don't fit anywhere else

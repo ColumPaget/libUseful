@@ -26,6 +26,11 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include <limits.h>
 #include <ctype.h>
 #include <limits.h>
+#include <pwd.h>  //for uid_t
+#include <grp.h>  //for gid_t
+#include <math.h> //for math defines like PI
+
+
 
 #include "defines.h"
 #include "String.h"

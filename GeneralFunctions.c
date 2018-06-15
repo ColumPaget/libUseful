@@ -3,9 +3,6 @@
 #include "Hash.h"
 #include "Time.h"
 #include <sys/utsname.h>
-#include <math.h>
-#include <pwd.h>
-#include <grp.h>
 
 #ifdef linux
 #include <sys/sysinfo.h>

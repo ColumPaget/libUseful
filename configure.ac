@@ -44,6 +44,14 @@ then
 AC_DEFINE([HAVE_SETRESUID])
 fi
 
+AC_CHECK_LIB(c,get_current_dir_name,,)
+cf_have_get_current_dir_name=$ac_cv_lib_c_get_current_dir_name
+if test "$cf_have_get_current_dir_name" = "yes"
+then
+AC_DEFINE([HAVE_GET_CURR_DIR])
+fi
+
+
 
 AC_CHECK_LIB(c,umount2,,)
 cf_have_umount2=$ac_cv_lib_c_umount2

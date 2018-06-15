@@ -14,6 +14,17 @@
 #endif
 
 
+#ifndef HAVE_GET_CURR_DIR
+char *get_current_dir_name()
+{
+char *path;
+
+path=(char *) calloc(1, PATH_MAX+1);
+getcwd(path, PATH_MAX+1);
+return(path);
+}
+#endif
+
 
 const char *GetBasename(const char *Path)
 {

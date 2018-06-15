@@ -31,6 +31,12 @@ int FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRES
 //with the Path string.
 const char *GetBasename(const char *Path);
 
+
+//if get_current_dir_name doesn't exist, then add it
+#ifndef HAVE_GET_CURR_DIR
+char *get_current_dir_name();
+#endif
+
 //Append a '/' to a libUseful style string if it doesn't already have one. As this function adds
 //to the length of the string it should only be used with libUseful style strings
 char *SlashTerminateDirectoryPath(char *DirPath);
