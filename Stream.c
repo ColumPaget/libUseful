@@ -340,6 +340,7 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
     fd_set selectset;
     int result=0, count=0, len;
     struct timeval tv;
+    void *vptr;
 
     if (! S) return(STREAM_CLOSED);
     if (S->out_fd==-1) return(STREAM_CLOSED);
@@ -371,8 +372,10 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
         if (S->State & SS_SSL)
         {
 #ifdef HAVE_LIBSSL
-            result=SSL_write((SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:CTX"), Data + count, DataLen - count);
-						if (result < 0) result=STREAM_CLOSED;
+		vptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+		if (vptr) result=SSL_write((SSL *) vptr, Data + count, DataLen - count);
+		else result=0;
+		if (result < 0) result=STREAM_CLOSED;
 #endif
         }
         else

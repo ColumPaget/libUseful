@@ -354,6 +354,7 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
     if (ListStart->Flags & LIST_FLAG_MAP_HEAD) ListStart=MapGetChain(ListStart, Name);
 
     Curr=ListGetLast(ListStart);
+
     if (Curr==NULL) return(Curr);
     return(ListInsertTypedItem(Curr,Type,Name,Item));
 }
@@ -386,6 +387,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
     {
         //use next to hold Head->Side for less typing!
         Next=Head->Side;
+
         if (Root->Flags & LIST_FLAG_CASE) result=strcmp(Next->Tag,Name);
         else result=strcasecmp(Next->Tag,Name);
 
@@ -406,6 +408,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
     }
 
     Prev=Head;
+
     while (Curr)
     {
         Next=Curr->Next;
@@ -454,7 +457,8 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
     if (! Root) return(NULL);
     Node=ListFindNamedItemInsert(Root, Name);
-    if ((! Node) || (Node==Head) || (! Node->Tag)) return(NULL);
+
+    if ((! Node) || (Node==Node->Head) || (! Node->Tag)) return(NULL);
 
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
     //insert chain

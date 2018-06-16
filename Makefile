@@ -1,8 +1,8 @@
 CC = gcc
 VERSION = 3.2
-CFLAGS = -g -O2 
-LIBS = 
-FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_MADVISE -DHAVE_MADVISE_NOFORK -DHAVE_MADVISE_DONTDUMP -DHAVE_MLOCK
+CFLAGS = -g -O2 -I/usr/local/Cellar/openssl/1.0.2o_1/include/
+LIBS = -lcrypto -lssl 
+FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_LIBSSL=1 -DHAVE_LIBCRYPTO=1 -DHAVE_EVP_BF_CBC=1 -DHAVE_EVP_RC2_CBC=1 -DHAVE_EVP_RC4=1 -DHAVE_EVP_DES_CBC=1 -DHAVE_EVP_DESX_CBC=1 -DHAVE_EVP_CAST5_CBC=1 -DHAVE_EVP_AES_128_CBC=1 -DHAVE_EVP_AES_256_CBC=1 -DHAVE_DECL_OPENSSL_ADD_ALL_ALGORITHMS=0 -DHAVE_DECL_SSL_SET_TLSEXT_HOST_NAME=0 -DHAVE_MADVISE -DHAVE_MADVISE_NOFORK -DHAVE_MADVISE_DONTDUMP -DHAVE_MLOCK
 prefix=/usr/local
 OBJ=String.o List.o Socket.o UnixSocket.o Stream.o Errors.o Unicode.o Terminal.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o Http.o Smtp.o inet.o Expect.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o Hash.o Ssh.o Compression.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Process.o Encodings.o RawData.o SecureMem.o CommandLineParser.o
 

@@ -473,8 +473,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, OpenSSLVerifyCallback);
             ssl=SSL_new(ctx);
             SSL_set_fd(ssl,S->in_fd);
-            STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",ssl);
-
+            STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ssl);
             OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE);
 
             ptr=LibUsefulGetValue("SSL:PermittedCiphers");
