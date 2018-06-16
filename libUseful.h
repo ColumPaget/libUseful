@@ -14,6 +14,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define TRUE 1
 #endif
 
+#define __LIBUSEFUL_VERSION__ VERSION
 #define __LIBUSEFUL_BUILD_DATE__ __DATE__
 #define __LIBUSEFUL_BUILD_TIME__ __TIME__
 
