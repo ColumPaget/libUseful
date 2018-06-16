@@ -20,7 +20,26 @@
 
 DH *CachedDH=NULL;
 
-
+void HandleSSLError(int err)
+{
+switch (err)
+{
+case SSL_ERROR_NONE: printf("none\n");break;
+case SSL_ERROR_ZERO_RETURN: printf("zero\n");break;
+case SSL_ERROR_WANT_READ: printf("wr\n");break;
+case SSL_ERROR_WANT_WRITE: printf("ww\n");break;
+case SSL_ERROR_WANT_CONNECT: printf("connect\n");break;
+case SSL_ERROR_WANT_ACCEPT: printf("accept\n");break;
+case SSL_ERROR_WANT_X509_LOOKUP: ("lookup\n");break;
+/*
+case SSL_ERROR_WANT_ASYNC: printf("async\n");break;
+case SSL_ERROR_WANT_ASYNC_JOB: printf("job\n");break;
+case SSL_ERROR_WANT_CLIENT_HELLO_CB: printf("cb\n");break;
+*/
+case SSL_ERROR_SYSCALL: printf("syscall\n");break;
+case SSL_ERROR_SSL: ("ssl\n");break;
+}
+}
 
 void OpenSSLReseedRandom()
 {
@@ -128,17 +147,6 @@ void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
 }
 #endif
 
-
-void HandleSSLError()
-{
-#ifdef HAVE_LIBSSL
-    int val;
-
-    val=ERR_get_error();
-    fprintf(stderr,"Failed to create SSL_CTX: %s\n",ERR_error_string(val,NULL));
-    fflush(NULL);
-#endif
-}
 
 
 int INTERNAL_SSL_INIT()
@@ -465,7 +473,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
         //  SSL_load_ciphers();
         Method=SSLv23_client_method();
         ctx=SSL_CTX_new(Method);
-        if (! ctx) HandleSSLError();
+        if (! ctx) RaiseError(0, "Failed to create SSL_CTX: %s\n",ERR_error_string(ERR_get_error(), NULL));
         else
         {
             STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(S,ctx);
@@ -491,7 +499,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             while (result==-1)
             {
                 result=SSL_get_error(ssl, result);
-                if ( (result!=SSL_ERROR_WANT_READ) && (result != SSL_ERROR_WANT_WRITE) ) break;
+                if ( (result != SSL_ERROR_WANT_READ) && (result != SSL_ERROR_WANT_WRITE) && (result != SSL_ERROR_WANT_CONNECT)) break;
                 usleep(300);
                 result=SSL_connect(ssl);
             }
