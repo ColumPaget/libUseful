@@ -1332,8 +1332,17 @@ int HTTPCopyToSTREAM(STREAM *Con, STREAM *S)
 int HTTPDownload(char *URL, STREAM *S)
 {
     STREAM *Con;
+		const char *ptr;
+
     Con=HTTPGet(URL);
     if (! Con) return(0);
+
+		ptr=STREAMGetValue(Con, "HTTP:ResponseCode");
+		if ((! ptr) || (*ptr !='2'))
+		{
+			STREAMClose(Con);
+			return(NULL);
+		}
     return(HTTPCopyToSTREAM(Con, S));
 }
 
