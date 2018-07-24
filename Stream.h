@@ -131,7 +131,6 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_TLS_AUTO 32768  //nothing to see here, move along
 #define SF_ERROR 65536     //raise an error if open or connect fails
 #define SF_EXEC_INHERIT 131072  //allow file to be inherited across an exec (default is close-on-exec)
-#define SF_SYMLINK_OK 262144    //don't raise a logging entry if opening a symlink
 #define SF_NOCACHE 524288       //don't cache file data in filesystem cache
 #define SF_SORTED  1048576      //file is sorted, this is a hint to 'STREAMFind'
 #define STREAM_IMMUTABLE  2097152   //file is immutable (if supported by fs)

@@ -690,7 +690,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     // to get us to write somewhere other than intended.
 
 
-    if (! (Flags & SF_SYMLINK_OK))
+    if (! (Flags & SF_FOLLOW))
     {
         if (lstat(p_Path, &myStat) !=0)
         {
