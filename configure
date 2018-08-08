@@ -4455,7 +4455,8 @@ if test "${enable_capabilities+set}" = set; then :
   enableval=$enable_capabilities; cf_use_capabilities=$enableval
 fi
 
-if test "$cf_use_capabilities" != "no"
+
+if test "$cf_use_capabilities" = "yes"
 then
 ac_fn_c_check_header_mongrel "$LINENO" "sys/capability.h" "ac_cv_header_sys_capability_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_capability_h" = xyes; then :

@@ -200,7 +200,8 @@ esac
 
 cf_have_capabilities=no
 AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval )
-if test "$cf_use_capabilities" != "no"
+
+if test "$cf_use_capabilities" = "yes"
 then
 AC_CHECK_HEADER(sys/capability.h,cf_have_capabilities=yes,,)
 AC_CHECK_HEADER(linux/capability.h,cf_have_capabilities=yes,,)

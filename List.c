@@ -291,6 +291,7 @@ void ListDestroy(ListNode *ListStart, LIST_ITEM_DESTROY_FUNC ItemDestroyer)
     if (! ListStart) return;
     ListClear(ListStart, ItemDestroyer);
     if (ListStart->Item) free(ListStart->Item);
+    if (ListStart->Stats) free(ListStart->Stats);
     free(ListStart);
 }
 
