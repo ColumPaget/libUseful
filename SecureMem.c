@@ -14,7 +14,7 @@
 //needed for low-level file access
 #include <sys/file.h>
 
-SECURESTORE *CredsStore=NULL;
+static SECURESTORE *CredsStore=NULL;
 
 void SecureClearMem(char *Mem, int Size)
 {

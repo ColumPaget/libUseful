@@ -20,6 +20,7 @@ void CommandLineParserInit(CMDLINE *CmdLine, int argc, char *argv[]);
 CMDLINE *CommandLineParserCreate(int argc, char *argv[]);
 const char *CommandLineCurr(CMDLINE *CmdLine);
 const char *CommandLineNext(CMDLINE *CmdLine);
+const char *CommandLineFirst(CMDLINE *CmdLine);
 
 #ifdef __cplusplus
 }

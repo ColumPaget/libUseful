@@ -23,12 +23,12 @@ char *ExtractFromWebpage(char *RetStr, char *URL, char *ExtractStr, int MinLengt
 
             if (StrLen(Tempstr) >=MinLength)
             {
-                if (! StrLen(ExtractStr)) RetStr=CopyStr(RetStr,Tempstr);
+                if (! StrValid(ExtractStr)) RetStr=CopyStr(RetStr,Tempstr);
                 else
                 {
                     ExtractVarsFromString(Tempstr,ExtractStr,Vars);
                     ptr=GetVar(Vars,"extract_item");
-                    if (StrLen(ptr)) RetStr=CopyStr(RetStr,ptr);
+                    if (StrValid(ptr)) RetStr=CopyStr(RetStr,ptr);
                 }
             }
             Tempstr=STREAMReadLine(Tempstr,S);

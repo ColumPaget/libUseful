@@ -72,6 +72,8 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TERMBAR_UPPER 128
 #define TERMBAR_LOWER 256
 #define TERM_SAVEATTRIBS 512
+#define TERM_ALIGN_CENTER 4096
+#define TERM_ALIGN_RIGHT  8192
 
 //These flags can be passed in the Flags argument of ANSICode
 #define ANSI_HIDE			65536
@@ -181,19 +183,18 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define KEY_CTRL_WIN    0x16E
 #define KEY_CTRL_MENU   0x16F
 
-
 typedef struct
 {
-    int Flags;
-    int ForeColor;
-    int BackColor;
-    int TextLen;
-    char *Text;
-		char *MenuPadLeft;
-		char *MenuPadRight;
-		char *MenuCursorLeft;
-		char *MenuCursorRight;
-    STREAM *Term;
+int Flags;
+int ForeColor;
+int BackColor;
+int TextLen;
+char *Text;
+char *MenuPadLeft;
+char *MenuPadRight;
+char *MenuCursorLeft;
+char *MenuCursorRight;
+STREAM *Term;
 } TERMBAR;
 
 
@@ -259,7 +260,7 @@ void TerminalReset(STREAM *S);
 void TerminalPutChar(int Char, STREAM *S);
 
 //'Str' is a format string with with 'tilde commands' in it. The ANSI coded result is copied into RetStr, which is resized as needed and returned
-char *TerminalFormatStr(char *RetStr, const char *Str);
+char *TerminalFormatStr(char *RetStr, const char *Str, STREAM *Term);
 
 //'Str' is a format string with 'tilde commands' in it. The ANSI coded result is output to stream S
 void TerminalPutStr(const char *Str, STREAM *S);
@@ -280,6 +281,9 @@ int TerminalReadChar(STREAM *S);
 converts a key to a string. For non-printable key values these strings are the same as the #defined keys above, except without
 the leading 'KEY_'. So 'ESC', 'F1' 'SHIFT_F1' 'UP' 'DOWN' etc etc */
 const char *TerminalTranslateKeyCode(int key);
+
+int TerminalTranslateKeyStr(const char *str);
+
 
 //translates a config string into the flags TERM_HIDETEXT, TERM_SHOWSTARS, TERM_SHOWTEXTSTARS
 //You will probably use those flags directly, this function is intended for bindings to programming languages
@@ -334,6 +338,46 @@ typedef int (*KEY_CALLBACK_FUNC)(STREAM *Term, int Key);
 void TerminalSetKeyCallback(STREAM *Term, KEY_CALLBACK_FUNC Func);
 
 
+//Terminal menu functions give you a selectable 'box' menu of options that's operated by 'up', 'down'
+//'enter' to select and 'escape' to back out of it. The menu has an internal list called 'options' to
+//which you add named items. The names are the menu options that will be displayed. You can pass NULL
+//for the list item, or an object you want associated with the menu option. When an option is selected
+//the list node is returned, so you have both the option name, as Node->Tag, and any associated item
+//as Node->Item
+
+typedef struct
+{
+int x;
+int y;
+int wid;
+int high;
+STREAM *Term;
+ListNode *Options;
+char *MenuAttribs;
+char *MenuCursorLeft;
+char *MenuCursorRight;
+} TERMMENU;
+
+
+TERMMENU *TerminalMenuCreate(STREAM *Term, int x, int y, int wid, int high);
+void TerminalMenuDestroy(TERMMENU *Item);
+
+//draw the menu in it's current state.
+void TerminalMenuDraw(TERMMENU *Menu);
+
+//process key and draw menu in its state after the keypress. Return a choice if
+//one is selected, else return NULL. This can be used if you want to handle some
+//keypresses outside of the menu, only passing relevant keys to the menu
+ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key);
+
+//run a menu after it's been setup. This keeps reading keypresses until an option is
+//selected. Returns the selected option, or returns NULL if escape is pressed
+ListNode *TerminalMenuProcess(TERMMENU *Menu);
+
+//create a menu from a list of options, and run it.
+// This keeps reading keypresses until an option is
+//selected. Returns the selected option, or returns NULL if escape is pressed
+ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, int high);
 
 #ifdef __cplusplus
 }

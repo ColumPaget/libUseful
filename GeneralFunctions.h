@@ -18,7 +18,8 @@ A number of general functions that don't fit anywhere else
 extern "C" {
 #endif
 
-void Destroy(void *Obj);
+//Destroy is defined in String.c 'cos of StrLen caching
+//void Destroy(void *Obj);
 
 //fill 'size' bytes pointed to by 'Str' with char 'fill'. 'Str' is treated as a volatile, which is intended to prevent
 //the compiler from optimizing this function out. Use this function to blank memory holding sensitive information, as

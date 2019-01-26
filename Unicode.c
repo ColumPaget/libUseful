@@ -1,6 +1,6 @@
 #include "Unicode.h"
 
-int UnicodeLevel=0;
+static int UnicodeLevel=0;
 
 void UnicodeSetUTF8(int level)
 {

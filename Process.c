@@ -20,8 +20,8 @@
 /*This is code to change the command-line of a program as visible in ps */
 
 extern char **environ;
-char *TitleBuffer=NULL;
-int TitleLen=0;
+static char *TitleBuffer=NULL;
+static int TitleLen=0;
 
 
 

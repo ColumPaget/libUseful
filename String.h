@@ -6,7 +6,22 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #ifndef LIBUSEFUL_STRING
 #define LIBUSEFUL_STRING
 
-//functions related to resizeable strings
+/*****************************************************************************
+Functions related to resizeable strings.
+
+From version 4.0 libUseful uses 'StrLenCache-ing'. This dramatically speeds up
+programs that deal with long strings, as it's no longer needed to iterate 
+through the entire string to calculate its length. Instead the lengths of the
+most recently used strings are held in a cache. This means less data passes
+through the CPU's L1/L2/L3 cache, which can also further speed things up.
+
+The downside to this is that you can no longer just set a character to the 
+null character (ascii zero or '/0') in order to truncate the string, because
+the cache will still think the string has it's old length and functions like
+CatStr will misbehave, as characters will be added *after* the terminating 
+null character, and so lost. This you must use the 'StrTrunc', 'StrTruncChar'
+and 'StrRTruncChar' functions to truncate strings
+*****************************************************************************/
 
 #include <stdarg.h>
 #include <string.h> //for strlen, used below in StrLen
@@ -32,7 +47,8 @@ extern "C" {
 //operator '?' and the dreaded comma operator ','
 
 //return length of a string. Doesn't crash if string is NULL, just returns 0
-#define StrLen(str) ( str ? strlen(str) : 0 )
+#define StrLen(str) ( (str) ? strlen(str) : 0 )
+
 
 //if a string is not null, and not empty (contains chars) then return true. Doesn't call 'strlen' or iterate through entire string
 //so is more efficient then using StrLen for the same purpose
@@ -60,6 +76,16 @@ extern "C" {
 
 //Quote some standard chars in a string with '\'. 
 #define EnquoteStr(Dest, Src) (QuoteCharsInStr((Dest), (Src), "'\"\r\n"))
+
+//free memory up. Doesn't crash if Obj is null
+void Destroy(void *Obj);
+
+
+//thse are used internally, you'll not normally use any of these functions
+int StrLenFromCache(const char *Str);
+void StrLenCacheDel(const char *Str);
+void StrLenCacheUpdate(const char *Str, int incr);
+void StrLenCacheAdd(const char *Str, size_t len);
 
 
 //allocate or reallocate 'Len' bytes of memory to a resizeable string
@@ -129,6 +155,17 @@ int istext(const char *Str);
 //returns true if string only contains digits
 int isnum(const char *Str);
 
+//Truncate a string to so many chars
+char *StrTrunc(char *Str, int Len);
+
+//Truncate a string to a terminator character. 
+//Returns 'TRUE' if character found, 'FALSE' otherwise
+int StrTruncChar(char *Str, char Term);
+
+//Truncate a string to a terminator character but search for character from end of string ('R' for 'Reverse')
+//Returns 'TRUE' if character found, 'FALSE' otherwise
+int StrRTruncChar(char *Str, char Term);
+
 //strip trailing whitespace from a string
 char *StripTrailingWhitespace(char *Str);
 
@@ -159,7 +196,6 @@ int MatchTokenFromList(const char *Token,const char **List, int Flags);
 //in case you forgot to do so
 char *InternalMCatStr(char *, const char *, ...);
 char *InternalMCopyStr(char *, const char *, ...);
-
 
 #ifdef __cplusplus
 }

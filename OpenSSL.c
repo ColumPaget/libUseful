@@ -18,7 +18,7 @@
 #include <openssl/rand.h>
 #include <openssl/asn1.h>
 
-DH *CachedDH=NULL;
+static DH *CachedDH=NULL;
 
 void HandleSSLError(int err)
 {

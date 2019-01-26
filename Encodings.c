@@ -159,7 +159,7 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
 
 
     default:
-        RetStr=SetStrLen(RetStr,len );
+        RetStr=SetStrLen(RetStr, len);
         memcpy(RetStr,Bytes,len);
         RetStr[len]='\0';
         break;

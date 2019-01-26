@@ -87,6 +87,7 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
     wptr=*TagType;
     if ((len > 0) && (wptr[len-1]=='/')) wptr[len-1]='\0';
     wptr[len]='\0';
+		StrLenCacheAdd(*TagType, len);
 
     while (isspace(*ptr)) ptr++;
 
@@ -143,6 +144,7 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
     wptr=*TagData;
     if ((len > 0) && (wptr[len-1]=='/')) wptr[len-1]='\0';
     wptr[len]='\0';
+		StrLenCacheAdd(*TagData, len);
 
     strlwr(*TagType);
     while (isspace(*ptr)) ptr++;
@@ -261,6 +263,7 @@ char *HTMLUnQuote(char *RetStr, const char *Data)
         }
     }
 
+		StrLenCacheAdd(Output, len);
     DestroyString(Token);
 
     return(Output);

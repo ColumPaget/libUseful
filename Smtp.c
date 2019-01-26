@@ -141,6 +141,8 @@ int SMTPLogin(STREAM *S, int Caps, const char *User, const char *Pass)
     {
         Tempstr=SetStrLen(Tempstr, StrLen(User) + StrLen(Pass) +10);
 
+				//this isn't what it looks like. The '\0' here do not terminate the string
+				//as this authentication system uses a string with '\0' as separators
         len=StrLen(User);
         ptr=Tempstr;
         memcpy(ptr, User, len);
@@ -148,9 +150,8 @@ int SMTPLogin(STREAM *S, int Caps, const char *User, const char *Pass)
         *ptr='\0';
         ptr++;
 
-        len=StrLen(User);
-        ptr=Tempstr;
-        memcpy(ptr, User, len);
+        len=StrLen(Pass);
+        memcpy(ptr, Pass, len);
         ptr+=len;
         *ptr='\0';
         ptr++;

@@ -3,11 +3,12 @@
 typedef enum {MATCH_FAIL, MATCH_FOUND, MATCH_ONE, MATCH_MANY, MATCH_REPEAT, MATCH_NEXT, MATCH_QUOT, MATCH_START, MATCH_CHARLIST, MATCH_HEX, MATCH_OCTAL, MATCH_SWITCH_ON, MATCH_SWITCH_OFF} TPMatchElements;
 
 //Gets Called recursively
-int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags);
-int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char **Start, const char **End, int *Flags);
+static int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags);
+static int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char **Start, const char **End, int *Flags);
+static int pmatch_one_internal(const char *Pattern, const char *String, int len, const char **Start, const char **End, int *Flags);
 
 
-int pmatch_ascii(const char *P_Ptr, char S_Char,int Type)
+static int pmatch_ascii(const char *P_Ptr, char S_Char,int Type)
 {
     char ValStr[4];
     int P_Char=-1;
@@ -32,13 +33,14 @@ int pmatch_ascii(const char *P_Ptr, char S_Char,int Type)
 }
 
 
-void pmatch_switch(char SwitchType, char SwitchOnOrOff, int *Flags)
+static void pmatch_switch(char SwitchType, char SwitchOnOrOff, int *Flags)
 {
     int NewFlag=0, OnOrOff=FALSE;
 
     if (SwitchOnOrOff==MATCH_SWITCH_ON) OnOrOff=TRUE;
     else if (SwitchOnOrOff==MATCH_SWITCH_OFF) OnOrOff=FALSE;
     else return;
+
 
     switch (SwitchType)
     {
@@ -57,7 +59,10 @@ void pmatch_switch(char SwitchType, char SwitchOnOrOff, int *Flags)
         NewFlag=PMATCH_NOEXTRACT;
         OnOrOff= !OnOrOff;
         break;
-
+    case 'O':
+        NewFlag=PMATCH_NO_OVERLAP;
+        OnOrOff= !OnOrOff;
+        break;
     case 'N':
         NewFlag=PMATCH_NEWLINEEND;
         break;
@@ -69,7 +74,7 @@ void pmatch_switch(char SwitchType, char SwitchOnOrOff, int *Flags)
 }
 
 
-int pmatch_quot_analyze(char P_Char, char S_Char)
+static int pmatch_quot_analyze(char P_Char, char S_Char)
 {
     int result=MATCH_FAIL;
 
@@ -120,11 +125,17 @@ int pmatch_quot_analyze(char P_Char, char S_Char)
     case 'P':
         if (ispunct(S_Char)) result=MATCH_ONE;
         break;
+    case 'T':
+        if (! isspace(S_Char)) result=MATCH_ONE;
+        break;
     case 'X':
         if (isxdigit(S_Char)) result=MATCH_ONE;
         break;
     case 'U':
         if (isupper(S_Char)) result=MATCH_ONE;
+        break;
+		case '0':
+				if (S_Char=='\0') result=MATCH_ONE;
         break;
     case '+':
         result=MATCH_SWITCH_ON;
@@ -143,7 +154,7 @@ int pmatch_quot_analyze(char P_Char, char S_Char)
 
 
 
-int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
+static int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 {
     int result=MATCH_FAIL, OldFlags;
     char P_Char, S_Char;
@@ -151,7 +162,6 @@ int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 
     P_Char=**P_PtrPtr;
     S_Char=**S_PtrPtr;
-
 
     result=pmatch_quot_analyze(P_Char, S_Char);
 
@@ -182,6 +192,9 @@ int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
         (*P_PtrPtr)++; //go past the + or - to the actual type
         pmatch_switch(**P_PtrPtr, result, Flags);
         (*P_PtrPtr)++;
+
+
+/*
         result=pmatch_char(P_PtrPtr, S_PtrPtr, Flags);
 
         if (result==MATCH_FAIL)
@@ -189,6 +202,7 @@ int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
             *P_PtrPtr=OldPos;
             *Flags=OldFlags;
         }
+*/
         return(result);
         break;
 
@@ -203,16 +217,17 @@ int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 
 #define CHARLIST_NOT 1
 
-int pmatch_charlist(const char **P_PtrPtr, char S_Char, int Flags)
+static int pmatch_charlist(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 {
-    char P_Char, Prev_Char=0;
+    char P_Char, S_Char, Prev_Char=0;
     int result=MATCH_FAIL;
     int mode=0;
 
 
+		S_Char=**S_PtrPtr;
     while (**P_PtrPtr != '\0')
     {
-        if (Flags & PMATCH_NOCASE) P_Char=tolower(**P_PtrPtr);
+        if (*Flags & PMATCH_NOCASE) P_Char=tolower(**P_PtrPtr);
         else P_Char=**P_PtrPtr;
 
         if (P_Char==']') break;
@@ -221,13 +236,11 @@ int pmatch_charlist(const char **P_PtrPtr, char S_Char, int Flags)
         {
         case '\\':
             (*P_PtrPtr)++;
-            if (Flags & PMATCH_NOCASE) P_Char=tolower(**P_PtrPtr);
-            else P_Char=**P_PtrPtr;
+						result=pmatch_quot(P_PtrPtr, S_PtrPtr, Flags);
             break;
-
         case '-':
             (*P_PtrPtr)++;
-            if (Flags & PMATCH_NOCASE) P_Char=tolower(**P_PtrPtr);
+            if (*Flags & PMATCH_NOCASE) P_Char=tolower(**P_PtrPtr);
             else P_Char=**P_PtrPtr;
 
             if ((S_Char >= Prev_Char) && (S_Char <= P_Char)) result=MATCH_ONE;
@@ -244,10 +257,20 @@ int pmatch_charlist(const char **P_PtrPtr, char S_Char, int Flags)
 
         Prev_Char=P_Char;
         (*P_PtrPtr)++;
+
+				if (result==MATCH_ONE) break;
     }
 
-//go beyond ']'
-    (*P_PtrPtr)++;
+		//go beyond ']'
+    while (**P_PtrPtr != '\0') 
+		{
+    	if (**P_PtrPtr == ']') 
+			{
+    			(*P_PtrPtr)++;
+				break;
+			}
+			(*P_PtrPtr)++;
+		}
 
     if (mode & CHARLIST_NOT)
     {
@@ -255,50 +278,52 @@ int pmatch_charlist(const char **P_PtrPtr, char S_Char, int Flags)
         else result=MATCH_ONE;
     }
 
+
+
     return(result);
 }
 
 
 
-int pmatch_repeat(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, int *Flags)
+static int pmatch_repeat(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char *Prev, int *Flags)
 {
-    char *SubPattern=NULL;
+    char *Tempstr=NULL;
     const char *ptr;
-    char *sp_ptr;
-    int count=0, i, val=0, result=MATCH_FAIL;
+    int count=0, val=0, result=MATCH_FAIL;
 
-    ptr=*P_PtrPtr;
-    while ( ((**P_PtrPtr) != '}') && ((**P_PtrPtr) != '\0') ) (*P_PtrPtr)++;
-    if ((**P_PtrPtr)=='\0') return(MATCH_FAIL);
+		//if prev match is also a +, then it's a fail
+		if (*Prev=='+') return (MATCH_FAIL);
+		if (**P_PtrPtr == '{')
+		{
+			ptr=*P_PtrPtr;
+			while ( ((**P_PtrPtr) != '}') && ((**P_PtrPtr) != '\0') ) (*P_PtrPtr)++;
+			if ((**P_PtrPtr)=='\0') return(MATCH_FAIL);
+			Tempstr=CopyStrLen(Tempstr, ptr, *P_PtrPtr - ptr);
+			val=strtol(Tempstr, &ptr, 10);
+		}
 
-    SubPattern=CopyStrLen(SubPattern,ptr,*P_PtrPtr - ptr);
-
-		/*
-    sp_ptr=strchr(SubPattern,'|');
-    if (sp_ptr)
-    {
-        *sp_ptr='\0';
-        sp_ptr++;
-        count=atoi(SubPattern);
-        for (i=0; i < count; i++)
-        {
-            val=0;
-            result=pmatch_search((const char **) &sp_ptr, S_PtrPtr, S_End, NULL, NULL, &val);
-            if (result==MATCH_FAIL) break;
-        }
-    }
-		*/
+		while (1)
+		{
+			ptr=Prev;
+			result=pmatch_char(&ptr, S_PtrPtr, Flags);
+			if (result==MATCH_FAIL) break;
+			count++;
+			if ((val > 0) && (count > val)) break;
+			(*S_PtrPtr)++;
+		}	
 
     (*S_PtrPtr)--;
     (*P_PtrPtr)++;
-    DestroyString(SubPattern);
+    DestroyString(Tempstr);
+
+		if (count >= val) return(MATCH_ONE);
     return(result);
 }
 
 
 
 
-int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
+static int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 {
     char P_Char, S_Char;
     const char *P_Start;
@@ -334,17 +359,17 @@ int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
     case '\0':
         result=MATCH_FOUND;
         break;
-    case '*':
-        result=MATCH_MANY;
-        break;
+
     case '?':
         (*P_PtrPtr)++;
         result=MATCH_ONE;
         break;
+
     case '^':
         (*P_PtrPtr)++;
         result=MATCH_START;
         break;
+
     case '$':
         if (S_Char=='\0') result=MATCH_FOUND;
         else if ((*Flags & PMATCH_NEWLINEEND) && (S_Char=='\n')) result=MATCH_FOUND;
@@ -372,17 +397,25 @@ int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 
     case '[':
         (*P_PtrPtr)++;
-        result=pmatch_charlist(P_PtrPtr,S_Char,*Flags);
-        break;
-
-    case '{':
-        (*P_PtrPtr)++;
-        result=MATCH_REPEAT;
+        result=pmatch_charlist(P_PtrPtr, S_PtrPtr, Flags);
         break;
 
     case '\\':
         (*P_PtrPtr)++;
         result=pmatch_quot(P_PtrPtr, S_PtrPtr, Flags);
+        break;
+
+    case '*':
+        result=MATCH_MANY;
+        break;
+
+    case '+':
+        result=MATCH_REPEAT;
+        break;
+
+    case '{':
+				//don't increment ptr, the pmatch_repeat function will examine this character to see if it's '{' or '+'
+        result=MATCH_REPEAT;
         break;
 
     default:
@@ -398,13 +431,13 @@ int pmatch_char(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 }
 
 
-int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char **MatchStart, const char **MatchEnd, int *Flags)
+static int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char **MatchStart, const char **MatchEnd, int *Flags)
 {
     const char *P_Ptr, *S_Ptr;
     int result;
-
-    if (MatchStart) *MatchStart=NULL;
-    if (MatchEnd) *MatchEnd=NULL;
+		
+    //if (MatchEnd) *MatchEnd=NULL;
+    if (MatchStart && (*MatchStart==NULL)) *MatchStart=*S_PtrPtr;
 
     P_Ptr=(*P_PtrPtr)+1;
     if (*P_Ptr=='\0')
@@ -412,12 +445,12 @@ int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End,
         //we have a terminating '*' so consume all string
         while (**S_PtrPtr != '\0') (*S_PtrPtr)++;
         *P_PtrPtr=P_Ptr;
+				if (MatchEnd) *MatchEnd=P_Ptr;
         return(MATCH_ONE);
     }
 
-    for (S_Ptr=*S_PtrPtr; *S_Ptr != '\0'; S_Ptr++)
+    for (S_Ptr=*S_PtrPtr; ; S_Ptr++)
     {
-        P_Ptr=(*P_PtrPtr)+1;
         //out of pattern, must be a match!
         result=pmatch_search(&P_Ptr, &S_Ptr, S_End, MatchStart, MatchEnd, Flags);
         if (result == MATCH_ONE)
@@ -426,19 +459,22 @@ int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End,
             *S_PtrPtr=S_Ptr;
             return(MATCH_ONE);
         }
+
+				if (*S_Ptr == '\0') return(MATCH_FAIL);
     }
     return(MATCH_FAIL);
 }
 
 
 //Somewhat ugly, as we need to iterate through the string, so we need it passed as a **
-int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char **MatchStart, const char **MatchEnd, int *Flags)
+static int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_End, const char **MatchStart, const char **MatchEnd, int *Flags)
 {
     const char *ptr, *S_Start, *P_tmp, *S_tmp;
+		//Prev1 and Prev2 are for the 'repeat last match' system. If we consider, for instance, '\D+' we will match a number with '\D' 
+		//and then come to '+' which means one or more of the same. Unfortunately, by the time we've read '+' and realized what it is, the
+		//'\D' is now to matches behind, so we have to use two 'Prev' variables to deal with that
+		const char *Prev1=NULL, *Prev2=NULL;
     int result;
-
-    if (MatchStart) *MatchStart=NULL;
-    if (MatchEnd) *MatchEnd=NULL;
 
     if (*Flags & PMATCH_SUBSTR)
     {
@@ -447,6 +483,8 @@ int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
     }
 
     S_Start=*S_PtrPtr;
+		Prev1=*P_PtrPtr;
+		Prev2=Prev1;
     result=pmatch_char(P_PtrPtr, S_PtrPtr, Flags);
     while (*S_PtrPtr < S_End)
     {
@@ -459,7 +497,7 @@ int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
         case MATCH_START:
             if (*Flags & PMATCH_NOTSTART) return(MATCH_FAIL);
             (*S_PtrPtr)--; //naughty, were are now pointing before String, but the
-            //S_Ptr++ below will correct this
+                           //S_Ptr++ below will correct this
             break;
 
 
@@ -469,47 +507,69 @@ int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
         case MATCH_MANY:
             result=pmatch_many(P_PtrPtr, S_PtrPtr, S_End, MatchStart, MatchEnd, Flags);
             if (result==MATCH_FAIL) return(MATCH_FAIL);
+						if (StrValid(*P_PtrPtr)==0) return(MATCH_ONE);
             break;
 
         case MATCH_FOUND:
-
-            if (! (*Flags & PMATCH_NOEXTRACT) )
-            {
-                //This is to prevent returning NULL strings in 'MatchStart' and 'MatchEnd'
-                if (MatchStart && (! *MatchStart)) *MatchStart=S_Start;
-                if (MatchEnd && (! *MatchEnd)) *MatchEnd=*MatchStart;
-            }
             return(MATCH_ONE);
             break;
 
+				//pmatch_repeat handles both '+' and '{n}' style repeats
         case MATCH_REPEAT:
-            result=pmatch_repeat(P_PtrPtr, S_PtrPtr, S_End, Flags);
+            result=pmatch_repeat(P_PtrPtr, S_PtrPtr, S_End, Prev2, Flags);
             if (result==MATCH_FAIL) return(MATCH_FAIL);
             break;
         }
 
 
-        if (result==MATCH_NEXT) /*do nothing */ ;
-        else if (result==MATCH_FOUND) continue;
-        else if (! (*Flags & PMATCH_NOEXTRACT))
+				switch (result)
+				{
+        case MATCH_NEXT:
+        case MATCH_SWITCH_ON:
+        case MATCH_SWITCH_OFF:
+					/* do nothing. These are events that do not move us through the string we are matching against */ ;
+					break;
+
+        //Handle 'MATCH_FOUND' in the switch statement, don't iterate further through Pattern or String
+        case MATCH_FOUND: 
+					continue;
+				break;
+
+				default:
+        if (! (*Flags & PMATCH_NOEXTRACT))
         {
             if (MatchStart && (*S_PtrPtr >= S_Start) && (! *MatchStart)) *MatchStart=*S_PtrPtr;
             if (MatchEnd && ((*(S_PtrPtr)+1) < S_End)) *MatchEnd=(*S_PtrPtr)+1;
         }
 
-        //Handle 'MATCH_FOUND' in the switch statement, don't iterate further through Pattern or String
-
         if (**S_PtrPtr != '\0') (*S_PtrPtr)++;
+				break;
+				}
 
+
+				Prev2=Prev1;
+				Prev1=*P_PtrPtr;
         result=pmatch_char(P_PtrPtr, S_PtrPtr, Flags);
     }
 
 //any number of '*' at the end of the pattern don't count once we've run out of string
 //? however does, because '?' is saying 'one character' whereas '*' is zero or more
-//while (*P_Ptr=='*') P_Ptr++;
+// while (*P_Ptr=='*') P_Ptr++;
 
-//if pattern not exhausted then we didn't get a match
+
+// if pattern not exhausted then we didn't get a match
     if (**P_PtrPtr !='\0') return(MATCH_FAIL);
+
+    if (! (*Flags & PMATCH_NOEXTRACT))
+    {
+      if (MatchStart && (*S_PtrPtr >= S_Start) && (! *MatchStart)) *MatchStart=*S_PtrPtr;
+      if (MatchEnd)
+			{
+				if (*S_PtrPtr >= S_End) *MatchEnd=S_End;
+				else *MatchEnd=(*S_PtrPtr)+1;
+			}
+    }
+
 
     return(MATCH_ONE);
 }
@@ -518,7 +578,7 @@ int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const char *S_En
 
 
 //Wrapper around pmatch_search to make it more user friendly
-int pmatch_one(const char *Pattern, const char *String, int len, const char **Start, const char **End, int Flags)
+static int pmatch_one_internal(const char *Pattern, const char *String, int len, const char **Start, const char **End, int *Flags)
 {
     const char *P_Ptr, *S_Ptr, *S_End;
     int result;
@@ -532,12 +592,17 @@ int pmatch_one(const char *Pattern, const char *String, int len, const char **St
     if (Start) *Start=NULL;
     if (End) *End=NULL;
 
-    result=pmatch_search(&P_Ptr, &S_Ptr, S_End, Start, End, &Flags);
+    result=pmatch_search(&P_Ptr, &S_Ptr, S_End, Start, End, Flags);
     if ((result == MATCH_ONE) || (result == MATCH_FOUND))
     {
-        if ((Flags & PMATCH_SHORT) || (*S_Ptr=='\0'))
+        if ((*Flags & PMATCH_SHORT) || (*S_Ptr=='\0'))
         {
-            return(TRUE);
+        		if (! (*Flags & PMATCH_NOEXTRACT))
+						{
+							if (! *Start) return(FALSE);
+							if (! *End) return(FALSE);
+						}
+						if (S_Ptr > String) return(TRUE);
         }
     }
 
@@ -545,39 +610,13 @@ int pmatch_one(const char *Pattern, const char *String, int len, const char **St
 }
 
 
-
-
-int pmatch_process(const char **Compiled, const char *String, int len, ListNode *Matches, int Flags)
+int pmatch_one(const char *Pattern, const char *String, int len, const char **Start, const char **End, int Flags)
 {
-//p_ptr points to the pattern from 'Compiled' that's currently being
-//tested. s_ptr holds our progress through the string
-    const char **p_ptr;
-    const char *Start=NULL, *End=NULL;
-    int result;
-    TPMatch *Match;
-    int NoOfItems=0;
-
-    for (p_ptr=Compiled; *p_ptr != NULL; p_ptr++)
-    {
-        if (pmatch_one(*p_ptr, String, len, &Start, &End, Flags))
-        {
-            NoOfItems++;
-            if (Matches)
-            {
-                Match=(TPMatch *) calloc(1, sizeof(TPMatch));
-                Match->Start=Start;
-                Match->End=End;
-                ListAddItem(Matches,Match);
-            }
-        }
-    }
-
-    return(NoOfItems);
+return(pmatch_one_internal(Pattern, String, len, Start, End, &Flags));
 }
 
 
-
-void pmatch_compile(const char *Pattern, const char ***Compiled)
+static void pmatch_compile(const char *Pattern, const char ***Compiled)
 {
     int NoOfRecords=0, NoOfItems=0;
     const char *ptr, *start;
@@ -586,7 +625,6 @@ void pmatch_compile(const char *Pattern, const char ***Compiled)
 
     while (ptr && (*ptr != '\0'))
     {
-        //while ((*ptr=='?') || (*ptr=='*')) ptr++;
         NoOfItems++;
         if (NoOfItems >= NoOfRecords)
         {
@@ -604,12 +642,48 @@ void pmatch_compile(const char *Pattern, const char ***Compiled)
 }
 
 
+//this checks for a match using any of the match patterns in 'compiled' against 'String' once. The calling function will
+//then increment String and call this function again
+static int pmatch_process(const char **Compiled, const char *String, int len, const char **Start, const char **End, ListNode *Matches, int *Flags)
+{
+//p_ptr points to the pattern from 'Compiled' that's currently being
+//tested. s_ptr holds our progress through the string
+    const char **p_ptr;
+    int result;
+    TPMatch *Match;
+    int NoOfItems=0;
+
+		*Start=NULL;
+		*End=NULL;
+    for (p_ptr=Compiled; *p_ptr != NULL; p_ptr++)
+    {
+        if (pmatch_one_internal(*p_ptr, String, len, Start, End, Flags))
+        {
+            NoOfItems++;
+
+            if (Matches)
+            {
+                Match=(TPMatch *) calloc(1, sizeof(TPMatch));
+                Match->Start=*Start;
+                Match->End=*End;
+                ListAddItem(Matches,Match);
+            }
+    				if (*Flags & PMATCH_NO_OVERLAP) break;
+        }
+    }
+
+    return(NoOfItems);
+}
+
+
+
 
 int pmatch(const char *Pattern, const char *String, int Len, ListNode *Matches, int Flags)
 {
     const char **Compiled=NULL;
     const char *s_ptr, *s_end;
-    int result=0, i;
+		const char *Start=NULL,  *End=NULL;
+    int result=0, mcount=0, i;
 
     pmatch_compile(Pattern,&Compiled);
 
@@ -618,28 +692,25 @@ int pmatch(const char *Pattern, const char *String, int Len, ListNode *Matches, 
 
     if (Flags & PMATCH_SUBSTR)
     {
-        for (s_ptr=String; s_ptr < s_end; s_ptr++)
+        for (s_ptr=String; s_ptr < s_end; )
         {
-            result+=pmatch_process((const char **) Compiled, s_ptr, s_end-s_ptr, Matches, Flags);
+            result=pmatch_process((const char **) Compiled, s_ptr, s_end-s_ptr, &Start, &End, Matches, &Flags);
+						mcount+=result;
             Flags |= PMATCH_NOTSTART;
-        }
-    }
-    else result=pmatch_process((const char **) Compiled, String, Len, Matches, Flags);
 
-    /*
     				//if we allow matches to overlap, then we'll check for a match
     				//at every position, otherwise we jump to end of this match
-    				if (! (Flags & PMATCH_OVERLAP))
-    				{
-    					s_ptr=End;
-    					s_ptr--;
-    				}
-    */
+    				if (result && (Flags & PMATCH_NO_OVERLAP)) s_ptr=End;
+						else s_ptr++;
+        }
+    }
+    else mcount=pmatch_process((const char **) Compiled, String, Len, &Start, &End, Matches, &Flags);
+
 
     if (Compiled) 
 		{
 			for (i=0; Compiled[i] !=NULL; i++) Destroy((void *) Compiled[i]);
 			free(Compiled);
 		}
-    return(result);
+    return(mcount);
 }

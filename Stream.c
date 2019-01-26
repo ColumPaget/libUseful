@@ -255,7 +255,6 @@ int STREAMCountWaitingBytes(STREAM *S)
     return(0);
 }
 
-
 STREAM *STREAMSelect(ListNode *Streams, struct timeval *tv)
 {
     fd_set SelectSet;
@@ -308,6 +307,8 @@ STREAM *STREAMSelect(ListNode *Streams, struct timeval *tv)
 
     return(NULL);
 }
+
+
 
 
 int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
@@ -526,8 +527,8 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
     }
 
 
-    DestroyString(OutputBuff);
-    DestroyString(InBuff);
+    Destroy(OutputBuff);
+    Destroy(InBuff);
 
     if (len==0)
     {
@@ -659,7 +660,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     {
         if (Flags & SF_ERROR) RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "failed to open %s", p_Path);
         else RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "failed to open %s", p_Path);
-        DestroyString(NewPath);
+        Destroy(NewPath);
         return(NULL);
     }
 
@@ -668,7 +669,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
         if (flock(fd,LOCK_EX | LOCK_NB)==-1)
         {
             close(fd);
-            DestroyString(NewPath);
+            Destroy(NewPath);
             return(NULL);
         }
     }
@@ -679,7 +680,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
         {
             RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "file lock requested but failed %s", p_Path);
             close(fd);
-            DestroyString(NewPath);
+            Destroy(NewPath);
             return(NULL);
         }
     }
@@ -696,7 +697,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
         {
             RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "cannot stat %s", p_Path);
             close(fd);
-            DestroyString(NewPath);
+            Destroy(NewPath);
             return(NULL);
         }
 
@@ -704,7 +705,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
         {
             RaiseError(0, "STREAMFileOpen", "%s is a symlink, but not not in 'symlink okay' mode", p_Path);
             close(fd);
-            DestroyString(NewPath);
+            Destroy(NewPath);
             return(NULL);
         }
     }
@@ -734,8 +735,8 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     }
 
 
-    DestroyString(Tempstr);
-    DestroyString(NewPath);
+    Destroy(Tempstr);
+    Destroy(NewPath);
 
     return(Stream);
 }
@@ -909,13 +910,13 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         }
     }
 
-    DestroyString(Token);
-    DestroyString(Proto);
-    DestroyString(Host);
-    DestroyString(User);
-    DestroyString(Pass);
-    DestroyString(Path);
-    DestroyString(Args);
+    Destroy(Token);
+    Destroy(Proto);
+    Destroy(Host);
+    Destroy(User);
+    Destroy(Pass);
+    Destroy(Path);
+    Destroy(Args);
 
     return(S);
 }
@@ -939,14 +940,14 @@ void STREAMDestroy(void *p_S)
     else
     {
         //if SF_MMAP is set then S->InputBuff points to shared memory
-        if (! (S->Flags & SF_MMAP)) DestroyString(S->InputBuff);
-        DestroyString(S->OutputBuff);
+        if (! (S->Flags & SF_MMAP)) Destroy(S->InputBuff);
+        Destroy(S->OutputBuff);
     }
 
     ListDestroy(S->Items, NULL);
     ListDestroy(S->Values,(LIST_ITEM_DESTROY_FUNC) Destroy);
     ListDestroy(S->ProcessingModules,DataProcessorDestroy);
-    DestroyString(S->Path);
+    Destroy(S->Path);
     free(S);
 }
 
@@ -966,7 +967,7 @@ void STREAMClose(STREAM *S)
     if (S->Type == STREAM_TYPE_TTY) TTYHangUp(S->in_fd);
 
     if (
-        (StrLen(S->Path)==0) ||
+        (StrEnd(S->Path)) ||
         (strcmp(S->Path,"-") !=0)
     )
     {
@@ -1143,7 +1144,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
                 bytes_read=UDPRecv(S->in_fd,  tmpBuff, val, &Peer, NULL);
                 saved_errno=errno;
                 STREAMSetValue(S, "Peer", Peer);
-                DestroyString(Peer);
+                Destroy(Peer);
             }
             else
             {
@@ -1182,7 +1183,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
 //there is a condition (like socket close) where the thing we are waiting for
 //may not appear
 
-    DestroyString(tmpBuff);
+    Destroy(tmpBuff);
     return(read_result);
 }
 
@@ -1362,7 +1363,7 @@ int STREAMInternalPushProcessingModules(STREAM *S, const char *InData, unsigned 
         Curr=Next;
     }
 
-    DestroyString(TempBuff);
+    Destroy(TempBuff);
     return(AllDataWritten);
 }
 
@@ -1449,7 +1450,7 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
     if (len > 0) result=STREAMInternalQueueBytes(S, i_data, len);
     else if (S->OutEnd > S->StartPoint) result=STREAMInternalFinalWriteBytes(S, S->OutputBuff, S->OutEnd);
 
-    DestroyString(TempBuff);
+    Destroy(TempBuff);
 
 		if (result < 0) return(result);
 		else return(DataLen);
@@ -1462,7 +1463,7 @@ int STREAMWriteString(const char *Buffer, STREAM *S)
 {
     int result;
 
-    if (StrLen(Buffer) < 1) return(FALSE);
+    if (StrEnd(Buffer)) return(FALSE);
     result=STREAMWriteBytes(S,Buffer,strlen(Buffer));
     return(result);
 }
@@ -1471,7 +1472,7 @@ int STREAMWriteLine(const char *Buffer, STREAM *S)
 {
     int result;
 
-    if (StrLen(Buffer) < 1) return(FALSE);
+    if (StrEnd(Buffer)) return(FALSE);
     result=STREAMWriteBytes(S,Buffer,strlen(Buffer));
     if (result < 0) return(result);
     if (S->Flags & FLUSH_LINE) result=STREAMFlush(S);
@@ -1614,7 +1615,7 @@ int STREAMReadBytesToTerm(STREAM *S, char *Buffer, int BuffSize,unsigned char Te
 char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
 {
     int result, len=0, avail=0, bytes_read=0;
-    char *RetStr=NULL, *ptr;
+    char *RetStr=NULL, *p_Term;
     int IsClosed=FALSE;
 
 
@@ -1624,14 +1625,17 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
         len=0;
         avail=S->InEnd-S->InStart;
 
+				//if this gets set we've found a terminator
+				p_Term=NULL;
+
         //if we have bytes in buffer then check for terminator or buffer full
         //in either case set len to transfer bytes out
         if (avail > 0)
         {
             //if buffer full, or terminator char present, set len
             //memchr is wicked fast, so use it
-            ptr=memchr(S->InputBuff+S->InStart, Term, avail);
-            if (ptr) len=(ptr+1)-(S->InputBuff+S->InStart);
+            p_Term=memchr(S->InputBuff+S->InStart, Term, avail);
+            if (p_Term) len=(p_Term+1)-(S->InputBuff+S->InStart);
             else if (IsClosed) len=avail;
             else if (S->InStart > 0) len=0; //call 'ReadCharsToBuffer' which will move 'InStart' to start of buffer
             else if (S->InEnd >= S->BuffSize) len=avail;
@@ -1639,7 +1643,8 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
         //if nothing in buffer and connection closed, return NULL
         else if (IsClosed)
         {
-            DestroyString(RetStr);
+						if (bytes_read > 0) return(RetStr);
+            Destroy(RetStr);
             return(NULL);
         }
 
@@ -1668,7 +1673,7 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
             bytes_read+=len;
             *(RetStr+bytes_read)='\0';
 
-            return(RetStr);
+            if (p_Term) return(RetStr);
         }
 
     }
@@ -1713,7 +1718,7 @@ char *STREAMReadToMultiTerminator(char *Buffer, STREAM *S, char *Terms)
     if (
         ((inchar==STREAM_CLOSED) || (inchar==STREAM_DATA_ERROR))
         &&
-        (StrLen(Tempptr)==0)
+        (StrEnd(Tempptr))
     )
     {
         free(Tempptr);
@@ -1782,7 +1787,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     char *Tempstr=NULL;
     int result, bytes_read=0;
 
-    if (S->Size > 0)
+    if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) )
     {
         RetStr=SetStrLen(RetStr, S->Size);
         while (bytes_read < S->Size)
@@ -1804,7 +1809,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
         }
     }
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     return(RetStr);
 }
 
@@ -1926,7 +1931,7 @@ int STREAMFindBinarySearch(STREAM *S, const char *Item, const char *Delimiter, c
         result=STREAMFindCompare(Tempstr, Item, Delimiter, RetStr);
         if (result < 1)
         {
-            DestroyString(Tempstr);
+            Destroy(Tempstr);
             if (result==0) return(TRUE);
             return(FALSE);
         }
@@ -1934,7 +1939,7 @@ int STREAMFindBinarySearch(STREAM *S, const char *Item, const char *Delimiter, c
         StripTrailingWhitespace(Tempstr);
     }
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     return(FALSE);
 }
 
@@ -1953,13 +1958,13 @@ int STREAMFind(STREAM *S, const char *Item, const char *Delimiter, char **RetStr
         StripTrailingWhitespace(Tempstr);
         if (STREAMFindCompare(Tempstr, Item, Delimiter, RetStr)==0)
         {
-            DestroyString(Tempstr);
+            Destroy(Tempstr);
             return(TRUE);
         }
         Tempstr=STREAMReadLine(Tempstr, S);
     }
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     return(FALSE);
 }
 
@@ -2039,7 +2044,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 								if ((result==STREAM_CLOSED) && (towrite==0))
 								{
 									STREAMFlush(Out);
-									return(STREAM_CLOSED);
+									return(bytes_transferred);
 								}
             }
 
@@ -2086,18 +2091,17 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
         else len=(long) (Max-bytes_transferred);
     }
 
-    if ((result==STREAM_CLOSED) && (bytes_transferred==0) ) return(STREAM_CLOSED);
     return(bytes_transferred);
 }
 
 
-int STREAMCopy(STREAM *Src, const char *DestPath)
+unsigned long STREAMCopy(STREAM *Src, const char *DestPath)
 {
     STREAM *Dest;
-    int result;
+    unsigned long result;
 
     Dest=STREAMOpen(DestPath,"wc");
-    if (! Dest) return(FALSE);
+    if (! Dest) return(0);
 
     result=STREAMSendFile(Src, Dest, 0, SENDFILE_LOOP);
 // | SENDFILE_KERNEL);

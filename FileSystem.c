@@ -114,7 +114,7 @@ int FileChangeExtension(const char *FilePath, const char *NewExt)
     if (!ptr) ptr=Tempstr;
     ptr=strrchr(ptr,'.');
     if (! ptr) ptr=Tempstr+StrLen(Tempstr);
-    *ptr='\0';
+    StrTrunc(Tempstr, ptr-Tempstr);
 
     if (*NewExt=='.') Tempstr=CatStr(Tempstr,NewExt);
     else Tempstr=MCatStr(Tempstr,".",NewExt,NULL);
@@ -237,13 +237,14 @@ int FileChGroup(const char *FileName, const char *Group)
 }
 
 
-int FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRESS_CALLBACK Callback)
+unsigned long FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRESS_CALLBACK Callback)
 {
     STREAM *Src;
-    int result;
+    unsigned long result;
 
     Src=STREAMOpen(SrcPath,"r");
-    if (! Src) return(FALSE);
+    if (! Src) return(0);
+
     if (Callback) STREAMAddProgressCallback(Src,Callback);
     result=STREAMCopy(Src, DestPath);
     STREAMClose(Src);
@@ -403,9 +404,10 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
 #endif
 
 
-#define UMOUNT_RECURSE 1
-#define UMOUNT_RMDIR   2
-#define UMOUNT_SUBDIRS 4
+#define UMOUNT_RECURSE  1
+#define UMOUNT_SUBDIRS  2
+#define UMOUNT_RMDIR    4
+#define UMOUNT_RMFILE   8
 
 
 int FileSystemUnMountFlagsDepth(const char *MountPoint, int UnmountFlags, int ExtraFlags, int Depth, int MaxDepth)
@@ -435,6 +437,7 @@ if (ExtraFlags & UMOUNT_RECURSE)
        {
            FileSystemUnMountFlagsDepth(Glob.gl_pathv[i], UnmountFlags, ExtraFlags & ~UMOUNT_SUBDIRS, Depth+1, MaxDepth);
        }
+			 else if (ExtraFlags & UMOUNT_RMFILE) unlink(Glob.gl_pathv[i]);
 			 }
     }
 		globfree(&Glob);
@@ -497,3 +500,7 @@ int FileSystemUnMount(const char *MountPoint, const char *Args)
 }
 
 
+int FileSystemRmDir(const char *Dir)
+{
+	return(FileSystemUnMountFlagsDepth(Dir, 0, UMOUNT_RECURSE | UMOUNT_RMDIR | UMOUNT_RMFILE, 0, 0));
+}

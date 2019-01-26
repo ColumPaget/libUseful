@@ -389,8 +389,12 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
         //use next to hold Head->Side for less typing!
         Next=Head->Side;
 
+				if (Next->Tag)
+				{
         if (Root->Flags & LIST_FLAG_CASE) result=strcmp(Next->Tag,Name);
         else result=strcasecmp(Next->Tag,Name);
+				}
+				else result=-1;
 
         if (result==0) return(Next);
         //if result < 0 AND ITS AN ORDERED LIST then it means the cached item is ahead of our insert point, so we might as well jump to it
@@ -465,6 +469,8 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
     //insert chain
     Head=Node->Head;
 
+		if (Head)
+		{
     if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
     else result=strcasecmp(Node->Tag,Name);
 
@@ -477,6 +483,7 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
         if (Node->Stats) Node->Stats->Hits++;
         return(Node);
     }
+		}
     return(NULL);
 }
 

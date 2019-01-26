@@ -9,10 +9,10 @@
 
 //we cache seconds because we expect most questions about
 //time to be in seconds, and this avoids multiplying millisecs up
-time_t LU_CachedTime=0;
+static time_t LU_CachedTime=0;
 //This is cached millisecs since 1970
-uint64_t LU_CachedMillisecs=0;
-struct tm LU_CachedTM;
+static uint64_t LU_CachedMillisecs=0;
+static struct tm LU_CachedTM;
 
 
 uint64_t GetTime(int Flags)

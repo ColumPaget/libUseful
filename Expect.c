@@ -59,7 +59,12 @@ int STREAMExpectDialog(STREAM *S, ListNode *ExpectDialogs)
                         {
                             ExpectDialog->Match=0;
                             ExpectDialog->Flags |= DIALOG_DONE;
-                            if (ExpectDialog->Reply) STREAMWriteLine(ExpectDialog->Reply,S);
+                            if (ExpectDialog->Reply) 
+														{
+															//this is to allow programs that clear their buffers before reading to do that without throwing away our reply
+															usleep(10000);
+															STREAMWriteLine(ExpectDialog->Reply,S);
+														}
                             if (ExpectDialog->Flags & DIALOG_END) return(TRUE);
                             if (ExpectDialog->Flags & DIALOG_FAIL) return(FALSE);
                         }

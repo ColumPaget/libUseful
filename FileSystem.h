@@ -23,7 +23,7 @@ extern "C" {
 
 //copy SrcPath to DestPath, periodically calling the function 'Callback' to ouput information about
 //copy progress. Look in 'DataProcessing.h' for more information about the Callback function.
-int FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRESS_CALLBACK Callback);
+unsigned long FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRESS_CALLBACK Callback);
 
 //replacement for the basename function. There are two different versions of basename that give
 //different results, and basename reserves the right to modify the string that is passed in.
@@ -129,6 +129,7 @@ int FileSetBinaryXAttr(const char *Path, const char *Name, const char *Value, in
 int FileSetXAttr(const char *Path, const char *Name, const char *Value);
 
 
+int FileSystemRmDir(const char *Dir);
 
 #ifdef __cplusplus
 }

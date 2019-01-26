@@ -7,7 +7,7 @@
 typedef void (*HASH_INIT_FUNC)(HASH *Hash, int Len);
 
 
-const char *HashTypes[]= {"md5","sha1","sha256","sha512","whirlpool","jh-224","jh-256","jh-384","jh-512",NULL};
+static const char *HashTypes[]= {"md5","sha1","sha256","sha512","whirlpool","jh-224","jh-256","jh-384","jh-512",NULL};
 
 //mostly a helper function for environments where integer constants are not convinient
 int HashEncodingFromStr(const char *Str)

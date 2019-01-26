@@ -260,6 +260,7 @@ char *SubstituteVarsInString(char *Buffer, const char *Fmt, ListNode *Vars, int 
 
         case '$':
             FmtPtr++;
+						StrLenCacheAdd(ReturnStr, len);
             ReturnStr=ParseVar(ReturnStr, &FmtPtr, Vars, Flags);
             len=StrLen(ReturnStr);
             break;
@@ -286,6 +287,7 @@ char *SubstituteVarsInString(char *Buffer, const char *Fmt, ListNode *Vars, int 
     }
 
 
+		StrLenCacheAdd(ReturnStr, len);
     DestroyString(Tempstr);
     DestroyString(VarName);
     return(ReturnStr);

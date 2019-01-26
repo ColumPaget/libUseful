@@ -44,6 +44,7 @@ MATCH SWITCHES:
 \+C \-C  turn on/off case sensitive matching
 \+W \-W  turn on/off wildcards
 \+X \-X  turn on/off extraction. When 'off' matching chars will not be added to returned strings
+\+O \-O  turn on/off overlapping matches. Overlapping matches are on by default.
 
 
 
@@ -60,7 +61,7 @@ Please note that, without the PMATCH_SUBSTR flag being passed, the whole string 
 #define PMATCH_NEWLINEEND 16
 #define PMATCH_NOTSTART 32
 #define PMATCH_NOTEND   64
-#define PMATCH_OVERLAP 128
+#define PMATCH_NO_OVERLAP 128
 #define PMATCH_SHORT 256
 
 

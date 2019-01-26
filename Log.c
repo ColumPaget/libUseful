@@ -7,12 +7,12 @@
 //When logs are used by 'child processes', it's only the 'parent' process that should be
 //able to delete/reopen the log. Otherwise the child can delete a log that the parent
 //keeps writing to, and keeps handing to child processes. Thus we record the parent pid
-pid_t ParentPID=0;
+static pid_t ParentPID=0;
 
 
 
-ListNode *LogFiles=NULL;
-TLogFile *LogFileDefaults=NULL;
+static ListNode *LogFiles=NULL;
+static TLogFile *LogFileDefaults=NULL;
 
 
 STREAM *LogFileInternalDoRotate(TLogFile *LogFile);

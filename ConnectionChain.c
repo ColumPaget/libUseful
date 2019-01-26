@@ -7,8 +7,8 @@
 #include "Stream.h"
 #include "Ssh.h"
 
-const char *HopTypes[]= {"none","tcp","https","ssh","sshtunnel","socks4","socks5","shell","telnet",NULL};
 typedef enum {CONNECT_HOP_NONE, CONNECT_HOP_TCP, CONNECT_HOP_HTTPTUNNEL, CONNECT_HOP_SSH, CONNECT_HOP_SSHTUNNEL, CONNECT_HOP_SOCKS4, CONNECT_HOP_SOCKS5, CONNECT_HOP_SHELL_CMD, CONNECT_HOP_TELNET} THopTypes;
+static const char *HopTypes[]= {"none","tcp","https","ssh","sshtunnel","socks4","socks5","shell","telnet",NULL};
 
 char *GlobalConnectionChain=NULL;
 

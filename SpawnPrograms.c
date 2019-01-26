@@ -205,7 +205,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
             close(channel3[1]);
             //Yes, we can pass an integer value as errfd, even though errfd is an int *.
             //This is probably a bad idea, and will likely be changed in future releases
-            //if (errfd != (int *) COMMS_COMBINE_STDERR) *errfd=channel3[0];
+            if ((int) errfd != COMMS_COMBINE_STDERR) *errfd=channel3[0];
         }
     }
 

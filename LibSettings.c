@@ -7,7 +7,7 @@
 /* are used by libUseful itself */
 
 int LibUsefulFlags=0;
-ListNode *LibUsefulSettings=NULL;
+static ListNode *LibUsefulSettings=NULL;
 
 ListNode *LibUsefulValuesGetHead()
 {

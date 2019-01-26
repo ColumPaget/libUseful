@@ -8,10 +8,6 @@
 #include <sys/sysinfo.h>
 #endif
 
-void Destroy(void *Obj)
-{
-    if (Obj) free(Obj);
-}
 
 //xmemset uses a 'volatile' pointer so that it won't be optimized out
 void xmemset(volatile char *Str, char fill, off_t size)

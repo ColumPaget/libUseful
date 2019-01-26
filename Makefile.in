@@ -1,5 +1,5 @@
 CC = @CC@
-VERSION = 3.23
+VERSION = 4.0
 CFLAGS = @CFLAGS@ @SIMD_CFLAGS@
 LDFLAGS=@LDFLAGS@
 LIBS = @LIBS@
@@ -11,8 +11,8 @@ OBJ=String.o List.o Socket.o UnixSocket.o Stream.o Errors.o Unicode.o Terminal.o
 all: $(OBJ)
 	$(CC) $(FLAGS) -shared -o libUseful-$(VERSION).so $(OBJ) $(LIBS) $(LDFLAGS)
 	ar rcs libUseful-$(VERSION).a $(OBJ)
-	-ln -s libUseful-$(VERSION).so libUseful-3.so &>/dev/null
-	-ln -s libUseful-$(VERSION).a libUseful-3.a &>/dev/null
+	-ln -s libUseful-$(VERSION).so libUseful-4.so &>/dev/null
+	-ln -s libUseful-$(VERSION).a libUseful-4.a &>/dev/null
 	-ln -s libUseful-$(VERSION).so libUseful.so &>/dev/null
 	-ln -s libUseful-$(VERSION).a libUseful.a &>/dev/null
 
@@ -161,6 +161,6 @@ install: libUseful.so
 	-mkdir -p $(prefix)/lib; cp *.so *.a $(prefix)/lib  
 	-mkdir -p $(prefix)/include/libUseful-$(VERSION)
 	cp *.h $(prefix)/include/libUseful-$(VERSION)
-	-mkdir -p $(prefix)/include/libUseful-3
-	cp *.h $(prefix)/include/libUseful-3
+	-mkdir -p $(prefix)/include/libUseful-4
+	cp *.h $(prefix)/include/libUseful-4
 

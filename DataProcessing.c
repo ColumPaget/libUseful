@@ -646,6 +646,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
         {
 #ifdef HAVE_LIBZ
             Mod->Init=zlibProcessorInit;
+						Mod->Flags |= DPM_COMPRESS;
 #endif
         }
         else if (
@@ -656,6 +657,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
 #ifdef HAVE_LIBZ
             Mod->Init=zlibProcessorInit;
             Args=MCopyStr(Args,"Alg=gzip ",iArgs,NULL);
+						Mod->Flags |= DPM_COMPRESS;
 #endif
         }
         else if (
@@ -667,6 +669,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
             Mod->Init=PipeCommandProcessorInit;
             Mod->Write=PipeCommandProcessorWrite;
             Mod->Close=PipeCommandProcessorClose;
+						Mod->Flags |= DPM_COMPRESS;
         }
         else if (strcasecmp(Name,"xz")==0)
         {
@@ -674,6 +677,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
             Mod->Init=PipeCommandProcessorInit;
             Mod->Write=PipeCommandProcessorWrite;
             Mod->Close=PipeCommandProcessorClose;
+						Mod->Flags |= DPM_COMPRESS;
         }
 
     }
@@ -692,6 +696,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
         {
 #ifdef HAVE_LIBZ
             Mod->Init=zlibProcessorInit;
+						Mod->Flags |= DPM_COMPRESS;
 #endif
         }
         else if (strcasecmp(Name,"gzip")==0)
@@ -699,6 +704,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
 #ifdef HAVE_LIBZ
             Mod->Init=zlibProcessorInit;
             Args=MCopyStr(Args,"Alg=gzip ",iArgs,NULL);
+						Mod->Flags |= DPM_COMPRESS;
 #endif
         }
         else if (strcasecmp(Name,"bzip2")==0)
@@ -707,6 +713,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
             Mod->Init=PipeCommandProcessorInit;
             Mod->Read=PipeCommandProcessorWrite;
             Mod->Close=PipeCommandProcessorClose;
+						Mod->Flags |= DPM_COMPRESS;
         }
         else if (strcasecmp(Name,"xz")==0)
         {
@@ -714,6 +721,7 @@ TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Na
             Mod->Init=PipeCommandProcessorInit;
             Mod->Read=PipeCommandProcessorWrite;
             Mod->Close=PipeCommandProcessorClose;
+						Mod->Flags |= DPM_COMPRESS;
         }
 
     }
@@ -816,6 +824,7 @@ int STREAMAddStandardDataProcessor(STREAM *S, const char *Class, const char *Nam
     if (Mod)
     {
         STREAMAddDataProcessor(S, Mod, Args);
+				if (Mod->Flags & DPM_COMPRESS) S->State |= SS_COMPRESSED;
         return(TRUE);
     }
 

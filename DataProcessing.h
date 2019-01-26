@@ -54,6 +54,7 @@ typedef void (*DATA_PROGRESS_CALLBACK)(const char *Path, int bytes, int total);
 #define DPM_WRITE_FINAL 2
 #define DPM_NOPAD_DATA 4
 #define DPM_PROGRESS 8
+#define DPM_COMPRESS 16
 
 struct t_dpmod
 {

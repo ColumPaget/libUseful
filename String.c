@@ -6,6 +6,17 @@
 #define va_copy(dest, src) (dest) = (src)
 #endif
 
+typedef struct
+{
+const char *Str;
+size_t len;
+} TStrLenCacheEntry;
+
+static int StrLenCacheSize=0;
+static TStrLenCacheEntry *StrLenCache=NULL;
+
+
+
 
 int strtobool(const char *str)
 {
@@ -32,6 +43,50 @@ int strtobool(const char *str)
 }
 
 
+char *strlwr(char *str)
+{
+    char *ptr;
+
+    if (! str) return(NULL);
+    for (ptr=str; *ptr !='\0'; ptr++) *ptr=tolower(*ptr);
+    return(str);
+}
+
+
+char *strupr(char *str)
+{
+    char *ptr;
+    if (! str) return(NULL);
+    for (ptr=str; *ptr !='\0'; ptr++) *ptr=toupper(*ptr);
+    return(str);
+}
+
+
+char *strrep(char *str, char oldchar, char newchar)
+{
+    char *ptr;
+
+    if (! str) return(NULL);
+    for (ptr=str; *ptr !='\0'; ptr++)
+    {
+        if (*ptr==oldchar) *ptr=newchar;
+    }
+    return(str);
+}
+
+char *strmrep(char *str, char *oldchars, char newchar)
+{
+    char *ptr;
+
+    if (! str) return(NULL);
+    for (ptr=str; *ptr !='\0'; ptr++)
+    {
+        if (strchr(oldchars,*ptr)) *ptr=newchar;
+    }
+    return(str);
+}
+
+
 
 int CompareStr(const char *S1, const char *S2)
 {
@@ -47,12 +102,123 @@ int CompareStr(const char *S1, const char *S2)
 }
 
 
+
+void StrLenCacheDel(const char *Str)
+{
+int i;
+
+for (i=0; i < StrLenCacheSize; i++)
+{
+	if (StrLenCache[i].Str == Str) StrLenCache[i].Str=NULL;
+}
+}
+
+void StrLenCacheUpdate(const char *Str, int incr)
+{
+int i;
+
+for (i=0; i < StrLenCacheSize; i++)
+{
+	if (StrLenCache[i].Str == Str) StrLenCache[i].len+=incr;
+}
+}
+
+
+void StrLenCacheAdd(const char *Str, size_t len)
+{
+int i, emptyslot=-1;
+
+if (! StrLenCache) 
+{
+	StrLenCache=(TStrLenCacheEntry *) calloc(20, sizeof(TStrLenCacheEntry));
+	StrLenCacheSize=20;
+}
+
+for (i=0; i < StrLenCacheSize; i++)
+{
+	if (StrLenCache[i].Str == NULL) emptyslot=i;
+	else if (StrLenCache[i].Str == Str) 
+	{
+		StrLenCache[i].len=len;
+		return;
+	}
+}
+
+if (emptyslot == -1) emptyslot=rand() % StrLenCacheSize;
+
+StrLenCache[emptyslot].Str=Str;
+StrLenCache[emptyslot].len=len;
+}
+
+
+int StrLenFromCache(const char *Str)
+{
+uint64_t c, i;
+
+if (! Str) return(0);
+
+//apparently with a good compiler this gives a faster result than checking each byte
+//not sure I believe it but it doesn't cost much so...
+c=*(uint64_t *) Str;
+if ((c & 0xFF)==0) return(0);
+if ((c & 0xFF00)==0) return(1);
+if ((c & 0xFF0000)==0) return(2);
+if ((c & 0xFF000000)==0) return(3);
+if ((c & 0xFF00000000)==0) return(4);
+if ((c & 0xFF0000000000)==0) return(5);
+if ((c & 0xFF000000000000)==0) return(6);
+if ((c & 0xFF00000000000000)==0) return(7);
+
+//okay, it's not a short string, so is it in the cache?
+for (i=0; i < StrLenCacheSize; i++)
+{
+__builtin_prefetch (&StrLenCache[i].Str, 0, 3);
+__builtin_prefetch (&StrLenCache[i+1].Str, 0, 3);
+
+	if (StrLenCache[i].Str == Str) 
+{
+//	fprintf(stderr, "strlen cache hit: %d\n", StrLenCache[i].len);
+	return(StrLenCache[i].len);
+}
+}
+//fprintf(stderr, "strlen cache miss: %d\n", StrLenCache[i].len);
+
+//okay, nothing worked, fall back to good old strlen
+return(strlen(Str));
+}
+
+
+//Use strlen cache
+void Destroy(void *Obj)
+{
+	StrLenCacheDel(Obj);
+  if (Obj) free(Obj);
+}
+
+
+
+
+
+char *SetStrLen(char *Str, size_t len)
+{
+char *ptr;
+
+		StrLenCacheDel(Str);
+    // Note len+1 to allow for terminating NULL 
+    if (Str==NULL) ptr=(char *) calloc(1, len + 8);
+    else ptr=(char *) realloc(Str, len + 8);
+
+		if (len > 8) StrLenCacheAdd(ptr, len);
+		return(ptr);
+}
+
+
 char *CopyStrLen(char *Dest, const char *Src, size_t len)
 {
     const char *src, *end;
     char *dst;
 
-    Dest=(char *)realloc(Dest,len+1);
+    Dest=SetStrLen(Dest,len);
     dst=Dest;
     src=Src;
     if (src)
@@ -77,8 +243,8 @@ char *CatStrLen(char *Dest, const char *Src, size_t len)
     char *dst;
     int dstlen;
 
-    dstlen=StrLen(Dest);
-    Dest=(char *)realloc(Dest,dstlen+len+1);
+    dstlen=StrLenFromCache(Dest);
+    Dest=SetStrLen(Dest,dstlen+len);
     dst=Dest+dstlen;
     src=Src;
     end=src+len;
@@ -115,19 +281,19 @@ char *VCatStr(char *Dest, const char *Str1,  va_list args)
 
     if (Dest !=NULL)
     {
-        len=StrLen(Dest);
+        len=StrLenFromCache(Dest);
         ptr=Dest;
     }
-    else ptr=(char *) calloc(10,1);
+    else ptr=SetStrLen(NULL, StrLenFromCache(Str1));
 
     if (! Str1) return(ptr);
 
-    for (sptr=Str1; sptr !=NULL; sptr=va_arg(args,const char *))
+    for (sptr=Str1; sptr !=NULL; sptr=va_arg(args, const char *))
     {
         ilen=StrLen(sptr);
         if (ilen > 0)
         {
-            ptr=(char *) realloc(ptr,len+ilen+10);
+            ptr=SetStrLen(ptr,len+ilen);
             if (ptr)
             {
                 memcpy(ptr+len, sptr, ilen);
@@ -140,6 +306,10 @@ char *VCatStr(char *Dest, const char *Str1,  va_list args)
     return(ptr);
 }
 
+
+
+//These two functions are not really internal to this module, but should only be called via the 
+//supplied macros in String.h
 char *InternalMCatStr(char *Dest, const char *Str1,  ...)
 {
     char *ptr=NULL;
@@ -167,6 +337,44 @@ char *InternalMCopyStr(char *Dest, const char *Str1,  ...)
     return(ptr);
 }
 
+char *StrTrunc(char *Str, int Len)
+{
+if (StrLen(Str) > Len) 
+{
+	Str[Len]='\0';
+	StrLenCacheAdd(Str, Len);
+}
+
+return(Str);
+}
+
+
+int StrTruncChar(char *Str, char Term)
+{
+const char *ptr;
+
+ptr=strchr(Str, Term);
+if (ptr) 
+{
+	StrTrunc(Str, ptr-Str);
+	return(TRUE);
+}
+return(FALSE);
+}
+
+
+int StrRTruncChar(char *Str, char Term)
+{
+const char *ptr;
+
+ptr=strrchr(Str, Term);
+if (ptr) 
+{
+	Str=StrTrunc(Str, ptr-Str);
+	return(TRUE);
+}
+return(FALSE);
+}
 
 
 char *PadStr(char*Dest, char Pad, int PadLen)
@@ -183,14 +391,14 @@ char *PadStr(char*Dest, char Pad, int PadLen)
     if (PadLen > 0)
     {
         Dest=(CatStr(Dest, NewStr));
-        DestroyString(NewStr);
+        Destroy(NewStr);
     }
 //Negative values mean pad in front of text
     else
     {
         NewStr=CatStr(NewStr,Dest);
         //NewStr is the replacement for Dest, so we destroy Dest
-        DestroyString(Dest);
+        Destroy(Dest);
         Dest=NewStr;
     }
 
@@ -205,7 +413,7 @@ char *PadStrTo(char*Dest, char Pad, int PadLen)
 
     if (PadLen==0) return(Dest);
 
-    len=StrLen(Dest);
+    len=StrLenFromCache(Dest);
     if (PadLen > 0)
     {
         val=PadLen-len;
@@ -279,7 +487,7 @@ char *VFormatStr(char *InBuff, const char *InputFmtStr, va_list args)
         /* new style returns how long buffer should have been.. so we resize it */
         if (result > (inc * count))
         {
-            Tempstr=SetStrLen(Tempstr, result+10);
+            Tempstr=SetStrLen(Tempstr, result);
             va_copy(argscopy,args);
             result=vsnprintf(Tempstr,result+10,FmtStr,argscopy);
             va_end(argscopy);
@@ -288,7 +496,10 @@ char *VFormatStr(char *InBuff, const char *InputFmtStr, va_list args)
         break;
     }
 
-    DestroyString(FmtStr);
+		if (result < 0) result=0;
+		StrLenCacheAdd(Tempstr, result);
+
+    Destroy(FmtStr);
 
     return(Tempstr);
 }
@@ -322,7 +533,7 @@ inline char *AddCharToBuffer(char *Dest, size_t DestLen, char Char)
     char *actb_ptr;
 
 //if (Dest==NULL || ((DestLen % 100)==0))
-    actb_ptr=(char *) realloc((void *) Dest,DestLen +110);
+    actb_ptr=SetStrLen(Dest, DestLen);
 //else actb_ptr=Dest;
 
     actb_ptr[DestLen]=Char;
@@ -337,7 +548,7 @@ inline char *AddBytesToBuffer(char *Dest, size_t DestLen, char *Bytes, size_t No
     char *actb_ptr=NULL;
 
 //if (Dest==NULL || ((DestLen % 100)==0))
-    actb_ptr=(char *) realloc((void *) Dest,DestLen + NoOfBytes +10);
+    actb_ptr=SetStrLen(Dest, DestLen + NoOfBytes);
 //else actb_ptr=Dest;
 
     memcpy(actb_ptr+DestLen,Bytes,NoOfBytes);
@@ -347,111 +558,69 @@ inline char *AddBytesToBuffer(char *Dest, size_t DestLen, char *Bytes, size_t No
 
 
 
-char *SetStrLen(char *Str,size_t len)
-{
-    /* Note len+1 to allow for terminating NULL */
-    if (Str==NULL) return((char *) calloc(1,len+1));
-    else return( (char *) realloc(Str,len+1));
-}
-
-
-char *strlwr(char *str)
-{
-    char *ptr;
-
-    if (! str) return(NULL);
-    for (ptr=str; *ptr !='\0'; ptr++) *ptr=tolower(*ptr);
-    return(str);
-}
-
-
-char *strupr(char *str)
-{
-    char *ptr;
-    if (! str) return(NULL);
-    for (ptr=str; *ptr !='\0'; ptr++) *ptr=toupper(*ptr);
-    return(str);
-}
-
-
-char *strrep(char *str, char oldchar, char newchar)
-{
-    char *ptr;
-
-    if (! str) return(NULL);
-    for (ptr=str; *ptr !='\0'; ptr++)
-    {
-        if (*ptr==oldchar) *ptr=newchar;
-    }
-    return(str);
-}
-
-char *strmrep(char *str, char *oldchars, char newchar)
-{
-    char *ptr;
-
-    if (! str) return(NULL);
-    for (ptr=str; *ptr !='\0'; ptr++)
-    {
-        if (strchr(oldchars,*ptr)) *ptr=newchar;
-    }
-    return(str);
-}
-
 
 //These functions return str to allow easy use in languages like lua where the string object
 //is opaque and we must return a new one like this: StripTrailingWhitespace(CopyStr(NULL,Str));
 
-char *StripTrailingWhitespace(char *str)
+char *StripTrailingWhitespace(char *Str)
 {
     size_t len;
     char *ptr;
 
-    len=StrLen(str);
+    len=StrLenFromCache(Str);
     if (len > 0)
     {
-        for(ptr=str+len-1; (ptr >= str) && isspace(*ptr); ptr--) *ptr='\0';
+    		StrLenCacheDel(Str);
+        for(ptr=Str+len-1; (ptr >= Str) && isspace(*ptr); ptr--) *ptr='\0';
     }
 
-    return(str);
+    return(Str);
 }
 
 
-char *StripLeadingWhitespace(char *str)
+char *StripLeadingWhitespace(char *Str)
 {
+		size_t len;
     char *ptr, *start=NULL;
 
-    if (str)
+    if (Str)
     {
-        for(ptr=str; *ptr !='\0'; ptr++)
+        for(ptr=Str; *ptr !='\0'; ptr++)
         {
             if ((! start) && (! isspace(*ptr))) start=ptr;
         }
 
         if (!start) start=ptr;
-        memmove(str,start,ptr+1-start);
+				len=ptr-start;
+				//+1 to get the '\0' character at the end of the line
+        memmove(Str,start,len+1);
+				StrLenCacheAdd(Str, len);
     }
-    return(str);
+    return(Str);
 }
 
 
 
-char *StripCRLF(char *Line)
+char *StripCRLF(char *Str)
 {
     size_t len;
     char *ptr;
 
-    len=StrLen(Line);
+    len=StrLenFromCache(Str);
     if (len > 0)
     {
-        for (ptr=Line+len-1; ptr >= Line; ptr--)
+				StrLenCacheDel(Str);
+        for (ptr=Str+len-1; ptr >= Str; ptr--)
         {
-            if (strchr("\n\r",*ptr)) *ptr='\0';
+            if (strchr("\n\r",*ptr)) 
+						{
+							*ptr='\0';
+						}
             else break;
         }
     }
 
-    return(Line);
+    return(Str);
 }
 
 
@@ -466,11 +635,12 @@ char *StripQuotes(char *Str)
     if ((*ptr=='"') || (*ptr=='\''))
     {
         StartQuote=*ptr;
-        len=StrLen(ptr);
+        len=StrLenFromCache(ptr);
         if ((len > 0) && (StartQuote != '\0') && (ptr[len-1]==StartQuote))
         {
             if (ptr[len-1]==StartQuote) ptr[len-1]='\0';
             memmove(Str,ptr+1,len);
+						StrLenCacheAdd(Str, len);
         }
     }
     return(Str);
@@ -513,6 +683,7 @@ char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)
         olen++;
     }
 
+		StrLenCacheAdd(RetStr, olen);
     return(RetStr);
 }
 
@@ -665,7 +836,7 @@ int strntol(const char **ptr, int len, int radix, long *value)
     strlwr(Tempstr);
     *value=strtol(Tempstr,NULL,radix);
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     *ptr=end;
     return(TRUE);
 }

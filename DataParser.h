@@ -108,7 +108,7 @@ OBTAINED VIA ParserOpenItem. Only do it to the root node obtained with ParserPar
 extern "C" {
 #endif
 
-typedef enum {PARSER_JSON, PARSER_RSS, PARSER_YAML, PARSER_CONFIG, PARSER_INI, PARSER_URL, PARSER_FORK} EParsers;
+typedef enum {PARSER_JSON, PARSER_XML, PARSER_RSS, PARSER_YAML, PARSER_CONFIG, PARSER_INI, PARSER_URL, PARSER_FORK} EParsers;
 
 //this typedef is simply to create a typename that makes code clearer, you can just use 'ListNode' if you prefer
 typedef struct lnode PARSER;

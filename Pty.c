@@ -13,9 +13,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-ListNode *TTYAttribs=NULL;
 
-
+static ListNode *TTYAttribs=NULL;
 
 
 int TTYHangUp(int tty)
@@ -105,6 +104,7 @@ void TTYConfig(int tty, int LineSpeed, int Flags)
     tty_data.c_cflag=CREAD | CS8 | HUPCL | CLOCAL;
 
 
+    tty_data.c_cc[VERASE]=old_tty_data->c_cc[VERASE];
     if (Flags & TTYFLAG_SOFTWARE_FLOW)
     {
         tty_data.c_iflag |= IXON | IXOFF;

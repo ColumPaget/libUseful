@@ -1,12 +1,11 @@
 #include "Terminal.h"
 #include "Unicode.h"
 #include "Pty.h"
+#include "String.h"
 #include <sys/ioctl.h>
 #include <termios.h>
 
-const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
-
-
+static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
 
 int TerminalStrLen(const char *Str)
@@ -24,7 +23,6 @@ int TerminalStrLen(const char *Str)
         }
         else i++;
     }
-
 
     return(i);
 }
@@ -368,9 +366,61 @@ const char *TerminalTranslateKeyCode(int key)
     KeyStr[0]='?';
     KeyStr[1]='\0';
     if ((key > 31) && (key < 127)) KeyStr[0]=key & 0xFF;
+    else if ((key=='\n') || (key=='\r')) KeyStr[0]=key & 0xFF;
     return(KeyStr);
 }
 
+
+
+
+int TerminalTranslateKeyStr(const char *str)
+{
+
+switch (*str)
+{
+case 'e':
+case 'E':
+	if (strcasecmp(str, "ESC")==0) return(ESCAPE);
+break;
+
+case 'l':
+case 'L':
+	if (strcasecmp(str, "LEFT")==0) return(KEY_LEFT);
+break;
+
+case 'r':
+case 'R':
+	if (strcasecmp(str, "RIGHT")==0) return(KEY_RIGHT);
+break;
+
+case 'u':
+case 'U':
+	if (strcasecmp(str, "UP")==0) return(KEY_UP);
+break;
+
+case 'd':
+case 'D':
+	if (strcasecmp(str, "DOWN")==0) return(KEY_DOWN);
+break;
+
+case 'f':
+case 'F':
+	if (strcasecmp(str, "F1")==0) return(KEY_F1);
+	if (strcasecmp(str, "F2")==0) return(KEY_F2);
+	if (strcasecmp(str, "F3")==0) return(KEY_F3);
+	if (strcasecmp(str, "F4")==0) return(KEY_F4);
+	if (strcasecmp(str, "F5")==0) return(KEY_F5);
+	if (strcasecmp(str, "F6")==0) return(KEY_F6);
+	if (strcasecmp(str, "F7")==0) return(KEY_F7);
+	if (strcasecmp(str, "F8")==0) return(KEY_F8);
+	if (strcasecmp(str, "F9")==0) return(KEY_F9);
+	if (strcasecmp(str, "F10")==0) return(KEY_F10);
+	if (strcasecmp(str, "F11")==0) return(KEY_F11);
+break;
+}
+
+return((int) *str);
+}
 
 
 void TerminalGeometry(STREAM *S, int *wid, int *len)
@@ -452,6 +502,34 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
 
 
 
+const char *TerminalAlignText(const char *Text, char **RetStr, int Flags, STREAM *Term)
+{
+int pos=0, cols, rows, len, i;
+const char *ptr;
+
+TerminalGeometry(Term, &cols, &rows);
+len=TerminalStrLen(Text);
+
+if (Flags & TERM_ALIGN_CENTER) pos=cols / 2 - len / 2;
+else if (Flags & TERM_ALIGN_RIGHT) pos=cols - len;
+
+len=StrLenFromCache(*RetStr);
+for (i=0; i < pos; i++)
+{
+	*RetStr=AddCharToBuffer(*RetStr, len, ' ');
+	len++;
+}
+
+for (ptr=Text; *ptr !='\0'; ptr++)
+{
+	*RetStr=AddCharToBuffer(*RetStr, len, *ptr);
+	len++;
+}
+
+StrLenCacheAdd(*RetStr, len);
+
+return(ptr);
+}
 
 
 
@@ -537,10 +615,11 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
 }
 
 
-char *TerminalFormatStr(char *RetStr, const char *Str)
+const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
 {
     const char *ptr, *end;
-    long len, val;
+		char *Tempstr=NULL;
+    long val;
 
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
@@ -551,79 +630,94 @@ char *TerminalFormatStr(char *RetStr, const char *Str)
             switch (*ptr)
             {
             case '~':
-                RetStr=AddCharToStr(RetStr, *ptr);
+                *RetStr=AddCharToStr(*RetStr, *ptr);
                 break;
             case 'r':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_RED, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_RED, 0);
                 break;
             case 'R':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_RED);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_RED);
                 break;
             case 'g':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_GREEN, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_GREEN, 0);
                 break;
             case 'G':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_GREEN);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_GREEN);
                 break;
             case 'b':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLUE, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_BLUE, 0);
                 break;
             case 'B':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLUE);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_BLUE);
                 break;
             case 'n':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLACK, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_BLACK, 0);
                 break;
             case 'N':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLACK);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_BLACK);
                 break;
             case 'w':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_WHITE, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_WHITE, 0);
                 break;
             case 'W':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_WHITE);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_WHITE);
                 break;
             case 'y':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_YELLOW, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_YELLOW, 0);
                 break;
             case 'Y':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_YELLOW);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_YELLOW);
                 break;
             case 'm':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_MAGENTA, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_MAGENTA, 0);
                 break;
             case 'M':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_MAGENTA);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_MAGENTA);
                 break;
             case 'c':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_CYAN, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, ANSI_CYAN, 0);
+                break;
+            case 'C':
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, 0, ANSI_CYAN);
                 break;
             case 'e':
-                RetStr=TerminalCommandStr(RetStr, TERM_TEXT, ANSI_BOLD, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_TEXT, ANSI_BOLD, 0);
                 break;
             case 'i':
-                RetStr=TerminalCommandStr(RetStr, TERM_TEXT, ANSI_INVERSE, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_TEXT, ANSI_INVERSE, 0);
                 break;
             case 'u':
-                RetStr=TerminalCommandStr(RetStr, TERM_TEXT, ANSI_UNDER, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_TEXT, ANSI_UNDER, 0);
                 break;
             case 'I':
-                RetStr=TerminalCommandStr(RetStr, TERM_TEXT, ANSI_INVERSE, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_TEXT, ANSI_INVERSE, 0);
                 break;
             case '<':
-                RetStr=TerminalCommandStr(RetStr, TERM_CLEAR_STARTLINE, 0, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_CLEAR_STARTLINE, 0, 0);
                 break;
             case '>':
-                RetStr=TerminalCommandStr(RetStr, TERM_CLEAR_ENDLINE, 0, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_CLEAR_ENDLINE, 0, 0);
                 break;
+						case '|':
+								Tempstr=CopyStr(Tempstr, "");
+								ptr=TerminalAlignText(ptr+1, &Tempstr, TERM_ALIGN_CENTER, Term);
+								TerminalFormatSubStr(Tempstr, RetStr, Term);
+								ptr--; //we have to wind ptr back one place, so that next time around the loop ptr++ points to the right character
+						break;
+						case '}':
+								Tempstr=CopyStr(Tempstr, "");
+								ptr=TerminalAlignText(ptr+1, &Tempstr, TERM_ALIGN_RIGHT, Term);
+								TerminalFormatSubStr(Tempstr, RetStr, Term);
+								ptr--; //we have to wind ptr back one place, so that next time around the loop ptr++ points to the right character
+						break;
             case 'U':
                 ptr++;
                 if (! strntol(&ptr, 4, 16, &val)) break;
                 ptr--; //because of ptr++ on next loop
-                RetStr=TerminalCommandStr(RetStr, TERM_UNICODE, val, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_UNICODE, val, 0);
                 break;
             case '0':
-                RetStr=TerminalCommandStr(RetStr, TERM_NORM, 0, 0);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_NORM, 0, 0);
                 break;
             }
         }
@@ -631,14 +725,23 @@ char *TerminalFormatStr(char *RetStr, const char *Str)
         else if (*ptr & 128)
         {
             val=UnicodeDecode(&ptr);
-            if (val > 0) RetStr=TerminalCommandStr(RetStr, TERM_UNICODE, val, 0);
+            if (val > 0) *RetStr=TerminalCommandStr(*RetStr, TERM_UNICODE, val, 0);
         }
-        else RetStr=AddCharToStr(RetStr, *ptr);
+        else *RetStr=AddCharToStr(*RetStr, *ptr);
     }
 
-    return(RetStr);
+
+		Destroy(Tempstr);
+
+    return(ptr);
 }
 
+
+char *TerminalFormatStr(char *RetStr, const char *Str, STREAM *Term)
+{
+TerminalFormatSubStr(Str, &RetStr, Term);
+return(RetStr);
+}
 
 
 void TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S)
@@ -670,7 +773,7 @@ void TerminalPutChar(int Char, STREAM *S)
     {
         Tempstr=UnicodeStr(Tempstr, Char);
         if (S) STREAMWriteLine(Tempstr, S);
-        else write(1,Tempstr,StrLen(Tempstr));
+        else write(1,Tempstr,StrLenFromCache(Tempstr));
     }
 
     DestroyString(Tempstr);
@@ -683,9 +786,9 @@ void TerminalPutStr(const char *Str, STREAM *S)
 {
     char *Tempstr=NULL;
 
-    Tempstr=TerminalFormatStr(Tempstr, Str);
+    Tempstr=TerminalFormatStr(Tempstr, Str, S);
     if (S) STREAMWriteLine(Tempstr, S);
-    else write(1,Tempstr,StrLen(Tempstr));
+    else write(1,Tempstr,StrLenFromCache(Tempstr));
 
     DestroyString(Tempstr);
 }
@@ -1138,6 +1241,7 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
         inchar=TerminalReadChar(S);
     }
 
+		StrLenCacheAdd(RetStr, len);
 
     return(RetStr);
 }
@@ -1469,3 +1573,171 @@ char *TerminalBarMenu(char *RetStr, TERMBAR *TB, const char *ItemStr)
 }
 
 
+
+
+TERMMENU *TerminalMenuCreate(STREAM *Term, int x, int y, int wid, int high)
+{
+TERMMENU *Item;
+
+Item=(TERMMENU *) calloc(1,sizeof(TERMMENU));
+Item->Term=Term;
+Item->x=x;
+Item->y=y;
+Item->wid=wid;
+Item->high=high;
+Item->Options=ListCreate();
+Item->MenuAttribs=CopyStr(Item->MenuAttribs, "~C~n");
+Item->MenuCursorLeft=CopyStr(Item->MenuCursorLeft, "~W~n");
+
+return(Item);
+}
+
+
+void TerminalMenuDestroy(TERMMENU *Item)
+{
+Destroy(Item->MenuAttribs);
+Destroy(Item->MenuCursorLeft);
+Destroy(Item->MenuCursorRight);
+
+ListDestroy(Item->Options, NULL);
+free(Item);
+}
+
+
+
+void TerminalMenuDraw(TERMMENU *Menu)
+{
+		ListNode *Curr, *Prev;
+		char *p_Color=NULL, *Tempstr=NULL, *Output=NULL;
+		int y, yend, count;
+
+		y=Menu->y;
+		yend=y+Menu->high;
+
+    if (Menu->Options->Side)
+    {
+      Curr=Menu->Options->Side;
+      Prev=ListGetPrev(Curr);
+      count=0;
+      while (Prev)
+      {
+      Curr=Prev;
+      count++;
+      if (count >= Menu->high) break;
+      Prev=ListGetPrev(Curr);
+      }
+    }
+    else Curr=ListGetNext(Menu->Options);
+
+		while (Curr)
+		{
+					TerminalCursorMove(Menu->Term, Menu->x, y);
+					if (Menu->Options->Side==Curr) Tempstr=MCopyStr(Tempstr, Menu->MenuCursorLeft, "> ", Curr->Tag, NULL);
+					else Tempstr=MCopyStr(Tempstr, Menu->MenuAttribs, "  ", Curr->Tag, NULL);
+
+					Output=CopyStr(Output, "");
+					Output=TerminalFormatStr(Output, Tempstr, Menu->Term);
+					count=TerminalStrLen(Output);
+					while (count < (Menu->wid))
+					{
+							Output=CatStr(Output, " ");
+							count++;
+					}
+					STREAMWriteString(Output, Menu->Term);
+					STREAMWriteString(ANSI_NORM, Menu->Term);
+					y++;
+					if (y > yend) break;
+					Curr=ListGetNext(Curr);
+		}
+
+		Tempstr=CopyStr(Tempstr, "");
+		Tempstr=PadStrTo(Tempstr, ' ', Menu->wid -4);
+		while (y < yend)
+		{
+			STREAMWriteString(Tempstr, Menu->Term);
+			y++;
+		}
+
+		STREAMFlush(Menu->Term);
+		Destroy(Tempstr);
+		Destroy(Output);
+}
+
+
+ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
+{
+	switch (key)
+	{
+		case KEY_UP:
+				if (Menu->Options->Side) 
+				{
+					if (Menu->Options->Side->Prev && (Menu->Options->Side->Prev != Menu->Options)) Menu->Options->Side=Menu->Options->Side->Prev;
+				}
+				else Menu->Options->Side=ListGetNext(Menu->Options);
+			 break;
+
+		case KEY_DOWN:
+				if (Menu->Options->Side) 
+				{
+					if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
+				}
+				else Menu->Options->Side=ListGetNext(Menu->Options);
+			 break;
+
+		case '\r':
+		case '\n':
+			 return(Menu->Options->Side);
+			 break;
+	}
+	TerminalMenuDraw(Menu);
+
+	return(NULL);
+}
+
+
+
+ListNode *TerminalMenuProcess(TERMMENU *Menu)
+{
+ListNode *Node;
+int key;
+
+TerminalMenuDraw(Menu);
+
+key=TerminalReadChar(Menu->Term);
+while (1)
+{
+	if (key == ESCAPE)
+	{
+		Node=NULL;
+		break;
+	}
+	Node=TerminalMenuOnKey(Menu, key);
+	if (Node) break;
+	key=TerminalReadChar(Menu->Term);
+}
+
+
+return(Node);
+}
+
+
+ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, int high)
+{
+TERMMENU *Menu;
+ListNode *Node;
+int key;
+
+Menu=TerminalMenuCreate(Term, x, y, wid, high);
+Node=ListGetNext(Options);
+while (Node)
+{
+	ListAddNamedItem(Menu->Options, Node->Tag, NULL);
+	Node=ListGetNext(Node);
+}
+Menu->Options->Side=ListGetNext(Menu->Options);
+
+Node=TerminalMenuProcess(Menu);
+
+TerminalMenuDestroy(Menu);
+return(Node);
+}

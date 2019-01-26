@@ -2,7 +2,7 @@
 #include "includes.h"
 #include <errno.h>
 
-ListNode *Errors=NULL;
+static ListNode *Errors=NULL;
 
 void ErrorDestroy(void *p_Err)
 {

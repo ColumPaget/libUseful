@@ -26,8 +26,8 @@
 
 
 const char *HTTP_AUTH_BY_TOKEN="AuthTokenType";
-ListNode *Cookies=NULL;
-int g_HTTPFlags=0;
+static ListNode *Cookies=NULL;
+static int g_HTTPFlags=0;
 
 
 
@@ -239,6 +239,8 @@ char *HTTPUnQuote(char *RetBuff, const char *Str)
 
     }
 
+		StrLenCacheAdd(RetStr, olen);
+
     DestroyString(Token);
     return(RetStr);
 }
@@ -265,6 +267,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
 						else
 						{
             Token=FormatStr(Token,"%%%02X",*ptr);
+						StrLenCacheAdd(RetStr, olen);
             RetStr=CatStr(RetStr,Token);
             olen+=StrLen(Token);
 						}
@@ -278,6 +281,8 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
 
 
     RetStr[olen]='\0';
+		StrLenCacheAdd(RetStr, olen);
+
     DestroyString(Token);
     return(RetStr);
 }
@@ -384,7 +389,7 @@ void HTTPInfoPOSTSetContent(HTTPInfoStruct *Info, const char *ContentType, const
 
 void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
 {
-    char *URL=NULL, *Proto=NULL, *User=NULL, *Pass=NULL, *Token=NULL, *Args=NULL;
+    char *URL=NULL, *Proto=NULL, *User=NULL, *Pass=NULL, *Token=NULL, *Args=NULL, *Value=NULL;
     const char *p_URL, *ptr;
 
     ptr=GetToken(iURL, "\\S", &URL, 0);
@@ -405,31 +410,34 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
 
     if (StrValid(Proto) && (strcmp(Proto,"https")==0)) Info->Flags |= HTTP_SSL;
 
-    HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
 
-    ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Args);
+    ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     while (ptr)
     {
         if (strcasecmp(Token, "oauth")==0)
         {
             Info->AuthFlags |= HTTP_AUTH_OAUTH;
-            Info->Credentials=CopyStr(Info->Credentials, Args);
+            Info->Credentials=CopyStr(Info->Credentials, Value);
         }
         else if (strcasecmp(Token, "hostauth")==0) Info->AuthFlags |= HTTP_AUTH_HOST;
-        else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Args);
-        else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Args);
-        else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Args);
-        else if (strcasecmp(Token, "useragent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Args);
-        else if (strcasecmp(Token, "user-agent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Args);
-        else SetVar(Info->CustomSendHeaders, Token, Args);
-        ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Args);
+        else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Value);
+        else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Value);
+        else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Value);
+        else if (strcasecmp(Token, "useragent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Value);
+        else if (strcasecmp(Token, "user-agent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Value);
+        else SetVar(Info->CustomSendHeaders, Token, Value);
+        ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
+
+		if (Info->PostContentLength > 0) Info->Doc=MCatStr(Info->Doc, "?", Args, NULL);
+		else HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
 
     if (StrValid(Pass)) CredsStoreAdd(Info->Host, User, Pass);
 
     DestroyString(User);
     DestroyString(Pass);
     DestroyString(Token);
+    DestroyString(Value);
     DestroyString(Proto);
     DestroyString(Args);
     DestroyString(URL);
@@ -516,7 +524,7 @@ void HTTPClearCookies()
 }
 
 
-int HTTPHandleWWWAuthenticate(const char *Line, int *Type, char **Config)
+static int HTTPHandleWWWAuthenticate(const char *Line, int *Type, char **Config)
 {
     const char *ptr, *ptr2;
     char *Token=NULL, *Name=NULL, *Value=NULL;
@@ -568,7 +576,7 @@ int HTTPHandleWWWAuthenticate(const char *Line, int *Type, char **Config)
 
 
 
-void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
+static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
 {
     char *Token=NULL, *Tempstr=NULL;
     const char *ptr;
@@ -745,7 +753,7 @@ char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, const char
 }
 
 
-char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info, char *AuthInfo)
+static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info, char *AuthInfo)
 {
     char *SendStr=NULL, *Tempstr=NULL, *Realm=NULL, *Nonce=NULL;
     const char *ptr;
@@ -1311,23 +1319,6 @@ STREAM *HTTPWithConfig(const char *URL, const char *Config)
 
 
 
-int HTTPCopyToSTREAM(STREAM *Con, STREAM *S)
-{
-    char *Tempstr=NULL;
-    int result, total=0;
-
-    Tempstr=SetStrLen(Tempstr,BUFSIZ);
-    result=STREAMReadBytes(Con, Tempstr,BUFSIZ);
-    while (result > 0)
-    {
-        STREAMWriteBytes(S,Tempstr,result);
-        total+=result;
-        result=STREAMReadBytes(Con, Tempstr,BUFSIZ);
-    }
-    return(total);
-}
-
-
 
 int HTTPDownload(char *URL, STREAM *S)
 {
@@ -1335,15 +1326,15 @@ int HTTPDownload(char *URL, STREAM *S)
 		const char *ptr;
 
     Con=HTTPGet(URL);
-    if (! Con) return(0);
+    if (! Con) return(-1);
 
 		ptr=STREAMGetValue(Con, "HTTP:ResponseCode");
 		if ((! ptr) || (*ptr !='2'))
 		{
 			STREAMClose(Con);
-			return(NULL);
+			return(-1);
 		}
-    return(HTTPCopyToSTREAM(Con, S));
+    return(STREAMSendFile(Con, S, 0, SENDFILE_LOOP));
 }
 
 

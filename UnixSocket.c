@@ -29,7 +29,7 @@ void sun_set_path(struct sockaddr_un *sa, const char *Path)
 
         //else grrrr
 #else
-        val=strlen(Path);
+        val=StrLen(Path);
         if (val < len) len=val;
         strncpy(sa->sun_path,Path,len);
         sa->sun_path[len]='\0';

@@ -46,4 +46,10 @@ ptr=CmdLine->argv[CmdLine->curr];
 return(ptr);
 }
 
+const char *CommandLineFirst(CMDLINE *CmdLine)
+{
+CmdLine->curr=0;
+return(CommandLineNext(CmdLine));
+}
+
 

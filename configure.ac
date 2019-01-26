@@ -1,9 +1,6 @@
 #AC_INIT(libUseful,colums.projects@googlemail.com,,http://sites.google.com/site/columscode) 
 AC_INIT(defines.h)
 
-VERSION="0.0.1" 
-AC_SUBST(VERSION) 
-
 AC_PROG_CC
 AC_LANG_C
 AC_PROG_MAKE_SET
@@ -131,7 +128,7 @@ then
 fi
 
 
-AC_ARG_ENABLE(zlib, [  --enable-zlib       use ZLib Compression], cf_use_zlib=$enableval )
+AC_ARG_ENABLE(zlib, [  --enable-zlib       use ZLib Compression], cf_use_zlib=$enableval)
 
 if test "$cf_use_zlib" = "yes" -o "$cf_use_ssl" = "yes"
 then

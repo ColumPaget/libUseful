@@ -4,8 +4,8 @@
 #include "DataParser.h"
 
 
-ListNode *OAuthTypes=NULL;
-ListNode *OAuthKeyChain=NULL;
+static ListNode *OAuthTypes=NULL;
+static ListNode *OAuthKeyChain=NULL;
 
 
 void SetupOAuthTypes()
@@ -385,7 +385,7 @@ void OAuthParse(OAUTH *Ctx, const char *Line)
     char *Name=NULL, *Value=NULL;
     const char *ptr;
 
-    ptr=GetToken(Line,"\\S",&Ctx->Name,GETTOKEN_QUOTES);
+    ptr=GetToken(Line,"\\S", &Ctx->Name, GETTOKEN_QUOTES);
     ptr=GetNameValuePair(ptr," ", "=", &Name, &Value);
     while (ptr)
     {

@@ -17,7 +17,7 @@ char *ParsePort(char *Str, char **Port)
     if (ptr)
     {
         if (Port) *Port=CopyStr(*Port,ptr+1);
-        *ptr='\0';
+				StrTrunc(Str, ptr-Str);
     }
 
     return(ptr);
@@ -43,7 +43,7 @@ const char *ParseHostDetails(const char *Data,char **Host,char **Port,char **Use
         if (User)
         {
             tptr=GetToken(Token,":",User,0);
-            if (StrLen(tptr)) *Password=CopyStr(*Password,tptr);
+            if (StrValid(tptr)) *Password=CopyStr(*Password,tptr);
         }
     }
     else ptr=Data;
@@ -54,8 +54,7 @@ const char *ParseHostDetails(const char *Data,char **Host,char **Port,char **Use
     {
         if (*Token=='[')
         {
-            wptr=strrchr(Token,']');
-            if (wptr) *wptr='\0';
+						StrTruncChar(Token,']');
             tptr=Token+1;
         }
         else tptr=Token;
@@ -116,9 +115,9 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
             {
                 aptr=strchr(*Path,'?');
                 if (! aptr) aptr=strchr(*Path,'#');
-                if (aptr)
+                if (aptr) 
                 {
-                    *aptr='\0';
+										StrTrunc(*Path, aptr-*Path);
                     aptr++;
                     *Args=CopyStr(*Args,aptr);
                 }
@@ -129,7 +128,7 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
 //the 'GetToken' call will have thrown away the '/' at the start of the path
 //add it back in
 
-    if (Port && (! StrLen(*Port)) && StrLen(tProto))
+    if (Port && (! StrValid(*Port)) && StrValid(tProto))
     {
         if (strcmp(tProto,"http")==0) *Port=CopyStr(*Port,"80");
         else if (strcmp(tProto,"https")==0) *Port=CopyStr(*Port,"443");
@@ -156,7 +155,7 @@ void ParseConnectDetails(const char *Str, char **Type, char **Host, char **Port,
     ptr=GetToken(Str," ",&Token,0);
     ParseURL(Token, Type, Host, Port, User, Pass, Path, &Args);
 
-    if (Path && StrLen(Args)) *Path=MCatStr(*Path,"?",Args,NULL);
+    if (Path && StrValid(Args)) *Path=MCatStr(*Path,"?",Args,NULL);
 
     while (ptr)
     {
