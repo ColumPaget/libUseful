@@ -60,6 +60,7 @@ Obviously, any 'char *' variable can be passed to libUseful functions if it's no
 See 'String.h' for details of the individual functions libUseful provides for dealing with resizable strings.
 
 
+One more thing to note is that you should never try to shorten libUseful strings by setting a character to '\0' (null). This is because libUseful uses an internal system of string length caching to prevent traversing a string every time we need to know its length. Use the StrTrunc and StrTruncChar functions to truncate strings.
 
 
 Lists and Maps
