@@ -218,28 +218,31 @@ int GetTokenMultiSepMatch(char **Separators, const char **start_ptr, const char 
 
     //must do this as GetTokenSepMatch moves these pointers on, and that'll cause problems
     //if one of our separators fails to match part way through
-    sptr=*start_ptr;
+		sep_ptr=Separators;
     eptr=*end_ptr;
+    sptr=*start_ptr;
 
-		while (*sptr !='\0')
-		{
-    sep_ptr=Separators;
-
+		//We must check each separator against the string from the start. We can't go through the string
+		//checking each separator at each character, because quoted characters mean we can't just treat
+		//the string character-by-character.
     while (*sep_ptr !=NULL)
     {
-				//we have to protect sptr just like start_ptr, or else GetTokenSepMatch will change it
-				tptr=sptr;
-        if (GetTokenSepMatch(*sep_ptr, &tptr, &eptr, Flags))
-        {
-            *start_ptr=tptr;
-            *end_ptr=eptr;
-            return(TRUE);
-        }
-        sep_ptr++;
-    }
+		tptr=sptr;
+		while (*tptr !='\0')
+		{
 
-		sptr=GetTokenStepThru(sptr, Flags);
+			//we have to protect sptr just like start_ptr, or else GetTokenSepMatch will change it
+      if (GetTokenSepMatch(*sep_ptr, &tptr, &eptr, Flags))
+      {
+          *start_ptr=tptr;
+          *end_ptr=eptr;
+          return(TRUE);
+      }
+
+			tptr=GetTokenStepThru(tptr, Flags);
 		}
+    sep_ptr++;
+    }
 
     *start_ptr=*end_ptr;
 
