@@ -1189,6 +1189,12 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
     char outchar;
     KEY_CALLBACK_FUNC Func;
 
+    len=StrLen(RetStr);
+		if (len > 0) 
+		{
+			STREAMWriteLine(RetStr, S);
+			STREAMFlush(S);
+		}	
     inchar=TerminalReadChar(S);
     while (inchar != EOF)
     {
@@ -1421,6 +1427,11 @@ void TerminalBarUpdate(TERMBAR *TB, const char *Text)
 
     DestroyString(Str);
 }
+
+
+
+
+
 
 
 char *TerminalBarReadText(char *RetStr, TERMBAR *TB, int Flags, const char *Prompt)
