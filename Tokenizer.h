@@ -106,12 +106,12 @@ see examples/Tokenizer.c for examples
 #define GETTOKEN_MULTI_SEP 1
 #define GETTOKEN_HONOR_QUOTES 2  //honor quotes but don't strip them
 #define GETTOKEN_STRIP_QUOTES 4  //strip quotes (but otherwise ignore)
-#define GETTOKEN_QUOTES 6  //honore and strip quotes
+#define GETTOKEN_QUOTES 6  //honor and strip quotes
 #define GETTOKEN_INCLUDE_SEPARATORS 8  //include separators as tokens
 #define GETTOKEN_INCLUDE_SEP 8
 #define GETTOKEN_APPEND_SEPARATORS 16 //append separators to previous token
 #define GETTOKEN_APPEND_SEP 16
-#define GETTOKEN_BACKSLASH  32
+#define GETTOKEN_BACKSLASH  32  //treat backslashes as normal characters, rather than a form of quoting
 #define GETTOKEN_STRIP_SPACE 64 //strip whitespace from start and end of token
 
 

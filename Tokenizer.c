@@ -13,6 +13,15 @@ const char *ptr;
 	{
 	case '\0': return(Str); break;
 
+	case '\\':
+  	if (! (Flags & GETTOKEN_BACKSLASH))
+		{
+			//if we got a backslash, then skip past it and the character it quotes,
+			//unless it's quoting a NULL character (which just ain't allowed)
+			if ( *(Str+1) != '\0' ) return(Str+2);
+		}
+	break;
+
 	case '"':
 	case '\'':
   	if (Flags & GETTOKEN_HONOR_QUOTES) 
@@ -218,37 +227,34 @@ int GetTokenMultiSepMatch(char **Separators, const char **start_ptr, const char 
 
     //must do this as GetTokenSepMatch moves these pointers on, and that'll cause problems
     //if one of our separators fails to match part way through
-		sep_ptr=Separators;
-    eptr=*end_ptr;
     sptr=*start_ptr;
+    eptr=*end_ptr;
 
-		//We must check each separator against the string from the start. We can't go through the string
-		//checking each separator at each character, because quoted characters mean we can't just treat
-		//the string character-by-character.
+    while (*sptr !='\0')
+    {
+    sep_ptr=Separators;
+
     while (*sep_ptr !=NULL)
     {
-		tptr=sptr;
-		while (*tptr !='\0')
-		{
+        //we have to protect sptr just like start_ptr, or else GetTokenSepMatch will change it
+        tptr=sptr;
+        if (GetTokenSepMatch(*sep_ptr, &tptr, &eptr, Flags))
+        {
+            *start_ptr=tptr;
+            *end_ptr=eptr;
+            return(TRUE);
+        }
 
-			//we have to protect sptr just like start_ptr, or else GetTokenSepMatch will change it
-      if (GetTokenSepMatch(*sep_ptr, &tptr, &eptr, Flags))
-      {
-          *start_ptr=tptr;
-          *end_ptr=eptr;
-          return(TRUE);
-      }
+        sep_ptr++;
+    }
 
-			tptr=GetTokenStepThru(tptr, Flags);
-		}
-    sep_ptr++;
+    sptr=GetTokenStepThru(sptr, Flags);
     }
 
     *start_ptr=*end_ptr;
 
     return(FALSE);
 }
-
 
 
 
