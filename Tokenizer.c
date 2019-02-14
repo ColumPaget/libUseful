@@ -210,7 +210,7 @@ char **BuildMultiSeparators(const char *Pattern)
 }
 
 
-
+/*
 int GetTokenMultiSepMatch(char **Separators, const char **start_ptr, const char **end_ptr, int Flags)
 {
     char **sep_ptr;
@@ -248,7 +248,43 @@ int GetTokenMultiSepMatch(char **Separators, const char **start_ptr, const char 
 
     return(FALSE);
 }
+*/
 
+
+int GetTokenMultiSepMatch(char **Separators, const char **start_ptr, const char **end_ptr, int Flags)
+{
+    char **sep_ptr;
+    const char *sptr=NULL, *eptr=NULL, *tptr;
+
+    //must do this as GetTokenSepMatch moves these pointers on, and that'll cause problems
+    //if one of our separators fails to match part way through
+    sptr=*start_ptr;
+    eptr=*end_ptr;
+
+    while (*sptr !='\0')
+    {
+    sep_ptr=Separators;
+
+    while (*sep_ptr !=NULL)
+    {
+        //we have to protect sptr just like start_ptr, or else GetTokenSepMatch will change it
+        tptr=sptr;
+        if (GetTokenSepMatch(*sep_ptr, &tptr, &eptr, Flags))
+        {
+            *start_ptr=tptr;
+            *end_ptr=eptr;
+            return(TRUE);
+        }
+        sep_ptr++;
+    }
+
+    sptr=GetTokenStepThru(sptr, Flags);
+    }
+
+    *start_ptr=*end_ptr;
+
+    return(FALSE);
+}
 
 
 
