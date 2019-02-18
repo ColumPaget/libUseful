@@ -1648,8 +1648,11 @@ void TerminalMenuDraw(TERMMENU *Menu)
 
 					Output=CopyStr(Output, "");
 					Output=TerminalFormatStr(Output, Tempstr, Menu->Term);
-					count=TerminalStrLen(Output);
-					while (count < (Menu->wid))
+
+					//length has two added for the leading space for the cursor
+					count=TerminalStrLen(Curr->Tag) +2;
+
+					while (count < Menu->wid)
 					{
 							Output=CatStr(Output, " ");
 							count++;
@@ -1662,7 +1665,7 @@ void TerminalMenuDraw(TERMMENU *Menu)
 		}
 
 		Tempstr=CopyStr(Tempstr, "");
-		Tempstr=PadStrTo(Tempstr, ' ', Menu->wid -4);
+		Tempstr=PadStrTo(Tempstr, ' ', Menu->wid);
 		while (y < yend)
 		{
 			STREAMWriteString(Tempstr, Menu->Term);
