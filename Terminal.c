@@ -1211,6 +1211,7 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
         //'backspace' key on keyboard will send the 'del' character in some cases!
         case 0x7f: //this is 'del'
         case 0x08: //this is backspace
+				outchar=0;
             //backspace over previous character and erase it with whitespace!
             if (len > 0)
             {
@@ -1238,7 +1239,7 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
             break;
         }
 
-        if (! (Flags & TERM_HIDETEXT))
+        if ( (! (Flags & TERM_HIDETEXT)) && (outchar > 0) )
         {
             STREAMWriteBytes(S, &outchar,1);
             STREAMFlush(S);
