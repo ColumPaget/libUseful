@@ -1644,14 +1644,21 @@ void TerminalMenuDraw(TERMMENU *Menu)
 		while (Curr)
 		{
 					TerminalCursorMove(Menu->Term, Menu->x, y);
-					if (Menu->Options->Side==Curr) Tempstr=MCopyStr(Tempstr, Menu->MenuCursorLeft, "> ", Curr->Tag, NULL);
-					else Tempstr=MCopyStr(Tempstr, Menu->MenuAttribs, "  ", Curr->Tag, NULL);
+					if (Menu->Options->Side==Curr) Tempstr=MCopyStr(Tempstr, Menu->MenuCursorLeft, "> ", NULL);
+					else Tempstr=MCopyStr(Tempstr, Menu->MenuAttribs, "  ", NULL);
+
+
+					count=TerminalStrLen(Curr->Tag);
+					if (count > Menu->wid-2) count=Menu->wid-2;
+					Tempstr=CatStrLen(Tempstr, Curr->Tag, count);
+
+
 
 					Output=CopyStr(Output, "");
 					Output=TerminalFormatStr(Output, Tempstr, Menu->Term);
 
 					//length has two added for the leading space for the cursor
-					count=TerminalStrLen(Curr->Tag) +2;
+					count+=2;
 
 					while (count < Menu->wid)
 					{
