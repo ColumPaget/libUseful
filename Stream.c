@@ -649,7 +649,14 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 #endif
         p_Path=NewPath;
     }
-    else
+    else if (strncmp(Path, "~/", 2) ==0)
+		{
+			//Path+1 so we get the / to make sure there is one after HomeDir
+			NewPath=MCopyStr(NewPath, GetCurrUserHomeDir(), Path+1, NULL);
+      fd=open(Path, Mode, 0600);
+      p_Path=Path;
+		}
+		else
     {
         fd=open(Path, Mode, 0600);
         p_Path=Path;

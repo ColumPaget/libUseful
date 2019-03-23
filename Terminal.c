@@ -449,6 +449,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
         case 'F':
             if (
                 (strcasecmp(Name,"forecolor")==0) ||
+                (strcasecmp(Name,"fgcolor")==0) ||
                 (strcasecmp(Name,"fcolor")==0)
             )
             {
@@ -460,6 +461,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
         case 'B':
             if (
                 (strcasecmp(Name,"backcolor") ==0) ||
+                (strcasecmp(Name,"bgcolor") ==0) ||
                 (strcasecmp(Name,"bcolor") ==0)
             )
             {
@@ -1346,6 +1348,7 @@ void TerminalBarSetConfig(TERMBAR *TB, const char *Config)
     char *Name=NULL, *Value=NULL;
     const char *ptr;
 
+		//first check for options only used in terminal bars
     ptr=GetNameValuePair(Config, " ","=",&Name,&Value);
     while (ptr)
     {
@@ -1362,7 +1365,9 @@ void TerminalBarSetConfig(TERMBAR *TB, const char *Config)
         ptr=GetNameValuePair(ptr, " ","=",&Name,&Value);
     }
 
-    TerminalInternalConfig(Config, &(TB->ForeColor), &(TB->BackColor), &(TB->Flags));
+		//then check for default options, backcolor and forecolor reversed because terminal bars
+		//are inverse text
+    TerminalInternalConfig(Config, &(TB->BackColor), &(TB->ForeColor), &(TB->Flags));
 
     DestroyString(Name);
     DestroyString(Value);
@@ -1688,6 +1693,8 @@ void TerminalMenuDraw(TERMMENU *Menu)
 
 ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
 {
+int i;
+
 	switch (key)
 	{
 		case KEY_UP:
@@ -1705,6 +1712,29 @@ ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
 				}
 				else Menu->Options->Side=ListGetNext(Menu->Options);
 			 break;
+
+		case KEY_PGUP:
+			 for (i=0; i < Menu->high; i++)
+			 {
+				if (Menu->Options->Side) 
+				{
+					if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
+				}
+				else Menu->Options->Side=ListGetNext(Menu->Options);
+			 }
+			 break;	
+
+
+		case KEY_PGDN:
+			 for (i=0; i < Menu->high; i++)
+			 {
+				if (Menu->Options->Side) 
+				{
+					if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
+				}
+				else Menu->Options->Side=ListGetNext(Menu->Options);
+			 }	 
+			 break;	
 
 		case '\r':
 		case '\n':
