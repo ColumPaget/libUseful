@@ -649,12 +649,13 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 #endif
         p_Path=NewPath;
     }
+		//if path starts with a tilde, then it's the user's home directory
     else if (strncmp(Path, "~/", 2) ==0)
 		{
 			//Path+1 so we get the / to make sure there is one after HomeDir
 			NewPath=MCopyStr(NewPath, GetCurrUserHomeDir(), Path+1, NULL);
-      fd=open(Path, Mode, 0600);
-      p_Path=Path;
+      fd=open(NewPath, Mode, 0600);
+      p_Path=NewPath;
 		}
 		else
     {

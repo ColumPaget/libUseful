@@ -270,10 +270,8 @@ int LogFileInternalWrite(TLogFile *LF, STREAM *S, int Flags, const char *Str)
 
     if (Flags & LOGFILE_TIMESTAMP)
     {
-        TimeStruct=localtime(&Now);
-        LogStr=SetStrLen(LogStr,40);
-        strftime(LogStr,20,"%Y/%m/%d %H:%M:%S",TimeStruct);
-
+        LogStr=CopyStr(LogStr, GetDateStr("%Y/%m/%d %H:%M:%S",NULL));
+				
         if (Flags & LOGFILE_MILLISECS)
         {
             Tempstr=FormatStr(Tempstr,".%03d ", GetTime(TIME_CACHED | TIME_MILLISECS) % 1000);
@@ -423,8 +421,8 @@ int LogToFile(const char *FileName, const char *fmt, ...)
     if (! LogFile) LogFile=LogFileCreate(FileName, 0);
     if (LogFile)
     {
-        va_start(args,fmt);
-        Tempstr=VFormatStr(Tempstr,fmt,args);
+        va_start(args, fmt);
+        Tempstr=VFormatStr(Tempstr, fmt, args);
         va_end(args);
         StripTrailingWhitespace(Tempstr);
         result=LogFileInternalPush(LogFile,LogFile->S,LogFile->Flags, Tempstr);
