@@ -259,12 +259,14 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
     {
         if (strchr(CharList,*ptr))
         {
+					/*
 						if (*ptr==' ')
 						{
             RetStr=AddCharToBuffer(RetStr,olen,'+');
 						olen++;
 						}
 						else
+					*/
 						{
             Token=FormatStr(Token,"%%%02X",*ptr);
 						StrLenCacheAdd(RetStr, olen);
@@ -642,7 +644,7 @@ static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
                     (strncasecmp(ptr,"https:",6)==0)
                 )
                 {
-                    Info->RedirectPath=CopyStr(Info->RedirectPath,ptr);
+                    Info->RedirectPath=HTTPQuoteChars(Info->RedirectPath, ptr, " ");
                 }
                 else
                 {
