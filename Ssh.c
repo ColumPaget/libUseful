@@ -6,7 +6,7 @@
 STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pass, const char *Command)
 {
     ListNode *Dialog;
-    char *Tempstr=NULL, *KeyFile=NULL, *Token=NULL;
+    char *Tempstr=NULL, *KeyFile=NULL, *Token=NULL, *RemoteCmd=NULL;
 		const char *ptr;
     STREAM *S;
     int val, i;
@@ -36,13 +36,17 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
         else if (strncmp(Token, "tunnel:",7)==0) Tempstr=MCatStr(Tempstr,"-N -L ", Token+7, NULL);
         else if (strncmp(Token, "stdin:",6)==0) Tempstr=MCatStr(Tempstr,"-W ", Token+6, NULL);
         else if (strncmp(Token, "jump:",5)==0) Tempstr=MCatStr(Tempstr,"-J ", Token+5, NULL);
-        else Tempstr=MCatStr(Tempstr, "\"", Token, "\" ", NULL);
-			ptr=GetToken(ptr, "\\S", &Token, 0);
+        else RemoteCmd=MCatStr(RemoteCmd, Token, " ", NULL);
+
+				ptr=GetToken(ptr, "\\S", &Token, 0);
     }
+
+    if (StrValid(RemoteCmd)) Tempstr=MCatStr(Tempstr, " \"", RemoteCmd, "\" ", NULL);
     Tempstr=CatStr(Tempstr, " 2> /dev/null");
 
 //Never use TTYFLAG_CANON here
-    S=STREAMSpawnCommand(Tempstr,"pty,crlf,ignsig");
+    //S=STREAMSpawnCommand(Tempstr,"pty,crlf,ignsig");
+    S=STREAMSpawnCommand(Tempstr,"crlf,ignsig");
     if (S)
     {
         if (StrValid(User) && (! StrValid(KeyFile)))
@@ -62,6 +66,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
 
     DestroyString(Tempstr);
     DestroyString(KeyFile);
+    DestroyString(RemoteCmd);
     DestroyString(Token);
 
     return(S);

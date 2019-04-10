@@ -878,18 +878,28 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     case 't':
     case 's':
     case 'u':
-        if (strcasecmp(Proto,"ssh")==0) S=SSHConnect(Host, Port, User, Pass, Path);
-        else if (strcasecmp(Proto,"tty")==0)
-        {
+			if (strcasecmp(Proto,"ssh")==0) 
+			{
+				//if SF_RDONLY is set, then we treat this as a 'file get', otherwise we treat it as
+				//a remote command
+				if (Flags & SF_RDONLY)
+				{
+					Token=QuoteCharsInStr(Token, Path, "    ()");
+					Path=MCopyStr(Path, "cat ", Token, "; exit", NULL);
+				}
+				S=SSHConnect(Host, Port, User, Pass, Path);
+			}
+      else if (strcasecmp(Proto,"tty")==0)
+      {
             S=STREAMFromFD(TTYConfigOpen(URL+4, Config));
             if (S)
             {
                 S->Path=CopyStr(S->Path,URL);
                 S->Type=STREAM_TYPE_TTY;
             }
-        }
-        else
-        {
+      }
+      else
+      {
             S=STREAMCreate();
             S->Path=CopyStr(S->Path,URL);
             if (! STREAMConnect(S, URL, Config))
@@ -897,8 +907,8 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
                 STREAMClose(S);
                 S=NULL;
             }
-        }
-        break;
+      }
+      break;
 
     default:
         if (strcmp(URL,"-")==0) S=STREAMFromDualFD(0,1);
