@@ -259,6 +259,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
     {
         if (strchr(CharList,*ptr))
         {
+					// replacing ' ' with '+' should work, but some servers seem to no longer support it
 					/*
 						if (*ptr==' ')
 						{
