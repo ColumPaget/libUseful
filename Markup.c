@@ -210,11 +210,16 @@ char *HTMLUnQuote(char *RetStr, const char *Data)
             ptr++;
             ptr=GetToken(ptr,";",&Token,0);
 
-            if (*Token=='#')
+            if (strncmp(Token,"#x", 2)==0)
             {
-                Output=AddCharToBuffer(Output,len,strtol(Token+1,NULL,16));
+                Output=AddCharToBuffer(Output,len,strtol(Token+2,NULL,16));
                 len++;
             }
+            else if (*Token=='#')
+						{
+                Output=AddCharToBuffer(Output,len,strtol(Token+1,NULL,10));
+                len++;
+						}
             else if (strcmp(Token,"amp")==0)
             {
                 Output=AddCharToBuffer(Output,len,'&');
