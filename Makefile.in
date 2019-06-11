@@ -164,3 +164,5 @@ install: libUseful.so
 	-mkdir -p $(prefix)/include/libUseful-4
 	cp *.h $(prefix)/include/libUseful-4
 
+test: libUseful.so
+	-echo "No tests written yet"
