@@ -96,13 +96,6 @@ const char *LookupGroupName(gid_t gid);
 //This allows items to be mapped to values with a good spread, and is used internally by the 'Map' datastructure
 unsigned int fnv_hash(unsigned const char *key, int NoOfItems);
 
-
-typedef enum {OSINFO_TYPE, OSINFO_ARCH, OSINFO_RELEASE, OSINFO_HOSTNAME, OSINFO_UPTIME, OSINFO_TOTALMEM, OSINFO_FREEMEM, OSINFO_BUFFERMEM, OSINFO_LOAD, OSINFO_HOMEDIR, OSINFO_TMPDIR, OSINFO_PROCS, OSINFO_USERINFO} EOSInfo;
-
-const char *OSSysInfoString(int Info);
-unsigned long OSSysInfoLong(int Info);
-
-
 #ifdef __cplusplus
 }
 #endif

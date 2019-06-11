@@ -53,5 +53,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "Terminal.h"
 #include "Process.h"
 #include "SecureMem.h"
+#include "SysInfo.h"
 
 #endif
