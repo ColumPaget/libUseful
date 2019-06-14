@@ -106,6 +106,10 @@ const char *GetRemoteIP(int sock);
 //lookup the primary IP address of a hostname
 const char *LookupHostIP(const char *Host);
 
+//lookup a list of addresses for a hostname
+ListNode *LookupHostIPList(const char *Host);
+
+
 const char *IPStrToHostName(const char *);
 
 //convert an integer representation of IP4 address to a string

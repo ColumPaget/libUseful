@@ -101,6 +101,28 @@ const char *LookupHostIP(const char *Host)
 }
 
 
+ListNode *LookupHostIPList(const char *Host)
+{
+struct hostent *hostdata;
+ListNode *List;
+char **ptr;
+  
+   hostdata=gethostbyname(Host);
+   if (!hostdata) 
+   {
+     return(NULL);
+   }
+
+List=ListCreate();
+//inet_ntoa shouldn't need this cast to 'char *', but it emitts a warning
+//without it
+for (ptr=hostdata->h_addr_list; *ptr !=NULL; ptr++)
+{
+ ListAddItem(List, CopyStr(NULL,  (char *) inet_ntoa(*(struct in_addr *) *ptr)));
+}
+
+return(List);
+}
 
 
 
