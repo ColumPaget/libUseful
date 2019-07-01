@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/ColumPaget/libUseful.svg?branch=master)](https://travis-ci.com/ColumPaget/libUseful)
 
 libUseful - a 'C' library of useful functions. 
 -----------------------------------------------
