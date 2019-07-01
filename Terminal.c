@@ -95,271 +95,317 @@ const char *TerminalTranslateKeyCode(int key)
     case ESCAPE:
         return("ESC");
         break;
-    case KEY_F1:
+    case TKEY_F1:
         return("F1");
         break;
-    case KEY_F2:
+    case TKEY_F2:
         return("F2");
         break;
-    case KEY_F3:
+    case TKEY_F3:
         return("F3");
         break;
-    case KEY_F4:
+    case TKEY_F4:
         return("F4");
         break;
-    case KEY_F5:
+    case TKEY_F5:
         return("F5");
         break;
-    case KEY_F6:
+    case TKEY_F6:
         return("F6");
         break;
-    case KEY_F7:
+    case TKEY_F7:
         return("F7");
         break;
-    case KEY_F8:
+    case TKEY_F8:
         return("F8");
         break;
-    case KEY_F9:
+    case TKEY_F9:
         return("F9");
         break;
-    case KEY_F10:
+    case TKEY_F10:
         return("F10");
         break;
-    case KEY_F11:
+    case TKEY_F11:
         return("F11");
         break;
-    case KEY_F12:
+    case TKEY_F12:
         return("F12");
         break;
-    case KEY_F13:
+    case TKEY_F13:
         return("F13");
         break;
-    case KEY_F14:
+    case TKEY_F14:
         return("F14");
         break;
 
-    case KEY_SHIFT_F1:
+    case TKEY_SHIFT_F1:
         return("SHIFT_F1");
         break;
-    case KEY_SHIFT_F2:
+    case TKEY_SHIFT_F2:
         return("SHIFT_F2");
         break;
-    case KEY_SHIFT_F3:
+    case TKEY_SHIFT_F3:
         return("SHIFT_F3");
         break;
-    case KEY_SHIFT_F4:
+    case TKEY_SHIFT_F4:
         return("SHIFT_F4");
         break;
-    case KEY_SHIFT_F5:
+    case TKEY_SHIFT_F5:
         return("SHIFT_F5");
         break;
-    case KEY_SHIFT_F6:
+    case TKEY_SHIFT_F6:
         return("SHIFT_F6");
         break;
-    case KEY_SHIFT_F7:
+    case TKEY_SHIFT_F7:
         return("SHIFT_F7");
         break;
-    case KEY_SHIFT_F8:
+    case TKEY_SHIFT_F8:
         return("SHIFT_F8");
         break;
-    case KEY_SHIFT_F9:
+    case TKEY_SHIFT_F9:
         return("SHIFT_F9");
         break;
-    case KEY_SHIFT_F10:
+    case TKEY_SHIFT_F10:
         return("SHIFT_F10");
         break;
-    case KEY_SHIFT_F11:
+    case TKEY_SHIFT_F11:
         return("SHIFT_F11");
         break;
-    case KEY_SHIFT_F12:
+    case TKEY_SHIFT_F12:
         return("SHIFT_F12");
         break;
-    case KEY_SHIFT_F13:
+    case TKEY_SHIFT_F13:
         return("SHIFT_F13");
         break;
-    case KEY_SHIFT_F14:
+    case TKEY_SHIFT_F14:
         return("SHIFT_F14");
         break;
 
-    case KEY_CTRL_F1:
+    case TKEY_CTRL_F1:
         return("CTRL_F1");
         break;
-    case KEY_CTRL_F2:
+    case TKEY_CTRL_F2:
         return("CTRL_F2");
         break;
-    case KEY_CTRL_F3:
+    case TKEY_CTRL_F3:
         return("CTRL_F3");
         break;
-    case KEY_CTRL_F4:
+    case TKEY_CTRL_F4:
         return("CTRL_F4");
         break;
-    case KEY_CTRL_F5:
+    case TKEY_CTRL_F5:
         return("CTRL_F5");
         break;
-    case KEY_CTRL_F6:
+    case TKEY_CTRL_F6:
         return("CTRL_F6");
         break;
-    case KEY_CTRL_F7:
+    case TKEY_CTRL_F7:
         return("CTRL_F7");
         break;
-    case KEY_CTRL_F8:
+    case TKEY_CTRL_F8:
         return("CTRL_F8");
         break;
-    case KEY_CTRL_F9:
+    case TKEY_CTRL_F9:
         return("CTRL_F9");
         break;
-    case KEY_CTRL_F10:
+    case TKEY_CTRL_F10:
         return("CTRL_F10");
         break;
-    case KEY_CTRL_F11:
+    case TKEY_CTRL_F11:
         return("CTRL_F11");
         break;
-    case KEY_CTRL_F12:
+    case TKEY_CTRL_F12:
         return("CTRL_F12");
         break;
-    case KEY_CTRL_F13:
+    case TKEY_CTRL_F13:
         return("CTRL_F13");
         break;
-    case KEY_CTRL_F14:
+    case TKEY_CTRL_F14:
         return("CTRL_F14");
         break;
 
-    case KEY_UP:
+    case TKEY_UP:
         return("UP");
         break;
-    case KEY_DOWN:
+    case TKEY_DOWN:
         return("DOWN");
         break;
-    case KEY_LEFT:
+    case TKEY_LEFT:
         return("LEFT");
         break;
-    case KEY_RIGHT:
+    case TKEY_RIGHT:
         return("RIGHT");
         break;
-    case KEY_HOME:
+    case TKEY_HOME:
         return("HOME");
         break;
-    case KEY_END:
+    case TKEY_END:
         return("END");
         break;
-    case KEY_PAUSE:
+    case TKEY_PAUSE:
         return("PAUSE");
         break;
-    case KEY_FOCUS_IN:
+    case TKEY_FOCUS_IN:
         return("FOCUS_IN");
         break;
-    case KEY_FOCUS_OUT:
+    case TKEY_FOCUS_OUT:
         return("FOCUS_OUT");
         break;
-    case KEY_INSERT:
+    case TKEY_INSERT:
         return("INSERT");
         break;
-    case KEY_DELETE:
+    case TKEY_DELETE:
         return("DELETE");
         break;
-    case KEY_PGUP:
+    case TKEY_PGUP:
         return("PGUP");
         break;
-    case KEY_PGDN:
+    case TKEY_PGDN:
         return("PGDN");
         break;
-    case KEY_WIN:
+    case TKEY_WIN:
         return("WIN");
         break;
-    case KEY_MENU:
+    case TKEY_MENU:
         return("MENU");
         break;
 
-    case KEY_SHIFT_UP:
+    case TKEY_SHIFT_UP:
         return("SHIFT_UP");
         break;
-    case KEY_SHIFT_DOWN:
+    case TKEY_SHIFT_DOWN:
         return("SHIFT_DOWN");
         break;
-    case KEY_SHIFT_LEFT:
+    case TKEY_SHIFT_LEFT:
         return("SHIFT_LEFT");
         break;
-    case KEY_SHIFT_RIGHT:
+    case TKEY_SHIFT_RIGHT:
         return("SHIFT_RIGHT");
         break;
-    case KEY_SHIFT_HOME:
+    case TKEY_SHIFT_HOME:
         return("SHIFT_HOME");
         break;
-    case KEY_SHIFT_END:
+    case TKEY_SHIFT_END:
         return("SHIFT_END");
         break;
-    case KEY_SHIFT_PAUSE:
+    case TKEY_SHIFT_PAUSE:
         return("SHIFT_PAUSE");
         break;
-    case KEY_SHIFT_FOCUS_IN:
+    case TKEY_SHIFT_FOCUS_IN:
         return("SHIFT_FOCUS_IN");
         break;
-    case KEY_SHIFT_FOCUS_OUT:
+    case TKEY_SHIFT_FOCUS_OUT:
         return("SHIFT_FOCUS_OUT");
         break;
-    case KEY_SHIFT_INSERT:
+    case TKEY_SHIFT_INSERT:
         return("SHIFT_INSERT");
         break;
-    case KEY_SHIFT_DELETE:
+    case TKEY_SHIFT_DELETE:
         return("SHIFT_DELETE");
         break;
-    case KEY_SHIFT_PGUP:
+    case TKEY_SHIFT_PGUP:
         return("SHIFT_PGUP");
         break;
-    case KEY_SHIFT_PGDN:
+    case TKEY_SHIFT_PGDN:
         return("SHIFT_PGDN");
         break;
-    case KEY_SHIFT_WIN:
+    case TKEY_SHIFT_WIN:
         return("SHIFT_WIN");
         break;
-    case KEY_SHIFT_MENU:
+    case TKEY_SHIFT_MENU:
         return("SHIFT_MENU");
         break;
 
-    case KEY_CTRL_UP:
+    case TKEY_CTRL_UP:
         return("CTRL_UP");
         break;
-    case KEY_CTRL_DOWN:
+    case TKEY_CTRL_DOWN:
         return("CTRL_DOWN");
         break;
-    case KEY_CTRL_LEFT:
+    case TKEY_CTRL_LEFT:
         return("CTRL_LEFT");
         break;
-    case KEY_CTRL_RIGHT:
+    case TKEY_CTRL_RIGHT:
         return("CTRL_RIGHT");
         break;
-    case KEY_CTRL_HOME:
+    case TKEY_CTRL_HOME:
         return("CTRL_HOME");
         break;
-    case KEY_CTRL_END:
+    case TKEY_CTRL_END:
         return("CTRL_END");
         break;
-    case KEY_CTRL_PAUSE:
+    case TKEY_CTRL_PAUSE:
         return("CTRL_PAUSE");
         break;
-    case KEY_CTRL_FOCUS_IN:
+    case TKEY_CTRL_FOCUS_IN:
         return("CTRL_FOCUS_IN");
         break;
-    case KEY_CTRL_FOCUS_OUT:
+    case TKEY_CTRL_FOCUS_OUT:
         return("CTRL_FOCUS_OUT");
         break;
-    case KEY_CTRL_INSERT:
+    case TKEY_CTRL_INSERT:
         return("CTRL_INSERT");
         break;
-    case KEY_CTRL_DELETE:
+    case TKEY_CTRL_DELETE:
         return("CTRL_DELETE");
         break;
-    case KEY_CTRL_PGUP:
+    case TKEY_CTRL_PGUP:
         return("CTRL_PGUP");
         break;
-    case KEY_CTRL_PGDN:
+    case TKEY_CTRL_PGDN:
         return("CTRL_PGDN");
         break;
-    case KEY_CTRL_WIN:
+    case TKEY_CTRL_WIN:
         return("CTRL_WIN");
         break;
-    case KEY_CTRL_MENU:
+    case TKEY_CTRL_MENU:
         return("CTRL_MENU");
+        break;
+
+    case TKEY_ALT_UP:
+        return("ALT_UP");
+        break;
+    case TKEY_ALT_DOWN:
+        return("ALT_DOWN");
+        break;
+    case TKEY_ALT_LEFT:
+        return("ALT_LEFT");
+        break;
+    case TKEY_ALT_RIGHT:
+        return("ALT_RIGHT");
+        break;
+    case TKEY_ALT_HOME:
+        return("ALT_HOME");
+        break;
+    case TKEY_ALT_END:
+        return("ALT_END");
+        break;
+    case TKEY_ALT_PAUSE:
+        return("ALT_PAUSE");
+        break;
+    case TKEY_ALT_FOCUS_IN:
+        return("ALT_FOCUS_IN");
+        break;
+    case TKEY_ALT_FOCUS_OUT:
+        return("ALT_FOCUS_OUT");
+        break;
+    case TKEY_ALT_INSERT:
+        return("ALT_INSERT");
+        break;
+    case TKEY_ALT_DELETE:
+        return("ALT_DELETE");
+        break;
+    case TKEY_ALT_PGUP:
+        return("ALT_PGUP");
+        break;
+    case TKEY_ALT_PGDN:
+        return("ALT_PGDN");
+        break;
+    case TKEY_ALT_WIN:
+        return("ALT_WIN");
+        break;
+    case TKEY_ALT_MENU:
+        return("ALT_MENU");
         break;
     }
 
@@ -373,55 +419,175 @@ const char *TerminalTranslateKeyCode(int key)
 
 
 
-int TerminalTranslateKeyStr(const char *str)
+int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
 {
+
+if (*mod) *mod=0;
+if (strncasecmp(str, "shift-", 6)==0)
+{
+if (mod !=NULL) *mod |= KEYMOD_SHIFT;
+str+=6;
+}
+else if (strncasecmp(str, "ctrl-", 5)==0)
+{
+if (mod !=NULL) *mod |= KEYMOD_CTRL;
+str+=5;
+}
+else if (strncasecmp(str, "alt-", 4)==0)
+{
+	if (mod !=NULL) *mod |= KEYMOD_ALT;
+	str+=4;
+}
 
 switch (*str)
 {
-case 'e':
-case 'E':
-	if (strcasecmp(str, "ESC")==0) return(ESCAPE);
+case 'b':
+case 'B':
+  if (strcasecmp(str, "back")==0) return(TKEY_BACK);
 break;
 
-case 'l':
-case 'L':
-	if (strcasecmp(str, "LEFT")==0) return(KEY_LEFT);
-break;
-
-case 'r':
-case 'R':
-	if (strcasecmp(str, "RIGHT")==0) return(KEY_RIGHT);
-break;
-
-case 'u':
-case 'U':
-	if (strcasecmp(str, "UP")==0) return(KEY_UP);
+case 'c':
+case 'C':
+  if (strcasecmp(str, "calc")==0) return(TKEY_CALC);
+  if (strcasecmp(str, "calculator")==0) return(TKEY_CALC);
+  if (strcasecmp(str, "copy")==0) return(TKEY_COPY);
+  if (strcasecmp(str, "cut")==0) return(TKEY_CUT);
+  if (strcasecmp(str, "clear")==0) return(TKEY_CLEAR);
+  if (strcasecmp(str, "computer")==0) return(TKEY_MYCOMPUTER);
 break;
 
 case 'd':
 case 'D':
-	if (strcasecmp(str, "DOWN")==0) return(KEY_DOWN);
+	if (strcasecmp(str, "DOWN")==0) return(TKEY_DOWN);
+	if (strcasecmp(str, "delete")==0) return(TKEY_DELETE);
+  if (strcasecmp(str, "del")==0) return(TKEY_DELETE);
 break;
+
+case 'e':
+case 'E':
+  if (strcasecmp(str, "end")==0) return(TKEY_END);
+	if (strcasecmp(str, "ESC")==0) return(ESCAPE);
+	if (strcasecmp(str, "ENTER")==0) return(TKEY_ENTER);
+  if (strcasecmp(str, "eject")==0) return(TKEY_EJECT);
+break;
+
 
 case 'f':
 case 'F':
-	if (strcasecmp(str, "F1")==0) return(KEY_F1);
-	if (strcasecmp(str, "F2")==0) return(KEY_F2);
-	if (strcasecmp(str, "F3")==0) return(KEY_F3);
-	if (strcasecmp(str, "F4")==0) return(KEY_F4);
-	if (strcasecmp(str, "F5")==0) return(KEY_F5);
-	if (strcasecmp(str, "F6")==0) return(KEY_F6);
-	if (strcasecmp(str, "F7")==0) return(KEY_F7);
-	if (strcasecmp(str, "F8")==0) return(KEY_F8);
-	if (strcasecmp(str, "F9")==0) return(KEY_F9);
-	if (strcasecmp(str, "F10")==0) return(KEY_F10);
-	if (strcasecmp(str, "F11")==0) return(KEY_F11);
+  if (strcasecmp(str, "faves")==0) return(TKEY_FAVES);
+  if (strcasecmp(str, "forward")==0) return(TKEY_FORWARD);
+	if (strcasecmp(str, "F1")==0) return(TKEY_F1);
+	if (strcasecmp(str, "F2")==0) return(TKEY_F2);
+	if (strcasecmp(str, "F3")==0) return(TKEY_F3);
+	if (strcasecmp(str, "F4")==0) return(TKEY_F4);
+	if (strcasecmp(str, "F5")==0) return(TKEY_F5);
+	if (strcasecmp(str, "F6")==0) return(TKEY_F6);
+	if (strcasecmp(str, "F7")==0) return(TKEY_F7);
+	if (strcasecmp(str, "F8")==0) return(TKEY_F8);
+	if (strcasecmp(str, "F9")==0) return(TKEY_F9);
+	if (strcasecmp(str, "F10")==0) return(TKEY_F10);
+	if (strcasecmp(str, "F11")==0) return(TKEY_F11);
+	if (strcasecmp(str, "F12")==0) return(TKEY_F12);
+	if (strcasecmp(str, "F13")==0) return(TKEY_F13);
+	if (strcasecmp(str, "F14")==0) return(TKEY_F14);
+break;
+
+case 'h':
+case 'H':
+    if (strcasecmp(str, "home")==0) return(TKEY_HOME);
+    if (strcasecmp(str, "homepage")==0) return(TKEY_HOME_PAGE);
+break;
+
+case 'i':
+case 'I':
+    if (strcasecmp(str, "insert")==0) return(TKEY_INSERT);
+    if (strcasecmp(str, "ins")==0) return(TKEY_INSERT);
+break;
+
+case 'm':
+case 'M':
+    if (strcasecmp(str, "mail")==0) return(TKEY_MAIL);
+    if (strcasecmp(str, "messenger")==0) return(TKEY_MESSENGER);
+    if (strcasecmp(str, "media")==0) return(TKEY_MEDIA);
+    if (strcasecmp(str, "mycomp")==0) return(TKEY_MYCOMPUTER);
+    if (strcasecmp(str, "mycomputer")==0) return(TKEY_MYCOMPUTER);
+break;
+
+case 'p':
+case 'P':
+    if (strcasecmp(str, "pgup")==0) return(TKEY_PGUP);
+    if (strcasecmp(str, "pgdn")==0) return(TKEY_PGDN);
+    if (strcasecmp(str, "pause")==0) return(TKEY_PAUSE);
+break;
+
+case 'l':
+case 'L':
+	if (strcasecmp(str, "LEFT")==0) return(TKEY_LEFT);
+  if (strcasecmp(str, "lshift")==0) return(TKEY_LSHIFT);
+  if (strcasecmp(str, "lctrl")==0) return(TKEY_LCNTRL);
+  if (strcasecmp(str, "lcntrl")==0) return(TKEY_LCNTRL);
+  if (strcasecmp(str, "lightbulb")==0) return(TKEY_LIGHTBULB);
+break;
+
+case 'o':
+case 'O':
+  if (strcasecmp(str, "open")==0) return(TKEY_OPEN);
+break;
+
+case 'r':
+case 'R':
+	if (strcasecmp(str, "RIGHT")==0) return(TKEY_RIGHT);
+  if (strcasecmp(str, "rshift")==0) return(TKEY_RSHIFT);
+  if (strcasecmp(str, "rctrl")==0) return(TKEY_RCNTRL);
+  if (strcasecmp(str, "rcntrl")==0) return(TKEY_RCNTRL);
+break;
+
+
+case 's':
+case 'S':
+    if (strcasecmp(str, "space")==0) return(' ');
+    if (strcasecmp(str, "search")==0) return(TKEY_SEARCH);
+    if (strcasecmp(str, "standby")==0) return(TKEY_STANDBY);
+    if (strcasecmp(str, "sleep")==0) return(TKEY_SLEEP);
+    if (strcasecmp(str, "shop")==0) return(TKEY_SHOP);
+    if (strcasecmp(str, "stop")==0) return(TKEY_STOP);
+break;
+
+case 't':
+case 'T':
+    if (strcasecmp(str, "term")==0) return(TKEY_TERMINAL);
+    if (strcasecmp(str, "terminal")==0) return(TKEY_TERMINAL);
+break;
+
+case 'u':
+case 'U':
+	if (strcasecmp(str, "UP")==0) return(TKEY_UP);
+break;
+
+
+case 'w':
+case 'W':
+    if (strcasecmp(str, "win")==0) return(TKEY_WIN);
+    if (strcasecmp(str, "www")==0) return(TKEY_WWW);
+    if (strcasecmp(str, "wlan")==0) return(TKEY_WLAN);
+    if (strcasecmp(str, "webcam")==0) return(TKEY_WEBCAM);
 break;
 }
 
 return((int) *str);
 }
 
+int TerminalTranslateKeyStr(const char *str)
+{
+int key, mod;
+
+key=TerminalTranslateKeyStrWithMod(str, &mod);
+if (mod==KEYMOD_SHIFT) key+=TKEY_SHIFT_BASE;
+if (mod==KEYMOD_CTRL) key+=TKEY_CTRL_BASE;
+if (mod==KEYMOD_ALT) key+=TKEY_ALT_BASE;
+
+return(key);
+}
 
 void TerminalGeometry(STREAM *S, int *wid, int *len)
 {
@@ -820,74 +986,74 @@ int TerminalReadCSISeq(STREAM *S, char PrevChar)
         switch (val)
         {
         case 1:
-            return(KEY_HOME);
+            return(TKEY_HOME);
             break;
         case 2:
-            return(KEY_INSERT);
+            return(TKEY_INSERT);
             break;
         case 3:
-            return(KEY_DELETE);
+            return(TKEY_DELETE);
             break;
         case 4:
-            return(KEY_END);
+            return(TKEY_END);
             break;
         case 5:
-            return(KEY_PGUP);
+            return(TKEY_PGUP);
             break;
         case 6:
-            return(KEY_PGDN);
+            return(TKEY_PGDN);
             break;
 
         case 11:
-            return(KEY_F1);
+            return(TKEY_F1);
             break;
         case 12:
-            return(KEY_F2);
+            return(TKEY_F2);
             break;
         case 13:
-            return(KEY_F3);
+            return(TKEY_F3);
             break;
         case 14:
-            return(KEY_F4);
+            return(TKEY_F4);
             break;
         case 15:
-            return(KEY_F5);
+            return(TKEY_F5);
             break;
         case 16:
-            return(KEY_F6);
+            return(TKEY_F6);
             break;
         case 17:
-            return(KEY_F6);
+            return(TKEY_F6);
             break;
         case 18:
-            return(KEY_F7);
+            return(TKEY_F7);
             break;
         case 19:
-            return(KEY_F8);
+            return(TKEY_F8);
             break;
         case 20:
-            return(KEY_F9);
+            return(TKEY_F9);
             break;
         case 21:
-            return(KEY_F10);
+            return(TKEY_F10);
             break;
         case 23:
-            return(KEY_F11);
+            return(TKEY_F11);
             break;
         case 24:
-            return(KEY_F12);
+            return(TKEY_F12);
             break;
         case 25:
-            return(KEY_F13);
+            return(TKEY_F13);
             break;
         case 26:
-            return(KEY_F14);
+            return(TKEY_F14);
             break;
         case 28:
-            return(KEY_WIN);
+            return(TKEY_WIN);
             break;
         case 29:
-            return(KEY_MENU);
+            return(TKEY_MENU);
             break;
         }
         break;
@@ -898,75 +1064,75 @@ int TerminalReadCSISeq(STREAM *S, char PrevChar)
         switch (val)
         {
         case 1:
-            return(KEY_SHIFT_HOME);
+            return(TKEY_SHIFT_HOME);
             break;
         case 2:
-            return(KEY_SHIFT_INSERT);
+            return(TKEY_SHIFT_INSERT);
             break;
         case 3:
-            return(KEY_SHIFT_DELETE);
+            return(TKEY_SHIFT_DELETE);
             break;
         case 4:
-            return(KEY_SHIFT_END);
+            return(TKEY_SHIFT_END);
             break;
         case 5:
-            return(KEY_SHIFT_PGUP);
+            return(TKEY_SHIFT_PGUP);
             break;
         case 6:
-            return(KEY_SHIFT_PGDN);
+            return(TKEY_SHIFT_PGDN);
             break;
 
         case 11:
-            return(KEY_SHIFT_F1);
+            return(TKEY_SHIFT_F1);
             break;
         case 12:
-            return(KEY_SHIFT_F2);
+            return(TKEY_SHIFT_F2);
             break;
         case 13:
-            return(KEY_SHIFT_F3);
+            return(TKEY_SHIFT_F3);
             break;
         case 14:
-            return(KEY_SHIFT_F4);
+            return(TKEY_SHIFT_F4);
             break;
         case 15:
-            return(KEY_SHIFT_F5);
+            return(TKEY_SHIFT_F5);
             break;
         case 16:
-            return(KEY_SHIFT_F6);
+            return(TKEY_SHIFT_F6);
             break;
         case 17:
-            return(KEY_SHIFT_F6);
+            return(TKEY_SHIFT_F6);
             break;
         case 18:
-            return(KEY_SHIFT_F7);
+            return(TKEY_SHIFT_F7);
             break;
         case 19:
-            return(KEY_SHIFT_F8);
+            return(TKEY_SHIFT_F8);
             break;
         case 20:
-            return(KEY_SHIFT_F9);
+            return(TKEY_SHIFT_F9);
             break;
         case 21:
-            return(KEY_SHIFT_F10);
+            return(TKEY_SHIFT_F10);
             break;
         case 23:
-            return(KEY_SHIFT_F11);
+            return(TKEY_SHIFT_F11);
             break;
         case 24:
-            return(KEY_SHIFT_F12);
+            return(TKEY_SHIFT_F12);
             break;
 
         case 25:
-            return(KEY_SHIFT_F13);
+            return(TKEY_SHIFT_F13);
             break;
         case 26:
-            return(KEY_SHIFT_F14);
+            return(TKEY_SHIFT_F14);
             break;
         case 28:
-            return(KEY_SHIFT_WIN);
+            return(TKEY_SHIFT_WIN);
             break;
         case 29:
-            return(KEY_SHIFT_MENU);
+            return(TKEY_SHIFT_MENU);
             break;
         }
         break;
@@ -976,74 +1142,74 @@ int TerminalReadCSISeq(STREAM *S, char PrevChar)
         switch (val)
         {
         case 1:
-            return(KEY_CTRL_HOME);
+            return(TKEY_CTRL_HOME);
             break;
         case 2:
-            return(KEY_CTRL_INSERT);
+            return(TKEY_CTRL_INSERT);
             break;
         case 3:
-            return(KEY_CTRL_DELETE);
+            return(TKEY_CTRL_DELETE);
             break;
         case 4:
-            return(KEY_CTRL_END);
+            return(TKEY_CTRL_END);
             break;
         case 5:
-            return(KEY_CTRL_PGUP);
+            return(TKEY_CTRL_PGUP);
             break;
         case 6:
-            return(KEY_CTRL_PGDN);
+            return(TKEY_CTRL_PGDN);
             break;
         case 11:
-            return(KEY_CTRL_F1);
+            return(TKEY_CTRL_F1);
             break;
         case 12:
-            return(KEY_CTRL_F2);
+            return(TKEY_CTRL_F2);
             break;
         case 13:
-            return(KEY_CTRL_F3);
+            return(TKEY_CTRL_F3);
             break;
         case 14:
-            return(KEY_CTRL_F4);
+            return(TKEY_CTRL_F4);
             break;
         case 15:
-            return(KEY_CTRL_F5);
+            return(TKEY_CTRL_F5);
             break;
         case 16:
-            return(KEY_CTRL_F6);
+            return(TKEY_CTRL_F6);
             break;
         case 17:
-            return(KEY_CTRL_F6);
+            return(TKEY_CTRL_F6);
             break;
         case 18:
-            return(KEY_CTRL_F7);
+            return(TKEY_CTRL_F7);
             break;
         case 19:
-            return(KEY_CTRL_F8);
+            return(TKEY_CTRL_F8);
             break;
         case 20:
-            return(KEY_CTRL_F9);
+            return(TKEY_CTRL_F9);
             break;
         case 21:
-            return(KEY_CTRL_F10);
+            return(TKEY_CTRL_F10);
             break;
         case 23:
-            return(KEY_CTRL_F11);
+            return(TKEY_CTRL_F11);
             break;
         case 24:
-            return(KEY_CTRL_F12);
+            return(TKEY_CTRL_F12);
             break;
 
         case 25:
-            return(KEY_CTRL_F13);
+            return(TKEY_CTRL_F13);
             break;
         case 26:
-            return(KEY_CTRL_F14);
+            return(TKEY_CTRL_F14);
             break;
         case 28:
-            return(KEY_CTRL_WIN);
+            return(TKEY_CTRL_WIN);
             break;
         case 29:
-            return(KEY_CTRL_MENU);
+            return(TKEY_CTRL_MENU);
             break;
         }
         break;
@@ -1077,31 +1243,31 @@ int TerminalReadChar(STREAM *S)
             switch (inchar)
             {
             case 'A':
-                return(KEY_UP);
+                return(TKEY_UP);
                 break;
             case 'B':
-                return(KEY_DOWN);
+                return(TKEY_DOWN);
                 break;
             case 'C':
-                return(KEY_RIGHT);
+                return(TKEY_RIGHT);
                 break;
             case 'D':
-                return(KEY_LEFT);
+                return(TKEY_LEFT);
                 break;
             case 'H':
-                return(KEY_HOME);
+                return(TKEY_HOME);
                 break;
             case 'P':
-                return(KEY_PAUSE);
+                return(TKEY_PAUSE);
                 break;
             case 'Z':
-                return(KEY_END);
+                return(TKEY_END);
                 break;
             case 'I':
-                return(KEY_FOCUS_IN);
+                return(TKEY_FOCUS_IN);
                 break;
             case 'O':
-                return(KEY_FOCUS_OUT);
+                return(TKEY_FOCUS_OUT);
                 break;
 
             case '0':
@@ -1124,46 +1290,46 @@ int TerminalReadChar(STREAM *S)
             switch (inchar)
             {
             case 'A':
-                return(KEY_CTRL_UP);
+                return(TKEY_CTRL_UP);
                 break;
             case 'B':
-                return(KEY_CTRL_DOWN);
+                return(TKEY_CTRL_DOWN);
                 break;
             case 'c':
-                return(KEY_CTRL_LEFT);
+                return(TKEY_CTRL_LEFT);
                 break;
             case 'd':
-                return(KEY_CTRL_RIGHT);
+                return(TKEY_CTRL_RIGHT);
                 break;
             case 'P':
-                return(KEY_F1);
+                return(TKEY_F1);
                 break;
             case 'Q':
-                return(KEY_F2);
+                return(TKEY_F2);
                 break;
             case 'R':
-                return(KEY_F3);
+                return(TKEY_F3);
                 break;
             case 'S':
-                return(KEY_F4);
+                return(TKEY_F4);
                 break;
             case 't':
-                return(KEY_F5);
+                return(TKEY_F5);
                 break;
             case 'u':
-                return(KEY_F6);
+                return(TKEY_F6);
                 break;
             case 'v':
-                return(KEY_F7);
+                return(TKEY_F7);
                 break;
             case 'l':
-                return(KEY_F8);
+                return(TKEY_F8);
                 break;
             case 'w':
-                return(KEY_F9);
+                return(TKEY_F9);
                 break;
             case 'x':
-                return(KEY_F10);
+                return(TKEY_F10);
                 break;
             }
             break;
@@ -1189,7 +1355,7 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 {
     int inchar, len=0;
     char outchar;
-    KEY_CALLBACK_FUNC Func;
+    TKEY_CALLBACK_FUNC Func;
 
     len=StrLen(RetStr);
 		if (len > 0) 
@@ -1337,7 +1503,7 @@ void TerminalReset(STREAM *S)
 }
 
 
-void TerminalSetKeyCallback(STREAM *Term, KEY_CALLBACK_FUNC Func)
+void TerminalSetKeyCallback(STREAM *Term, TKEY_CALLBACK_FUNC Func)
 {
     STREAMSetItem(Term, "KeyCallbackFunc", Func);
 }
@@ -1443,7 +1609,7 @@ void TerminalBarUpdate(TERMBAR *TB, const char *Text)
 char *TerminalBarReadText(char *RetStr, TERMBAR *TB, int Flags, const char *Prompt)
 {
     int inchar, PromptLen;
-    KEY_CALLBACK_FUNC Func;
+    TKEY_CALLBACK_FUNC Func;
     char *DisplayString=NULL;
     const char *ptr;
     int cols, rows;
@@ -1559,13 +1725,13 @@ char *TerminalBarMenu(char *RetStr, TERMBAR *TB, const char *ItemStr)
             break;
 
         case '<':
-        case KEY_LEFT:
+        case TKEY_LEFT:
             Curr=ListGetPrev(Items->Side);
             if (Curr) Items->Side=Curr;
             break;
 
         case '>':
-        case KEY_RIGHT:
+        case TKEY_RIGHT:
             Curr=ListGetNext(Items->Side);
             if (Curr) Items->Side=Curr;
             break;
@@ -1697,7 +1863,7 @@ int i;
 
 	switch (key)
 	{
-		case KEY_UP:
+		case TKEY_UP:
 				if (Menu->Options->Side) 
 				{
 					if (Menu->Options->Side->Prev && (Menu->Options->Side->Prev != Menu->Options)) Menu->Options->Side=Menu->Options->Side->Prev;
@@ -1705,7 +1871,7 @@ int i;
 				else Menu->Options->Side=ListGetNext(Menu->Options);
 			 break;
 
-		case KEY_DOWN:
+		case TKEY_DOWN:
 				if (Menu->Options->Side) 
 				{
 					if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
@@ -1713,7 +1879,7 @@ int i;
 				else Menu->Options->Side=ListGetNext(Menu->Options);
 			 break;
 
-		case KEY_PGUP:
+		case TKEY_PGUP:
 			 for (i=0; i < Menu->high; i++)
 			 {
 				if (Menu->Options->Side) 
@@ -1725,7 +1891,7 @@ int i;
 			 break;	
 
 
-		case KEY_PGDN:
+		case TKEY_PGDN:
 			 for (i=0; i < Menu->high; i++)
 			 {
 				if (Menu->Options->Side) 
