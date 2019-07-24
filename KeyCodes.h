@@ -110,12 +110,12 @@
 #define TKEY_PAUSE 0x147
 #endif
 
-#ifndef TKEY_FOCUS_IN
-#define TKEY_FOCUS_IN 0x148
+#ifndef TKEY_PRINT
+#define TKEY_PRINT 0x148
 #endif
 
-#ifndef TKEY_FOCUS_OUT
-#define TKEY_FOCUS_OUT 0x149
+#ifndef TKEY_SCROLL_LOCK
+#define TKEY_SCROLL_LOCK 0x149
 #endif
 
 #ifndef TKEY_INSERT
@@ -187,7 +187,10 @@
 #define TKEY_COPY        0x226
 #define TKEY_CUT         0x227
 #define TKEY_CLEAR       0x228
-#define TKEY_STOP        0x229
+#define TKEY_FOCUS_IN    0x229
+#define TKEY_FOCUS_OUT   0x22A
+#define TKEY_STOP        0x22B
+
 
 #define TKEY_SHIFT_BASE 0x1000
 #define TKEY_SHIFT_F1  0x1111

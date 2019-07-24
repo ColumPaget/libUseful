@@ -1,5 +1,5 @@
 CC = @CC@
-VERSION = 4.6
+VERSION = 4.7
 CFLAGS = @CFLAGS@ @SIMD_CFLAGS@
 LDFLAGS=@LDFLAGS@
 LIBS = @LIBS@
@@ -161,11 +161,12 @@ clean:
 	-rm -r autom4te.cache config.cache
 
 install: libUseful.so
-	-mkdir -p $(prefix)/lib; cp *.so *.a $(prefix)/lib  
-	-mkdir -p $(prefix)/include/libUseful-$(VERSION)
-	cp *.h $(prefix)/include/libUseful-$(VERSION)
-	-mkdir -p $(prefix)/include/libUseful-4
-	cp *.h $(prefix)/include/libUseful-4
+	-mkdir -p $(DESTDIR)$(prefix)/lib 
+	cp *.so *.a $(DESTDIR)$(prefix)/lib  
+	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
+	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
+	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-4
+	cp *.h $(DESTDIR)$(prefix)/include/libUseful-4
 
 test: libUseful.so
 	-echo "No tests written yet"

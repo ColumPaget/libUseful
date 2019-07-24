@@ -509,15 +509,10 @@ case 'M':
     if (strcasecmp(str, "mail")==0) return(TKEY_MAIL);
     if (strcasecmp(str, "messenger")==0) return(TKEY_MESSENGER);
     if (strcasecmp(str, "media")==0) return(TKEY_MEDIA);
+    if (strcasecmp(str, "menu")==0) return(TKEY_MENU);
+    if (strcasecmp(str, "mute")==0) return(TKEY_MEDIA_MUTE);
     if (strcasecmp(str, "mycomp")==0) return(TKEY_MYCOMPUTER);
     if (strcasecmp(str, "mycomputer")==0) return(TKEY_MYCOMPUTER);
-break;
-
-case 'p':
-case 'P':
-    if (strcasecmp(str, "pgup")==0) return(TKEY_PGUP);
-    if (strcasecmp(str, "pgdn")==0) return(TKEY_PGDN);
-    if (strcasecmp(str, "pause")==0) return(TKEY_PAUSE);
 break;
 
 case 'l':
@@ -533,6 +528,16 @@ case 'o':
 case 'O':
   if (strcasecmp(str, "open")==0) return(TKEY_OPEN);
 break;
+
+case 'p':
+case 'P':
+    if (strcasecmp(str, "pgup")==0) return(TKEY_PGUP);
+    if (strcasecmp(str, "pgdn")==0) return(TKEY_PGDN);
+    if (strcasecmp(str, "pause")==0) return(TKEY_PAUSE);
+    if (strcasecmp(str, "print")==0) return(TKEY_PRINT);
+    if (strcasecmp(str, "play")==0) return(TKEY_MEDIA_PAUSE);
+break;
+
 
 case 'r':
 case 'R':
@@ -550,7 +555,9 @@ case 'S':
     if (strcasecmp(str, "standby")==0) return(TKEY_STANDBY);
     if (strcasecmp(str, "sleep")==0) return(TKEY_SLEEP);
     if (strcasecmp(str, "shop")==0) return(TKEY_SHOP);
-    if (strcasecmp(str, "stop")==0) return(TKEY_STOP);
+		if (strcasecmp(str, "stop")==0) return(TKEY_STOP);
+    if (strcasecmp(str, "scrlck")==0) return(TKEY_SCROLL_LOCK);
+    if (strcasecmp(str, "scroll-lock")==0) return(TKEY_SCROLL_LOCK);
 break;
 
 case 't':
@@ -564,6 +571,12 @@ case 'U':
 	if (strcasecmp(str, "UP")==0) return(TKEY_UP);
 break;
 
+case 'v':
+case 'V':
+	if (strcasecmp(str, "volup")==0) return(TKEY_VOL_UP);
+	if (strcasecmp(str, "voldn")==0) return(TKEY_VOL_DOWN);
+	if (strcasecmp(str, "voldown")==0) return(TKEY_UP);
+break;
 
 case 'w':
 case 'W':
@@ -572,6 +585,7 @@ case 'W':
     if (strcasecmp(str, "wlan")==0) return(TKEY_WLAN);
     if (strcasecmp(str, "webcam")==0) return(TKEY_WEBCAM);
 break;
+
 }
 
 return((int) *str);
