@@ -765,8 +765,8 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
         break;
 
     case TERM_SCROLL:
-        if (Arg1 < 0) Tempstr=FormatStr(Tempstr,"\x1b[%dT",0-Arg1);
-        else Tempstr=FormatStr(Tempstr,"\x1b[%dS",Arg1);
+        if (Arg1 < 0) Tempstr=FormatStr(Tempstr,"\x1b[%dT", 0 - Arg1);
+        else Tempstr=FormatStr(Tempstr,"\x1b[%dS", Arg1);
         RetStr=CatStr(RetStr,Tempstr);
         break;
 
@@ -1450,6 +1450,7 @@ void TerminalBarsInit(STREAM *S)
 {
     int top=0, bottom=0, cols, rows;
     ListNode *Curr;
+		char *Tempstr=NULL;
     TERMBAR *TB;
 
     TerminalGeometry(S, &cols, &rows);
@@ -1467,10 +1468,23 @@ void TerminalBarsInit(STREAM *S)
 
     if ((top > 0) || (bottom > 0))
     {
-        if (top > 0) STREAMSetValue(S, "Terminal:top","1");
+        if (top > 0) 
+				{
+						Tempstr=FormatStr(Tempstr, "%d", top);			
+						STREAMSetValue(S, "Terminal:top",Tempstr);
+				}
+
+        if (bottom > 0) 
+				{
+						Tempstr=FormatStr(Tempstr, "%d", bottom);			
+						STREAMSetValue(S, "Terminal:bottom",Tempstr);
+				}
+
         TerminalCommand(TERM_SCROLL_REGION, top+2, rows-(top+bottom), S);
         TerminalCommand(TERM_CURSOR_MOVE, 0, top+2, S);
     }
+
+Destroy(Tempstr);
 }
 
 
@@ -1512,7 +1526,18 @@ void TerminalSetup(STREAM *S, const char *Config)
 
 void TerminalReset(STREAM *S)
 {
-    if (atoi(STREAMGetValue(S, "Terminal:top")) > 0) STREAMWriteLine("\x1b[m\x1b[r", S);
+int top=0, bottom=0;
+const char *ptr;
+
+    ptr=STREAMGetValue(S, "Terminal:top");
+    if (ptr) top = atoi(ptr);
+	 
+    ptr=STREAMGetValue(S, "Terminal:bottom");
+    if (ptr) bottom = atoi(ptr);
+
+    if ((top > 0) || (bottom > 0)) STREAMWriteLine("\x1b[m\x1b[r", S);
+
+		STREAMFlush(S);
     if (isatty(S->in_fd)) TTYReset(S->in_fd);
 }
 

@@ -432,13 +432,8 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
             S->out_fd=tmpS->out_fd;
         }
 
-        if (tmpS)
-        {
-//set these to -1 so STREAMClose won't close our connection
-            tmpS->in_fd=-1;
-            tmpS->out_fd=-1;
-            STREAMClose(tmpS);
-        }
+				//STREAMDestroy is like STREAMClose, except it doesn't close any file descriptors
+        if (tmpS) STREAMDestroy(tmpS);
     }
 
     if (! result) RaiseError(0, "ConnectHopSSH", "failed to sshtunnel via %s to %s", ProxyURL, Destination);
