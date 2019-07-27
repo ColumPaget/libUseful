@@ -85,6 +85,9 @@ int ANSIParseColor(const char *Str)
 }
 
 
+
+
+
 const char *TerminalTranslateKeyCode(int key)
 {
     static char KeyStr[2];
@@ -242,9 +245,20 @@ const char *TerminalTranslateKeyCode(int key)
     case TKEY_END:
         return("END");
         break;
+
     case TKEY_PAUSE:
         return("PAUSE");
         break;
+
+    case TKEY_PRINT:
+        return("PRINT");
+        break;
+
+   case TKEY_SCROLL_LOCK:
+        return("SCROLL_LOCK");
+        break;
+
+
     case TKEY_FOCUS_IN:
         return("FOCUS_IN");
         break;
@@ -269,6 +283,54 @@ const char *TerminalTranslateKeyCode(int key)
     case TKEY_MENU:
         return("MENU");
         break;
+
+    case TKEY_WWW:
+        return("WWW");
+        break;
+
+    case TKEY_HOME_PAGE:
+        return("HOMEPAGE");
+        break;
+
+    case TKEY_FAVES:
+        return("FAVES");
+        break;
+
+    case TKEY_SEARCH:
+        return("SEARCH");
+        break;
+
+		case TKEY_BACK:
+				return("BACK");
+				break;
+
+		case TKEY_FORWARD:
+				return("FORWARD");
+				break;
+
+		case TKEY_MAIL:
+				return("MAIL");
+				break;
+
+		case TKEY_MESSENGER:
+				return("MESSENGER");
+				break;
+
+		case TKEY_MEDIA:
+				return("MEDIA");
+				break;
+
+		case TKEY_MEDIA_MUTE:
+				return("MUTE");
+				break;
+
+		case TKEY_MYCOMPUTER:
+				return("MYCOMPUTER");
+				break;
+
+		case TKEY_CALC:
+				return("CALCULATOR");
+				break;
 
     case TKEY_SHIFT_UP:
         return("SHIFT_UP");
@@ -423,21 +485,28 @@ int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
 {
 
 if (*mod) *mod=0;
-if (strncasecmp(str, "shift-", 6)==0)
+
+//read as many modifiers as are found, then break
+while (1)
 {
-if (mod !=NULL) *mod |= KEYMOD_SHIFT;
-str+=6;
+  if (strncasecmp(str, "shift-", 6)==0)
+  {
+  if (mod !=NULL) *mod |= KEYMOD_SHIFT;
+  str+=6;
+  }
+  else if (strncasecmp(str, "ctrl-", 5)==0)
+  {
+  if (mod !=NULL) *mod |= KEYMOD_CTRL;
+  str+=5;
+  }
+  else if (strncasecmp(str, "alt-", 4)==0)
+  {
+    if (mod !=NULL) *mod |= KEYMOD_ALT;
+    str+=4;
+  }
+  else break;
 }
-else if (strncasecmp(str, "ctrl-", 5)==0)
-{
-if (mod !=NULL) *mod |= KEYMOD_CTRL;
-str+=5;
-}
-else if (strncasecmp(str, "alt-", 4)==0)
-{
-	if (mod !=NULL) *mod |= KEYMOD_ALT;
-	str+=4;
-}
+
 
 switch (*str)
 {
