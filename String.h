@@ -115,6 +115,7 @@ char *CopyPadStr(char*Dest, const char *Src, char Pad, int PadLen);
 //copy a string and pad it TO PadLen  length
 char *CopyPadStrTo(char*Dest, const char *Src, char Pad, int PadLen);
 
+char *ReplaceStr(char *RetStr, const char *Input, const char *Old, const char *New);
 
 //these are the quivalent of 'sprintf', except with resizable strings. Furthermore %n is not supported.
 char *VFormatStr(char *RetStr, const char *Format, va_list);

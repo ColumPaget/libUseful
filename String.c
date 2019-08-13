@@ -518,6 +518,27 @@ char *FormatStr(char *InBuff, const char *FmtStr, ...)
 }
 
 
+
+char *ReplaceStr(char *RetStr, const char *Input, const char *Old, const char *New)
+{
+char *Token=NULL;
+const char *ptr;
+
+RetStr=CopyStr(RetStr, "");
+ptr=GetToken(Input, Old, &Token, GETTOKEN_INCLUDE_SEP);
+while (ptr)
+{
+  if (strcmp(Token, Old)==0) RetStr=CatStr(RetStr, New);
+  else RetStr=CatStr(RetStr, Token);
+  ptr=GetToken(ptr, Old, &Token, GETTOKEN_INCLUDE_SEP);
+}
+
+Destroy(Token);
+
+return(RetStr);
+}
+
+
 char *AddCharToStr(char *Dest,char Src)
 {
     char temp[2];

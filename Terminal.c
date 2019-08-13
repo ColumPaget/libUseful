@@ -11,22 +11,46 @@ static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","b
 int TerminalStrLen(const char *Str)
 {
     const char *ptr;
-    int i=0;
+    int len=0;
 
-    if (! Str) return(i);
+    if (! Str) return(len);
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
         if (*ptr=='~')
         {
             ptr++;
-            if (*ptr=='~') i++;
+            if (*ptr=='~') len++;
         }
-        else i++;
+        else len++;
     }
 
-    return(i);
+    return(len);
 }
 
+
+char *TerminalStrTrunc(const char *Str, int MaxLen)
+{
+    const char *ptr;
+    int len=0;
+
+    for (ptr=Str; *ptr !='\0'; ptr++)
+    {
+        if (*ptr=='~')
+        {
+            ptr++;
+            if (*ptr=='~') len++;
+        }
+        else len++;
+
+				if (len > MaxLen)
+				{
+					Str=StrTrunc(Str, ptr+1-Str);
+					break;
+				}
+    }
+
+return(Str);
+}
 
 
 
@@ -1896,10 +1920,12 @@ free(Item);
 
 
 
+
 void TerminalMenuDraw(TERMMENU *Menu)
 {
 		ListNode *Curr, *Prev;
-		char *p_Color=NULL, *Tempstr=NULL, *Output=NULL;
+		char *Contents=NULL, *Tempstr=NULL, *Output=NULL;
+		char *p_Attribs, *p_Cursor, *p_Color=NULL;
 		int y, yend, count;
 
 		y=Menu->y;
@@ -1923,23 +1949,29 @@ void TerminalMenuDraw(TERMMENU *Menu)
 		while (Curr)
 		{
 					TerminalCursorMove(Menu->Term, Menu->x, y);
-					if (Menu->Options->Side==Curr) Tempstr=MCopyStr(Tempstr, Menu->MenuCursorLeft, "> ", NULL);
-					else Tempstr=MCopyStr(Tempstr, Menu->MenuAttribs, "  ", NULL);
+					if (Menu->Options->Side==Curr) 
+					{
+						p_Attribs=Menu->MenuCursorLeft;
+						p_Cursor="> ";
+					}
+					else 
+					{
+						p_Attribs=Menu->MenuAttribs;
+						p_Cursor="  ";
+					}
 
-
-					count=TerminalStrLen(Curr->Tag);
-					if (count > Menu->wid-2) count=Menu->wid-2;
-					Tempstr=CatStrLen(Tempstr, Curr->Tag, count);
-
-
+					Contents=ReplaceStr(Contents, Curr->Tag, "~0", p_Attribs);
+					Contents=TerminalStrTrunc(Contents, Menu->wid-4);
+					
+					Tempstr=MCopyStr(Tempstr, p_Attribs, p_Cursor, Contents, NULL);
 
 					Output=CopyStr(Output, "");
-					Output=TerminalFormatStr(Output, Tempstr, Menu->Term);
+					TerminalFormatSubStr(Tempstr, &Output, Menu->Term);
 
 					//length has two added for the leading space for the cursor
-					count+=2;
 
-					while (count < Menu->wid)
+					count=TerminalStrLen(Contents);
+					while (count < Menu->wid-2)
 					{
 							Output=CatStr(Output, " ");
 							count++;
@@ -1960,6 +1992,8 @@ void TerminalMenuDraw(TERMMENU *Menu)
 		}
 
 		STREAMFlush(Menu->Term);
+
+		Destroy(Contents);
 		Destroy(Tempstr);
 		Destroy(Output);
 }
