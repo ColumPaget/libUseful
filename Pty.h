@@ -21,6 +21,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define TTYFLAG_OUT_CRLF 1048576   //change LineFeed to CarriageReturn-Linefeed on output
 #define TTYFLAG_NONBLOCK 2097152
 #define TTYFLAG_SAVE     4194304   //save attributes for later use with TTYReset
+#define COMMS_COMBINE_STDERR 8388608   //save attributes for later use with TTYReset
 
 #define STREAMConfigTTY(S,speed,flags) ((S && istty(S->in_fd)) ? TTYConfig(S->in_fd,speed,flags))
 #define STREAMResetTTY(S) ((S && istty(S->in_fd)) ? TTYReset(S->in_fd))

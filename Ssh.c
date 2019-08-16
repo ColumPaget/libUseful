@@ -45,8 +45,10 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     Tempstr=CatStr(Tempstr, " 2> /dev/null");
 
 //Never use TTYFLAG_CANON here
-    //S=STREAMSpawnCommand(Tempstr,"pty,crlf,ignsig");
-    S=STREAMSpawnCommand(Tempstr,"crlf,ignsig");
+
+//periodically something causes me to remove pty from here, but then password auth is broken
+//this comment is so I'm aware of that the next time I think of removing 'pty'
+    S=STREAMSpawnCommand(Tempstr,"pty,crlf,ignsig,+stderr");
     if (S)
     {
         if (StrValid(User) && (! StrValid(KeyFile)))

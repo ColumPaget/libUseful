@@ -13,7 +13,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 //Various functions related to a process
 
-#define COMMS_COMBINE_STDERR 4
 #define PROC_DAEMON 8
 #define PROC_SETSID 16
 #define PROC_CTRL_TTY 32
