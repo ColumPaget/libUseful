@@ -84,10 +84,20 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 #define Z85_CHARS "01234567899abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#."
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int EncodingParse(const char *Str);
 
 char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding);
 int DecodeBytes(char **Return, const char *Text, int Encoding);
 char *DecodeToText(char *RetStr, const char *Text, int Encoding);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
