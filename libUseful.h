@@ -33,6 +33,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "FileSystem.h"
 #include "GeneralFunctions.h"
 #include "DataProcessing.h"
+#include "Encodings.h"
 #include "Hash.h"
 #include "Compression.h"
 #include "Time.h"
