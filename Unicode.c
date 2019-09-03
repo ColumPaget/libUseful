@@ -105,7 +105,7 @@ unsigned int UnicodeDecode(const char **ptr)
         if (ptr_incr(ptr, 1) != 1) return(0);
         val |= (**ptr) & 127;
     }
-    else //if (((**ptr) & 224) == 192)
+    else if (((**ptr) & 224) == 224)
     {
         val=((**ptr) & 31) << 12;
         if (ptr_incr(ptr, 1) != 1) return(0);

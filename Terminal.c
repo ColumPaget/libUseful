@@ -8,6 +8,7 @@
 static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
 
+
 int TerminalStrLen(const char *Str)
 {
     const char *ptr;
@@ -16,9 +17,19 @@ int TerminalStrLen(const char *Str)
     if (! Str) return(len);
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
-        if (*ptr=='~')
+    		if (*ptr & 128)
+				{
+					switch (*ptr & 224)
+					{ 
+					case 224:  ptr_incr(&ptr, 1);
+					case 192:  ptr_incr(&ptr, 1);
+					}
+
+					len++;
+				}
+        else if (*ptr=='~')
         {
-            ptr++;
+						ptr_incr(&ptr, 1);
             if (*ptr=='~') len++;
         }
         else len++;
@@ -1321,6 +1332,52 @@ int TerminalReadCSISeq(STREAM *S, char PrevChar)
         }
         break;
 
+			case ';':
+    		inchar=STREAMReadChar(S);
+				switch (inchar)
+				{
+					case '2':
+    				inchar=STREAMReadChar(S);
+						switch (inchar)
+						{
+							case 'A': return(TKEY_SHIFT_UP); break;
+							case 'B': return(TKEY_SHIFT_DOWN); break;
+							case 'C': return(TKEY_SHIFT_RIGHT); break;
+							case 'D': return(TKEY_SHIFT_LEFT); break;
+							case 'F': return(TKEY_SHIFT_END); break;
+							case 'H': return(TKEY_SHIFT_HOME); break;
+						}
+					break;
+
+					case '3':
+    				inchar=STREAMReadChar(S);
+						switch (inchar)
+						{
+							case 'A': return(TKEY_ALT_UP); break;
+							case 'B': return(TKEY_ALT_DOWN); break;
+							case 'C': return(TKEY_ALT_RIGHT); break;
+							case 'D': return(TKEY_ALT_LEFT); break;
+							case 'F': return(TKEY_ALT_END); break;
+							case 'H': return(TKEY_ALT_HOME); break;
+						}
+					break;
+
+	
+					case '5':
+    				inchar=STREAMReadChar(S);
+						switch (inchar)
+						{
+							case 'A': return(TKEY_CTRL_UP); break;
+							case 'B': return(TKEY_CTRL_DOWN); break;
+							case 'C': return(TKEY_CTRL_RIGHT); break;
+							case 'D': return(TKEY_CTRL_LEFT); break;
+							case 'F': return(TKEY_CTRL_END); break;
+							case 'H': return(TKEY_CTRL_HOME); break;
+	
+						}
+					break;
+				}
+			break;
 
     }
 
@@ -1349,6 +1406,19 @@ int TerminalReadChar(STREAM *S)
             inchar=STREAMReadChar(S);
             switch (inchar)
             {
+            case 'a':
+                return(TKEY_SHIFT_UP);
+                break;
+            case 'b':
+                return(TKEY_SHIFT_DOWN);
+                break;
+            case 'c':
+                return(TKEY_SHIFT_RIGHT);
+                break;
+            case 'd':
+                return(TKEY_SHIFT_LEFT);
+                break;
+
             case 'A':
                 return(TKEY_UP);
                 break;
