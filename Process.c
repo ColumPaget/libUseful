@@ -765,6 +765,7 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"daemon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
+        else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"outnull")==0)  
 				{
 								fd_remap_path(1, "/dev/null", O_WRONLY);
