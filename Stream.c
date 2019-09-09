@@ -57,15 +57,45 @@ items[Set->size-1].revents=0;
 if (type & SELECT_READ) items[Set->size-1].events |= POLLIN;
 if (type & SELECT_WRITE) items[Set->size-1].events |= POLLOUT;
 }
+#include <math.h>
 
 static int SelectWait(TSelectSet *Set, struct timeval *tv)
 {
-int timeout;
+long long timeout, next;
+double start, diff, val;
+int result;
 
-if (! tv) timeout=-1;
-else timeout=(tv->tv_sec * 1000) + (tv->tv_usec / 1000);
 
-return(poll((struct pollfd *) Set->items, Set->size, timeout));
+if (tv)
+{
+	//convert to millisecs
+	timeout=(tv->tv_sec * 1000) + (tv->tv_usec / 1000);
+	start=GetTime(TIME_MILLISECS);
+}
+else timeout=-1;
+
+result=poll((struct pollfd *) Set->items, Set->size, timeout);
+
+if (tv)
+{
+	diff=GetTime(TIME_MILLISECS) - start;
+	if (diff > 0)
+	{
+		timeout-=diff;
+		if (timeout > 0) 
+		{
+			tv->tv_sec=floor(timeout / 1000.0);
+			tv->tv_usec=(timeout - (tv->tv_sec * 1000.0)) * 1000;
+		}
+		else
+		{
+			tv->tv_sec=0;
+			tv->tv_usec=0;
+		}
+	}
+}
+
+return(result);
 }
 
 static int SelectCheck(TSelectSet *Set, int fd)

@@ -23,7 +23,7 @@ void ParserItemsDestroy(ListNode *Items)
 
 
 
-const char *ParserAddNewStructure(int ParserType, const char *Data, ListNode *Parent, int Type, const char *Name, int IndentLevel)
+const char *ParserAddNewStructure(const char *Data, int ParserType, ListNode *Parent, int Type, const char *Name, int IndentLevel)
 {
     ListNode *Item, *Node;
     char *Token=NULL;
@@ -61,7 +61,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
         switch (*Token)
         {
         case '[':
-            ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ARRAY, Name, IndentLevel+1);
+            ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ARRAY, Name, IndentLevel+1);
 						Name=CopyStr(Name,"");
             break;
 
@@ -71,7 +71,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case '{':
-            ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, Name, IndentLevel+1);
+            ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, Name, IndentLevel+1);
 						Name=CopyStr(Name,"");
             break;
 
@@ -154,7 +154,7 @@ static const char *ParserYAMLItems(int ParserType, const char *Doc, ListNode *Pa
 
             count=0;
             for (tptr=ptr; *tptr==' '; tptr++) count++;
-            if (count > IndentLevel) ptr=ParserAddNewStructure(ParserType, tptr, Parent, ITEM_ENTITY, Name, count);
+            if (count > IndentLevel) ptr=ParserAddNewStructure(tptr, ParserType, Parent, ITEM_ENTITY, Name, count);
             else if (count < IndentLevel) BreakOut=TRUE;
             PrevToken=CopyStr(PrevToken,"");
             break;
@@ -245,13 +245,9 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
             StripLeadingWhitespace(Name);
             StripTrailingWhitespace(Name);
 
-            ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, Name, IndentLevel+1);
+            ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, Name, IndentLevel+1);
 						Name=CopyStr(Name,"");
 						Token=CopyStr(Token,"");
-            break;
-
-        case '}':
-            BreakOut=TRUE;
             break;
 
         case ' ':
@@ -259,11 +255,16 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
         case ':':
         case '=':
 					  Name=CopyStr(Name, PrevToken);
-            ptr=GetToken(ptr,"\n|;|}|{",&Token,GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP | GETTOKEN_HONOR_QUOTES);
+            //ptr=GetToken(ptr,"\n|;|}|{",&Token,GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP | GETTOKEN_HONOR_QUOTES);
 				break;
 
         case '\r':
 				break;
+
+        case '}':
+            BreakOut=TRUE;
+						//fall through
+
 
         case '\n':
 						if (ParserConfigCheckForBrace(&ptr)) 
@@ -271,21 +272,23 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
 							Name=MCatStr(Name, " ", PrevToken, NULL);
 							break;
 						}
+						//fall through
+
 						
 
         case ';':
 						if (StrValid(PrevToken))
 						{
-            StripLeadingWhitespace(PrevToken);
-            StripTrailingWhitespace(PrevToken);
-						if (StrValid(Name))
-						{
-            Node=ListAddNamedItem(Parent, Name, CopyStr(NULL, PrevToken));
-            Node->ItemType=ITEM_VALUE;
-						}
-						Name=CopyStr(Name,"");
-						//we don't want \r \n or ; tokens included in anything
-						Token=CopyStr(Token,"");
+	            StripLeadingWhitespace(PrevToken);
+	            StripTrailingWhitespace(PrevToken);
+							if (StrValid(Name))
+							{
+ 			           Node=ListAddNamedItem(Parent, Name, CopyStr(NULL, PrevToken));
+    			       Node->ItemType=ITEM_VALUE;
+							}
+							Name=CopyStr(Name,"");
+							//we don't want \r \n or ; tokens included in anything
+							Token=CopyStr(Token,"");
 						}
             break;
 
@@ -387,11 +390,11 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
             case 'I':
                 if (strcasecmp(Token,"item")==0)
                 {
-                    ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, NULL, IndentLevel+1);
+                    ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, NULL, IndentLevel+1);
                 }
 								else if (strcasecmp(Token,"image")==0)
                 {
-                    ptr=ParserAddNewStructure(ParserType, ptr, Parent, ITEM_ENTITY, Token, IndentLevel+1);
+                    ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, Token, IndentLevel+1);
                 }
                 else Name=CopyStr(Name, Token);
                 break;
