@@ -1549,6 +1549,8 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 
         switch (inchar)
         {
+				case STREAM_TIMEOUT:
+				case STREAM_NODATA:
         case '\n':
         case '\r':
             break;
@@ -1827,6 +1829,7 @@ char *TerminalBarReadText(char *RetStr, TERMBAR *TB, int Flags, const char *Prom
     {
         Func=STREAMGetItem(TB->Term, "KeyCallbackFunc");
         if (Func) Func(TB->Term, inchar);
+
         switch (inchar)
         {
         case STREAM_TIMEOUT:

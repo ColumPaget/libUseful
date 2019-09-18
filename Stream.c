@@ -84,7 +84,7 @@ if (tv)
 		timeout-=diff;
 		if (timeout > 0) 
 		{
-			tv->tv_sec=floor(timeout / 1000.0);
+			tv->tv_sec=(int) (timeout / 1000.0);
 			tv->tv_usec=(timeout - (tv->tv_sec * 1000.0)) * 1000;
 		}
 		else
