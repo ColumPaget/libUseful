@@ -742,7 +742,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     STREAM *Stream;
     struct stat myStat;
     char *Tempstr=NULL, *NewPath=NULL;
-    const char *p_Path;
+    const char *p_Path, *ptr;
 
     p_Path=Path;
     if (Flags & SF_WRONLY) Mode=O_WRONLY;
@@ -845,7 +845,8 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     //CREATE THE STREAM OBJECT !!
     Stream=STREAMFromFD(fd);
 
-    STREAMSetTimeout(Stream, LibUsefulGetInteger("STREAM:Timeout"));
+		ptr=LibUsefulGetValue("STREAM:Timeout");
+    if (StrValid(ptr)) STREAMSetTimeout(Stream, atoi(ptr));
 
     STREAMSetFlushType(Stream,FLUSH_FULL,0,0);
     Tempstr=FormatStr(Tempstr,"%d",myStat.st_size);
