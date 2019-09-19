@@ -61,6 +61,17 @@ int LibUsefulGetBool(const char *Name)
     return(strtobool(LibUsefulGetValue(Name)));
 }
 
+
+int LibUsefulGetInteger(const char *Name)
+{
+const char *ptr;
+
+ptr=LibUsefulGetValue(Name);
+if (StrValid(ptr)) return(atoi(ptr));
+return(0);
+}
+
+
 void LibUsefulAtExit()
 {
     if (LibUsefulFlags & LU_CONTAINER) FileSystemUnMount("/","lazy");

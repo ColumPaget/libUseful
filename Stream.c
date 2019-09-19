@@ -844,7 +844,9 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 
     //CREATE THE STREAM OBJECT !!
     Stream=STREAMFromFD(fd);
-    STREAMSetTimeout(Stream,0);
+
+    STREAMSetTimeout(Stream, LibUsefulGetInteger("STREAM:Timeout"));
+
     STREAMSetFlushType(Stream,FLUSH_FULL,0,0);
     Tempstr=FormatStr(Tempstr,"%d",myStat.st_size);
     STREAMSetValue(Stream, "FileSize", Tempstr);
@@ -1046,6 +1048,21 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
             if (Flags & SF_RDONLY) STREAMAddStandardDataProcessor(S, "decompress", "gzip", "");
             else if (Flags & SF_WRONLY) STREAMAddStandardDataProcessor(S, "compress", "gzip", "");
         }
+
+    		STREAMSetTimeout(S, LibUsefulGetInteger("STREAM:Timeout"));
+
+				switch (S->Type)
+				{
+					case STREAM_TYPE_TCP:
+					case STREAM_TYPE_UDP: 
+					case STREAM_TYPE_SSL:
+					case STREAM_TYPE_HTTP:
+					case STREAM_TYPE_CHUNKED_HTTP:
+						ptr=LibUsefulGetValue("Net:Timeout");
+    				if (StrValid(ptr)) STREAMSetTimeout(S, atoi(ptr));
+					break;
+				}
+
     }
 
     Destroy(Token);

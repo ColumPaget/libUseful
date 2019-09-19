@@ -85,6 +85,8 @@ SSL:VerifyCertFile    set path to file containing a concatanated list of C.A. ce
                        used in certificate verification
 
 
+Net:Timeout           set default timeout for all network connections
+TCP:keep_alives       use tcp keepalives for all network connections
 */
 
 
@@ -110,6 +112,8 @@ const char *LibUsefulGetValue(const char *Name);
 //get a value as a boolean. This treats a value set to 'yes' 'y' or 'true' as true regardless
 //of case (so uppercase or mixed-case works too). Any other value is false
 int LibUsefulGetBool(const char *Name);
+
+int LibUsefulGetInteger(const char *Name);
 
 //this function gets called at exit to do certain cleaning up. It's no concern of the user.
 //nothing to see here, move along

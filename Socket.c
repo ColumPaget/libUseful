@@ -1174,6 +1174,9 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
     const char *ptr;
     int Flags=0;
 
+		ptr=LibUsefulGetValue("TCP:Keepalives");
+		if ( StrValid(ptr) &&  (! strtoboolean(ptr)) ) Flags |= SOCK_NOKEEPALIVE;
+
     ptr=GetNameValuePair(Config," ","=",&Name,&Value);
     while (ptr)
     {
