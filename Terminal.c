@@ -1549,6 +1549,11 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 
         switch (inchar)
         {
+				case ESCAPE:
+				Destroy(RetStr);
+				return(NULL);
+				break;
+
 				case STREAM_TIMEOUT:
 				case STREAM_NODATA:
         case '\n':
