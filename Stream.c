@@ -1108,6 +1108,10 @@ void STREAMDestroy(void *p_S)
 }
 
 
+void STREAMTruncate(STREAM *S, long size)
+{
+   ftruncate(S->out_fd,size);
+}
 
 void STREAMClose(STREAM *S)
 {
