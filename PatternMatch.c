@@ -599,8 +599,8 @@ static int pmatch_one_internal(const char *Pattern, const char *String, int len,
         {
         		if (! (*Flags & PMATCH_NOEXTRACT))
 						{
-							if (! *Start) return(FALSE);
-							if (! *End) return(FALSE);
+							if (Start && (! *Start)) return(FALSE);
+							if (End && (! *End)) return(FALSE);
 						}
 						if (S_Ptr > String) return(TRUE);
         }
@@ -653,8 +653,8 @@ static int pmatch_process(const char **Compiled, const char *String, int len, co
     TPMatch *Match;
     int NoOfItems=0;
 
-		*Start=NULL;
-		*End=NULL;
+		if (Start) *Start=NULL;
+		if (End) *End=NULL;
     for (p_ptr=Compiled; *p_ptr != NULL; p_ptr++)
     {
         if (pmatch_one_internal(*p_ptr, String, len, Start, End, Flags))
@@ -664,8 +664,8 @@ static int pmatch_process(const char **Compiled, const char *String, int len, co
             if (Matches)
             {
                 Match=(TPMatch *) calloc(1, sizeof(TPMatch));
-                Match->Start=*Start;
-                Match->End=*End;
+                if (Start) Match->Start=*Start;
+                if (End) Match->End=*End;
                 ListAddItem(Matches,Match);
             }
     				if (*Flags & PMATCH_NO_OVERLAP) break;
