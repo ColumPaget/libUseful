@@ -4,6 +4,8 @@
 //#include <sys/ioctl.h>
 //#include <sys/resource.h>
 #include <sys/mount.h>
+#include <utime.h>
+#include <time.h>
 
 #ifdef HAVE_XATTR
 #include <sys/xattr.h>
@@ -236,6 +238,19 @@ int FileChGroup(const char *FileName, const char *Group)
     return(FALSE);
 }
 
+
+int FileTouch(const char *Path)
+{
+struct utimbuf times;
+
+times.actime=time(NULL); 
+times.modtime=time(NULL); 
+
+if (util(Path, &times)==0) return(TRUE); 
+
+RaiseError(ERRFLAG_ERRNO, "FileTouch", "failed to update file mtime");
+return(FALSE);
+}
 
 unsigned long FileCopyWithProgress(const char *SrcPath, const char *DestPath, DATA_PROGRESS_CALLBACK Callback)
 {
@@ -504,3 +519,5 @@ int FileSystemRmDir(const char *Dir)
 {
 	return(FileSystemUnMountFlagsDepth(Dir, 0, UMOUNT_RECURSE | UMOUNT_RMDIR | UMOUNT_RMFILE, 0, 0));
 }
+
+
