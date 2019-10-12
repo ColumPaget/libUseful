@@ -246,7 +246,7 @@ struct utimbuf times;
 times.actime=time(NULL); 
 times.modtime=time(NULL); 
 
-if (util(Path, &times)==0) return(TRUE); 
+if (utime(Path, &times)==0) return(TRUE); 
 
 RaiseError(ERRFLAG_ERRNO, "FileTouch", "failed to update file mtime");
 return(FALSE);
