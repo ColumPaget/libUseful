@@ -511,7 +511,7 @@ ListNode *InsertItemIntoSortedList(ListNode *List, void *Item, int (*LessThanFun
 }
 
 //list get next is just a macro that either calls this for maps, or returns Node->next
-ListNode *MapGetNext(ListNode *CurrItem)
+ListNode *MapChainGetNext(ListNode *CurrItem)
 {
     ListNode *SubNode, *Head;
 
@@ -544,6 +544,18 @@ ListNode *MapGetNext(ListNode *CurrItem)
         if (CurrItem->Next) return(CurrItem->Next);
     }
 
+    return(NULL);
+}
+
+
+ListNode *MapGetNext(ListNode *CurrItem)
+{
+    ListNode *SubNode, *Head;
+
+    if (! CurrItem) return(NULL);
+		SubNode=MapChainGetNext(CurrItem);
+		if (SubNode) return(SubNode);
+
 //'Head' here points to a BUCKET HEADER. These are marked with this flag, except the last one
 //so we know when we've reached the end
     Head=ListGetHead(CurrItem);
@@ -556,6 +568,7 @@ ListNode *MapGetNext(ListNode *CurrItem)
     return(NULL);
 }
 
+ 
 
 ListNode *ListGetPrev(ListNode *CurrItem)
 {

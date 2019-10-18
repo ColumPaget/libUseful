@@ -167,6 +167,9 @@ ListNode *ListGetLast(ListNode *);
 //get nth item in a list
 ListNode *ListGetNth(ListNode *Head, int n);
 
+
+ListNode *MapChainGetNext(ListNode *);
+
 //get next item in a map
 ListNode *MapGetNext(ListNode *);
 
