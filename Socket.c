@@ -282,7 +282,7 @@ int SockAddrCreate(struct sockaddr **ret_sa, const char *Host, int Port)
     }
 
 #ifdef USE_INET6
-    return(IP6SockAddrCreate(ret_sa, p_Addr, Port));
+    if (IsIP6Address(p_Addr)) return(IP6SockAddrCreate(ret_sa, p_Addr, Port));
 #endif
 
     return(IP4SockAddrCreate(ret_sa, p_Addr, Port));

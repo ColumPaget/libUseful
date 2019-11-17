@@ -161,6 +161,10 @@ void TerminalReset(STREAM *S);
 //scroll one line down
 #define TerminalScrollDown(S) ( TerminalCommand(TERM_SCROLL, -1, 0, S))
 
+//scroll the screen by x columns and y rows
+#define TerminalSetScrollRegion(S, x, y) ( TerminalCommand(TERM_SCROLL_REGION, y, x, S))
+
+
 //put a character. Char can be a value outside the ANSI range which will result in an xterm unicode character string being output
 void TerminalPutChar(int Char, STREAM *S);
 
