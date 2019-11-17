@@ -1034,7 +1034,9 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
       break;
 
     default:
-        if (strcmp(URL,"-")==0) S=STREAMFromDualFD(0,1);
+        if ( (strcmp(URL,"-")==0) || (strcasecmp(URL,"stdio:")==0) ) S=STREAMFromDualFD(0,1);
+				else if (strcasecmp(URL,"stdin:")==0) ) S=STREAMFromFD(0);
+				else if (strcasecmp(URL,"stdout:")==0) ) S=STREAMFromFD(1);
         else S=STREAMFileOpen(URL, Flags);
         break;
     }
