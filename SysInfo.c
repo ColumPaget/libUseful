@@ -7,6 +7,31 @@
 #include <sys/sysinfo.h>
 #endif
 
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+
+
+char *OSSysInfoInterfaces(char *RetStr)
+{
+struct if_nameindex *interfaces;
+int i;
+
+RetStr=CopyStr(RetStr, "");
+interfaces=if_nameindex();
+if (interfaces)
+{
+for (i=0; interfaces[i].if_name != NULL; i++)
+{
+	RetStr=MCatStr(RetStr, interfaces[i].if_name, " ", NULL);
+}
+if_freenameindex(interfaces);
+}
+
+return(RetStr);
+}
+
+
 
 //This is a convinience function for use by modern languages like
 //lua that have an 'os' object that returns information
@@ -56,6 +81,12 @@ const char *OSSysInfoString(int Info)
         if (! ptr) ptr="/tmp";
         if (ptr) return(ptr);
         break;
+
+		case OSINFO_INTERFACES:
+			//don't just return output of function, as buf is static we must update it
+			buf=OSSysInfoInterfaces(buf);
+			return(buf);
+		break;
 
 
         /*

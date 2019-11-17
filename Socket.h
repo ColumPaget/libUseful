@@ -54,6 +54,9 @@ int IsIPAddress(const char *Str);
 //return the primary IP bound to an interface (e.g. 127.0.0.1 for lo). Currently only returns IP4 addresses
 const char *GetInterfaceIP(const char *Interface);
 
+//interface details as a list of name=value pairs. (Pass in a string for them to be copied into, like 'copy str'
+char *GetInterfaceDetails(char *RetStr, const char *Interface);
+
 //look in the kernel's arp cache for the MAC address of an IP. Also can return the network device (eth0 etc) that
 //this IP has been seen on. Some communication with the device must have recently happened for this to work.
 int GetHostARP(const char *IP, char **Device, char **MAC);

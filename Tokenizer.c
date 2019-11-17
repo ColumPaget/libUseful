@@ -443,3 +443,22 @@ const char *GetNameValuePair(const char *Input, const char *PairDelim, const cha
     return(ptr);
 }
 
+
+char *GetNameValue(char *RetStr, const char *Input, const char *PairDelim, const char *NameValueDelim, const char *SearchName)
+{
+char *Name=NULL, *Value=NULL;
+const char *ptr;
+
+RetStr=CopyStr(RetStr, "");
+ptr=GetNameValuePair(Input, PairDelim, NameValueDelim, &Name, &Value);
+while (ptr)
+{
+	if (strcmp(Name, SearchName)==0) RetStr=CopyStr(RetStr, Value);
+	ptr=GetNameValuePair(ptr, PairDelim, NameValueDelim, &Name, &Value);
+}
+
+Destroy(Name);
+Destroy(Value);
+
+return(RetStr);
+}

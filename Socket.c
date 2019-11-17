@@ -420,6 +420,42 @@ int GetSockDestination(int sock, char **Host, int *Port)
 }
 
 
+char *GetInterfaceDetails(char *RetStr, const char *Interface)
+{
+    int fd, result;
+    struct ifreq ifr;
+		char *Tempstr=NULL;
+
+		RetStr=CopyStr(RetStr, "");
+    if (! StrValid(Interface)) return(RetStr);
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd==-1) return(RetStr);
+
+    ifr.ifr_addr.sa_family = AF_INET;
+    strncpy(ifr.ifr_name, Interface, IFNAMSIZ-1);
+
+    result=ioctl(fd, SIOCGIFADDR, &ifr);
+		if (result > -1) RetStr=MCopyStr(RetStr, "ip4address=", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), " ", NULL);
+
+    result=ioctl(fd, SIOCGIFBRDADDR, &ifr);
+		RetStr=MCatStr(RetStr, "ip4broadcast=", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr), " ", NULL);
+
+    result=ioctl(fd, SIOCGIFNETMASK, &ifr);
+		RetStr=MCatStr(RetStr, "ip4netmask=", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr), " ", NULL);
+
+    result=ioctl(fd, SIOCGIFDSTADDR, &ifr);
+		RetStr=MCatStr(RetStr, "ip4destaddr=", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_dstaddr)->sin_addr), " ", NULL);
+
+    result=ioctl(fd, SIOCGIFMTU, &ifr);
+		Tempstr=FormatStr(Tempstr, "%d", ifr.ifr_mtu);
+		RetStr=MCatStr(RetStr, "ip4destaddr=", Tempstr, " ", NULL);
+
+    close(fd);
+
+		Destroy(Tempstr);
+	return(RetStr);
+}
+
 
 
 const char *GetInterfaceIP(const char *Interface)
