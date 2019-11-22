@@ -6,6 +6,9 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #ifndef LIBUSEFUL_DEFINES_H
 #define LIBUSEFUL_DEFINES_H
 
+//this mostly exits for libUseful-lua
+#define bool int
+
 #define FALSE 0
 #define TRUE  1
 
