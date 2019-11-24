@@ -127,23 +127,23 @@ size_t OSSysInfoLong(int Info)
         break;
 
     case OSINFO_TOTALMEM:
-        return((size_t) SysInfo.totalram);
+        return((size_t) (SysInfo.totalram * SysInfo.mem_unit));
         break;
 
     case OSINFO_FREEMEM:
-        return((size_t) SysInfo.freeram);
+        return((size_t) (SysInfo.freeram * SysInfo.mem_unit));
         break;
 
     case OSINFO_BUFFERMEM:
-        return((size_t) SysInfo.bufferram);
+        return((size_t) (SysInfo.bufferram * SysInfo.mem_unit));
        break;
 
 		case OSINFO_TOTALSWAP:
-			 	return((size_t) SysInfo.totalswap);
+			 	return((size_t) (SysInfo.totalswap * SysInfo.mem_unit));
 			break;
 
 		case OSINFO_FREESWAP:
-			 	return((size_t) SysInfo.freeswap);
+			 	return((size_t) (SysInfo.freeswap * SysInfo.mem_unit));
 				break;
 
     case OSINFO_PROCS:
