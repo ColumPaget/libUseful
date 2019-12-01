@@ -1030,7 +1030,6 @@ int HTTPProcessResponse(HTTPInfoStruct *HTTPInfo)
                 //As redirect check has been done, we can copy redirect path to previous
                 HTTPInfo->PreviousRedirect=CopyStr(HTTPInfo->PreviousRedirect,HTTPInfo->RedirectPath);
                 ParseURL(HTTPInfo->RedirectPath, &Proto, &HTTPInfo->Host, &Tempstr,NULL, NULL,&HTTPInfo->Doc,NULL);
-								fprintf(stderr, "REDIRECT: host=%s URL=%s\n", HTTPInfo->Host, HTTPInfo->RedirectPath);
                 HTTPInfo->Port=atoi(Tempstr);
 
                 //if HTTP_SSL_REWRITE is set, then all redirects get forced to https
