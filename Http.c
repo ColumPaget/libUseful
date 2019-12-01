@@ -577,7 +577,35 @@ static int HTTPHandleWWWAuthenticate(const char *Line, int *Type, char **Config)
     return(*Type);
 }
 
+/* redirect headers can get complex. WE can have a 'full' header:
+ *    http://myhost/whatever
+ * or just the 'path' part
+ *    /whatever
+ * or even this
+ *    //myhost/whatever
+ */
 
+static void HTTPParseLocationHeader(HTTPInfoStruct *Info, const char *Header)
+{
+   if (
+         (strncasecmp(Header,"http:",5)==0) ||
+         (strncasecmp(Header,"https:",6)==0)
+      )
+      {
+         Info->RedirectPath=HTTPQuoteChars(Info->RedirectPath, Header, " ");
+      }
+	 		else if (strncmp(Header, "//",2)==0)
+			{
+        if (Info->Flags & HTTP_SSL) Info->RedirectPath=MCopyStr(Info->RedirectPath,"https:",Header,NULL);
+         else Info->RedirectPath=MCopyStr(Info->RedirectPath,"http:",Header,NULL);
+			}
+      else
+      {
+         if (Info->Flags & HTTP_SSL) Info->RedirectPath=FormatStr(Info->RedirectPath,"https://%s:%d%s",Info->Host,Info->Port,Header);
+         else Info->RedirectPath=FormatStr(Info->RedirectPath,"http://%s:%d%s",Info->Host,Info->Port,Header);
+      }
+
+}
 
 
 static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
@@ -639,21 +667,7 @@ static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
 
         case 'L':
         case 'l':
-            if (strcasecmp(Token,"Location")==0)
-            {
-                if (
-                    (strncasecmp(ptr,"http:",5)==0) ||
-                    (strncasecmp(ptr,"https:",6)==0)
-                )
-                {
-                    Info->RedirectPath=HTTPQuoteChars(Info->RedirectPath, ptr, " ");
-                }
-                else
-                {
-                    if (Info->Flags & HTTP_SSL) Info->RedirectPath=FormatStr(Info->RedirectPath,"https://%s:%d%s",Info->Host,Info->Port,ptr);
-                    else Info->RedirectPath=FormatStr(Info->RedirectPath,"http://%s:%d%s",Info->Host,Info->Port,ptr);
-                }
-            }
+            if (strcasecmp(Token,"Location")==0) HTTPParseLocationHeader(Info, ptr);
             break;
 
         case 'P':
@@ -1016,6 +1030,7 @@ int HTTPProcessResponse(HTTPInfoStruct *HTTPInfo)
                 //As redirect check has been done, we can copy redirect path to previous
                 HTTPInfo->PreviousRedirect=CopyStr(HTTPInfo->PreviousRedirect,HTTPInfo->RedirectPath);
                 ParseURL(HTTPInfo->RedirectPath, &Proto, &HTTPInfo->Host, &Tempstr,NULL, NULL,&HTTPInfo->Doc,NULL);
+								fprintf(stderr, "REDIRECT: host=%s URL=%s\n", HTTPInfo->Host, HTTPInfo->RedirectPath);
                 HTTPInfo->Port=atoi(Tempstr);
 
                 //if HTTP_SSL_REWRITE is set, then all redirects get forced to https
