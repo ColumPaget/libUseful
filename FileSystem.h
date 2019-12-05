@@ -20,6 +20,8 @@ extern "C" {
 //exist it will be created.
 #define FileCopy(SrcPath, DestPath) (FileCopyWithProgress(SrcPath, DestPath, NULL))
 
+//move fire to a directory, creating the diretory path if needed.
+int FileMoveToDir(const char *FilePath, const char *Dir);
 
 //copy SrcPath to DestPath, periodically calling the function 'Callback' to ouput information about
 //copy progress. Look in 'DataProcessing.h' for more information about the Callback function.

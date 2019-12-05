@@ -129,6 +129,24 @@ int FileChangeExtension(const char *FilePath, const char *NewExt)
 }
 
 
+int FileMoveToDir(const char *FilePath, const char *Dir)
+{
+    char *Tempstr=NULL;
+    char *ptr;
+    int result;
+
+    Tempstr=MCopyStr(Tempstr, Dir, "/", GetBasename(FilePath));
+    MakeDirPath(Tempstr, 0700);
+    result=rename(FilePath,Tempstr);
+    if (result !=0) RaiseError(ERRFLAG_ERRNO, "FileMoveToDir", "cannot rename '%s' to '%s'",FilePath, Tempstr);
+
+    DestroyString(Tempstr);
+
+    if (result==0) return(TRUE);
+    else return(FALSE);
+}
+
+
 int FindFilesInPath(const char *File, const char *Path, ListNode *Files)
 {
     char *Tempstr=NULL, *CurrPath=NULL;
