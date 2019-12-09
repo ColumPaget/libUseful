@@ -438,6 +438,8 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
 
     if (StrValid(Pass)) CredsStoreAdd(Info->Host, User, Pass);
 
+		if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
+
     DestroyString(User);
     DestroyString(Pass);
     DestroyString(Token);
