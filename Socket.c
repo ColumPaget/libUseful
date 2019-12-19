@@ -945,22 +945,24 @@ int IPReconnect(int sock, const char *Host, int Port, int Flags)
 
 int TCPConnectWithAttributes(const char *LocalHost, const char *Host, int Port, int Flags, int TTL, int ToS)
 {
-    int sock, result;
+const char *p_LocalHost=LocalHost;
+int sock, result;
 
-    sock=BindSock(SOCK_STREAM, LocalHost, 0, 0);
+if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
 
-    if (TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &TTL, sizeof(int));
-    if (ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &ToS, sizeof(int));
+sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
 
-    result=IPReconnect(sock,Host,Port,Flags);
-    if (result==-1)
-    {
-        close(sock);
-        return(-1);
-    }
+if (TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &TTL, sizeof(int));
+if (ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &ToS, sizeof(int));
 
+result=IPReconnect(sock,Host,Port,Flags);
+if (result==-1)
+{
+  close(sock);
+  return(-1);
+}
 
-    return(sock);
+return(sock);
 }
 
 
