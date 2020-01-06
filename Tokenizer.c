@@ -223,7 +223,7 @@ void DestroyMultiSeparators(char **separators)
 {
 char *ptr;
 
-	for (ptr=*separators; *ptr != NULL; ptr++) Destroy(ptr);
+	for (ptr=*separators; ptr != NULL; ptr++) Destroy(ptr);
 	Destroy(separators);
 }
 
