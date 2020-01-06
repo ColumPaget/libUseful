@@ -47,6 +47,17 @@ const char *ParserAddNewStructure(const char *Data, int ParserType, ListNode *Pa
 }
 
 
+void ParserAddValue(ListNode *Parent, const char *Name, const char *PrevToken)
+{
+ListNode *Node;
+
+  if (StrValid(Name) || StrValid(PrevToken))
+  {
+    Node=ListAddNamedItem(Parent, Name, CopyStr(NULL, PrevToken));
+    Node->ItemType=ITEM_VALUE;
+  }
+}
+
 #define JSON_TOKENS ",|[|]|{|}|:|\r|\n"
 static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel)
 {
@@ -66,6 +77,9 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case ']':
+            //we can have an item right before a ']' that doesn't terminate with a ',' because the ']' terminates it
+						ParserAddValue(Parent, Name, PrevToken);
+
             if (ptr && (*ptr==',')) ptr++;
             BreakOut=TRUE;
             break;
@@ -76,12 +90,9 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case '}':
-            //we can have an item right before a '}' that doesn't terminate with a ',' becasue the '}' terminates it
-            if (StrValid(Name) && StrValid(PrevToken))
-            {
-                Node=ListAddNamedItem(Parent, Name, CopyStr(NULL, PrevToken));
-                Node->ItemType=ITEM_VALUE;
-            }
+            //we can have an item right before a '}' that doesn't terminate with a ',' because the '}' terminates it
+						ParserAddValue(Parent, Name, PrevToken);
+
             if (ptr && (*ptr==',')) ptr++;
             BreakOut=TRUE;
             break;
@@ -96,8 +107,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
 
         case '\n':
         case ',':
-            Node=ListAddNamedItem(Parent, Name, CopyStr(NULL, PrevToken));
-            Node->ItemType=ITEM_VALUE;
+						ParserAddValue(Parent, Name, PrevToken);
             break;
 
         default:
