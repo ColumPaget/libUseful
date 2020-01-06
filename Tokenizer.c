@@ -219,6 +219,14 @@ char **BuildMultiSeparators(const char *Pattern)
 }
 
 
+void DestroyMultiSeparators(char **separators)
+{
+char *ptr;
+
+	for (ptr=*separators; *ptr != NULL; ptr++) Destroy(ptr);
+	Destroy(separators);
+}
+
 
 int GetTokenMultiSepMatch(char **Separators, const char **start_ptr, const char **end_ptr, int Flags)
 {
@@ -372,6 +380,7 @@ const char *GetToken(const char *SearchStr, const char *Separator, char **Token,
             separators=BuildMultiSeparators(Separator);
 						SepStart=SearchStr;
 						GetTokenMultiSepMatch(separators, &SepStart, &SepEnd, Flags);
+						DestroyMultiSeparators(separators);
         }
         else GetTokenFindSeparator(Separator, SearchStr, &SepStart, &SepEnd, Flags);
     }
