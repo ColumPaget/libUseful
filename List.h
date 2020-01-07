@@ -102,7 +102,8 @@ typedef struct lnode
 extern "C" {
 #endif
 
-//
+// function prototypes for 'destroy' and 'clone' functions used by
+// 'DestroyList' and 'CloneList'
 typedef void (*LIST_ITEM_DESTROY_FUNC)(void *);
 typedef void *(*LIST_ITEM_CLONE_FUNC)(void *);
 

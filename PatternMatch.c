@@ -1,4 +1,5 @@
 #include "PatternMatch.h"
+#include "Array.h"
 
 typedef enum {MATCH_FAIL, MATCH_FOUND, MATCH_ONE, MATCH_MANY, MATCH_REPEAT, MATCH_NEXT, MATCH_QUOT, MATCH_START, MATCH_CHARLIST, MATCH_HEX, MATCH_OCTAL, MATCH_SWITCH_ON, MATCH_SWITCH_OFF} TPMatchElements;
 
@@ -707,10 +708,7 @@ int pmatch(const char *Pattern, const char *String, int Len, ListNode *Matches, 
     else mcount=pmatch_process((const char **) Compiled, String, Len, &Start, &End, Matches, &Flags);
 
 
-    if (Compiled) 
-		{
-			for (i=0; Compiled[i] !=NULL; i++) Destroy((void *) Compiled[i]);
-			free(Compiled);
-		}
+    if (Compiled) StringArrayDestroy(Compiled);
+
     return(mcount);
 }
