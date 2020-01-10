@@ -236,7 +236,7 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
     const char *ptr;
     char *Token=NULL, *PrevToken=NULL, *Name=NULL;
     ListNode *Node;
-    int BreakOut=FALSE;
+    int BreakOut=FALSE, NewKey=TRUE;
 
 
     ptr=Doc;
@@ -260,12 +260,19 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
 						Token=CopyStr(Token,"");
             break;
 
+				//these are all possible seperators in key=value lines
         case ' ':
         case '	':
         case ':':
         case '=':
+				if (NewKey)
+				{
 					  Name=CopyStr(Name, PrevToken);
-            //ptr=GetToken(ptr,"\n|;|}|{",&Token,GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP | GETTOKEN_HONOR_QUOTES);
+						//as this is the seperator in key=value so we do not
+						//want to treat it as a token
+						Token=CopyStr(Token, "");
+						NewKey=FALSE;
+				}
 				break;
 
         case '\r':
@@ -300,6 +307,7 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
 							//we don't want \r \n or ; tokens included in anything
 							Token=CopyStr(Token,"");
 						}
+						NewKey=TRUE;
             break;
 
         default:
