@@ -24,9 +24,9 @@ return(Array);
 
 void ArrayDestroy(void **Array, ARRAY_ITEM_DESTROY_FUNC DestroyFunc)
 {
-char *ptr;
+void **ptr;
 
-  for (ptr=*Array; ptr != NULL; ptr++) DestroyFunc(ptr);
+  for (ptr=Array; *ptr != NULL; ptr++) DestroyFunc(*ptr);
   if (Array != NULL) free(Array);
 }
 
