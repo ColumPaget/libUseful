@@ -1001,17 +1001,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     case 't':
     case 's':
     case 'u':
-			if (strcasecmp(Proto,"ssh")==0) 
-			{
-				//if SF_RDONLY is set, then we treat this as a 'file get', otherwise we treat it as
-				//a remote command
-				if (Flags & SF_RDONLY)
-				{
-					Token=QuoteCharsInStr(Token, Path, "    ()");
-					Path=MCopyStr(Path, "cat ", Token, "; exit", NULL);
-				}
-				S=SSHConnect(Host, Port, User, Pass, Path);
-			}
+			if (strcasecmp(Proto,"ssh")==0) S=SSHOpen(Host, Port, User, Pass, Path, Flags);
       else if (strcasecmp(Proto,"tty")==0)
       {
             S=STREAMFromFD(TTYConfigOpen(URL+4, Config));
@@ -1122,6 +1112,8 @@ void STREAMClose(STREAM *S)
     int val;
 
     if (! S) return;
+		if (StrValid(S->Path) && (strncmp(S->Path, "ssh:", 4)==0)) SSHClose(S);
+
 
     //-1 means 'FLUSH'
     STREAMReadThroughProcessors(S, NULL, -1);

@@ -400,7 +400,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
         //Host will be Token, and port Token2
         ParseConnectDetails(Destination, NULL, &Token, &Token2, NULL, NULL, NULL);
         Tempstr=FormatStr(Tempstr,"tunnel:%d:%s:%s ",DPort,Token,Token2);
-        tmpS=SSHConnect(Host, Port, User, Pass, Tempstr);
+        tmpS=SSHConnect(Host, Port, User, Pass, Tempstr, 0);
         if (tmpS)
         {
             if (! S->Items) S->Items=ListCreate();
@@ -423,7 +423,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
         ParseConnectDetails(Destination, NULL, &Token, &Token2, NULL, NULL, NULL);
         DPort=atoi(Token2);
         Tempstr=FormatStr(Tempstr,"stdin:%s:%d", Token, DPort);
-        tmpS=SSHConnect(Host, Port, User, Pass, Tempstr);
+        tmpS=SSHConnect(Host, Port, User, Pass, Tempstr, 0);
         if (tmpS)
         {
             usleep(200000);

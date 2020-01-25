@@ -32,6 +32,19 @@ https:www.google.com                     https network connection
 cmd:cat /etc/hosts                       run command 'cat /etc/hosts' and read/write to/from it
 ssh:192.168.2.1:1022/cat /etc/hosts      ssh connect, running the command 'cat /etc/hosts'
 
+in the case of SSH stream the default action, if no 'config' flags are passed, is to run a command. 'x' config flag will also explictly run a command. 'r' will cat a file from the remote server. 'w' will cat from the stream TO a file on the remote server. 
+
+S=STREAMOpen("ssh:192.168.2.1/myfile.txt", "r");  //read from 'myfile.txt' in current directory
+
+S=STREAMOpen("ssh:192.168.2.1//tmp/myfile.txt", "r");  //read from 'myfile.txt' in /tmp (note double '/' for '/tmp')
+
+S=STREAMOpen("ssh:192.168.2.1/myfile.txt", "w");  //WRITE to 'myfile.txt' in current directory
+
+
+S=STREAMOpen("ssh:192.168.2.1/ls *", "");  //RUN COMMAND 'ls *'
+S=STREAMOpen("ssh:192.168.2.1/ls *", "x");  //RUN COMMAND 'ls *'
+
+
 
 The 'config' argument has different meanings for some of the different URL types.
 
@@ -50,9 +63,10 @@ L     lock/unlock file on each write
 i     allow this file to be inherited across an exec (default is close-on-exec)
 t     make a unique temporary file name. the file path must be a mktemp style template, with the last six characters being 'XXXXXX'
 S     file contents are sorted
+x     treat file path as a command to execute (currently on in ssh: streams) 
 z     compress/uncompress with gzip
 
-for 'http' and 'https' URLs the first argument is a haracter list (though only one character long) with the following values
+for 'http' and 'https' URLs the first argument is a character list (though only one character long) with the following values
 
 r    GET method (default if no method specified)
 w    POST method

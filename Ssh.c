@@ -3,13 +3,14 @@
 #include "Pty.h"
 #include "SpawnPrograms.h"
 
-STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pass, const char *Command)
+STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pass, const char *Command, int Flags)
 {
     ListNode *Dialog;
-    char *Tempstr=NULL, *KeyFile=NULL, *Token=NULL, *RemoteCmd=NULL;
-		const char *ptr;
+    char *Tempstr=NULL, *KeyFile=NULL, *Token=NULL, *RemoteCmd=NULL, *TTYConfigs=NULL;
+    const char *ptr;
     STREAM *S;
     int val, i;
+
 
 
 //If we are using the .ssh/config connection-config system then there won't be a username, and 'Host' will
@@ -29,8 +30,8 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
         Tempstr=MCatStr(Tempstr,"-i ",KeyFile," ",NULL);
     }
 
-		ptr=GetToken(Command, "\\S", &Token, 0);
-		while (ptr)
+    ptr=GetToken(Command, "\\S", &Token, 0);
+    while (ptr)
     {
         if (strcmp(Token,"none")==0) Tempstr=CatStr(Tempstr, "-N ");
         else if (strncmp(Token, "tunnel:",7)==0) Tempstr=MCatStr(Tempstr,"-N -L ", Token+7, NULL);
@@ -38,19 +39,30 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
         else if (strncmp(Token, "jump:",5)==0) Tempstr=MCatStr(Tempstr,"-J ", Token+5, NULL);
         else RemoteCmd=MCatStr(RemoteCmd, Token, " ", NULL);
 
-				ptr=GetToken(ptr, "\\S", &Token, 0);
+        ptr=GetToken(ptr, "\\S", &Token, 0);
     }
 
     if (StrValid(RemoteCmd)) Tempstr=MCatStr(Tempstr, " \"", RemoteCmd, "\" ", NULL);
     Tempstr=CatStr(Tempstr, " 2> /dev/null");
 
-//Never use TTYFLAG_CANON here
 
-//periodically something causes me to remove pty from here, but then password auth is broken
-//this comment is so I'm aware of that the next time I think of removing 'pty'
-    S=STREAMSpawnCommand(Tempstr,"pty,crlf,ignsig,+stderr");
+		//Setup configuration of the connection to the 'ssh' command
+		//This is done over a psuedo-terminal (pty)
+		//periodically something causes me to remove the 'pty' settings
+		//but then password auth is broken.
+		//this comment is so I'm aware of that the next time I think of removing 'pty'
+		TTYConfigs=CopyStr(TTYConfigs, "pty,crlf,+stderr,ignsig");
+		//if we are writing to a file on the remote server then we need some way
+		//to tell it 'end of file'. We can't just close the connection, as we 
+		//may not have sent all the data. For this one situation we use canonical
+		//pty settings, so we can use the 'cntrl-d' control character
+		if (Flags & SSH_CANON_PTY) TTYConfigs=CatStr(TTYConfigs, ",canon");
+
+
+    S=STREAMSpawnCommand(Tempstr, TTYConfigs);
     if (S)
     {
+				S->Path=MCopyStr(S->Path, "ssh:", Host, NULL);
         if (StrValid(User) && (! StrValid(KeyFile)))
         {
             Dialog=ListCreate();
@@ -68,8 +80,64 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
 
     DestroyString(Tempstr);
     DestroyString(KeyFile);
+    DestroyString(TTYConfigs);
     DestroyString(RemoteCmd);
     DestroyString(Token);
 
     return(S);
+}
+
+
+
+//Open an ssh stream in read, write or execute mode, depending on read flags
+//This is called from STREAMOpen, where the 'r', 'w' or 'x' in the 2nd arg
+//get translated to:
+//'r' -> SF_RDONLY (read a file from remote server)
+//'w' -> SF_WRONLY (write a file to remote server)
+//'x' or anything else runs a command on the remote server
+
+STREAM *SSHOpen(const char *Host, int Port, const char *User, const char *Pass, const char *iPath, int Flags)
+{
+char *Tempstr=NULL, *Path=NULL;
+const char *ptr;
+int SshFlags=0;
+STREAM *S;
+
+
+		ptr=iPath;
+		if (*ptr=='/') ptr++;
+    //if SF_RDONLY is set, then we treat this as a 'file get'
+    if (Flags & SF_RDONLY)
+    {
+        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
+        Path=MCopyStr(Path, "cat ", Tempstr, "; exit", NULL);
+    }
+    else if (Flags & SF_WRONLY)
+    {
+        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
+        Path=MCopyStr(Path, "cat - > ", Tempstr, "; exit", NULL);
+				SshFlags |= SSH_CANON_PTY;
+    }
+		else Path=CopyStr(Path, iPath);
+
+    S=SSHConnect(Host, Port, User, Pass, Path, SshFlags);
+
+		Destroy(Tempstr);
+		Destroy(Path);
+
+    return(S);
+}
+
+
+void SSHClose(STREAM *S)
+{
+//cntrl-d
+const char endchar=4;
+char *Tempstr=NULL;
+
+STREAMWriteBytes(S, &endchar, 1);
+STREAMFlush(S);
+Tempstr=STREAMReadDocument(Tempstr, S);
+
+Destroy(Tempstr);
 }

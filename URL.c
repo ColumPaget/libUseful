@@ -104,7 +104,7 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
    ptr=GetToken(ptr,"/",&Token,0);
    ParseHostDetails(Token,Host,Port,User,Password);
 
-    while (ptr && (*ptr=='/')) ptr++;
+    //while (ptr && (*ptr=='/')) ptr++;
 
     if (StrValid(ptr))
     {
