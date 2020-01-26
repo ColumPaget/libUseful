@@ -38,7 +38,10 @@ S=STREAMOpen("ssh:192.168.2.1/myfile.txt", "r");  //read from 'myfile.txt' in cu
 
 S=STREAMOpen("ssh:192.168.2.1//tmp/myfile.txt", "r");  //read from 'myfile.txt' in /tmp (note double '/' for '/tmp')
 
-S=STREAMOpen("ssh:192.168.2.1/myfile.txt", "w");  //WRITE to 'myfile.txt' in current directory
+S=STREAMOpen("ssh:192.168.2.1/myfile.txt", "w");  //WRITE to 'myfile.txt' in current directory. THIS ONLY WORKS FOR ASCII TEXT, NOT BINARY FILES.
+S=STREAMOpen("ssh:192.168.2.1/myfile.txt", "a");  //APPEND to 'myfile.txt' in current directory. THIS ONLY WORKS FOR ASCII TEXT, NOT BINARY FILES.
+
+"r", "w" and "a" modes use the 'cat' command on the remote server, so obviously that must exist
 
 
 S=STREAMOpen("ssh:192.168.2.1/ls *", "");  //RUN COMMAND 'ls *'

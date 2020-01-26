@@ -20,7 +20,9 @@ The returned stream can be used with the usual STREAM functions to read/write to
 ssh host. see Stream.h for available functions.
 */
 
-#define SSH_CANON_PTY 1 //communicate to ssh program over a canonical pty (honor ctrl-d, ctrl-c etc)
+#define SSH_CANON_PTY 1  //communicate to ssh program over a canonical pty (honor ctrl-d, ctrl-c etc)
+#define SSH_NO_ESCAPE 2  //disable the 'escape character'
+#define SSH_COMPRESS  4  //use -C to compress ssh traffic
 
 #ifdef __cplusplus
 extern "C" {

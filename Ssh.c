@@ -30,6 +30,9 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
         Tempstr=MCatStr(Tempstr,"-i ",KeyFile," ",NULL);
     }
 
+		if (Flags & SSH_NO_ESCAPE) Tempstr=MCatStr(Tempstr, "-e none ");
+		if (Flags & SSH_COMPRESS) Tempstr=MCatStr(Tempstr, "-C ");
+
     ptr=GetToken(Command, "\\S", &Token, 0);
     while (ptr)
     {
@@ -118,8 +121,15 @@ STREAM *S;
         Path=MCopyStr(Path, "cat - > ", Tempstr, "; exit", NULL);
 				SshFlags |= SSH_CANON_PTY;
     }
+    else if (Flags & STREAM_APPEND)
+    {
+        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
+        Path=MCopyStr(Path, "cat - >> ", Tempstr, "; exit", NULL);
+				SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
+    }
 		else Path=CopyStr(Path, iPath);
 
+		if (Flags & SF_COMPRESSED) SshFlags |= SSH_COMPRESS;
     S=SSHConnect(Host, Port, User, Pass, Path, SshFlags);
 
 		Destroy(Tempstr);
