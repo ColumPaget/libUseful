@@ -187,7 +187,7 @@ const char *OpenSSLQueryCipher(STREAM *S)
     void *ptr;
 
     if (! S) return(NULL);
-    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
     if (! ptr) return(NULL);
 
 #ifdef HAVE_LIBSSL
@@ -259,7 +259,7 @@ int OpenSSLVerifyCertificate(STREAM *S)
     X509 *cert=NULL;
     SSL *ssl;
 
-    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
     if (! ptr) return(FALSE);
 
     ssl=(SSL *) ptr;
@@ -481,7 +481,8 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, OpenSSLVerifyCallback);
             ssl=SSL_new(ctx);
             SSL_set_fd(ssl,S->in_fd);
-            STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ssl);
+            STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ctx);
+            STREAMSetItem(S,"LIBUSEFUL-SSL:OBJ",(void *) ssl);
             OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE);
 
             ptr=LibUsefulGetValue("SSL:PermittedCiphers");
@@ -613,7 +614,10 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                 OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE|SSL_OP_CIPHER_SERVER_PREFERENCE);
 
                 SSL_set_fd(ssl,S->in_fd);
-                STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",ssl);
+              
+ 		            STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ctx);
+   			        STREAMSetItem(S,"LIBUSEFUL-SSL:OBJ",(void *) ssl);
+ 
                 ptr=LibUsefulGetValue("SSL:PermittedCiphers");
                 if (StrValid(ptr)) SSL_set_cipher_list(ssl, ptr);
                 SSL_set_accept_state(ssl);
@@ -662,7 +666,7 @@ int STREAMIsPeerAuth(STREAM *S)
 #ifdef HAVE_LIBSSL
     void *ptr;
 
-    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
     if (! ptr) return(FALSE);
 
     if (SSL_get_verify_result((SSL *) ptr)==X509_V_OK)
@@ -674,3 +678,13 @@ int STREAMIsPeerAuth(STREAM *S)
 }
 
 
+void OpenSSLClose(STREAM *S)
+{
+void *ptr;
+
+ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
+if (ptr) SSL_free((SSL *) ptr);
+
+ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+if (ptr) SSL_CTX_free((SSL_CTX *) ptr);
+}

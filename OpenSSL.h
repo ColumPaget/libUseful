@@ -94,6 +94,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags);
 //'Flags' can be any of the LU_SSL_ flags listed above
 int DoSSLServerNegotiation(STREAM *S, int Flags);
 
+void OpenSSLClose(STREAM *S);
 
 #ifdef __cplusplus
 }

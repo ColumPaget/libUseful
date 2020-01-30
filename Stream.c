@@ -493,7 +493,7 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
         if (S->State & SS_SSL)
         {
 #ifdef HAVE_LIBSSL
-		vptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+		vptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
 		if (vptr) result=SSL_write((SSL *) vptr, Data + count, DataLen - count);
 		else result=0;
 		if (result < 0) result=STREAM_CLOSED;
@@ -1105,28 +1105,20 @@ void STREAMTruncate(STREAM *S, long size)
    ftruncate(S->out_fd,size);
 }
 
-void STREAMClose(STREAM *S)
+
+
+//Some special features specifically around closing files. Currently these mostly concern telling the OS that a file
+//doesn't require caching (maybe becasue it's a logfile rather than data)
+void STREAMCloseFile(STREAM *S)
 {
-    ListNode *Curr;
-    STREAM *tmpS;
-    int val;
-
-    if (! S) return;
-		if (StrValid(S->Path) && (strncmp(S->Path, "ssh:", 4)==0)) SSHClose(S);
-
-
-    //-1 means 'FLUSH'
-    STREAMReadThroughProcessors(S, NULL, -1);
-    STREAMFlush(S);
-    if (S->Type == STREAM_TYPE_TTY) TTYHangUp(S->in_fd);
-
     if (
         (StrEnd(S->Path)) ||
         (strcmp(S->Path,"-") !=0)
     )
     {
-        if ((S->out_fd != -1) && (S->out_fd != S->in_fd))
+        if (S->out_fd != -1) 
         {
+					//if we don't need this file cached for future use, tell the os so when we close it
 #ifdef POSIX_FADV_DONTNEED
             if (S->Flags & SF_NOCACHE)
             {
@@ -1135,19 +1127,53 @@ void STREAMClose(STREAM *S)
             }
 #endif
 
-            close(S->out_fd);
         }
 
         if (S->in_fd != -1)
         {
 #ifdef POSIX_FADV_DONTNEED
-            if (S->Flags & SF_NOCACHE) posix_fadvise(S->in_fd, 0,0,POSIX_FADV_DONTNEED);
+					//if we don't need this input file cached for future use, tell the os so when we close it
+          if (S->Flags & SF_NOCACHE) posix_fadvise(S->in_fd, 0,0,POSIX_FADV_DONTNEED);
 #endif
 
-            close(S->in_fd);
         }
     }
+}
 
+
+
+void STREAMClose(STREAM *S)
+{
+    ListNode *Curr;
+    STREAM *tmpS;
+    int val;
+
+    if (! S) return;
+
+    //-1 means 'FLUSH'
+    STREAMReadThroughProcessors(S, NULL, -1);
+    STREAMFlush(S);
+
+		switch (S->Type)
+		{
+		case STREAM_TYPE_SSH:
+		SSHClose(S);
+		break;
+
+    case STREAM_TYPE_TTY:
+		TTYHangUp(S->in_fd);
+		break;
+
+		case STREAM_TYPE_FILE:
+		STREAMCloseFile(S);
+		break;
+		}
+
+
+		//OpenSSLClose only closes things that the OpenSSL subsystem has created, so it's safe to call on all streams
+		OpenSSLClose(S);
+
+//For all streams we kill off any helper processes and close any associated streams
     Curr=ListGetNext(S->Values);
     while (Curr)
     {
@@ -1172,6 +1198,10 @@ void STREAMClose(STREAM *S)
         Curr=ListGetNext(Curr);
     }
 
+		if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) close(S->out_fd);
+    if (S->in_fd > -1) close(S->in_fd);
+
+
     STREAMDestroy(S);
 }
 
@@ -1186,7 +1216,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
     struct timeval tv;
     char *tmpBuff=NULL, *Peer=NULL;
 #ifdef HAVE_LIBSSL
-    void *SSL_CTX=NULL;
+    void *SSL_OBJ=NULL;
 #endif
 
     if (! S) return(0);
@@ -1233,14 +1263,14 @@ int STREAMReadCharsToBuffer(STREAM *S)
 
 //This is used in multiple places below, do don't just move it to within the first place
 #ifdef HAVE_LIBSSL
-    SSL_CTX=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
+    SSL_OBJ=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
 
 //if there are bytes available in the internal OpenSSL buffers, when we don't have to
 //wait on a select, we can just go straight through to SSL_read
     if (S->State & SS_SSL)
     {
         //ssl pending checks if there's bytes in the SSL buffer, it's not a select
-        if (SSL_pending((SSL *) SSL_CTX) > 0) WaitForBytes=FALSE;
+        if (SSL_pending((SSL *) SSL_OBJ) > 0) WaitForBytes=FALSE;
     }
 #endif
 
@@ -1288,7 +1318,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
 #ifdef HAVE_LIBSSL
         if (S->State & SS_SSL)
         {
-            bytes_read=SSL_read((SSL *) SSL_CTX, tmpBuff, val);
+            bytes_read=SSL_read((SSL *) SSL_OBJ, tmpBuff, val);
             saved_errno=errno;
         }
         else

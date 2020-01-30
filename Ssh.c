@@ -66,6 +66,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     if (S)
     {
 				S->Path=MCopyStr(S->Path, "ssh:", Host, NULL);
+				S->Type=STREAM_TYPE_SSH;
         if (StrValid(User) && (! StrValid(KeyFile)))
         {
             Dialog=ListCreate();
@@ -79,7 +80,6 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
             ListDestroy(Dialog,ExpectDialogDestroy);
         }
     }
-
 
     DestroyString(Tempstr);
     DestroyString(KeyFile);
