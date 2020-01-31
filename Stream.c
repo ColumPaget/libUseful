@@ -1113,7 +1113,7 @@ void STREAMCloseFile(STREAM *S)
 {
     if (
         (StrEnd(S->Path)) ||
-        (strcmp(S->Path,"-") !=0)
+        (strcmp(S->Path,"-") !=0) //don't do this for stdin/stdout
     )
     {
         if (S->out_fd != -1) 
@@ -1185,6 +1185,8 @@ void STREAMClose(STREAM *S)
         Curr=ListGetNext(Curr);
     }
 
+		//associate streams are streams that support other streams, like the ssh connection that
+		//supports a port-forward through ssh. We close these down when the owner stream is closed
     Curr=ListGetNext(S->Items);
     while (Curr)
     {
@@ -1198,6 +1200,7 @@ void STREAMClose(STREAM *S)
         Curr=ListGetNext(Curr);
     }
 
+		//now we actually close the file descriptors for this stream
 		if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) close(S->out_fd);
     if (S->in_fd > -1) close(S->in_fd);
 
