@@ -291,7 +291,12 @@ int FileGetBinaryXAttr(char **RetStr, const char *Path, const char *Name)
 
     *RetStr=CopyStr(*RetStr, "");
 #ifdef HAVE_XATTR
+	#ifdef _APPLE_ //'cos some idiot's always got to 'think different'
+    len=getxattr(Path, Name, NULL, 0, 0, 0);
+	#else
     len=getxattr(Path, Name, NULL, 0);
+	#endif 
+
     if (len > 0)
     {
         *RetStr=SetStrLen(*RetStr,len);
@@ -318,7 +323,11 @@ char *FileGetXAttr(char *RetStr, const char *Path, const char *Name)
 int FileSetBinaryXAttr(const char *Path, const char *Name, const char *Value, int Len)
 {
 #ifdef HAVE_XATTR
+	#ifdef _APPLE_
+    return(setxattr(Path, Name, Value, Len, 0, 0, 0));
+	#else
     return(setxattr(Path, Name, Value, Len, 0));
+	#endif
 #else
     RaiseError(0, "FileSetXAttr", "xattr support not compiled in");
 #endif
