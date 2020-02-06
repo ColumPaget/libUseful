@@ -682,9 +682,11 @@ void OpenSSLClose(STREAM *S)
 {
 void *ptr;
 
+#ifdef HAVE_LIBSSL
 ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
 if (ptr) SSL_free((SSL *) ptr);
 
 ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
 if (ptr) SSL_CTX_free((SSL_CTX *) ptr);
+#endif
 }
