@@ -464,9 +464,10 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
 
-    S=STREAMOpen(Path,"rl");
+    S=STREAMOpen(Path,"r");
     if (S)
     {
+				STREAMLock(S, LOCK_SH);
         Tempstr=STREAMReadLine(Tempstr, S);
         while (Tempstr)
         {
@@ -509,11 +510,12 @@ int OAuthSave(OAUTH *Ctx, const char *Path)
     if (! StrValid(Path))
     {
         if (! StrValid(Ctx->SavePath)) return(FALSE);
-        S=STREAMOpen(Ctx->SavePath,"aEL");
+        S=STREAMOpen(Ctx->SavePath,"aE");
     }
-    else S=STREAMOpen(Path,"aEL");
+    else S=STREAMOpen(Path,"aE");
     if (S)
     {
+				STREAMLock(S, LOCK_EX);
         Tempstr=MCopyStr(Tempstr, "'", Ctx->Name,"' ",NULL);
         for (i=0; Fields[i] !=NULL; i++)
         {
