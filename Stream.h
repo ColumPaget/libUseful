@@ -131,8 +131,13 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 
 
 //Flags that alter stream behavior, the first block can be passed to 'STREAMFileOpen' only
+//These days it's better to use 'STREAMOpen' with a character string that defines stream options, rather
+//than STREAMFileOpen and these flags. These flags are used internally though.
+
 #define SF_RDWR 0 //open stream for read and write. This is the default
+
 //FLUSH_ flags go in this gap
+
 #define SF_RDONLY 16       //open stream read only 
 #define SF_WRONLY 32       //open stream write only
 #define SF_CREAT 64        //create stream if it doesn't exist
@@ -144,7 +149,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_RDLOCK 2048     //lock file on every read
 #define SF_FOLLOW 4096     //follow symbolic links
 #define SF_SECURE 8192     //lock internal buffers into memory so they aren't written to swap or coredumps
-#define SF_NONBLOCK 16384  //nonblocking open (you must use select to check that the fi
+#define SF_NONBLOCK 16384  //nonblocking open (you must use select to check that the file is ready to use)
 #define SF_TLS_AUTO 32768  //nothing to see here, move along
 #define SF_ERROR 65536     //raise an error if open or connect fails
 #define SF_EXEC_INHERIT 131072  //allow file to be inherited across an exec (default is close-on-exec)
@@ -156,7 +161,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_TMPNAME  16777216    //file path is a template to create a temporary file name (must end in 'XXXXXX')
 
 
-//Stream state values
+//Stream state values, set in S->State
 #define SS_CONNECTING 1
 #define SS_INITIAL_CONNECT_DONE 4
 #define SS_CONNECTED 8
@@ -381,7 +386,12 @@ STREAM *STREAMSelect(ListNode *Streams, struct timeval *timeout);
 //Push bytes into the front of the stream (so, they will be the first things read). 
 void STREAMInsertBytes(STREAM *S, const char *Bytes, int len);
 
-//if the stream is a file then peform file locking. Flags are the same as for flock
+//if the stream is a file then peform file locking. Flags are the same as for flock: 
+//LOCK_EX for an exclusive lock where only one process can lock the file
+//LOCK_SH for a shared lock where many processes can lock, but none can lock exclusively, usually used to implement 'read locks'
+//LOCK_UN for unlock
+//LOCK_NB for 'non blocking' lock that will fail if file already locked.
+//returns TRUE if lock succeeds, FALSE on failure
 int STREAMLock(STREAM *S, int flags);
 
 //find the key 'Item' in a file made up of lines broken up by newline, and a key value on each line separated from the rest of the line by 'Delimiter'.

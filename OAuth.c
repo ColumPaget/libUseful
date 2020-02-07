@@ -401,19 +401,70 @@ void OAuthParse(OAUTH *Ctx, const char *Line)
 }
 
 
-int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *Path)
+//cleans old entries out of the credentials file by loading all entries into a list
+//so that newer entries overwrite old ones, then writing back to disk
+static void OAuthCleanupCredsFile(const char *Path)
+{
+char *Tempstr=NULL, *Name=NULL;
+ListNode *Items=NULL, *Curr;
+const char *ptr;
+STREAM *S;
+
+Items=ListCreate();
+S=STREAMOpen(Path, "rw");
+if (S)
+{
+	STREAMLock(S, LOCK_EX);
+	Tempstr=STREAMReadLine(Tempstr, S);
+	while (Tempstr)
+	{
+	StripTrailingWhitespace(Tempstr);
+	ptr=GetToken(Tempstr, "\\S", &Name, GETTOKEN_QUOTES);
+	SetVar(Items, Name, ptr);
+	Tempstr=STREAMReadLine(Tempstr, S);
+	}
+
+	STREAMTruncate(S, 0);
+	STREAMSeek(S, SEEK_SET, 0);
+	Curr=ListGetNext(Items);
+	while (Curr)
+	{
+		Tempstr=MCopyStr(Tempstr, "'", Curr->Tag, "' ", Curr->Item, "\n", NULL);
+		STREAMWriteLine(Tempstr, S);
+		Curr=ListGetNext(Curr);
+	}
+
+	STREAMClose(S);
+}
+
+ListDestroy(Items, Destroy);
+Destroy(Tempstr);
+Destroy(Name);
+}
+
+
+int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
 {
     STREAM *S;
-    char *Tempstr=NULL, *Token=NULL, *Name=NULL;
+    char *Tempstr=NULL, *Token=NULL, *Name=NULL, *Path;
     const char *ptr;
     int result=FALSE;
+		int MatchingLines=0;
 
+		//if we are explictly passed an entry name then use that,
+		//else use the one from the OAUTH object
     if (StrValid(ReqName)) Name=CopyStr(Name, ReqName);
     else Name=CopyStr(Name, Ctx->Name);
+
+		//if we are explictly passed a file path then use that,
+		//else use the one from the OAUTH object
+		if (StrValid(iPath)) Path=CopyStr(Path, iPath);
+		else Path=CopyStr(Path, Ctx->SavePath);
+
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
-    if (! StrValid(Path)) S=STREAMOpen(Ctx->SavePath,"rl");
-    else S=STREAMOpen(Path,"rl");
+
+    S=STREAMOpen(Path,"rl");
     if (S)
     {
         Tempstr=STREAMReadLine(Tempstr, S);
@@ -424,15 +475,23 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *Path)
             {
                 OAuthParse(Ctx, Tempstr);
                 if (StrValid(Ctx->AccessToken) || StrValid(Ctx->RefreshToken)) result=TRUE;
+								MatchingLines++;
             }
             Tempstr=STREAMReadLine(Tempstr, S);
         }
         STREAMClose(S);
     }
 
+		//if the item we were looking for has more than 5 entries in the OAuth credentials file
+		//then there's too many 'old' entries that have been refreshed, and we should clean up
+		//the file
+		if (MatchingLines > 5) OAuthCleanupCredsFile(Path);
+
+
     DestroyString(Tempstr);
     DestroyString(Token);
     DestroyString(Name);
+    DestroyString(Path);
 
     return(result);
 }

@@ -796,6 +796,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     {
         if (flock(fd,LOCK_EX | LOCK_NB)==-1)
         {
+            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "file lock requested but failed %s", p_Path);
             close(fd);
             Destroy(NewPath);
             return(NULL);
