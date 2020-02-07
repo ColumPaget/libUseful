@@ -1,5 +1,5 @@
 CC = @CC@
-VERSION = 4.22
+VERSION = 4.23
 CFLAGS = @CFLAGS@ @SIMD_CFLAGS@
 LDFLAGS=@LDFLAGS@
 LIBS = @LIBS@
@@ -165,7 +165,7 @@ clean:
 
 install: libUseful.so
 	-mkdir -p $(DESTDIR)$(prefix)/lib 
-	cp -p *.so *.a $(DESTDIR)$(prefix)/lib  
+	cp -P *.so *.a $(DESTDIR)$(prefix)/lib  
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-4
