@@ -47,7 +47,7 @@ if (flags & ERRFLAG_DEBUG)
 {
 	result=FALSE;
 	if (StrValid(getenv("LIBUSEFUL_DEBUG"))) result=TRUE;
-	if (LibUsefulGetValue("libUseful:Debug")) result=TRUE;
+	if (LibUsefulGetBool("libUseful:Debug")) result=TRUE;
 }
 
 return(result);
