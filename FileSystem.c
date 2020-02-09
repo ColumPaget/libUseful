@@ -300,7 +300,11 @@ int FileGetBinaryXAttr(char **RetStr, const char *Path, const char *Name)
     if (len > 0)
     {
         *RetStr=SetStrLen(*RetStr,len);
+        #ifdef __APPLE__
+        getxattr(Path, Name, *RetStr, len, 0, 0);
+        #else
         getxattr(Path, Name, *RetStr, len);
+        #endif
     }
 #else
     RaiseError(0, "FileGetXAttr", "xattr support not compiled in");
