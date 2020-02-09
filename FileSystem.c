@@ -328,7 +328,7 @@ int FileSetBinaryXAttr(const char *Path, const char *Name, const char *Value, in
 {
 #ifdef HAVE_XATTR
 	#ifdef __APPLE__
-    return(setxattr(Path, Name, Value, Len, 0, 0, 0));
+    return(setxattr(Path, Name, Value, Len, 0, 0));
 	#else
     return(setxattr(Path, Name, Value, Len, 0));
 	#endif
