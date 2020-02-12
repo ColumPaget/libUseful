@@ -749,8 +749,8 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     else if (Flags & SF_RDONLY) Mode=O_RDONLY;
     else Mode=O_RDWR;
 
-    if (Flags & STREAM_APPEND) Mode|=O_APPEND;
-    if (Flags & SF_CREATE) Mode|=O_CREAT;
+    if (Flags & STREAM_APPEND) Mode |=O_APPEND;
+    if (Flags & SF_CREATE) Mode |=O_CREAT;
 
     if (strcmp(Path,"-")==0)
     {
@@ -765,7 +765,6 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
         fd=mkostemp(NewPath, Mode);
 #else
         fd=mkstemp(NewPath);
-        chmod(NewPath,Mode);
 #endif
         p_Path=NewPath;
     }
@@ -820,7 +819,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     // to get us to write somewhere other than intended.
 
 
-    if (! (Flags & SF_FOLLOW))
+    if ((Mode != O_RDONLY) && (! (Flags & SF_FOLLOW)))
     {
         if (lstat(p_Path, &myStat) !=0)
         {
