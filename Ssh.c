@@ -76,7 +76,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
             ExpectDialogAdd(Dialog, "ogin:", Tempstr, DIALOG_OPTIONAL);
             Tempstr=MCopyStr(Tempstr,Pass,"\n",NULL);
             ExpectDialogAdd(Dialog, "assword:", Tempstr, DIALOG_END);
-            STREAMExpectDialog(S, Dialog);
+            STREAMExpectDialog(S, Dialog, 0);
             ListDestroy(Dialog,ExpectDialogDestroy);
         }
     }
