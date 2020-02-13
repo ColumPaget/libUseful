@@ -5,7 +5,6 @@
 const char *ParserParseItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel);
 
 
-
 void ParserItemsDestroy(ListNode *Items)
 {
     ListNode *Curr;
