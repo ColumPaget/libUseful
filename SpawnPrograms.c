@@ -212,9 +212,14 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
         if (errfd) close(channel3[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
 
+				//if Func is NULL we effectively do a fork, rather than calling a function we just
+        //continue exectution from where we were
         Flags=ProcessApplyConfig(Config);
+				if (Func)
+				{
 				if (! (Flags & PROC_SETUP_FAIL)) Func(Data, Flags);
         exit(0);
+				}
     }
     else // This is the parent process, not the spawned child
     {
@@ -274,8 +279,14 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
             close(tty);
 
             ConfigFlags=ProcessApplyConfig(Config);
+
+						//if Func is NULL we effectively do a fork, rather than calling a function we just
+						//continue exectution from where we were
+						if (Func)
+						{
 						if (! (ConfigFlags & PROC_SETUP_FAIL)) Func((char *) Data, ConfigFlags);
             _exit(0);
+						}
         }
 
         close(tty);
