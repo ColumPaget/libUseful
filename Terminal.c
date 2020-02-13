@@ -39,7 +39,7 @@ int TerminalStrLen(const char *Str)
 }
 
 
-char *TerminalStrTrunc(const char *Str, int MaxLen)
+char *TerminalStrTrunc(char *Str, int MaxLen)
 {
     const char *ptr;
     int len=0;

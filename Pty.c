@@ -43,7 +43,7 @@ int TTYReset(int tty)
 
     if (! isatty(tty)) return(FALSE);
     Tempstr=FormatStr(Tempstr,"%d",tty);
-    Curr=ListFindNamedItem(TTYAttribs,Tempstr);
+    Curr=ListFindNamedItem(TTYAttribs, Tempstr);
     if (Curr)
     {
         tty_data=(struct termios *) Curr->Item;

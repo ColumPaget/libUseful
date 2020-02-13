@@ -60,16 +60,16 @@ char *GetCurrUserHomeDir();
 //write a file containing the current pid. The file can either be an absolute path to a file anywhere
 //or a relative path that creates a file in /var/run. The file is locked with flock
 //returns a file descriptor to the current file
-int WritePidFile(char *ProgName);
+int WritePidFile(const char *ProgName);
 
-int CreateLockFile(char *FilePath,int Timeout);
+int CreateLockFile(const char *FilePath, int Timeout);
 
 //pass argv from main to this function if you want to rewrite the process name that you see in 'ps'
 void ProcessTitleCaptureBuffer(char **argv);
 
 //set the process name that you see in 'ps'. Works like sprintf, with a format string and a variable number of
 //arguments. ProcessTitleCaptureBuffer must be called first
-void ProcessSetTitle(char *FmtStr, ...);
+void ProcessSetTitle(const char *FmtStr, ...);
 
 
 int ProcessApplyConfig(const char *Config);
