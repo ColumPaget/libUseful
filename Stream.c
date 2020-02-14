@@ -539,6 +539,7 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
 
 				if (result < 0) break;
         count+=result;
+				if (S->Flags & SF_NONBLOCK) break;
     }
 
     S->BytesWritten+=count;
