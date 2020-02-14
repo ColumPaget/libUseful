@@ -419,8 +419,11 @@ if (S)
 	while (Tempstr)
 	{
 	StripTrailingWhitespace(Tempstr);
+	if (StrValid(Tempstr))
+	{
 	ptr=GetToken(Tempstr, "\\S", &Name, GETTOKEN_QUOTES);
 	SetVar(Items, Name, ptr);
+	}
 	Tempstr=STREAMReadLine(Tempstr, S);
 	}
 
