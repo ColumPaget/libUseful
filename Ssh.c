@@ -107,8 +107,13 @@ int SshFlags=0;
 STREAM *S;
 
 
+		if (iPath)
+		{
 		ptr=iPath;
 		if (*ptr=='/') ptr++;
+		}
+		else ptr="";
+
     //if SF_RDONLY is set, then we treat this as a 'file get'
     if (Flags & SF_RDONLY)
     {
