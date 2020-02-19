@@ -127,7 +127,7 @@ STREAM *S;
         Path=MCopyStr(Path, "cat - >> ", Tempstr, "; exit", NULL);
 				SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
     }
-		else Path=CopyStr(Path, iPath);
+		else Path=CopyStr(Path, ptr);
 
 		if (Flags & SF_COMPRESSED) SshFlags |= SSH_COMPRESS;
     S=SSHConnect(Host, Port, User, Pass, Path, SshFlags);
