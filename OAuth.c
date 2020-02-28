@@ -474,6 +474,7 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
         Tempstr=STREAMReadLine(Tempstr, S);
         while (Tempstr)
         {
+						StripTrailingWhitespace(Tempstr);
             ptr=GetToken(Tempstr, "\\S", &Token, GETTOKEN_QUOTES);
             if (strcmp(Token, Name)==0)
             {
@@ -525,6 +526,7 @@ int OAuthSave(OAUTH *Ctx, const char *Path)
             ptr=GetVar(Ctx->Vars,Fields[i]);
             if (StrValid(ptr)) Tempstr=MCatStr(Tempstr, Fields[i], "='", ptr, "' ",NULL);
         }
+
         Tempstr=CatStr(Tempstr,"\n");
 
         STREAMWriteLine(Tempstr, S);
