@@ -727,7 +727,7 @@ case 'v':
 case 'V':
 	if (strcasecmp(str, "volup")==0) return(TKEY_VOL_UP);
 	if (strcasecmp(str, "voldn")==0) return(TKEY_VOL_DOWN);
-	if (strcasecmp(str, "voldown")==0) return(TKEY_UP);
+	if (strcasecmp(str, "voldown")==0) return(TKEY_VOL_DOWN);
 break;
 
 case 'w':
