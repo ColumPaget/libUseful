@@ -42,7 +42,7 @@ Errors are injected into the list with RaiseError like this:
 	the system when RaiseError was called. Also, if RaiseError prints out an error, then the string description of
   errno, as obtained from strerror will be appended to the output message.
 
-	Bye default RaiseError will not print out to stderr if stderr is not a tty, in order to prevent sending errors
+	By default RaiseError will not print out to stderr if stderr is not a tty, in order to prevent sending errors
 	up pipes and sockets to applications that aren't expecting them. If you want raise error to print even when
 	stderr is not a tty then either pass the ERRFLAG_NOTTY value, like this
 

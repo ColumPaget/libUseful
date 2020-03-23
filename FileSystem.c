@@ -552,3 +552,46 @@ int FileSystemRmDir(const char *Dir)
 }
 
 
+int FileSystemCopyDir(const char *Src, const char *Dest)
+{
+glob_t Glob;
+const char *ptr;
+struct stat Stat;
+char *Tempstr=NULL, *Path=NULL;
+int i;
+
+Tempstr=MCopyStr(Tempstr, Dest, "/", NULL);
+MakeDirPath(Tempstr, 0777);
+Tempstr=MCopyStr(Tempstr, Src, "/*", NULL);
+glob(Tempstr, 0, 0, &Glob);
+for (i=0; i < Glob.gl_pathc; i++)
+{
+	ptr=Glob.gl_pathv[i];
+	lstat(ptr, &Stat);
+
+	Path=MCopyStr(Path, Dest, "/", GetBasename(ptr), NULL);
+	if (S_ISLNK(Stat.st_mode))
+	{
+		Tempstr=SetStrLen(Tempstr, PATH_MAX);
+		readlink(ptr, Tempstr, PATH_MAX);
+		symlink(Path, Tempstr);
+	}
+	else if (S_ISDIR(Stat.st_mode))
+	{
+		FileSystemCopyDir(ptr, Path);
+	}
+	else if (S_ISREG(Stat.st_mode))
+	{
+		FileCopy(ptr, Path); 
+	}
+	else
+	{
+		 RaiseError(0, "FileSystemCopyDir", "WARNING: not copying %s. Files of this type aren't yet supported for copy", Src);
+	}
+}
+
+globfree(&Glob);
+
+Destroy(Tempstr);
+Destroy(Path);
+}

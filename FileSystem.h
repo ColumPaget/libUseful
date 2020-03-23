@@ -131,7 +131,8 @@ int FileSetBinaryXAttr(const char *Path, const char *Name, const char *Value, in
 //Set text attribute
 int FileSetXAttr(const char *Path, const char *Name, const char *Value);
 
-
+//recursive copy of a directory
+int FileSystemCopyDir(const char *Src, const char *Dest);
 
 int FileSystemRmDir(const char *Dir);
 
