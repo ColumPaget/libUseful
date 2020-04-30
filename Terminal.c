@@ -1822,7 +1822,7 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
             if (Flags & TERM_SHOWTEXTSTARS) STREAMWriteString("\x08*",S);
 
 						//ensure we don't return NULL, but that we instead return an empty string
-						RetStr=CatStr(RetStr, ""); 
+						if (RetStr==NULL) RetStr=CatStr(RetStr, ""); 
 
             break;
         }

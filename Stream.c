@@ -969,7 +969,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     if (ptr) ptr++;
     else ptr=URL;
 
-    Proto=CopyStr(Proto,"file");
+    Proto=CopyStr(Proto,"");
     ParseURL(ptr, &Proto, &Host, &Token, &User, &Pass, &Path, &Args);
     if (StrValid(Token)) Port=strtoul(Token,NULL,10);
 
@@ -981,22 +981,43 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     {
     case 'c':
         if (strcasecmp(Proto,"cmd")==0) S=STREAMSpawnCommand(URL+4, Config);
+        else S=STREAMFileOpen(URL, Flags);
         break;
+
+		case 'f':
+        if (strcasecmp(Proto,"file")==0) 
+				{
+				ptr=URL+5;
+
+				//file protocol can have 3 '/' after file, like this file:///myfile.txt. So we strip off two of these
+				//thus anything with 3 of them is a full path from /, anything with less than that is a relative path
+				//from the current directory
+				if (*ptr=='/') ptr++;
+				if (*ptr=='/') ptr++;
+        S=STREAMFileOpen(ptr, Flags);
+				}
+        else S=STREAMFileOpen(URL, Flags);
+				break;
 
     case 'h':
         if (
-            (strcmp(Proto,"http")==0) ||
-            (strcmp(Proto,"https")==0)
-        ) S=HTTPWithConfig(URL, Config);
+            (strcasecmp(Proto,"http")==0) ||
+            (strcasecmp(Proto,"https")==0)
+        ) 
+				{
+				S=HTTPWithConfig(URL, Config);
         //the 'write only' and 'read only' flags normally result in one or another
         //buffer not being allocated (as it's not expected to be needed). However
         //with HTTP 'write' means 'POST', and we still need both read and write
         //buffers to read from and to the server, so we must unset these flags
         Flags &= ~(SF_WRONLY | SF_RDONLY);
+				}
+        else S=STREAMFileOpen(URL, Flags);
         break;
 
     case 'm':
-        if (strcmp(Proto,"mmap")==0) S=STREAMFileOpen(URL+5, Flags | SF_MMAP);
+        if (strcasecmp(Proto,"mmap")==0) S=STREAMFileOpen(URL+5, Flags | SF_MMAP);
+        else S=STREAMFileOpen(URL, Flags);
         break;
 
     case 't':
@@ -1012,7 +1033,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
                 S->Type=STREAM_TYPE_TTY;
             }
       }
-      else
+      else 
       {
             S=STREAMCreate();
             S->Path=CopyStr(S->Path,URL);
