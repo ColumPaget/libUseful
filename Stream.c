@@ -2277,16 +2277,11 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
             result=0;
 
 
-            //nothing to write!
-            if (towrite < 1)
-            {
-                //nothing in either buffer! Stream empty. Is it closed?
-                if ((Out->OutEnd==0) && (result==STREAM_CLOSED)) break;
-            }
-
             result=STREAMWriteBytes(Out,In->InputBuff+In->InStart,towrite);
-
-						if (result > 0)
+	
+						//write failed with 'STREAM_CLOSED'
+						if (result==STREAM_CLOSED) break;
+						else if (result > 0)
 						{
             In->InStart+=result;
             bytes_transferred+=result;

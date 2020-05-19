@@ -600,6 +600,8 @@ break;
 
 case 'c':
 case 'C':
+  if (strcasecmp(str, "ctrl")==0) return(TKEY_LCNTRL);
+  if (strcasecmp(str, "cntrl")==0) return(TKEY_LCNTRL);
   if (strcasecmp(str, "calc")==0) return(TKEY_CALC);
   if (strcasecmp(str, "calculator")==0) return(TKEY_CALC);
   if (strcasecmp(str, "copy")==0) return(TKEY_COPY);
@@ -710,6 +712,7 @@ case 'S':
 		if (strcasecmp(str, "stop")==0) return(TKEY_STOP);
     if (strcasecmp(str, "scrlck")==0) return(TKEY_SCROLL_LOCK);
     if (strcasecmp(str, "scroll-lock")==0) return(TKEY_SCROLL_LOCK);
+  	if (strcasecmp(str, "shift")==0) return(TKEY_LSHIFT);
 break;
 
 case 't':
