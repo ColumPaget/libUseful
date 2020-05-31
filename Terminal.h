@@ -88,21 +88,6 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 
 
 
-typedef struct
-{
-int Flags;
-int ForeColor;
-int BackColor;
-int TextLen;
-char *Text;
-char *MenuPadLeft;
-char *MenuPadRight;
-char *MenuCursorLeft;
-char *MenuCursorRight;
-STREAM *Term;
-} TERMBAR;
-
-
 #define TerminalSetUTF8(level) (UnicodeSetUTF8(level))
 
 //Commands available via the 'terminal command' function. Normally you wouldn't use these, but use the equivalent macros below
@@ -171,11 +156,20 @@ void TerminalPutChar(int Char, STREAM *S);
 //'Str' is a format string with with 'tilde commands' in it. The ANSI coded result is copied into RetStr, which is resized as needed and returned
 char *TerminalFormatStr(char *RetStr, const char *Str, STREAM *Term);
 
+//this function is used internally but is deprecated
+const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term);
+
 //'Str' is a format string with 'tilde commands' in it. The ANSI coded result is output to stream S
 void TerminalPutStr(const char *Str, STREAM *S);
 
-//calculate length of string *after ANSI formating* 
+//calculate length of string *after ANSI formating*, so ANSI escape sequences don't count as characters added
+//to the length 
 int TerminalStrLen(const char *Str);
+
+//truncate a terminal string to a length *handling ANSI formatting*, so ANSI escape sequences don't count to 
+//the length to be truncated. This means if you ask for 5 characters, you get five text characters, plus any 
+//ansi strings that preceed them
+char *TerminalStrTrunc(char *Str, int MaxLen);
 
 
 //Perform various commands on the terminal (normally you'd just use the macros listed above)
@@ -218,81 +212,11 @@ char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
 //get width and height/length of a terminal
 void TerminalGeometry(STREAM *S, int *wid, int *len);
 
-// These functions create a terminal bar at the bottom of the screen. 
-TERMBAR *TerminalBarCreate(STREAM *Term, const char *Config, const char *Text);
-void TerminalBarDestroy(TERMBAR *TB);
-
-// Change config of a terminal bar. Options key=value strings. Recognized keys are:
-//    MenuPadLeft   //string that menu options should be left padded with
-//    MenuPadRight  //string that menu options should be right padded with
-//    MenuCursorLeft   //string that SELECTED menu options should be left padded with
-//    MenuCursorRight  //string that SELECTED menu options should be right padded with
-//    forecolor, backcolor, bold, inverse, underline, blink     //attributes
-//    e.g.   forecolor=red backcolor=yellow 'MenuPadLeft=  ' 'MenuPadRight=  ' 'MenuCursorLeft= >' 'MenuCursorRight=< '
-void TerminalBarSetConfig(TERMBAR *TB, const char *Config);
-
-
-//display a terminal bar with 'Text' 
-void TerminalBarUpdate(TERMBAR *TB, const char *Text);
-
-//display a prompt in a terminal bar and let the user type in text. Flags are as for 'TerminalReadText'
-char *TerminalBarReadText(char *RetStr, TERMBAR *TB, int Flags, const char *Prompt);
-
-//display a menu of optoons in a terminal bar. Options are supplied as a comma-separated
-//list in 'ItemStr'. The selected option is copied into 'RetStr' and returned
-char *TerminalBarMenu(char *RetStr, TERMBAR *TB, const char *ItemStr);
-
 //prototype for a callback function that recieves a key press
 typedef int (*TKEY_CALLBACK_FUNC)(STREAM *Term, int Key);
 
 //set a callback function that will be passed all key presses
 void TerminalSetKeyCallback(STREAM *Term, TKEY_CALLBACK_FUNC Func);
-
-
-//Terminal menu functions give you a selectable 'box' menu of options that's operated by 'up', 'down'
-//'enter' to select and 'escape' to back out of it. The menu has an internal list called 'options' to
-//which you add named items. The names are the menu options that will be displayed. You can pass NULL
-//for the list item, or an object you want associated with the menu option. When an option is selected
-//the list node is returned, so you have both the option name, as Node->Tag, and any associated item
-//as Node->Item
-
-typedef struct
-{
-int x;
-int y;
-int wid;
-int high;
-STREAM *Term;
-ListNode *Options;
-char *MenuAttribs;
-char *MenuCursorLeft;
-char *MenuCursorRight;
-} TERMMENU;
-
-#define TERMMENU_SELECTED LIST_FLAG_USER1
-
-TERMMENU *TerminalMenuCreate(STREAM *Term, int x, int y, int wid, int high);
-void TerminalMenuDestroy(TERMMENU *Item);
-
-//draw the menu in it's current state.
-void TerminalMenuDraw(TERMMENU *Menu);
-
-//process key and draw menu in its state after the keypress. Return a choice if
-//one is selected, else return NULL. This can be used if you want to handle some
-//keypresses outside of the menu, only passing relevant keys to the menu
-ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key);
-
-//run a menu after it's been setup. This keeps reading keypresses until an option is
-//selected. Returns the selected option, or returns NULL if escape is pressed
-ListNode *TerminalMenuProcess(TERMMENU *Menu);
-
-//create a menu from a list of options, and run it.
-//This keeps reading keypresses until an option is selected. 
-//Returns the selected option, or returns NULL if escape is pressed.
-//if TERMMENU_SELECTED is set on the head of Options, then the menu will allow setting
-//'selected' against multiple values
-ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, int high);
-
 
 
 #ifdef __cplusplus
