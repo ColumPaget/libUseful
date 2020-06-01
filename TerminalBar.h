@@ -7,7 +7,15 @@
 extern "C" {
 #endif
 
+/* THIS FEATURE IS STILL BEING DEVELOPED
+ *
+ * ultimately the plan is to be able to add 'bars' to the top and bottom of the screen that can hold
+ * information, menus or text input, with the scrolling region of the terminal being between them
+ */
 
+
+//this will eventually be replaced with
+//the 'TerminalWidget' base struct
 typedef struct
 {
 int Flags;

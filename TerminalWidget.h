@@ -1,3 +1,9 @@
+/*
+ *
+ * You probably have no interest in this module, it provides shared functionality used by TerminalMenu and TerminalChoice
+ */
+
+
 #ifndef LIBUSEFUL_TERMINAL_WIDGET_H
 #define LIBUSEFUL_TERMINAL_WIDGET_H
 

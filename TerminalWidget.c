@@ -54,6 +54,8 @@ switch (*Name)
 
 	case 'p':
 		if (strcasecmp(Name, "prompt")==0) TW->Text=CopyStr(TW->Text, Value);
+		else if (strcasecmp(Name, "pad-left")==0) TW->MenuPadLeft=CopyStr(TW->MenuPadLeft, Value);
+		else if (strcasecmp(Name, "pad-right")==0) TW->MenuPadRight=CopyStr(TW->MenuPadRight, Value);
 	break;
 
 	case 's':
