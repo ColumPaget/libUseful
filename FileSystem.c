@@ -564,8 +564,14 @@ Tempstr=MCopyStr(Tempstr, Dest, "/", NULL);
 MakeDirPath(Tempstr, 0777);
 Tempstr=MCopyStr(Tempstr, Src, "/*", NULL);
 glob(Tempstr, 0, 0, &Glob);
+Tempstr=MCopyStr(Tempstr, Src, "/.*", NULL);
+glob(Tempstr, GLOB_APPEND, NULL, &Glob);
 for (i=0; i < Glob.gl_pathc; i++)
 {
+	ptr=GetBasename(Glob.gl_pathv[i]);
+	
+	if ((strcmp(ptr,".") !=0) && (strcmp(ptr, "..") !=0) )
+	{
 	ptr=Glob.gl_pathv[i];
 	lstat(ptr, &Stat);
 
@@ -587,6 +593,7 @@ for (i=0; i < Glob.gl_pathc; i++)
 	else
 	{
 		 RaiseError(0, "FileSystemCopyDir", "WARNING: not copying %s. Files of this type aren't yet supported for copy", Src);
+	}
 	}
 }
 
