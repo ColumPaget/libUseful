@@ -132,9 +132,9 @@ int i;
 			 {
 				if (Menu->Options->Side) 
 				{
-					if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
+					if (Menu->Options->Side->Prev && (Menu->Options->Side->Prev != Menu->Options->Side->Head)) Menu->Options->Side=Menu->Options->Side->Prev;
 				}
-				else Menu->Options->Side=ListGetNext(Menu->Options);
+				else Menu->Options->Side=ListGetPrev(Menu->Options);
 			 }
 			 break;	
 

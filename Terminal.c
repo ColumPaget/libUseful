@@ -1666,6 +1666,9 @@ int TerminalReadChar(STREAM *S)
             case 'D':
                 return(TKEY_LEFT);
                 break;
+            case 'F':
+                return(TKEY_END);
+                break;
             case 'H':
                 return(TKEY_HOME);
                 break;
