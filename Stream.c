@@ -955,6 +955,29 @@ int STREAMParseConfig(const char *Config)
 }
 
 
+
+//this function handles the situation where we have a 'chain' of URLs (network proxies)
+//it extracts the 'real' or 'master' URL that specifies the actual connection, which
+//will be the LAST one in the list
+static const char *STREAMExtractMasterURL(const char *URL)
+{
+char *ptr;
+
+		if (strncmp(URL, "cmd:",4) ==0) return(URL); //'cmd:' urls do not go through proxies!
+		if (strncmp(URL, "file:",5) ==0) return(URL); //'file:' urls do not go through proxies!
+		if (strncmp(URL, "mmap:",5) ==0) return(URL); //'mmap:' urls do not go through proxies!
+		if (strncmp(URL, "stdin:",6) ==0) return(URL); //'stdin:' urls do not go through proxies!
+		if (strncmp(URL, "stdout:",7) ==0) return(URL); //'stdout:' urls do not go through proxies!
+
+    ptr=strrchr(URL, '|');
+    if (ptr) ptr++;
+    else ptr=URL;
+
+		return(ptr);
+}
+
+
+
 //URL can be a file path or a number of different network/file URL types
 STREAM *STREAMOpen(const char *URL, const char *Config)
 {
@@ -963,13 +986,9 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     const char *ptr;
     int Port=0, Flags=0;
 
-    //if we've got a chain of connections, then get the LAST one to analyze. 
-		//The others are all proxies we go via
-    ptr=strrchr(URL, '|');
-    if (ptr) ptr++;
-    else ptr=URL;
 
     Proto=CopyStr(Proto,"");
+		ptr=STREAMExtractMasterURL(URL);
     ParseURL(ptr, &Proto, &Host, &Token, &User, &Pass, &Path, &Args);
     if (StrValid(Token)) Port=strtoul(Token,NULL,10);
 

@@ -460,8 +460,14 @@ static int pmatch_many(const char **P_PtrPtr, const char **S_PtrPtr, const char 
             *S_PtrPtr=S_Ptr;
             return(MATCH_ONE);
         }
-
-				if (*S_Ptr == '\0') return(MATCH_FAIL);
+				//whatever pmatch_search did with the pattern pointer, if it match
+				//failed then we reset it 
+				P_Ptr=*P_PtrPtr;
+				if (*S_Ptr == '\0') 
+				{
+            *S_PtrPtr=S_Ptr;
+						return(MATCH_FAIL);
+				}
     }
     return(MATCH_FAIL);
 }
