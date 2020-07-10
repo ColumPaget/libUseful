@@ -1231,7 +1231,7 @@ void STREAMClose(STREAM *S)
     Curr=ListGetNext(S->Items);
     while (Curr)
     {
-        if (strcmp(Curr->Tag,"LU:AssociatedStream")==0)
+        if (strcmp(Curr->Tag, "LU:AssociatedStream")==0)
         {
             tmpS=(STREAM *) Curr->Item;
             STREAMClose(tmpS);

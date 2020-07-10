@@ -9,7 +9,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     char *Tempstr=NULL, *KeyFile=NULL, *Token=NULL, *RemoteCmd=NULL, *TTYConfigs=NULL;
     const char *ptr;
     STREAM *S;
-    int val, i;
+    int val, i, IsTunnel=FALSE;
 
 
 
@@ -37,9 +37,13 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     while (ptr)
     {
         if (strcmp(Token,"none")==0) Tempstr=CatStr(Tempstr, "-N ");
-        else if (strncmp(Token, "tunnel:",7)==0) Tempstr=MCatStr(Tempstr,"-N -L ", Token+7, NULL);
         else if (strncmp(Token, "stdin:",6)==0) Tempstr=MCatStr(Tempstr,"-W ", Token+6, NULL);
         else if (strncmp(Token, "jump:",5)==0) Tempstr=MCatStr(Tempstr,"-J ", Token+5, NULL);
+        else if (strncmp(Token, "tunnel:",7)==0) 
+				{
+					Tempstr=MCatStr(Tempstr,"-N -L ", Token+7, NULL);
+					IsTunnel=TRUE;
+				}
         else RemoteCmd=MCatStr(RemoteCmd, Token, " ", NULL);
 
         ptr=GetToken(ptr, "\\S", &Token, 0);
@@ -79,6 +83,13 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
             STREAMExpectDialog(S, Dialog, 0);
             ListDestroy(Dialog,ExpectDialogDestroy);
         }
+
+				//if we've started up an ssh to do tunneling via '-L <port>:<ip>:<port>' then we need to
+				//mark it's pid to be killed when this connection closes, otherwise we'll leak ssh procs.
+				if (IsTunnel) 
+				{
+					STREAMSetValue(S, "HelperPID", STREAMGetValue(S, "PeerPID"));
+				}
     }
 
     DestroyString(Tempstr);
