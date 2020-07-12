@@ -963,17 +963,18 @@ static const char *STREAMExtractMasterURL(const char *URL)
 {
 char *ptr;
 
-		if (strncmp(URL, "cmd:",4) ==0) return(URL); //'cmd:' urls do not go through proxies!
-		if (strncmp(URL, "file:",5) ==0) return(URL); //'file:' urls do not go through proxies!
-		if (strncmp(URL, "mmap:",5) ==0) return(URL); //'mmap:' urls do not go through proxies!
-		if (strncmp(URL, "stdin:",6) ==0) return(URL); //'stdin:' urls do not go through proxies!
-		if (strncmp(URL, "stdout:",7) ==0) return(URL); //'stdout:' urls do not go through proxies!
+	if (strncmp(URL, "cmd:",4) ==0) return(URL); //'cmd:' urls do not go through proxies!
+	if (strncmp(URL, "file:",5) ==0) return(URL); //'file:' urls do not go through proxies!
+	if (strncmp(URL, "mmap:",5) ==0) return(URL); //'mmap:' urls do not go through proxies!
+	if (strncmp(URL, "stdin:",6) ==0) return(URL); //'stdin:' urls do not go through proxies!
+	if (strncmp(URL, "stdout:",7) ==0) return(URL); //'stdout:' urls do not go through proxies!
+	if (strncmp(URL, "stdio:",7) ==0) return(URL); //'stdio:' urls do not go through proxies!
 
-    ptr=strrchr(URL, '|');
-    if (ptr) ptr++;
-    else ptr=URL;
+   ptr=strrchr(URL, '|');
+   if (ptr) ptr++;
+   else ptr=URL;
 
-		return(ptr);
+	return(ptr);
 }
 
 

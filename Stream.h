@@ -32,6 +32,9 @@ http:user:password@www.google.com        http network connection
 https:www.google.com                     https network connection
 cmd:cat /etc/hosts                       run command 'cat /etc/hosts' and read/write to/from it
 ssh:192.168.2.1:1022/cat /etc/hosts      ssh connect, running the command 'cat /etc/hosts'
+stdin:                                   standard in
+stdout:                                  standard out
+stdio:                                   both standard in and standard out
 
 'file://' is provided for compatiblity with web-browser environments. In this url format the protocol part is 'file://'. If a third '/' is present, like so 'file:///etc/services' then the url is a full path from the filesystem root. Any lesser number of '/' indicates a relative path from the current directory
 
