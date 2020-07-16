@@ -833,8 +833,8 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
     }
 
 
-    DestroyString(Name);
-    DestroyString(Value);
+    Destroy(Name);
+    Destroy(Value);
 
 }
 
@@ -946,9 +946,13 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
     case TERM_UNICODE:
         RetStr=StrAddUnicodeChar(RetStr, Arg1);
         break;
+
+    case TERM_UNICODE_NAME:
+        RetStr=StrAddUnicodeChar(RetStr, Arg1);
+        break;
     }
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     return(RetStr);
 }
 
@@ -1054,6 +1058,10 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
                 ptr--; //because of ptr++ on next loop
                 *RetStr=TerminalCommandStr(*RetStr, TERM_UNICODE, val, 0);
                 break;
+						case ':':
+								ptr=GetToken(ptr+1, ":", &Tempstr, 0);
+								*RetStr=UnicodeStrFromName(*RetStr, Tempstr);
+								break;
             case '0':
                 *RetStr=TerminalCommandStr(*RetStr, TERM_NORM, 0, 0);
                 break;
@@ -1089,7 +1097,7 @@ void TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S)
     Tempstr=TerminalCommandStr(Tempstr, Cmd, Arg1, Arg2);
     STREAMWriteString(Tempstr, S);
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
 }
 
 
@@ -1114,7 +1122,7 @@ void TerminalPutChar(int Char, STREAM *S)
         else write(1,Tempstr,StrLenFromCache(Tempstr));
     }
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
 }
 
 
@@ -1128,7 +1136,19 @@ void TerminalPutStr(const char *Str, STREAM *S)
     if (S) STREAMWriteLine(Tempstr, S);
     else write(1,Tempstr,StrLenFromCache(Tempstr));
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
+}
+
+
+void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S)
+{
+char *Cmd=NULL, *Tempstr=NULL;
+
+Cmd=MCopyStr(Cmd, Prefix, Str, Postfix, NULL);
+Tempstr=TerminalFormatStr(Tempstr, Cmd, S);
+STREAMWriteLine(Tempstr, S);
+Destroy(Tempstr);
+Destroy(Cmd);
 }
 
 
@@ -1616,7 +1636,7 @@ static int TerminalReadCSISeq(STREAM *S, char PrevChar)
 
     }
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
 
     return(0);
 }
@@ -1883,7 +1903,7 @@ int TerminalInit(STREAM *S, int Flags)
     }
     TerminalBarsInit(S);
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     return(TRUE);
 }
 

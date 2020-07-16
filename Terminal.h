@@ -9,28 +9,29 @@ This module provides various functions related to terminal input and output, par
 The functions 'TerminalFormatStr' and  'TerminalPutStr' accept a string with the following 'tilde command' formatting values 
 
 
-~~    output the tilde character '~'
-~r    switch color to red
-~R    switch background to red
-~g    switch color to green
-~G    switch background to green
-~b    switch color to blue
-~B    switch background to blue
-~n    switch color to black ('night' or 'noir')
-~N    switch background to black ('night' or 'noir')
-~y    switch color to yellow
-~Y    switch background to yellow
-~m    switch color to magenta
-~M    switch background to magenta
-~c    switch color to cyan
-~C    switch background to cyan
-~e    switch to bold text
-~i    switch to inverse text
-~u    switch to underlined text
-~<    clear to start of line
-~>    clear to end of line
-~0    reset all attributes (return to normal text)
-~U    output a unicode character
+~~        output the tilde character '~'
+~r        switch color to red
+~R        switch background to red
+~g        switch color to green
+~G        switch background to green
+~b        switch color to blue
+~B        switch background to blue
+~n        switch color to black ('night' or 'noir')
+~N        switch background to black ('night' or 'noir')
+~y        switch color to yellow
+~Y        switch background to yellow
+~m        switch color to magenta
+~M        switch background to magenta
+~c        switch color to cyan
+~C        switch background to cyan
+~e        switch to bold text
+~i        switch to inverse text
+~u        switch to underlined text
+~<        clear to start of line
+~>        clear to end of line
+~0        reset all attributes (return to normal text)
+~Uxxxx    output a unicode character (xxxx is the 4-digit unicode name)
+~:name:   output a unicode character using a name from the unicode names file 
 
 
 so, for example
@@ -43,6 +44,26 @@ int TerminalStrLen(const char *Str);
 
 Can be used to get the length of the string that will actually be displayed (with all formatting characters removed)
 
+Unicode characters can be referred to by name like so:
+
+TerminalPutStr("duration: 80~:micro:s", StdOut);
+
+provided that the name 'micro' has been mapped to a name in the unicode names file. This file contains entries in the format <name> <hex code> like so:
+
+
+micro 00b5
+quarter 00bc
+half 00bd
+3quarter 00be
+moon 263E
+quarternote 2669
+eighthnote 266A
+music 266B
+beamed8note 266B
+beamed16note 266C
+
+
+The default path for this file is /etc/unicode-names.conf, but it can be overriden either by setting the environment variable 'UNICODE_NAMES_FILE' or by setting the libuseful variable 'Unicode:NamesFile'
 */
 
 
@@ -92,7 +113,7 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TerminalSetUTF8(level) (UnicodeSetUTF8(level))
 
 //Commands available via the 'terminal command' function. Normally you wouldn't use these, but use the equivalent macros below
-typedef enum {TERM_NORM, TERM_TEXT, TERM_COLOR, TERM_CLEAR_SCREEN, TERM_CLEAR_ENDLINE, TERM_CLEAR_STARTLINE, TERM_CLEAR_LINE, TERM_CURSOR_HOME, TERM_CURSOR_MOVE, TERM_CURSOR_SAVE, TERM_CURSOR_UNSAVE, TERM_CURSOR_HIDE, TERM_CURSOR_SHOW, TERM_SCROLL, TERM_SCROLL_REGION, TERM_UNICODE} ETerminalCommands;
+typedef enum {TERM_NORM, TERM_TEXT, TERM_COLOR, TERM_CLEAR_SCREEN, TERM_CLEAR_ENDLINE, TERM_CLEAR_STARTLINE, TERM_CLEAR_LINE, TERM_CURSOR_HOME, TERM_CURSOR_MOVE, TERM_CURSOR_SAVE, TERM_CURSOR_UNSAVE, TERM_CURSOR_HIDE, TERM_CURSOR_SHOW, TERM_SCROLL, TERM_SCROLL_REGION, TERM_UNICODE, TERM_UNICODE_NAME} ETerminalCommands;
 
 
 
@@ -150,6 +171,20 @@ void TerminalReset(STREAM *S);
 //scroll the screen by x columns and y rows
 #define TerminalSetScrollRegion(S, x, y) ( TerminalCommand(TERM_SCROLL_REGION, y, x, S))
 
+
+//some macros to control xterm windows
+#define XtermSetIconNameAndTitle(S, title) ( XtermStringCommand("\x1b]0;", (title), "\007", (S)) )
+#define XtermSetIconName(S, title) ( XtermStringCommand("\x1b]1;", (title), "\007", (S)) )
+#define XtermSetTitle(S, title) ( XtermStringCommand("\x1b]2;", (title), "\007", (S)) )
+#define XtermIconify(S) ((void) STREAMWriteLine("\x1b[2t", (S)))
+#define XtermUnIconify(S) ((void) STREAMWriteLine("\x1b[1t", (S)))
+#define XtermRaise(S) ((void) STREAMWriteLine("\x1b[5t", (S)))
+#define XtermLower(S) ((void) STREAMWriteLine("\x1b[6t", (S)))
+#define XtermFullscreen(S) ((void) STREAMWriteLine("\x1[10;1t", (S)))
+#define XtermUnFullscreen(S) ((void) STREAMWriteLine("\x1[10;0t", (S)))
+
+
+void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);
 
 //put a character. Char can be a value outside the ANSI range which will result in an xterm unicode character string being output
 void TerminalPutChar(int Char, STREAM *S);

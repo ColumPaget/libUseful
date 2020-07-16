@@ -182,6 +182,9 @@ install: libUseful.so
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-4
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-4
+	-mkdir -p $(DESTDIR)$(prefix)/etc
+	cp *.conf $(DESTDIR)$(prefix)/etc
+
 
 test: libUseful.so
 	-echo "No tests written yet"
