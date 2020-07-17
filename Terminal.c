@@ -1060,6 +1060,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
                 break;
 						case ':':
 								ptr=GetToken(ptr+1, ":", &Tempstr, 0);
+                ptr--; //because of ptr++ on next loop
 								*RetStr=UnicodeStrFromName(*RetStr, Tempstr);
 								break;
             case '0':
