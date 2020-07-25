@@ -682,8 +682,8 @@ STREAM *STREAMFromSock(int sock, int Type, const char *Peer, const char *DestIP,
     S->Type=Type;
     if (StrValid(Peer))
     {
-        if (strncmp(Peer,"::ffff:",7)==0) STREAMSetValue(S,"Peer",Peer+7);
-        else STREAMSetValue(S,"Peer",Peer);
+        if (strncmp(Peer,"::ffff:",7)==0) STREAMSetValue(S,"PeerIP",Peer+7);
+        else STREAMSetValue(S,"PeerIP",Peer);
     }
 
     if (StrValid(DestIP))

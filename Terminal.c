@@ -10,13 +10,14 @@ static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","b
 
 
 
-int TerminalStrLen(const char *Str)
+static int TerminalInternalStrLen(const char **Str, int MaxLen)
 {
     const char *ptr;
     int len=0;
 
-    if (! Str) return(len);
-    for (ptr=Str; *ptr !='\0'; ptr++)
+    if ((! Str) || (! *Str)) return(len);
+
+    for (ptr=*Str; *ptr !='\0'; ptr++)
     {
     		if (*ptr & 128)
 				{
@@ -31,13 +32,60 @@ int TerminalStrLen(const char *Str)
         else if (*ptr=='~')
         {
 						ptr_incr(&ptr, 1);
-            if (*ptr=='~') len++;
+            if (*ptr=='~') len++; //~~ translates to ~, one character
+						else if (*ptr==':') 
+						{
+							len++; //named unicode glyph. one character
+						}
+						else if (*ptr=='U') 
+						{
+							ptr_incr(&ptr, 4);
+							len++; //16-bit unicode number. one character
+						}
         }
+        else if (*ptr=='\\')
+				{
+						ptr_incr(&ptr, 1);
+						switch (*ptr)
+						{
+							case '\0': break;
+
+							//octal value
+							case '0': 
+							ptr_incr(&ptr, 4);
+							len++;
+							break;
+
+							//hex value
+							case 'x': 
+							ptr_incr(&ptr, 3);
+							len++;
+							break;
+
+							default: len++; break;
+						}	
+				}	
         else len++;
+
+		if ((MaxLen != -1) && (len > MaxLen)) 
+		{
+			*Str=ptr;
+			break;
+		}
+
     }
 
+		*Str=ptr;
     return(len);
 }
+
+
+int TerminalStrLen(const char *Str)
+{
+if (! Str) return(0);
+return(TerminalInternalStrLen(&Str, -1));
+}
+
 
 
 char *TerminalStrTrunc(char *Str, int MaxLen)
@@ -45,21 +93,10 @@ char *TerminalStrTrunc(char *Str, int MaxLen)
     const char *ptr;
     int len=0;
 
-    for (ptr=Str; *ptr !='\0'; ptr++)
-    {
-        if (*ptr=='~')
-        {
-            ptr++;
-            if (*ptr=='~') len++;
-        }
-        else len++;
+		ptr=Str;
+		len=TerminalInternalStrLen(&ptr, MaxLen);
 
-				if (len > MaxLen)
-				{
-					Str=StrTrunc(Str, ptr+1-Str);
-					break;
-				}
-    }
+		if (len > MaxLen) Str=StrTrunc(Str, ptr+1-Str);
 
 return(Str);
 }
@@ -965,7 +1002,51 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
 
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
-        if (*ptr=='~')
+				if (*ptr=='\\')
+				{
+					ptr++;
+					switch (*ptr)
+					{
+						case 'a': 	
+            *RetStr=AddCharToStr(*RetStr, '\x07');
+						break;
+
+						case 'e': 	
+             *RetStr=AddCharToStr(*RetStr, '\x1b');
+						break;
+
+						case 'n': 	
+             *RetStr=AddCharToStr(*RetStr, '\n');
+						break;
+
+						case 'r': 	
+             *RetStr=AddCharToStr(*RetStr, '\r');
+						break;
+
+						case 't': 	
+             *RetStr=AddCharToStr(*RetStr, '\t');
+						break;
+
+						case 'x':
+						 ptr++;
+             strntol(&ptr, 2, 16, &val);
+						 *RetStr=AddCharToStr(*RetStr, val);	
+						 ptr--;
+						break;
+
+						case '0':
+						 ptr++;
+             strntol(&ptr, 3, 8, &val);
+						 *RetStr=AddCharToStr(*RetStr, val);	
+						 ptr--;
+						break;
+						
+						default:
+             *RetStr=AddCharToStr(*RetStr, *ptr);
+						break;
+					}
+				}
+				else if (*ptr=='~')
         {
             ptr++;
             if (*ptr=='\0') break;
@@ -1076,7 +1157,6 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
         }
         else *RetStr=AddCharToStr(*RetStr, *ptr);
     }
-
 
 		Destroy(Tempstr);
 
@@ -1798,7 +1878,8 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 		{
 			STREAMWriteLine(RetStr, S);
 			STREAMFlush(S);
-		}	
+		}
+
     inchar=TerminalReadChar(S);
     while (inchar != EOF)
     {
