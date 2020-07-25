@@ -6,7 +6,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 /* 
 This module provides various functions related to terminal input and output, particularly terminal colors.
 
-The functions 'TerminalFormatStr' and  'TerminalPutStr' accept a string with the following 'tilde command' formatting values 
+The functions 'TerminalFormatStr' and  'TerminalPutStr' accept a string with backslash escape sequences
+and the following 'tilde command' formatting values 
 
 
 ~~        output the tilde character '~'
@@ -33,14 +34,28 @@ The functions 'TerminalFormatStr' and  'TerminalPutStr' accept a string with the
 ~Uxxxx    output a unicode character (xxxx is the 4-digit unicode name)
 ~:name:   output a unicode character using a name from the unicode names file 
 
+so, for example:
 
-so, for example
+	TerminalPutStr("~y~RYellow text on a red background~0", StdOut);
 
-TerminalPutStr("~y~RYellow text on a red background~0", StdOut);
+Escape sequences a-la the 'echo' command are also accepted:
 
-This of course means that the final displayed string might be a different length from the formatted string that created it. So the function
+  \\      backslash
+  \a      alert (BEL)
+  \b      backspace
+  \c      produce no further output
+  \e      escape
+  \f      form feed
+  \n      new line
+  \r      carriage return
+  \t      horizontal tab
+  \v      vertical tab
+  \0NNN   byte with octal value NNN (1 to 3 digits)
+  \xHH    byte with hexadecimal value HH (1 to 2 digits)
 
-int TerminalStrLen(const char *Str);
+This of course means that the final displayed string might be a different length from the formatted string that created it. So the function:
+
+	int TerminalStrLen(const char *Str);
 
 Can be used to get the length of the string that will actually be displayed (with all formatting characters removed)
 
