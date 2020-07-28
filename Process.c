@@ -762,6 +762,7 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"sigdef")==0) Flags |= PROC_SIGDEF;
         else if (strcasecmp(Name,"sigdefault")==0) Flags |= PROC_SIGDEF;
         else if (strcasecmp(Name,"setsid")==0) Flags |= PROC_SETSID;
+        else if (strcasecmp(Name,"newpgroup")==0) Flags |= PROC_NEWPGROUP;
         else if (strcasecmp(Name,"daemon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
@@ -835,6 +836,7 @@ int ProcessApplyConfig(const char *Config)
     else
     {
         if (Flags & PROC_SETSID) setsid();
+        if (Flags & PROC_NEWPGROUP) setpgid(0, 0);
         if (Flags & PROC_CTRL_TTY) 
 				{
 //Set controlling tty to be stdin. This means that CTRL-C, SIGWINCH etc is handled for the
