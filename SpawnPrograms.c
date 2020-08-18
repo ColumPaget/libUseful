@@ -20,6 +20,17 @@ int SpawnParseConfig(const char *Config)
     while (ptr)
     {
         if (strcasecmp(Token,"+stderr")==0) Flags |= SPAWN_COMBINE_STDERR;
+				else if (strcasecmp(Token,"stderr2null")==0)
+				{
+					close(2);
+					open("/dev/null", O_WRONLY);
+				}
+				else if (strcasecmp(Token,"stdout2null")==0)
+				{
+					close(1);
+					open("/dev/null", O_WRONLY);
+				}
+
 
         ptr=GetToken(ptr," |,",&Token,GETTOKEN_MULTI_SEP);
     }
@@ -326,7 +337,14 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
         pid=PipeSpawnFunction(&to_fd, &from_fd, iptr, Func, Data, Config);
     }
 
-    if (pid > 0) S=STREAMFromDualFD(from_fd, to_fd);
+    if (pid > 0) 
+		{
+			//sleep to allow spawned function time to exit due to startup problems
+			usleep(250);
+			//use waitpid to check process has not exited, if so then spawn stream
+			if (waitpid(pid, NULL, WNOHANG) < 1) S=STREAMFromDualFD(from_fd, to_fd);
+		}
+
     if (S)
     {
         STREAMSetFlushType(S,FLUSH_LINE,0,0);

@@ -78,6 +78,22 @@ then
 AC_DEFINE([HAVE_POLL])
 fi
 
+AC_CHECK_LIB(c,htonll,,)
+cf_have_htonll=$ac_cv_lib_c_htonll
+if test "$cf_have_htonll" = "yes"
+then
+AC_DEFINE([HAVE_HTONLL])
+fi
+
+
+AC_CHECK_LIB(c,ntohll,,)
+cf_have_ntohll=$ac_cv_lib_c_ntohll
+if test "$cf_have_ntohll" = "yes"
+then
+AC_DEFINE([HAVE_NTOHLL])
+fi
+
+
 
 AC_ARG_ENABLE(sendfile, [  --enable-sendfile       enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval )
 

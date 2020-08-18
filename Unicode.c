@@ -157,7 +157,7 @@ int code=0;
 
 
 if (! UnicodeNamesCache) UnicodeNamesCache=ListCreate();
-Node=ListFindItem(UnicodeNamesCache, Name);
+Node=ListFindNamedItem(UnicodeNamesCache, Name);
 if (Node)
 {
 	code=strtol((const char *) Node->Item, NULL, 16);
@@ -169,6 +169,8 @@ if (StrValid(Tempstr)) Tempstr=CopyStr(Tempstr, getenv("UNICODE_NAMES_FILE"));
 if (! StrValid(Tempstr)) Tempstr=CopyStr(Tempstr, "/etc/unicode-names.conf");
 
 S=STREAMOpen(Tempstr, "r");
+if (S)
+{
 Tempstr=STREAMReadLine(Tempstr, S);
 while (Tempstr)
 {
@@ -176,13 +178,14 @@ while (Tempstr)
 	ptr=GetToken(Tempstr, "\\S", &Token, 0);
 	if (strcasecmp(Token, Name)==0)
 	{
-		SetVar(UnicodeNamesCache, Name, Token);
+		SetVar(UnicodeNamesCache, Name, ptr);
 		code=strtol(ptr, NULL, 16);
 		break;
 	}
 	Tempstr=STREAMReadLine(Tempstr, S);
 }
 STREAMClose(S);
+}
 
 Destroy(Tempstr);
 Destroy(Token);

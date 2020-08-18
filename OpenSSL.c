@@ -680,14 +680,23 @@ int OpenSSLIsPeerAuth(STREAM *S)
 
 void OpenSSLClose(STREAM *S)
 {
-void *ptr;
+ListNode *Node;
 
 #ifdef HAVE_LIBSSL
-ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-if (ptr) SSL_free((SSL *) ptr);
 
-ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:CTX");
-if (ptr) SSL_CTX_free((SSL_CTX *) ptr);
+Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
+if (Node) 
+{
+	SSL_free((SSL *) Node->Item);
+	ListDeleteNode(Node);
+}
+
+Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:CTX");
+if (Node) 
+{
+	SSL_CTX_free((SSL_CTX *) Node->Item);
+	ListDeleteNode(Node);
+}
 #endif
 }
 

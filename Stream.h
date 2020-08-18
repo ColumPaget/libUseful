@@ -291,6 +291,12 @@ STREAM *STREAMFileOpen(const char *Path, int Flags);
 //to close stdin, use this function  to free the STREAM object
 void STREAMDestroy(void *S);
 
+//close a stream and free most associated data, but don't destroy/free the stream object.
+//you would not normally use this except if you were linking libUseful to some kind of 
+//environment that expects to garbage-collect destroyed items itself (libUseful-lua is an
+//example of this situation)
+void STREAMShutdown(STREAM *Stream);
+
 //Close a file/connection and free the STREAM object
 void STREAMClose(STREAM *Stream);
 

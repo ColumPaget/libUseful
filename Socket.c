@@ -1208,12 +1208,17 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
     while (ptr)
     {
         if (strcmp("Name","E")==0) Flags |= CONNECT_ERROR;
-        if (strcmp("Name","k")==0) Flags |= SOCK_NOKEEPALIVE;
-        if (strcasecmp("Name","keepalive")==0)
+        else if (strcmp("Name","k")==0) Flags |= SOCK_NOKEEPALIVE;
+        else if (strcasecmp("Name","keepalive")==0)
         {
             if (StrLen(Value) && (strncasecmp(Value, "n",1)==0)) Flags |= SOCK_NOKEEPALIVE;
         }
-        STREAMSetValue(S, Name, Value);
+				else if (strcasecmp("Name","timeout")==0)
+        {
+            S->Timeout=atoi(Value);
+        }
+        else STREAMSetValue(S, Name, Value);
+
         ptr=GetNameValuePair(ptr," ","=",&Name,&Value);
     }
 

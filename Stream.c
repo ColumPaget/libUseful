@@ -492,10 +492,13 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
     {
         if (S->State & SS_SSL)
         {
+
 #ifdef HAVE_LIBSSL
+		//if this is an SSL stream, it should have an associated SSL object. If it doesn't then the stream
+		//either failed to open, or has been closed with STREAMShutdown
 		vptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
 		if (vptr) result=SSL_write((SSL *) vptr, Data + count, DataLen - count);
-		else result=0;
+		else result=STREAM_CLOSED;
 		if (result < 0) result=STREAM_CLOSED;
 #endif
         }
@@ -1185,9 +1188,9 @@ void STREAMCloseFile(STREAM *S)
 
 
 
-void STREAMClose(STREAM *S)
+void STREAMShutdown(STREAM *S)
 {
-    ListNode *Curr;
+    ListNode *Curr, *Next;
     STREAM *tmpS;
     int val;
 
@@ -1233,25 +1236,42 @@ void STREAMClose(STREAM *S)
     Curr=ListGetNext(S->Items);
     while (Curr)
     {
+			  Next=ListGetNext(Curr);	
         if (strcmp(Curr->Tag, "LU:AssociatedStream")==0)
         {
-            tmpS=(STREAM *) Curr->Item;
-            STREAMClose(tmpS);
+          tmpS=(STREAM *) Curr->Item;
+          STREAMClose(tmpS);
+					ListDeleteNode(Curr);
         }
-        else if (strcmp(Curr->Tag, "HTTP:InfoStruct")==0) HTTPInfoDestroy(Curr->Item);
+        else if (strcmp(Curr->Tag, "HTTP:InfoStruct")==0) 
+				{
+					HTTPInfoDestroy(Curr->Item);
+					ListDeleteNode(Curr);
+				}
 
-        Curr=ListGetNext(Curr);
+
+        Curr=Next;
     }
 
 		//now we actually close the file descriptors for this stream
-		if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) close(S->out_fd);
-    if (S->in_fd > -1) close(S->in_fd);
-
-
-    STREAMDestroy(S);
+		if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) 
+		{
+			close(S->out_fd);
+			S->out_fd=-1;
+		}
+    if (S->in_fd > -1) 
+		{
+			close(S->in_fd);
+			S->in_fd=-1;
+		}
 }
 
 
+void STREAMClose(STREAM *S)
+{
+	STREAMShutdown(S);
+  STREAMDestroy(S);
+}
 
 
 int STREAMReadCharsToBuffer(STREAM *S)
