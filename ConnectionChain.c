@@ -36,6 +36,24 @@ int SetGlobalConnectionChain(const char *Chain)
 }
 
 
+//if a proxy helper was launched by the current program (check using getpid) then
+//this is called by 'atexit' on exit, to shutdown that helper
+static void ConnectionHopCloseAll()
+{
+ListNode *Curr;
+STREAM *S;
+pid_t pid;
+
+Curr=ListGetNext(ProxyHelpers);
+while (Curr)
+{
+S=(STREAM *) Curr->Item;
+pid=atoi(STREAMGetValue(S, "LU:LauncherPID"));
+if (pid==getpid()) STREAMClose(S);
+Curr=ListGetNext(Curr);
+}
+}
+
 
 int ConnectHopHTTPSProxy(STREAM *S, const char *Proxy, const char *Destination)
 {
@@ -468,7 +486,10 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
       if (tmpS) 
 			{
 				if (! ProxyHelpers) ProxyHelpers=ListCreate();
+				Tempstr=FormatStr(Tempstr, "%d", getpid());
+				STREAMSetValue(tmpS, "LU:LauncherPID", Tempstr);
 				ListAddNamedItem(ProxyHelpers, ProxyURL, tmpS);
+				atexit(ConnectionHopCloseAll);
 			}
 		 }
 
