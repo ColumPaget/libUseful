@@ -1253,12 +1253,13 @@ void STREAMShutdown(STREAM *S)
         Curr=Next;
     }
 
-		//now we actually close the file descriptors for this stream
-		if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) 
-		{
-			close(S->out_fd);
-			S->out_fd=-1;
-		}
+		//now we actually close the file descriptors for this stream. 
+		if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) close(S->out_fd);
+		//out_fd is invalid now whether we closed it or not, so set it to -1
+		//so that if STREAMClose gets called later (say, in garbage-collected environments)
+		//we don't wind up closing another connection that has inhertied the file number
+		S->out_fd=-1;
+
     if (S->in_fd > -1) 
 		{
 			close(S->in_fd);
