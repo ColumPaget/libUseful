@@ -471,18 +471,31 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
 		if (Head)
 		{
-    if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
-    else result=strcasecmp(Node->Tag,Name);
+	    if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
+	    else result=strcasecmp(Node->Tag,Name);
+	
+			while (Node)
+			{
+		    if (
+	 	       (result==0) &&
+	 	       ( (Type==ANYTYPE) || (Type==Node->ItemType) )
+	 	   )
+	 	   {
+	 	       if (Head->Flags & LIST_FLAG_CACHE) Head->Side=Node;
+	 	       if (Node->Stats) Node->Stats->Hits++;
+	 	       return(Node);
+	 	   }
 
-    if (
-        (result==0) &&
-        ( (Type==ANYTYPE) || (Type==Node->ItemType) )
-    )
-    {
-        if (Head->Flags & LIST_FLAG_CACHE) Head->Side=Node;
-        if (Node->Stats) Node->Stats->Hits++;
-        return(Node);
-    }
+			//if this is set then there's at most one instance of an item with a given name
+			if (Head->Flags & LIST_FLAG_UNIQ) break;
+
+			//if it's an ordered list and the strcmp didn't match, then give up as there will be no more matching items
+			//past this point
+			if ((Head->Flags & LIST_FLAG_ORDERED) && (result !=0)) break;
+
+
+			Node=ListGetNext(Node);
+			}
 		}
     return(NULL);
 }
