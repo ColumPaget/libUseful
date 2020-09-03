@@ -604,8 +604,7 @@ const char *TerminalTranslateKeyCode(int key)
 
 int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
 {
-
-if (*mod) *mod=0;
+if (mod != NULL) *mod=0;
 
 //read as many modifiers as are found, then break
 while (1)

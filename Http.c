@@ -42,6 +42,7 @@ void HTTPInfoDestroy(void *p_Info)
     DestroyString(Info->Host);
     DestroyString(Info->Doc);
     DestroyString(Info->UserName);
+    DestroyString(Info->UserAgent);
     DestroyString(Info->Destination);
     DestroyString(Info->ResponseCode);
     DestroyString(Info->PreviousRedirect);
@@ -111,14 +112,12 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
 
         //if there's nothing in our buffer, and nothing being added, then
         //we've already finished!
-        if ((Chunk->BuffLen==0) && (InLen==0)) return(STREAM_CLOSED);
+        if ((Chunk->BuffLen==0) && (InLen < 1)) return(STREAM_CLOSED);
 
-        ptr=Chunk->Buffer;
-        vptr=ptr;
+        vptr=Chunk->Buffer;
         //skip past any leading '\r' or '\n'
         if (*vptr=='\r') vptr++;
         if (*vptr=='\n') vptr++;
-
         ptr=memchr(vptr,'\n', end-vptr);
 
         //sometimes people seem to miss off the final '\n', so if we get told there's no more data
@@ -130,10 +129,10 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
         }
 
 
-        if (ptr)
+        if (ptr) 
         {
-            *ptr='\0';
-            ptr++;
+					StrTrunc(Chunk->Buffer, ptr - Chunk->Buffer);
+          ptr++;
         }
         else return(0);
 
@@ -143,7 +142,7 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
 
         Chunk->BuffLen=end-ptr;
 
-        if (Chunk->BuffLen > 0)	memmove(Chunk->Buffer,ptr, Chunk->BuffLen);
+        if (Chunk->BuffLen > 0)	memmove(Chunk->Buffer, ptr, Chunk->BuffLen);
         //in case it went negative in the above calcuation
         else Chunk->BuffLen=0;
 
