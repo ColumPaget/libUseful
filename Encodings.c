@@ -175,7 +175,9 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
     const char *ptr, *end;
 
     len=StrLen(Text);
+		//for all these encodings the result will be no bigger than the input
     *Return=SetStrLen(*Return,len);
+
     memset(*Return,0,len);
     switch (Encoding)
     {
@@ -265,6 +267,11 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
 
 char *DecodeToText(char *RetStr, const char *Text, int Encoding)
 {
-    DecodeBytes(&RetStr, Text, Encoding);
-    return(RetStr);
+int len;
+
+  len=DecodeBytes(&RetStr, Text, Encoding);
+	RetStr[len]='\0';
+	StrLenCacheAdd(RetStr, len);
+
+  return(RetStr);
 }

@@ -19,6 +19,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define SOCK_REUSEPORT 128
 #define SOCK_PEERCREDS 512  //used with UNIX sockets to get remote user ID
 #define CONNECT_ERROR 1024  //report errors even if Error:IgnoreIP is set
+#define SOCK_TLS_AUTO 2048
 
 #define SOCK_CONNECTED 1
 #define SOCK_CONNECTING -1
@@ -29,6 +30,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define BIND_LISTEN  1
 #define BIND_CLOEXEC 2
 #define BIND_RAW 4
+#define BIND_REUSEPORT 8
 
 //This is not defined on all systems, so add it here
 #ifndef HOST_NAME_MAX
@@ -100,13 +102,25 @@ int UDPRecv(int sock,  char *Buffer, int len, char **Host, int *Port);
 // 'Address' is a local device name or IP address to bind to, or blank to bind to all local addresses/devices.
 // Return value is socket file descriptor
 int IPServerInit(int Type, const char *Address, int Port);
+int IPServerNew(int Type, const char *Address, int Port, int Flags);
 
 //Accept a connection on a ServerSocket previously created by IPServerInit. 'Addr' returns the IP of the remote
 //host that is connecting, you can pass NULL if you don't want that. Return value is a new file descriptor for
 //the accepted connection
 int IPServerAccept(int ServerSock,char **Addr);
 
+//STREAMServerInit and STREAMServerNew create server sockets for tcp:// udp:// unix:// unixdgram:// and tproxy:// protocols
+//STREAMServerNew takes a Config argument that is a string containing characters as follows:
+//  A - Autodetect SSL
+//  B - BROADCAST  set udp socket to be a broadcast socket
+//  R - Don't route. All addresses are treated as local 
+//  P - REUSE_PORT allows multiple processes to listen on the same port
+
+
 STREAM *STREAMServerInit(const char *URL);
+STREAM *STREAMServerNew(const char *URL, const char *Config);
+
+//Accept a connection on a tcp:// unix:// or tproxy:// socket
 STREAM *STREAMServerAccept(STREAM *Serv);
 
 //get endpoint details of a connection. Any of LocalAddress, LocalPort, RemoteAddress and RemotePort can be NULL if

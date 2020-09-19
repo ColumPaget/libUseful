@@ -92,7 +92,8 @@ int len;
     }
 
 		len=STREAMReadBytes(S, RD->Buffer+offset, size);
-    RD->DataLen=offset+len;
+		if (len > 0) offset+=len;
+		RD->DataLen=offset;
     return(len);
 }
 
