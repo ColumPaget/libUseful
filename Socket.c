@@ -341,7 +341,7 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
 		#endif
 
    	#ifdef SO_REUSEPORT
-	   	if (Flags & BIND_REUSEPORT) setsockopt(fd, IPPROTO_IP, SO_REUSEPORT, &result, sizeof(result));
+	   	if (Flags & BIND_REUSEPORT) setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &result, sizeof(result));
    	#endif
 
     result=bind(fd, sa, salen);
