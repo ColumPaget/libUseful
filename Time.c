@@ -144,6 +144,15 @@ long TimezoneOffset(const char *TimeZone)
 }
 
 
+
+void MillisecsToTV(int millisecs, struct timeval *tv)
+{
+    tv->tv_sec=millisecs / 1000;
+		tv->tv_usec=(millisecs - (tv->tv_sec * 1000)) * 1000;
+}
+
+
+
 /* A general 'Set Timer' function, Useful for timing out */
 /* socket connections etc                                */
 void SetTimeout(int timeout, SIGNAL_HANDLER_FUNC Handler)

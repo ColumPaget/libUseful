@@ -37,6 +37,7 @@ for (ptr=Value; *ptr !='\0'; ptr++)
 {
 	switch (*ptr)
 	{
+    case 'n': Settings->Flags |= CONNECT_NONBLOCK; break;
 		case 'E': Settings->Flags |= CONNECT_ERROR; break;
 		case 'k': Settings->Flags |= SOCK_NOKEEPALIVE; break;
 		case 'A': Settings->Flags |= SOCK_TLS_AUTO; break;
@@ -143,7 +144,7 @@ const char *LookupHostIP(const char *Host)
         return(NULL);
     }
 
-//inet_ntoa shouldn't need this cast to 'char *', but it emitts a warning
+//inet_ntoa shouldn't need this cast to 'char *', but it emits a warning
 //without it
     return(inet_ntoa(*(struct in_addr *) *hostdata->h_addr_list));
 }
@@ -1143,8 +1144,7 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
     if (! S) return(FALSE);
     if ((S->in_fd > -1) && (S->Timeout > 0) )
     {
-        tv.tv_sec=S->Timeout;
-        tv.tv_usec=0;
+				MillisecsToTV(S->Timeout * 10, &tv);
         if (FDSelect(S->in_fd, SELECT_WRITE, &tv) != SELECT_WRITE)
         {
             close(S->in_fd);
@@ -1193,6 +1193,7 @@ int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, in
     ListNode *Curr;
     char *Token=NULL, *ptr;
     int result=FALSE;
+		struct timeval tv;
 
 
     S->Path=FormatStr(S->Path,"tcp:%s:%d/",Host,Port);
@@ -1209,6 +1210,7 @@ int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, in
     if (StrValid(Host))
     {
         if (Flags & CONNECT_NONBLOCK) S->Flags |= SF_NONBLOCK;
+				if (S->Timeout > 0) Flags |= CONNECT_NONBLOCK;
 
         //Flags are handled in this function
         S->in_fd=TCPConnectWithAttributes(STREAMGetValue(S, "LocalAddress"), Host,Port,Flags,TTL,ToS);
@@ -1220,12 +1222,12 @@ int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, in
 
     if (result==TRUE)
     {
-        if (Flags & CONNECT_NONBLOCK)
+        if (S->Flags & SF_NONBLOCK)
         {
             S->State |=SS_CONNECTING;
             S->Flags |=SF_NONBLOCK;
         }
-        else result=STREAMDoPostConnect(S, Flags);
+				else result=STREAMDoPostConnect(S, Flags);
     }
 
     return(result);
@@ -1300,24 +1302,24 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
     int result=FALSE;
     char *Name=NULL, *Value=NULL;
 		TSockSettings Settings;
-    const char *ptr;
+    const char *ptr, *p_val;
 
     int Flags=0;
 
 		ptr=GetToken(Config, "\\S", &Value, 0);
 		Flags=SocketParseConfig(Value, &Settings);
 
-		ptr=LibUsefulGetValue("TCP:Keepalives");
-		if ( StrValid(ptr) &&  (! strtobool(ptr)) ) Flags |= SOCK_NOKEEPALIVE;
+		p_val=LibUsefulGetValue("TCP:Keepalives");
+		if ( StrValid(p_val) &&  (! strtobool(p_val)) ) Flags |= SOCK_NOKEEPALIVE;
 
     ptr=GetNameValuePair(ptr," ","=",&Name,&Value);
     while (ptr)
     {
-        if (strcasecmp("Name","keepalive")==0)
+        if (strcasecmp(Name,"keepalive")==0)
         {
             if (StrLen(Value) && (strncasecmp(Value, "n",1)==0)) Flags |= SOCK_NOKEEPALIVE;
         }
-				else if (strcasecmp("Name","timeout")==0)
+				else if (strcasecmp(Name,"timeout")==0)
         {
             S->Timeout=atoi(Value);
         }

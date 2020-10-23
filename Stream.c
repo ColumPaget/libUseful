@@ -508,9 +508,7 @@ int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
             {
                 FD_ZERO(&selectset);
                 FD_SET(S->out_fd, &selectset);
-                result=(S->Timeout % 100);
-                tv.tv_usec=result * 100000;
-                tv.tv_sec=S->Timeout / 100;
+								MillisecsToTV(S->Timeout * 10, &tv);
                 result=select(S->out_fd+1,NULL,&selectset,NULL,&tv);
                 if (result < 1) 
 								{
@@ -1348,9 +1346,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
     {
         FD_ZERO(&selectset);
         FD_SET(S->in_fd, &selectset);
-        val=(S->Timeout % 100);
-        tv.tv_usec=val * 10000;
-        tv.tv_sec=S->Timeout / 100;
+				MillisecsToTV(S->Timeout * 10, &tv);
         val=select(S->in_fd+1,&selectset,NULL,NULL,&tv);
 
         switch (val)
