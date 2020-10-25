@@ -495,6 +495,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             ptr=GetToken(ptr,":",&Token,0);
             SSL_set_tlsext_host_name(ssl, Token);
 #endif
+						/*
 						if (S->Timeout > 0) 
 						{
 								//convert centisecs to seconds
@@ -502,6 +503,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 								if (val==0) val++;
 								SSL_CTX_set_timeout (ctx, val);
 						}
+						*/
 
             result=SSL_connect(ssl);
             for (i=0; i < 3; i ++)
@@ -510,9 +512,12 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 								if (result > -1) break;
                 result=SSL_get_error(ssl, result);
                 if ( (result != SSL_ERROR_WANT_READ) && (result != SSL_ERROR_WANT_WRITE) && (result != SSL_ERROR_WANT_CONNECT)) break;
-                usleep(300);
+                usleep(2000);
                 result=SSL_connect(ssl);
             }
+
+						result=SSL_do_handshake(ssl);
+
             S->State |= SS_SSL;
 
             OpenSSLQueryCipher(S);

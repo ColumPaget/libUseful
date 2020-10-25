@@ -1161,7 +1161,12 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
 
         S->Type=STREAM_TYPE_TCP;
         STREAMSetFlushType(S,FLUSH_LINE,0,0);
-        if (Flags & CONNECT_SSL) DoSSLClientNegotiation(S, Flags);
+        if (Flags & CONNECT_SSL) 
+				{
+        	STREAMSetFlags(S, 0, SF_NONBLOCK);
+					DoSSLClientNegotiation(S, Flags);
+      //  	if (Flags & CONNECT_NONBLOCK) STREAMSetFlags(S, SF_NONBLOCK, 0);
+				}
 
         ptr=GetRemoteIP(S->in_fd);
 
@@ -1194,6 +1199,7 @@ int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, in
     char *Token=NULL, *ptr;
     int result=FALSE;
 		struct timeval tv;
+		int ConnectFlags=0;
 
 
     S->Path=FormatStr(S->Path,"tcp:%s:%d/",Host,Port);
@@ -1209,14 +1215,18 @@ int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, in
 
     if (StrValid(Host))
     {
-        if (Flags & CONNECT_NONBLOCK) S->Flags |= SF_NONBLOCK;
-				if (S->Timeout > 0) Flags |= CONNECT_NONBLOCK;
+				//we may have to connect nonblocking if there is a timeout, so that we don't block in the 
+				//'connect' function call, but we don't want to confuse that with a stream that's actually
+				//intended to be non-blocking
+				ConnectFlags=Flags;
+				if (S->Timeout > 0) ConnectFlags |= CONNECT_NONBLOCK;
 
         //Flags are handled in this function
-        S->in_fd=TCPConnectWithAttributes(STREAMGetValue(S, "LocalAddress"), Host,Port,Flags,TTL,ToS);
+        S->in_fd=TCPConnectWithAttributes(STREAMGetValue(S, "LocalAddress"), Host,Port,ConnectFlags,TTL,ToS);
 
         S->out_fd=S->in_fd;
         if (S->in_fd > -1) result=TRUE;
+        if (Flags & CONNECT_NONBLOCK) S->Flags |= SF_NONBLOCK;
     }
 
 
