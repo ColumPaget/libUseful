@@ -390,9 +390,20 @@ STREAM *STREAMSelect(ListNode *Streams, struct timeval *tv)
         S=(STREAM *) Curr->Item;
         if (S && (! (S->State & SS_EMBARGOED)))
         {
-            //Pump any data in the stream
-            STREAMFlush(S);
-            if (S->InEnd > S->InStart) return(S);
+						//server type streams don't have buffers
+						if ( (S->Type != STREAM_TYPE_UNIX_SERVER) && (S->Type != STREAM_TYPE_TCP_SERVER) ) 
+						{
+            		//Pump any data in the stream 
+								STREAMFlush(S);
+
+								//if there's stuff in buffer, then we don't need to select the file descriptor
+            		if (S->InEnd > S->InStart) 
+								{
+									SelectSetDestroy(Set);
+									return(S);
+								}
+						}
+
 						SelectAddFD(Set, SELECT_READ, S->in_fd);
         }
 
