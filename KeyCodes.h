@@ -148,6 +148,7 @@
 #define TKEY_LCNTRL 0x153
 #define TKEY_RCNTRL 0x154
 
+#define TKEY_CAPS_LOCK 0x160
 
 //'internet' and 'multimedia' keyboards
 

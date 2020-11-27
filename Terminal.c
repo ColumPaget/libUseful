@@ -645,6 +645,8 @@ case 'C':
   if (strcasecmp(str, "cut")==0) return(TKEY_CUT);
   if (strcasecmp(str, "clear")==0) return(TKEY_CLEAR);
   if (strcasecmp(str, "computer")==0) return(TKEY_MYCOMPUTER);
+  if (strcasecmp(str, "caps")==0) return(TKEY_CAPS_LOCK);
+  if (strcasecmp(str, "capslock")==0) return(TKEY_CAPS_LOCK);
 break;
 
 case 'd':
