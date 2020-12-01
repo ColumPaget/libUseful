@@ -19,6 +19,8 @@
 
 //Keycode definitions
 #define ESCAPE 0x1b
+#define TKEY_ESCAPE 0x1b
+#define TKEY_TAB '	'
 
 #ifndef TKEY_ENTER
 #define TKEY_ENTER  '\n'
@@ -80,7 +82,6 @@
 #ifndef TKEY_F14
 #define TKEY_F14 0x11E
 #endif
-
 
 #ifndef TKEY_UP
 #define TKEY_UP 0x141
