@@ -297,14 +297,17 @@
 
 
 
-
-//not used by libUseful, but assigned so other programs can use
-//these key definitions and mouse input without clashing
+// mouse button values returned by xterm mouse reporting
+#define MOUSE_BTN_0 0xFF00 //this means 'no button' or 'release'
 #define MOUSE_BTN_1 0xFF01
 #define MOUSE_BTN_2 0xFF02
 #define MOUSE_BTN_3 0xFF03
 #define MOUSE_BTN_4 0xFF04 //4 & 5 scrollwheel
 #define MOUSE_BTN_5 0xFF05
+
+//not used by libUseful, but assigned so other programs can use
+//these key definitions and mouse input without clashing
+
 #define MOUSE_BTN_6 0xFF06 //6 & 7 thumbbuttons
 #define MOUSE_BTN_7 0xFF07
 #define MOUSE_BTN_8 0xFF08 //from here on in is gaming mice!

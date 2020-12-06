@@ -110,6 +110,8 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TERMBAR_LOWER 256
 #define TERM_SAVEATTRIBS 512
 #define TERM_SAVE_ATTRIBS 512
+#define TERM_MOUSE        1024 //send xterm mouse events for buttons 1 2 and 3
+#define TERM_WHEELMOUSE   2048 //send xterm mouse events for buttons 1 2 and 3, and wheel buttons (4 and 5)
 #define TERM_ALIGN_CENTER 4096
 #define TERM_ALIGN_RIGHT  8192
 
@@ -131,6 +133,13 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 typedef enum {TERM_NORM, TERM_TEXT, TERM_COLOR, TERM_CLEAR_SCREEN, TERM_CLEAR_ENDLINE, TERM_CLEAR_STARTLINE, TERM_CLEAR_LINE, TERM_CURSOR_HOME, TERM_CURSOR_MOVE, TERM_CURSOR_SAVE, TERM_CURSOR_UNSAVE, TERM_CURSOR_HIDE, TERM_CURSOR_SHOW, TERM_SCROLL, TERM_SCROLL_REGION, TERM_UNICODE, TERM_UNICODE_NAME} ETerminalCommands;
 
 
+typedef struct
+{
+int flags;
+int button;
+int x;
+int y;
+} TMouseEvent;
 
 // pass in ANSI_ flags as listed above and get out an ANSI escape sequence 
 char *ANSICode(int Color, int BgColor, int Flags);
@@ -269,6 +278,8 @@ typedef int (*TKEY_CALLBACK_FUNC)(STREAM *Term, int Key);
 //set a callback function that will be passed all key presses
 void TerminalSetKeyCallback(STREAM *Term, TKEY_CALLBACK_FUNC Func);
 
+//returns a structure describing the last mouse event. Call this after recieving a MOUSE_BTN keypress event
+TMouseEvent *TerminalGetMouse(STREAM *Term);
 
 #ifdef __cplusplus
 }

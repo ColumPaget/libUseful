@@ -8,6 +8,7 @@
 
 static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
+TMouseEvent MouseEvent;
 
 
 static int TerminalInternalStrLen(const char **Str, int MaxLen)
@@ -590,6 +591,30 @@ const char *TerminalTranslateKeyCode(int key)
 		case TKEY_ALT_F12:
 				return("ALT_F12");
 				break;
+
+		case MOUSE_BTN_0:
+				return("MOUSE0");
+				break;
+
+		case MOUSE_BTN_1:
+				return("MOUSE1");
+				break;
+
+		case MOUSE_BTN_2:
+				return("MOUSE2");
+				break;
+
+		case MOUSE_BTN_3:
+				return("MOUSE3");
+				break;
+
+		case MOUSE_BTN_4:
+				return("MOUSE4");
+				break;
+
+		case MOUSE_BTN_5:
+				return("MOUSE5");
+				break;
     }
 
     KeyStr[0]='?';
@@ -850,13 +875,21 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
             if (strcasecmp(Name,"hidetext")==0) *Flags |= TERM_HIDETEXT;
             break;
 
+	case 'm':
+	case 'M':
+		if (strcasecmp(Name,"mouse")==0) *Flags=TERM_MOUSE;	
+	    break;
+
         case 'r':
         case 'R':
             if (strcasecmp(Name, "rawkeys") ==0) *Flags |= TERM_RAWKEYS;
             break;
 
         case 's':
+        case 'S':
             if (strcasecmp(Name,"stars")==0) *Flags |= TERM_SHOWSTARS;
+        		if (strcasecmp(Name,"saveattribs")==0) *Flags |= TERM_SAVEATTRIBS;
+        		if (strcasecmp(Name,"save")==0) *Flags |= TERM_SAVEATTRIBS;
             break;
 
 
@@ -865,6 +898,11 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
             if (strcasecmp(Name, "top") ==0) *Flags |= TERMBAR_UPPER;
             if (strcasecmp(Name,"textstars")==0) *Flags |= TERM_SHOWTEXTSTARS;
             break;
+
+				case 'w':
+				case 'W':
+					if (strcasecmp(Name,"wheelmouse")==0) *Flags=TERM_WHEELMOUSE;	
+					break;
         }
 
         ptr=GetNameValuePair(ptr, " ","=",&Name,&Value);
@@ -1724,6 +1762,34 @@ static int TerminalReadCSISeq(STREAM *S, char PrevChar)
 }
 
 
+int TerminalReadCSIMouse(STREAM *S)
+{
+char *Tempstr=NULL;
+int flags, val, keycode=0;
+
+MouseEvent.flags=STREAMReadChar(S)-32;
+MouseEvent.x=STREAMReadChar(S)-32;
+MouseEvent.y=STREAMReadChar(S)-32;
+
+switch (MouseEvent.flags)
+{
+	case 0: keycode=MOUSE_BTN_1; break;
+	case 1: keycode=MOUSE_BTN_2; break;
+	case 2: keycode=MOUSE_BTN_3; break;
+	case 3: keycode=MOUSE_BTN_0; break;
+	case 64: keycode=MOUSE_BTN_4; break;
+	case 65: keycode=MOUSE_BTN_5; break;
+}
+
+MouseEvent.button=keycode;
+
+Destroy(Tempstr);
+
+return(keycode);
+}
+
+
+
 
 int TerminalReadChar(STREAM *S)
 {
@@ -1773,6 +1839,9 @@ int TerminalReadChar(STREAM *S)
                 break;
             case 'H':
                 return(TKEY_HOME);
+                break;
+						case 'M':
+								return(TerminalReadCSIMouse(S));
                 break;
             case 'P':
                 return(TKEY_PAUSE);
@@ -1985,6 +2054,8 @@ int TerminalInit(STREAM *S, int Flags)
         if (ttyflags) TTYConfig(S->in_fd, 0, ttyflags);
     }
     TerminalBarsInit(S);
+    if (Flags & TERM_WHEELMOUSE) STREAMWriteLine("\x1b[?1000h", S);
+		else if (Flags & TERM_MOUSE) STREAMWriteLine("\x1b[?9h", S);
 
     Destroy(Tempstr);
     return(TRUE);
@@ -2013,6 +2084,8 @@ const char *ptr;
 
     if ((top > 0) || (bottom > 0)) STREAMWriteLine("\x1b[m\x1b[r", S);
 
+    STREAMWriteLine("\x1b[?9l", S);
+    STREAMWriteLine("\x1b[?1000l", S);
 		STREAMFlush(S);
     if (isatty(S->in_fd)) TTYReset(S->in_fd);
 }
@@ -2024,4 +2097,7 @@ void TerminalSetKeyCallback(STREAM *Term, TKEY_CALLBACK_FUNC Func)
 }
 
 
-
+TMouseEvent *TerminalGetMouse(STREAM *Term)
+{
+return(&MouseEvent);
+}
