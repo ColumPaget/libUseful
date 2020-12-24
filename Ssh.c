@@ -12,7 +12,6 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     int val, i, IsTunnel=FALSE;
 
 
-
 //If we are using the .ssh/config connection-config system then there won't be a username, and 'Host' will
 //actually be a configuration name that names a config section with all details
     if (StrValid(User)) Tempstr=MCopyStr(Tempstr,"ssh -2 -T ",User,"@",Host, " ", NULL );
@@ -72,6 +71,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
 
 		TTYConfigs=CatStr(TTYConfigs, " noshell");
 
+		printf("CMD: %s\n", Tempstr);
     S=STREAMSpawnCommand(Tempstr, TTYConfigs);
     if (S)
     {
@@ -127,7 +127,9 @@ STREAM *S;
 		if (iPath)
 		{
 		ptr=iPath;
-		if (*ptr=='/') ptr++;
+		if (strncmp(ptr, "//", 2)==0) ptr+=2;
+		else if (strncmp(ptr, "/./", 3)==0) ptr+=3;
+		else if (strncmp(ptr, "/~/", 3)==0) ptr+=3;
 		}
 		else ptr="";
 
@@ -135,18 +137,18 @@ STREAM *S;
     if (Flags & SF_RDONLY)
     {
         Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
-        Path=MCopyStr(Path, "cat ", Tempstr, "; exit", NULL);
+        Path=MCopyStr(Path, "cat ", Tempstr, NULL);
     }
     else if (Flags & SF_WRONLY)
     {
         Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
-        Path=MCopyStr(Path, "cat - > ", Tempstr, "; exit", NULL);
+        Path=MCopyStr(Path, "cat - > ", Tempstr, NULL);
 				SshFlags |= SSH_CANON_PTY;
     }
     else if (Flags & STREAM_APPEND)
     {
         Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
-        Path=MCopyStr(Path, "cat - >> ", Tempstr, "; exit", NULL);
+        Path=MCopyStr(Path, "cat - >> ", Tempstr, NULL);
 				SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
     }
 		else Path=CopyStr(Path, ptr);
