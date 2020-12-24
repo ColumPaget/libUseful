@@ -722,19 +722,21 @@ int result, val, RetVal=FALSE;
 char *Tempstr=NULL;
 
 val=S->Timeout;
-STREAMSetTimeout(S, 1);
+STREAMSetTimeout(S, 5);
 
-result=STREAMCountWaitingBytes(S);
-if (result > 1)
+//we must not read any bytes into our stream, or else e'll be stealing them
+//from ssl, which only has access to the file descriptor
+result=FDSelect(S->in_fd, SELECT_READ, NULL);
+if (result > 0)
 {
    Tempstr=SetStrLen(Tempstr,255);
+	 //cannot use STREAMPeek here, as bytes must stay in file descriptor for ssl
    result=recv(S->in_fd, Tempstr, 2, MSG_PEEK);
-   if (result >1)
+   if (result > 1)
    {
      if (memcmp(Tempstr, "\x16\x03",2)==0)
      {
      	//it's SSL/TLS
-			DoSSLServerNegotiation(S, 0);
 			RetVal=TRUE;
      }
    }

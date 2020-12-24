@@ -896,7 +896,7 @@ STREAM *STREAMServerAccept(STREAM *Serv)
     if (type==STREAM_TYPE_TCP_ACCEPT)
     {
     	//if TLS autodetection enabled, perform it now
-    	if (Serv->Flags & SF_TLS_AUTO) OpenSSLAutoDetect(S);
+    	if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, 0);
     }
 
     DestroyString(Tempstr);
