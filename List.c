@@ -471,11 +471,11 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
 		if (Head)
 		{
+			while (Node)
+			{
 	    if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
 	    else result=strcasecmp(Node->Tag,Name);
 	
-			while (Node)
-			{
 		    if (
 	 	       (result==0) &&
 	 	       ( (Type==ANYTYPE) || (Type==Node->ItemType) )
