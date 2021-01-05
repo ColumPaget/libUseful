@@ -217,9 +217,9 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
     break;
 
     case ENCODE_QUOTED_HTTP:
-	len=DecodeQuoted(Return,Text,'%');
+			*Return=HTTPUnQuote(*Return, Text);
+			len=StrLen(*Return);
     break;
-
 
     case ENCODE_BASE64:
         len=Radix64tobits(*Return,Text,BASE64_CHARS,'=');

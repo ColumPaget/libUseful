@@ -85,7 +85,7 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
 
 //End of Parse TagName. Strip any '/'
     wptr=*TagType;
-    if ((len > 0) && (wptr[len-1]=='/')) wptr[len-1]='\0';
+    if ((len > 0) && (wptr[len-1]=='/')) len--;
     wptr[len]='\0';
 		StrLenCacheAdd(*TagType, len);
 
@@ -142,7 +142,7 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
 
 //End of Parse TagData. Strip any '/'
     wptr=*TagData;
-    if ((len > 0) && (wptr[len-1]=='/')) wptr[len-1]='\0';
+    if ((len > 0) && (wptr[len-1]=='/')) len--;
     wptr[len]='\0';
 		StrLenCacheAdd(*TagData, len);
 
