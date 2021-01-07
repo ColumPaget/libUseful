@@ -423,6 +423,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         }
         else if (strcasecmp(Token, "hostauth")==0) Info->AuthFlags |= HTTP_AUTH_HOST;
         else if (strcasecmp(Token, "http1.0")==0) Info->Flags |= HTTP_VER1_0;
+        else if (strcasecmp(Token, "method")==0)   Info->Method=CopyStr(Info->Method, Value);
         else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Value);
         else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Value);
         else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Value);

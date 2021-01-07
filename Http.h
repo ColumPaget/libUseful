@@ -54,6 +54,7 @@ H    HEAD  method
 
 after this initial argument come name-value pairs with the following values
 
+method=<method>  //override method (GET/POST etc) with any default value
 oauth=<oauth config to use>
 content-type=<content type>
 content-length=<content length>
