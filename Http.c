@@ -129,10 +129,10 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
         }
 
 
-        if (ptr) 
+        if (ptr)
         {
-					StrTrunc(Chunk->Buffer, ptr - Chunk->Buffer);
-          ptr++;
+            StrTrunc(Chunk->Buffer, ptr - Chunk->Buffer);
+            ptr++;
         }
         else return(0);
 
@@ -238,7 +238,7 @@ char *HTTPUnQuote(char *RetBuff, const char *Str)
 
     }
 
-		StrLenCacheAdd(RetStr, olen);
+    StrLenCacheAdd(RetStr, olen);
 
     DestroyString(Token);
     return(RetStr);
@@ -258,21 +258,21 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
     {
         if (strchr(CharList,*ptr))
         {
-					// replacing ' ' with '+' should work, but some servers seem to no longer support it
-					/*
-						if (*ptr==' ')
-						{
+            // replacing ' ' with '+' should work, but some servers seem to no longer support it
+            /*
+            	if (*ptr==' ')
+            	{
             RetStr=AddCharToBuffer(RetStr,olen,'+');
-						olen++;
-						}
-						else
-					*/
-						{
-            Token=FormatStr(Token,"%%%02X",*ptr);
-						StrLenCacheAdd(RetStr, olen);
-            RetStr=CatStr(RetStr,Token);
-            olen+=StrLen(Token);
-						}
+            	olen++;
+            	}
+            	else
+            */
+            {
+                Token=FormatStr(Token,"%%%02X",*ptr);
+                StrLenCacheAdd(RetStr, olen);
+                RetStr=CatStr(RetStr,Token);
+                olen+=StrLen(Token);
+            }
         }
         else
         {
@@ -283,7 +283,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
 
 
     RetStr[olen]='\0';
-		StrLenCacheAdd(RetStr, olen);
+    StrLenCacheAdd(RetStr, olen);
 
     DestroyString(Token);
     return(RetStr);
@@ -293,7 +293,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
 
 char *HTTPQuote(char *RetBuff, const char *Str)
 {
-return(HTTPQuoteChars(RetBuff, Str, " \t\r\n\"#%()[]{}?&!,+':;/"));
+    return(HTTPQuoteChars(RetBuff, Str, " \t\r\n\"#%()[]{}?&!,+':;/"));
 }
 
 
@@ -433,12 +433,12 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
 
-		if (Info->PostContentLength > 0) Info->Doc=MCatStr(Info->Doc, "?", Args, NULL);
-		else HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
+    if (Info->PostContentLength > 0) Info->Doc=MCatStr(Info->Doc, "?", Args, NULL);
+    else HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
 
     if (StrValid(Pass)) CredsStoreAdd(Info->Host, User, Pass);
 
-		if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
+    if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
 
     DestroyString(User);
     DestroyString(Pass);
@@ -589,23 +589,23 @@ static int HTTPHandleWWWAuthenticate(const char *Line, int *Type, char **Config)
 
 static void HTTPParseLocationHeader(HTTPInfoStruct *Info, const char *Header)
 {
-   if (
-         (strncasecmp(Header,"http:",5)==0) ||
-         (strncasecmp(Header,"https:",6)==0)
-      )
-      {
-         Info->RedirectPath=HTTPQuoteChars(Info->RedirectPath, Header, " ");
-      }
-	 		else if (strncmp(Header, "//",2)==0)
-			{
+    if (
+        (strncasecmp(Header,"http:",5)==0) ||
+        (strncasecmp(Header,"https:",6)==0)
+    )
+    {
+        Info->RedirectPath=HTTPQuoteChars(Info->RedirectPath, Header, " ");
+    }
+    else if (strncmp(Header, "//",2)==0)
+    {
         if (Info->Flags & HTTP_SSL) Info->RedirectPath=MCopyStr(Info->RedirectPath,"https:",Header,NULL);
-         else Info->RedirectPath=MCopyStr(Info->RedirectPath,"http:",Header,NULL);
-			}
-      else
-      {
-         if (Info->Flags & HTTP_SSL) Info->RedirectPath=FormatStr(Info->RedirectPath,"https://%s:%d%s",Info->Host,Info->Port,Header);
-         else Info->RedirectPath=FormatStr(Info->RedirectPath,"http://%s:%d%s",Info->Host,Info->Port,Header);
-      }
+        else Info->RedirectPath=MCopyStr(Info->RedirectPath,"http:",Header,NULL);
+    }
+    else
+    {
+        if (Info->Flags & HTTP_SSL) Info->RedirectPath=FormatStr(Info->RedirectPath,"https://%s:%d%s",Info->Host,Info->Port,Header);
+        else Info->RedirectPath=FormatStr(Info->RedirectPath,"http://%s:%d%s",Info->Host,Info->Port,Header);
+    }
 
 }
 
@@ -776,32 +776,32 @@ static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruc
 
     if (! passlen) passlen=CredsStoreLookup(Info->Host, Info->UserName, &p_Password);
 
-		if (passlen)
-		{
-    if (Info->AuthFlags & HTTP_AUTH_DIGEST)
+    if (passlen)
     {
-        Tempstr=HTTPDigest(Tempstr, Info->Method, Info->UserName, p_Password, Realm, Info->Doc, Nonce);
-        SendStr=MCatStr(SendStr,AuthHeader,": Digest ", Tempstr, "\r\n",NULL);
+        if (Info->AuthFlags & HTTP_AUTH_DIGEST)
+        {
+            Tempstr=HTTPDigest(Tempstr, Info->Method, Info->UserName, p_Password, Realm, Info->Doc, Nonce);
+            SendStr=MCatStr(SendStr,AuthHeader,": Digest ", Tempstr, "\r\n",NULL);
+        }
+        else
+        {
+            Tempstr=MCopyStr(Tempstr,Info->UserName,":",NULL);
+            //Beware! Password will not be null terminated
+            Tempstr=CatStrLen(Tempstr,p_Password,passlen);
+            len=strlen(Tempstr);
+
+            //We should now have Logon:Password
+            Nonce=SetStrLen(Nonce,len * 2);
+
+            to64frombits((unsigned char *) Nonce, (unsigned char *) Tempstr, len);
+            SendStr=MCatStr(SendStr,AuthHeader,": Basic ",Nonce,"\r\n",NULL);
+
+            //wipe Tempstr, because it held password for a while
+            xmemset(Tempstr,0,len);
+        }
+
+        Info->AuthFlags |= HTTP_AUTH_SENT;
     }
-    else
-    {
-        Tempstr=MCopyStr(Tempstr,Info->UserName,":",NULL);
-        //Beware! Password will not be null terminated
-        Tempstr=CatStrLen(Tempstr,p_Password,passlen);
-        len=strlen(Tempstr);
-
-        //We should now have Logon:Password
-        Nonce=SetStrLen(Nonce,len * 2);
-
-        to64frombits((unsigned char *) Nonce, (unsigned char *) Tempstr, len);
-        SendStr=MCatStr(SendStr,AuthHeader,": Basic ",Nonce,"\r\n",NULL);
-
-        //wipe Tempstr, because it held password for a while
-        xmemset(Tempstr,0,len);
-    }
-
-    Info->AuthFlags |= HTTP_AUTH_SENT;
-		}
 
     DestroyString(Tempstr);
     DestroyString(Logon);
@@ -835,7 +835,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=CatStr(SendStr,Tempstr);
     }
 
-		//probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
+    //probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
     if ((strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0) || (strcasecmp(Info->Method,"PATCH")==0))
     {
         Tempstr=FormatStr(Tempstr,"Content-Length: %d\r\n",Info->PostContentLength);
@@ -1090,7 +1090,7 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     STREAM *S;
 
 
-		//proto in here will not be http/https but tcp/ssl/tls
+    //proto in here will not be http/https but tcp/ssl/tls
     Proto=CopyStr(Proto,"tcp");
     if (Info->Flags & HTTP_PROXY)
     {
@@ -1116,7 +1116,7 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     if (StrValid(Info->ConnectionChain)) Tempstr=FormatStr(Tempstr,"%s|%s:%s:%d/",Info->ConnectionChain,Proto,Host,Port);
     else Tempstr=FormatStr(Tempstr,"%s:%s:%d/",Proto,Host,Port);
 
-		S=STREAMOpen(Tempstr, "");
+    S=STREAMOpen(Tempstr, "");
     if (S)
     {
         S->Type=STREAM_TYPE_HTTP;
@@ -1305,14 +1305,24 @@ STREAM *HTTPWithConfig(const char *URL, const char *Config)
     {
         for (cptr=Token; *cptr !='\0'; cptr++)
         {
-						switch(*cptr)
-						{
-            case 'w': p_Method="POST"; break;
-            case 'W': p_Method="PUT"; break;
-            case 'P': p_Method="PATCH"; break;
-            case 'D': p_Method="DELETE"; break;
-            case 'H': p_Method="HEAD"; break;
-						}
+            switch(*cptr)
+            {
+            case 'w':
+                p_Method="POST";
+                break;
+            case 'W':
+                p_Method="PUT";
+                break;
+            case 'P':
+                p_Method="PATCH";
+                break;
+            case 'D':
+                p_Method="DELETE";
+                break;
+            case 'H':
+                p_Method="HEAD";
+                break;
+            }
         }
     }
 
@@ -1330,17 +1340,17 @@ STREAM *HTTPWithConfig(const char *URL, const char *Config)
 int HTTPDownload(char *URL, STREAM *S)
 {
     STREAM *Con;
-		const char *ptr;
+    const char *ptr;
 
     Con=HTTPGet(URL);
     if (! Con) return(-1);
 
-		ptr=STREAMGetValue(Con, "HTTP:ResponseCode");
-		if ((! ptr) || (*ptr !='2'))
-		{
-			STREAMClose(Con);
-			return(-1);
-		}
+    ptr=STREAMGetValue(Con, "HTTP:ResponseCode");
+    if ((! ptr) || (*ptr !='2'))
+    {
+        STREAMClose(Con);
+        return(-1);
+    }
     return(STREAMSendFile(Con, S, 0, SENDFILE_LOOP));
 }
 

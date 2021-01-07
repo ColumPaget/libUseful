@@ -118,7 +118,7 @@ char *SecureMMap(const char *Path)
     if (fd)
     {
         stat(Path, &FStat);
-        addr=mmap(NULL, FStat.st_size, PROT_NONE, MAP_PRIVATE , fd, 0);
+        addr=mmap(NULL, FStat.st_size, PROT_NONE, MAP_PRIVATE, fd, 0);
         close(fd);
     }
 

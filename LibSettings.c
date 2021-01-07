@@ -64,11 +64,11 @@ int LibUsefulGetBool(const char *Name)
 
 int LibUsefulGetInteger(const char *Name)
 {
-const char *ptr;
+    const char *ptr;
 
-ptr=LibUsefulGetValue(Name);
-if (StrValid(ptr)) return(atoi(ptr));
-return(0);
+    ptr=LibUsefulGetValue(Name);
+    if (StrValid(ptr)) return(atoi(ptr));
+    return(0);
 }
 
 

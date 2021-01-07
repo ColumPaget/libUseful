@@ -149,46 +149,46 @@ char *UnicodeStr(char *RetStr, int Code)
 
 char *UnicodeStrFromName(char *RetStr, const char *Name)
 {
-STREAM *S;
-char *Tempstr=NULL, *Token=NULL;
-const char *ptr;
-ListNode *Node;
-int code=0;
+    STREAM *S;
+    char *Tempstr=NULL, *Token=NULL;
+    const char *ptr;
+    ListNode *Node;
+    int code=0;
 
 
-if (! UnicodeNamesCache) UnicodeNamesCache=ListCreate();
-Node=ListFindNamedItem(UnicodeNamesCache, Name);
-if (Node)
-{
-	code=strtol((const char *) Node->Item, NULL, 16);
-	return(UnicodeStr(RetStr, code));
-}
+    if (! UnicodeNamesCache) UnicodeNamesCache=ListCreate();
+    Node=ListFindNamedItem(UnicodeNamesCache, Name);
+    if (Node)
+    {
+        code=strtol((const char *) Node->Item, NULL, 16);
+        return(UnicodeStr(RetStr, code));
+    }
 
-Tempstr=CopyStr(Tempstr, LibUsefulGetValue("Unicode:NamesFile"));
-if (StrValid(Tempstr)) Tempstr=CopyStr(Tempstr, getenv("UNICODE_NAMES_FILE"));
-if (! StrValid(Tempstr)) Tempstr=CopyStr(Tempstr, "/etc/unicode-names.conf");
+    Tempstr=CopyStr(Tempstr, LibUsefulGetValue("Unicode:NamesFile"));
+    if (StrValid(Tempstr)) Tempstr=CopyStr(Tempstr, getenv("UNICODE_NAMES_FILE"));
+    if (! StrValid(Tempstr)) Tempstr=CopyStr(Tempstr, "/etc/unicode-names.conf");
 
-S=STREAMOpen(Tempstr, "r");
-if (S)
-{
-Tempstr=STREAMReadLine(Tempstr, S);
-while (Tempstr)
-{
-	StripTrailingWhitespace(Tempstr);
-	ptr=GetToken(Tempstr, "\\S", &Token, 0);
-	if (strcasecmp(Token, Name)==0)
-	{
-		SetVar(UnicodeNamesCache, Name, ptr);
-		code=strtol(ptr, NULL, 16);
-		break;
-	}
-	Tempstr=STREAMReadLine(Tempstr, S);
-}
-STREAMClose(S);
-}
+    S=STREAMOpen(Tempstr, "r");
+    if (S)
+    {
+        Tempstr=STREAMReadLine(Tempstr, S);
+        while (Tempstr)
+        {
+            StripTrailingWhitespace(Tempstr);
+            ptr=GetToken(Tempstr, "\\S", &Token, 0);
+            if (strcasecmp(Token, Name)==0)
+            {
+                SetVar(UnicodeNamesCache, Name, ptr);
+                code=strtol(ptr, NULL, 16);
+                break;
+            }
+            Tempstr=STREAMReadLine(Tempstr, S);
+        }
+        STREAMClose(S);
+    }
 
-Destroy(Tempstr);
-Destroy(Token);
+    Destroy(Tempstr);
+    Destroy(Token);
 
-return(UnicodeStr(RetStr, code));
+    return(UnicodeStr(RetStr, code));
 }

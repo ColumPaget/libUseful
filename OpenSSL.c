@@ -22,23 +22,41 @@ static DH *CachedDH=NULL;
 
 void HandleSSLError(int err)
 {
-switch (err)
-{
-case SSL_ERROR_NONE: printf("none\n");break;
-case SSL_ERROR_ZERO_RETURN: printf("zero\n");break;
-case SSL_ERROR_WANT_READ: printf("wr\n");break;
-case SSL_ERROR_WANT_WRITE: printf("ww\n");break;
-case SSL_ERROR_WANT_CONNECT: printf("connect\n");break;
-case SSL_ERROR_WANT_ACCEPT: printf("accept\n");break;
-case SSL_ERROR_WANT_X509_LOOKUP: ("lookup\n");break;
-/*
-case SSL_ERROR_WANT_ASYNC: printf("async\n");break;
-case SSL_ERROR_WANT_ASYNC_JOB: printf("job\n");break;
-case SSL_ERROR_WANT_CLIENT_HELLO_CB: printf("cb\n");break;
-*/
-case SSL_ERROR_SYSCALL: printf("syscall\n");break;
-case SSL_ERROR_SSL: ("ssl\n");break;
-}
+    switch (err)
+    {
+    case SSL_ERROR_NONE:
+        printf("none\n");
+        break;
+    case SSL_ERROR_ZERO_RETURN:
+        printf("zero\n");
+        break;
+    case SSL_ERROR_WANT_READ:
+        printf("wr\n");
+        break;
+    case SSL_ERROR_WANT_WRITE:
+        printf("ww\n");
+        break;
+    case SSL_ERROR_WANT_CONNECT:
+        printf("connect\n");
+        break;
+    case SSL_ERROR_WANT_ACCEPT:
+        printf("accept\n");
+        break;
+    case SSL_ERROR_WANT_X509_LOOKUP:
+        ("lookup\n");
+        break;
+    /*
+    case SSL_ERROR_WANT_ASYNC: printf("async\n");break;
+    case SSL_ERROR_WANT_ASYNC_JOB: printf("job\n");break;
+    case SSL_ERROR_WANT_CLIENT_HELLO_CB: printf("cb\n");break;
+    */
+    case SSL_ERROR_SYSCALL:
+        printf("syscall\n");
+        break;
+    case SSL_ERROR_SSL:
+        ("ssl\n");
+        break;
+    }
 }
 
 void OpenSSLReseedRandom()
@@ -495,28 +513,28 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             ptr=GetToken(ptr,":",&Token,0);
             SSL_set_tlsext_host_name(ssl, Token);
 #endif
-						/*
-						if (S->Timeout > 0) 
-						{
-								//convert centisecs to seconds
-								val=S->Timeout / 100;
-								if (val==0) val++;
-								SSL_CTX_set_timeout (ctx, val);
-						}
-						*/
+            /*
+            if (S->Timeout > 0)
+            {
+            		//convert centisecs to seconds
+            		val=S->Timeout / 100;
+            		if (val==0) val++;
+            		SSL_CTX_set_timeout (ctx, val);
+            }
+            */
 
             result=SSL_connect(ssl);
             for (i=0; i < 3; i ++)
             {
-								//if we succeeded don't keep looping
-								if (result > -1) break;
+                //if we succeeded don't keep looping
+                if (result > -1) break;
                 result=SSL_get_error(ssl, result);
                 if ( (result != SSL_ERROR_WANT_READ) && (result != SSL_ERROR_WANT_WRITE) && (result != SSL_ERROR_WANT_CONNECT)) break;
                 usleep(2000);
                 result=SSL_connect(ssl);
             }
 
-						result=SSL_do_handshake(ssl);
+            result=SSL_do_handshake(ssl);
 
             S->State |= SS_SSL;
 
@@ -628,10 +646,10 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                 OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE|SSL_OP_CIPHER_SERVER_PREFERENCE);
 
                 SSL_set_fd(ssl,S->in_fd);
-              
- 		            STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ctx);
-   			        STREAMSetItem(S,"LIBUSEFUL-SSL:OBJ",(void *) ssl);
- 
+
+                STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ctx);
+                STREAMSetItem(S,"LIBUSEFUL-SSL:OBJ",(void *) ssl);
+
                 ptr=LibUsefulGetValue("SSL:PermittedCiphers");
                 if (StrValid(ptr)) SSL_set_cipher_list(ssl, ptr);
                 SSL_set_accept_state(ssl);
@@ -694,23 +712,23 @@ int OpenSSLIsPeerAuth(STREAM *S)
 
 void OpenSSLClose(STREAM *S)
 {
-ListNode *Node;
+    ListNode *Node;
 
 #ifdef HAVE_LIBSSL
 
-Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
-if (Node) 
-{
-	SSL_free((SSL *) Node->Item);
-	ListDeleteNode(Node);
-}
+    Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
+    if (Node)
+    {
+        SSL_free((SSL *) Node->Item);
+        ListDeleteNode(Node);
+    }
 
-Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:CTX");
-if (Node) 
-{
-	SSL_CTX_free((SSL_CTX *) Node->Item);
-	ListDeleteNode(Node);
-}
+    Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:CTX");
+    if (Node)
+    {
+        SSL_CTX_free((SSL_CTX *) Node->Item);
+        ListDeleteNode(Node);
+    }
 #endif
 }
 
@@ -718,32 +736,32 @@ if (Node)
 
 int OpenSSLAutoDetect(STREAM *S)
 {
-int result, val, RetVal=FALSE;
-char *Tempstr=NULL;
+    int result, val, RetVal=FALSE;
+    char *Tempstr=NULL;
 
-val=S->Timeout;
-STREAMSetTimeout(S, 5);
+    val=S->Timeout;
+    STREAMSetTimeout(S, 5);
 
 //we must not read any bytes into our stream, or else e'll be stealing them
 //from ssl, which only has access to the file descriptor
-result=FDSelect(S->in_fd, SELECT_READ, NULL);
-if (result > 0)
-{
-   Tempstr=SetStrLen(Tempstr,255);
-	 //cannot use STREAMPeek here, as bytes must stay in file descriptor for ssl
-   result=recv(S->in_fd, Tempstr, 2, MSG_PEEK);
-   if (result > 1)
-   {
-     if (memcmp(Tempstr, "\x16\x03",2)==0)
-     {
-     	//it's SSL/TLS
-			RetVal=TRUE;
-     }
-   }
-}
-STREAMSetTimeout(S, val);
+    result=FDSelect(S->in_fd, SELECT_READ, NULL);
+    if (result > 0)
+    {
+        Tempstr=SetStrLen(Tempstr,255);
+        //cannot use STREAMPeek here, as bytes must stay in file descriptor for ssl
+        result=recv(S->in_fd, Tempstr, 2, MSG_PEEK);
+        if (result > 1)
+        {
+            if (memcmp(Tempstr, "\x16\x03",2)==0)
+            {
+                //it's SSL/TLS
+                RetVal=TRUE;
+            }
+        }
+    }
+    STREAMSetTimeout(S, val);
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 
-return(RetVal);
+    return(RetVal);
 }

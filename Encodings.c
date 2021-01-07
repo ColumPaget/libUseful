@@ -173,30 +173,30 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
 
 int DecodeQuoted(char **Return, const char *Text, char QuoteChar)
 {
-const char *ptr;
-char Hex[3];
+    const char *ptr;
+    char Hex[3];
 
-for (ptr=Text; *ptr != '\0'; ptr++)
-{
-	if (*ptr==QuoteChar)
-	{
-	ptr++;
-	if (*ptr=='\0') break;
-	else if (*ptr =='\r') ptr++;
+    for (ptr=Text; *ptr != '\0'; ptr++)
+    {
+        if (*ptr==QuoteChar)
+        {
+            ptr++;
+            if (*ptr=='\0') break;
+            else if (*ptr =='\r') ptr++;
 
-	if (*ptr=='\0') break;
-	else if (*ptr !='\n') 
-	{
-	strncpy(Hex, ptr, 2);
-	ptr++;
-	if (*ptr=='\0') break;
-	*Return=AddCharToStr(*Return, strtol(Hex, NULL, 16));
-	}
-	}
-	else *Return=AddCharToStr(*Return, *ptr);
-}
+            if (*ptr=='\0') break;
+            else if (*ptr !='\n')
+            {
+                strncpy(Hex, ptr, 2);
+                ptr++;
+                if (*ptr=='\0') break;
+                *Return=AddCharToStr(*Return, strtol(Hex, NULL, 16));
+            }
+        }
+        else *Return=AddCharToStr(*Return, *ptr);
+    }
 
-return(StrLen(*Return));
+    return(StrLen(*Return));
 }
 
 
@@ -206,20 +206,20 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
     const char *ptr, *end;
 
     len=StrLen(Text);
-		//for all these encodings the result will be no bigger than the input
+    //for all these encodings the result will be no bigger than the input
     *Return=SetStrLen(*Return,len);
 
     memset(*Return,0,len);
     switch (Encoding)
     {
     case ENCODE_QUOTED_MIME:
-	len=DecodeQuoted(Return,Text,'=');
-    break;
+        len=DecodeQuoted(Return,Text,'=');
+        break;
 
     case ENCODE_QUOTED_HTTP:
-			*Return=HTTPUnQuote(*Return, Text);
-			len=StrLen(*Return);
-    break;
+        *Return=HTTPUnQuote(*Return, Text);
+        len=StrLen(*Return);
+        break;
 
     case ENCODE_BASE64:
         len=Radix64tobits(*Return,Text,BASE64_CHARS,'=');
@@ -301,11 +301,11 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
 
 char *DecodeToText(char *RetStr, const char *Text, int Encoding)
 {
-int len;
+    int len;
 
-	len=DecodeBytes(&RetStr, Text, Encoding);
-	RetStr[len]='\0';
-	StrLenCacheAdd(RetStr, len);
+    len=DecodeBytes(&RetStr, Text, Encoding);
+    RetStr[len]='\0';
+    StrLenCacheAdd(RetStr, len);
 
-  return(RetStr);
+    return(RetStr);
 }

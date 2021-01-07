@@ -148,7 +148,7 @@ long TimezoneOffset(const char *TimeZone)
 void MillisecsToTV(int millisecs, struct timeval *tv)
 {
     tv->tv_sec=millisecs / 1000;
-		tv->tv_usec=(millisecs - (tv->tv_sec * 1000)) * 1000;
+    tv->tv_usec=(millisecs - (tv->tv_sec * 1000)) * 1000;
 }
 
 
@@ -164,13 +164,13 @@ void SetTimeout(int timeout, SIGNAL_HANDLER_FUNC Handler)
 
     //SA_RESETHAND is the 'official' flag for the property of firing once
     //but older systems likely use SA_ONESHOT
-    #ifdef SA_RESETHAND
+#ifdef SA_RESETHAND
     SigAct.sa_flags=SA_RESETHAND;
-    #else
-      #ifdef SA_ONESHOT
-        SigAct.sa_flags=SA_ONESHOT;
-      #endif
-    #endif
+#else
+#ifdef SA_ONESHOT
+    SigAct.sa_flags=SA_ONESHOT;
+#endif
+#endif
 //SigAct.sa_restorer=NULL;
 
     sigaction(SIGALRM,&SigAct,NULL);

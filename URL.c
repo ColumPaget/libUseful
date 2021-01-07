@@ -17,7 +17,7 @@ char *ParsePort(char *Str, char **Port)
     if (ptr)
     {
         if (Port) *Port=CopyStr(*Port,ptr+1);
-				StrTrunc(Str, ptr-Str);
+        StrTrunc(Str, ptr-Str);
     }
 
     return(ptr);
@@ -54,7 +54,7 @@ const char *ParseHostDetails(const char *Data,char **Host,char **Port,char **Use
     {
         if (*Token=='[')
         {
-						StrTruncChar(Token,']');
+            StrTruncChar(Token,']');
             tptr=Token+1;
         }
         else tptr=Token;
@@ -99,10 +99,10 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
     }
     else ptr=URL;
 
-	// either we've cut out a protocol, or we haven't. If not the next thing is going to be the hostname
-	// maybe there we be a path coming after '/', even if '/' is absent this GetToken will return the Host part
-   ptr=GetToken(ptr,"/",&Token,0);
-   ParseHostDetails(Token,Host,Port,User,Password);
+    // either we've cut out a protocol, or we haven't. If not the next thing is going to be the hostname
+    // maybe there we be a path coming after '/', even if '/' is absent this GetToken will return the Host part
+    ptr=GetToken(ptr,"/",&Token,0);
+    ParseHostDetails(Token,Host,Port,User,Password);
 
     //while (ptr && (*ptr=='/')) ptr++;
 
@@ -118,9 +118,9 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
             {
                 aptr=strchr(*Path,'?');
                 if (! aptr) aptr=strchr(*Path,'#');
-                if (aptr) 
+                if (aptr)
                 {
-										StrTrunc(*Path, aptr-*Path);
+                    StrTrunc(*Path, aptr-*Path);
                     aptr++;
                     *Args=CopyStr(*Args,aptr);
                 }
