@@ -364,14 +364,17 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 
 STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
 {
-char *Token=NULL;
+char *Token=NULL, *ExecPath=NULL;
+STREAM *S=NULL;
 
 		GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);
-		if (access(Token, X_OK) !=0)
-		{
-			Destroy(Token);
-			return(NULL);
-		}
+    ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
 		Destroy(Token);
-    return(STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config));
+
+		if (StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
+
+		Destroy(ExecPath);
+		Destroy(Token);
+
+		return(S);
 }
