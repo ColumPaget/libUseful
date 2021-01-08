@@ -406,9 +406,10 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
     if (strcasecmp(Method,"POST")==0) ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, &Args);
     else ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, NULL);
 
+		if (! StrValid(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
+
     if (StrValid(Token)) Info->Port=atoi(Token);
 
-    if (StrValid(User) || StrValid(Pass)) Info->UserName=CopyStr(Info->UserName, User);
 
     if (StrValid(Proto) && (strcmp(Proto,"https")==0)) Info->Flags |= HTTP_SSL;
 
@@ -426,9 +427,10 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         else if (strcasecmp(Token, "method")==0)   Info->Method=CopyStr(Info->Method, Value);
         else if (strcasecmp(Token, "content-type")==0)   Info->PostContentType=CopyStr(Info->PostContentType, Value);
         else if (strcasecmp(Token, "content-length")==0) Info->PostContentLength=atoi(Value);
-        else if (strcasecmp(Token, "user")==0) Info->UserName=CopyStr(Info->UserName, Value);
         else if (strcasecmp(Token, "useragent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Value);
         else if (strcasecmp(Token, "user-agent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Value);
+        else if (strcasecmp(Token, "user")==0) User=CopyStr(User, Value);
+        else if (strcasecmp(Token, "password")==0) Pass=CopyStr(Pass, Value);
         else SetVar(Info->CustomSendHeaders, Token, Value);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
@@ -436,7 +438,12 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
     if (Info->PostContentLength > 0) Info->Doc=MCatStr(Info->Doc, "?", Args, NULL);
     else HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
 
-    if (StrValid(Pass)) CredsStoreAdd(Info->Host, User, Pass);
+    if (StrValid(User) || StrValid(Pass)) Info->UserName=CopyStr(Info->UserName, User);
+    if (StrValid(Pass))
+		{
+      Info->AuthFlags |= HTTP_AUTH_BASIC;
+			CredsStoreAdd(Info->Host, User, Pass);
+		}
 
     if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
 
@@ -848,13 +855,15 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=CatStr(SendStr,Tempstr);
     }
 
+
     /* If we have authorisation details then send them */
     if (Info->AuthFlags & HTTP_AUTH_OAUTH)
     {
         Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, FALSE), NULL);
     }
-    if (StrValid(Info->Authorization)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
-    else if (Info->AuthFlags & HTTP_AUTH_HOST) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Host);
+    else if (StrValid(Info->Authorization)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
+    else if (Info->AuthFlags & (HTTP_AUTH_HOST | HTTP_AUTH_BASIC | HTTP_AUTH_DIGEST)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Host);
+
     if (Info->ProxyAuthorization) SendStr=HTTPHeadersAppendAuth(SendStr, "Proxy-Authorization", Info, Info->ProxyAuthorization);
 
     if (Info->Flags & HTTP_NOCACHE) SendStr=CatStr(SendStr,"Pragma: no-cache\r\nCache-control: no-cache\r\n");
