@@ -369,7 +369,6 @@ STREAM *S=NULL;
 
 		GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);
     ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
-		Destroy(Token);
 
 		if (StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
 
