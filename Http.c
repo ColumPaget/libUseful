@@ -763,6 +763,9 @@ char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, const char
 }
 
 
+
+
+
 static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info, char *AuthInfo)
 {
     char *SendStr=NULL, *Tempstr=NULL, *Realm=NULL, *Nonce=NULL;
@@ -807,8 +810,11 @@ static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruc
             xmemset(Tempstr,0,len);
         }
 
-        Info->AuthFlags |= HTTP_AUTH_SENT;
     }
+
+		//even if we didn't send the password, say we did so here in order that
+		//we're not stuck in an eternal loop of sending passwords
+    Info->AuthFlags |= HTTP_AUTH_SENT;
 
     DestroyString(Tempstr);
     DestroyString(Logon);
@@ -1252,6 +1258,8 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                     (Info->AuthFlags & HTTP_AUTH_RETURN) ||
                     (StrEnd(Info->Authorization))
                 ) break;
+
+								fprintf(stderr, "AUTH: %d %s\n", Info->AuthFlags & HTTP_AUTH_SENT, Info->Authorization);
             }
 
             //if we got asked for proxy authentication bu have no auth details, then give up

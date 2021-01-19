@@ -61,7 +61,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     //periodically something causes me to remove the 'pty' settings
     //but then password auth is broken.
     //this comment is so I'm aware of that the next time I think of removing 'pty'
-    TTYConfigs=CopyStr(TTYConfigs, "pty crlf stderr2null ignsig");
+    TTYConfigs=CopyStr(TTYConfigs, "pty crlf stderr2null nosig");
 
     //if we are writing to a file on the remote server then we need some way
     //to tell it 'end of file'. We can't just close the connection, as we
