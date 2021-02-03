@@ -52,9 +52,11 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
         case 'B':
             Settings->Flags |= SOCK_BROADCAST;
             break;
+#ifdef TCP_FASTOPEN
         case 'F':
             Settings->Flags |= SOCK_TCP_FASTOPEN;
             break;
+#endif
         case 'R':
             Settings->Flags |= SOCK_DONTROUTE;
             break;
@@ -845,7 +847,9 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
             if (Settings.QueueLen > 0)
             {
                 listen(fd, Settings.QueueLen);
+#ifdef TCP_FASTOPEN
                 if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", Settings.QueueLen);
+#endif
             }
         }
         else if (strcmp(Proto,"tproxy")==0)
