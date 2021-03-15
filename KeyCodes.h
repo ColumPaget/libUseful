@@ -27,6 +27,115 @@
 #endif
 
 
+#ifndef TKEY_CTRL_A
+#define TKEY_CTRL_A 1
+#endif
+
+#ifndef TKEY_CTRL_B
+#define TKEY_CTRL_B 2
+#endif
+
+#ifndef TKEY_CTRL_C
+#define TKEY_CTRL_C 3
+#endif
+
+#ifndef TKEY_CTRL_D
+#define TKEY_CTRL_D 4
+#endif
+
+#ifndef TKEY_CTRL_E
+#define TKEY_CTRL_E 5
+#endif
+
+#ifndef TKEY_CTRL_F
+#define TKEY_CTRL_F 6
+#endif
+
+#ifndef TKEY_CTRL_G
+#define TKEY_CTRL_G 7
+#endif
+
+#ifndef TKEY_CTRL_H
+#define TKEY_CTRL_H 8
+#endif
+
+#ifndef TKEY_CTRL_I
+#define TKEY_CTRL_I 9
+#endif
+
+#ifndef TKEY_CTRL_J
+#define TKEY_CTRL_J 10
+#endif
+
+#ifndef TKEY_CTRL_K
+#define TKEY_CTRL_K 11
+#endif
+
+#ifndef TKEY_CTRL_L
+#define TKEY_CTRL_L 12
+#endif
+
+#ifndef TKEY_CTRL_M
+#define TKEY_CTRL_M 13
+#endif
+
+#ifndef TKEY_CTRL_N
+#define TKEY_CTRL_N 14
+#endif
+
+#ifndef TKEY_CTRL_O
+#define TKEY_CTRL_O 15
+#endif
+
+#ifndef TKEY_CTRL_P
+#define TKEY_CTRL_P 16
+#endif
+
+#ifndef TKEY_CTRL_Q
+#define TKEY_CTRL_Q 17
+#endif
+
+#ifndef TKEY_CTRL_R
+#define TKEY_CTRL_R 18
+#endif
+
+#ifndef TKEY_CTRL_S
+#define TKEY_CTRL_S 19
+#endif
+
+#ifndef TKEY_CTRL_T
+#define TKEY_CTRL_T 20
+#endif
+
+#ifndef TKEY_CTRL_U
+#define TKEY_CTRL_U 21
+#endif
+
+#ifndef TKEY_CTRL_V
+#define TKEY_CTRL_V 22
+#endif
+
+#ifndef TKEY_CTRL_W
+#define TKEY_CTRL_W 23
+#endif
+
+#ifndef TKEY_CTRL_X
+#define TKEY_CTRL_X 24
+#endif
+
+#ifndef TKEY_CTRL_Y
+#define TKEY_CTRL_Y 25
+#endif
+
+#ifndef TKEY_CTRL_Z
+#define TKEY_CTRL_Z 26
+#endif
+
+
+
+
+
+
 #ifndef TKEY_F1
 #define TKEY_F1 0x111
 #endif
