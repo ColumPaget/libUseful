@@ -406,7 +406,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
     if (strcasecmp(Method,"POST")==0) ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, &Args);
     else ParseURL(p_URL, &Proto, &Info->Host, &Token, &User, &Pass, &Info->Doc, NULL);
 
-		if (! StrValid(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
+    if (! StrValid(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
 
     if (StrValid(Token)) Info->Port=atoi(Token);
 
@@ -440,10 +440,10 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
 
     if (StrValid(User) || StrValid(Pass)) Info->UserName=CopyStr(Info->UserName, User);
     if (StrValid(Pass))
-		{
-      Info->AuthFlags |= HTTP_AUTH_BASIC;
-			CredsStoreAdd(Info->Host, User, Pass);
-		}
+    {
+        Info->AuthFlags |= HTTP_AUTH_BASIC;
+        CredsStoreAdd(Info->Host, User, Pass);
+    }
 
     if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
 
@@ -812,8 +812,8 @@ static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruc
 
     }
 
-		//even if we didn't send the password, say we did so here in order that
-		//we're not stuck in an eternal loop of sending passwords
+    //even if we didn't send the password, say we did so here in order that
+    //we're not stuck in an eternal loop of sending passwords
     Info->AuthFlags |= HTTP_AUTH_SENT;
 
     DestroyString(Tempstr);
@@ -850,8 +850,8 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
 
     //probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
     if ((Info->PostContentLength > 0) &&
-				( (strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0) || (strcasecmp(Info->Method,"PATCH")==0))
-		)
+            ( (strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0) || (strcasecmp(Info->Method,"PATCH")==0))
+       )
     {
         Tempstr=FormatStr(Tempstr,"Content-Length: %d\r\n",Info->PostContentLength);
         SendStr=CatStr(SendStr,Tempstr);
@@ -1259,7 +1259,6 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                     (StrEnd(Info->Authorization))
                 ) break;
 
-								fprintf(stderr, "AUTH: %d %s\n", Info->AuthFlags & HTTP_AUTH_SENT, Info->Authorization);
             }
 
             //if we got asked for proxy authentication bu have no auth details, then give up

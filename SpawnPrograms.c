@@ -339,14 +339,14 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 
     if (pid > 0)
     {
-				S=STREAMFromDualFD(from_fd, to_fd);
-				/*
-        if (waitpid(pid, NULL, WNOHANG) < 1) 
+        S=STREAMFromDualFD(from_fd, to_fd);
+        /*
+        if (waitpid(pid, NULL, WNOHANG) < 1)
         //sleep to allow spawned function time to exit due to startup problems
         usleep(250);
         //use waitpid to check process has not exited, if so then spawn stream
-				else fprintf(stderr, "ERROR: Subprocess exited: %s %s\n", strerror(errno), Data);
-				*/
+        else fprintf(stderr, "ERROR: Subprocess exited: %s %s\n", strerror(errno), Data);
+        */
     }
 
     if (S)
@@ -364,16 +364,16 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 
 STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
 {
-char *Token=NULL, *ExecPath=NULL;
-STREAM *S=NULL;
+    char *Token=NULL, *ExecPath=NULL;
+    STREAM *S=NULL;
 
-		GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);
+    GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);
     ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
 
-		if (StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
+    if (StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
 
-		Destroy(ExecPath);
-		Destroy(Token);
+    Destroy(ExecPath);
+    Destroy(Token);
 
-		return(S);
+    return(S);
 }

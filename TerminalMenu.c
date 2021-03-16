@@ -107,52 +107,51 @@ void TerminalMenuDraw(TERMMENU *Menu)
 
 ListNode *TerminalMenuTop(TERMMENU *Menu)
 {
-Menu->Options->Side=ListGetNext(Menu->Options);
+    Menu->Options->Side=ListGetNext(Menu->Options);
 
-return(Menu->Options->Side);
+    return(Menu->Options->Side);
 }
 
 ListNode *TerminalMenuUp(TERMMENU *Menu)
 {
-        if (Menu->Options->Side)
-        {
-            if (Menu->Options->Side->Prev && (Menu->Options->Side->Prev != Menu->Options)) Menu->Options->Side=Menu->Options->Side->Prev;
-        }
-        else Menu->Options->Side=ListGetNext(Menu->Options);
+    if (Menu->Options->Side)
+    {
+        if (Menu->Options->Side->Prev && (Menu->Options->Side->Prev != Menu->Options)) Menu->Options->Side=Menu->Options->Side->Prev;
+    }
+    else Menu->Options->Side=ListGetNext(Menu->Options);
 
-return(Menu->Options->Side);
+    return(Menu->Options->Side);
 }
 
 ListNode *TerminalMenuDown(TERMMENU *Menu)
 {
-        if (Menu->Options->Side)
-        {
-            if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
-        }
-        else Menu->Options->Side=ListGetNext(Menu->Options);
+    if (Menu->Options->Side)
+    {
+        if (Menu->Options->Side->Next) Menu->Options->Side=Menu->Options->Side->Next;
+    }
+    else Menu->Options->Side=ListGetNext(Menu->Options);
 
-return(Menu->Options->Side);
+    return(Menu->Options->Side);
 }
 
 ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
 {
     int i;
 
-fprintf(stderr, "TMOK: %d\n", key);
     switch (key)
     {
     case TKEY_HOME:
-	TerminalMenuTop(Menu);
-    break;
+        TerminalMenuTop(Menu);
+        break;
 
     case TKEY_UP:
     case TKEY_CTRL_W:
-	TerminalMenuUp(Menu);
+        TerminalMenuUp(Menu);
         break;
 
     case TKEY_DOWN:
     case TKEY_CTRL_S:
-	TerminalMenuDown(Menu);
+        TerminalMenuDown(Menu);
         break;
 
     case TKEY_PGUP:
@@ -243,21 +242,21 @@ ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, i
 
 ListNode *TerminalMenuFromText(STREAM *Term, const char *Options, int x, int y, int wid, int high)
 {
-ListNode *MenuList, *Node;
-const char *ptr;
-char *Token=NULL;
+    ListNode *MenuList, *Node;
+    const char *ptr;
+    char *Token=NULL;
 
-MenuList=ListCreate();
-ptr=GetToken(Options, "|", &Token, 0);
-while (ptr)
-{
-ListAddNamedItem(MenuList, Token, NULL);
-ptr=GetToken(ptr, "|", &Token, 0);
-}
+    MenuList=ListCreate();
+    ptr=GetToken(Options, "|", &Token, 0);
+    while (ptr)
+    {
+        ListAddNamedItem(MenuList, Token, NULL);
+        ptr=GetToken(ptr, "|", &Token, 0);
+    }
 
-Node=TerminalMenu(Term, MenuList, x, y, wid, high);
-ListDestroy(MenuList, Destroy);
-Destroy(Token);
+    Node=TerminalMenu(Term, MenuList, x, y, wid, high);
+    ListDestroy(MenuList, Destroy);
+    Destroy(Token);
 
-return(Node);
+    return(Node);
 }

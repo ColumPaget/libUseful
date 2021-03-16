@@ -174,103 +174,103 @@ const char *TerminalTranslateKeyCode(int key)
     {
     case 0:
         return("NUL");
-    break;
+        break;
 
     case ESCAPE:
         return("ESC");
         break;
 
     case TKEY_CTRL_A:
-	return("CTRL_A");
-    break;
+        return("CTRL_A");
+        break;
     case TKEY_CTRL_B:
-	return("CTRL_B");
-    break;
+        return("CTRL_B");
+        break;
     case TKEY_CTRL_C:
-	return("CTRL_C");
-    break;
+        return("CTRL_C");
+        break;
     case TKEY_CTRL_D:
-	return("CTRL_D");
-    break;
+        return("CTRL_D");
+        break;
     case TKEY_CTRL_E:
-	return("CTRL_E");
-    break;
+        return("CTRL_E");
+        break;
     case TKEY_CTRL_F:
-	return("CTRL_F");
-    break;
+        return("CTRL_F");
+        break;
     case TKEY_CTRL_G:
-	return("CTRL_G");
-    break;
+        return("CTRL_G");
+        break;
 
-/* NEVER RETURN CTRL_H, as this is backspace!
-    case TKEY_CTRL_H:
-	return("CTRL_H");
-    break;
-*/
+    /* NEVER RETURN CTRL_H, as this is backspace!
+        case TKEY_CTRL_H:
+    	return("CTRL_H");
+        break;
+    */
 
-/* NEVER RETURN CTRL_I, as this is tab!
-    case TKEY_CTRL_I:
-	return("CTRL_I");
-    break;
-*/
+    /* NEVER RETURN CTRL_I, as this is tab!
+        case TKEY_CTRL_I:
+    	return("CTRL_I");
+        break;
+    */
 
-/* NEVER RETURN CTRL_J, as this is LINEFEED/ENTER
-    case TKEY_CTRL_J:
-	return("CTRL_J");
-    break;
-*/
+    /* NEVER RETURN CTRL_J, as this is LINEFEED/ENTER
+        case TKEY_CTRL_J:
+    	return("CTRL_J");
+        break;
+    */
 
     case TKEY_CTRL_K:
-	return("CTRL_K");
-    break;
+        return("CTRL_K");
+        break;
     case TKEY_CTRL_L:
-	return("CTRL_L");
-    break;
+        return("CTRL_L");
+        break;
 
-/* NEVER RETURN CTRL-M, as this is carriage return!
-    case TKEY_CTRL_M:
-	return("CTRL_M");
-    break;
-*/ 
+    /* NEVER RETURN CTRL-M, as this is carriage return!
+        case TKEY_CTRL_M:
+    	return("CTRL_M");
+        break;
+    */
     case TKEY_CTRL_N:
-	return("CTRL_N");
-    break;
+        return("CTRL_N");
+        break;
     case TKEY_CTRL_O:
-	return("CTRL_O");
-    break;
+        return("CTRL_O");
+        break;
     case TKEY_CTRL_P:
-	return("CTRL_P");
-    break;
+        return("CTRL_P");
+        break;
     case TKEY_CTRL_Q:
-	return("CTRL_Q");
-    break;
+        return("CTRL_Q");
+        break;
     case TKEY_CTRL_R:
-	return("CTRL_R");
-    break;
+        return("CTRL_R");
+        break;
     case TKEY_CTRL_S:
-	return("CTRL_S");
-    break;
+        return("CTRL_S");
+        break;
     case TKEY_CTRL_T:
-	return("CTRL_T");
-    break;
+        return("CTRL_T");
+        break;
     case TKEY_CTRL_U:
-	return("CTRL_U");
-    break;
+        return("CTRL_U");
+        break;
     case TKEY_CTRL_V:
-	return("CTRL_V");
-    break;
+        return("CTRL_V");
+        break;
     case TKEY_CTRL_W:
-	return("CTRL_W");
-    break;
+        return("CTRL_W");
+        break;
     case TKEY_CTRL_X:
-	return("CTRL_X");
-    break;
+        return("CTRL_X");
+        break;
     case TKEY_CTRL_Y:
-	return("CTRL_Y");
-    break;
+        return("CTRL_Y");
+        break;
     case TKEY_CTRL_Z:
-	return("CTRL_Z");
-    break;
+        return("CTRL_Z");
+        break;
 
     case TKEY_F1:
         return("F1");
@@ -912,9 +912,8 @@ int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
 
     if ((*mod & KEYMOD_CTRL) && (*str > 65) && (*str < 122))
     {
-fprintf(stderr, "KM: %d key=%d result=%d\n", *mod, *str, tolower(*str) - 'a' +1);
-	*mod=0; //do not add a mod for these, as the character code alone implies it
-	return((tolower(*str) - 'a') +1);
+        *mod=0; //do not add a mod for these, as the character code alone implies it
+        return((tolower(*str) - 'a') +1);
     }
     return((int) *str);
 }

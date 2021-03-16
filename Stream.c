@@ -897,7 +897,7 @@ int STREAMParseConfig(const char *Config)
         ptr=Config;
         while (*ptr != '\0')
         {
-						if (*ptr==' ') break;
+            if (*ptr==' ') break;
             switch (*ptr)
             {
             case 'c':
