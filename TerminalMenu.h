@@ -16,10 +16,10 @@ extern "C" {
 //the list node is returned, so you have both the option name, as Node->Tag, and any associated item
 //as Node->Item
 
-// Supported keys are:
+// Supported keys are arrows and ctrl-WASD:
 
-//UP: up-arrow, ctrl-w, ctrl-i, ctrl-l
-//DOWN: down-arrow, ctrl-s, ctrl-k
+//UP: up-arrow, ctrl-w
+//DOWN: down-arrow, ctrl-s
 //SELECT: enter, ctrl-d
 //EXIT MENU: escape, ctrl-a
 

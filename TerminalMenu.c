@@ -138,6 +138,7 @@ ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
 {
     int i;
 
+fprintf(stderr, "TMOK: %d\n", key);
     switch (key)
     {
     case TKEY_HOME:
@@ -146,13 +147,11 @@ ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
 
     case TKEY_UP:
     case TKEY_CTRL_W:
-    case TKEY_CTRL_I:
 	TerminalMenuUp(Menu);
         break;
 
     case TKEY_DOWN:
     case TKEY_CTRL_S:
-    case TKEY_CTRL_K:
 	TerminalMenuDown(Menu);
         break;
 
