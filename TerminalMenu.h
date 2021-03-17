@@ -64,10 +64,10 @@ ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, i
 //create a menu from a line of text, and run it.
 //Options in the text a seperated by '|' so "This|That|The Other".
 //This keeps reading keypresses until an option is selected. 
-//Returns the selected option, or returns NULL if escape is pressed.
+//Returns the selected option as string copied into 'RetStr', or returns NULL if escape is pressed.
 //if TERMMENU_SELECTED is set on the head of Options, then the menu will allow setting
 //'selected' against multiple values
-ListNode *TerminalMenuFromText(STREAM *Term, const char *Options, int x, int y, int wid, int high);
+char *TerminalMenuFromText(char *RetStr, STREAM *Term, const char *Options, int x, int y, int wid, int high);
 
 
 #ifdef __cplusplus

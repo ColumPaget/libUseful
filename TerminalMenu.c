@@ -240,7 +240,7 @@ ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, i
 }
 
 
-ListNode *TerminalMenuFromText(STREAM *Term, const char *Options, int x, int y, int wid, int high)
+char *TerminalMenuFromText(char *RetStr, STREAM *Term, const char *Options, int x, int y, int wid, int high)
 {
     ListNode *MenuList, *Node;
     const char *ptr;
@@ -255,8 +255,14 @@ ListNode *TerminalMenuFromText(STREAM *Term, const char *Options, int x, int y, 
     }
 
     Node=TerminalMenu(Term, MenuList, x, y, wid, high);
+    if (Node) RetStr=CopyStr(RetStr, Node->Tag);
+    else
+    {
+	Destroy(RetStr);
+	RetStr=NULL;
+    }
     ListDestroy(MenuList, Destroy);
     Destroy(Token);
 
-    return(Node);
+    return(RetStr);
 }
