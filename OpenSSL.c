@@ -453,17 +453,17 @@ int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
 
     if (StrValid(ptr))
     {
-        if (strcasecmp(ptr,"ssl") !=0) Options=SSL_OP_NO_SSLv3;
+        if (strcasecmp(ptr,"ssl") !=0) Options |= SSL_OP_NO_SSLv3;
         else if (strcasecmp(ptr,"tls1.2")==0)
         {
 #ifdef SSL_OP_NO_TLSv1_1
-            Options|= SSL_OP_NO_TLSv1_1;
+            Options |= SSL_OP_NO_TLSv1_1;
 #endif
         }
         else if (strcasecmp(ptr,"tls1.1")==0)
         {
 #ifdef SSL_OP_NO_TLSv1
-            Options|= SSL_OP_NO_TLSv1;
+            Options |= SSL_OP_NO_TLSv1;
 #endif
         }
     }
