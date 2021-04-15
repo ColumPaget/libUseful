@@ -2,6 +2,7 @@
 #include "ConnectionChain.h"
 #include "URL.h"
 #include "UnixSocket.h"
+#include "FileSystem.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -22,19 +23,22 @@ typedef struct
 {
     int Flags;
     int QueueLen;
+    int Perms;
 } TSockSettings;
 
-int SocketParseConfig(const char *Config, TSockSettings *Settings)
+
+static void SocketParseConfigFlags(const char *Config, TSockSettings *Settings)
 {
     const char *ptr;
-    char *Name=NULL, *Value=NULL;
 
-    Settings->Flags=0;
-    Settings->QueueLen=0;
-
-    ptr=GetToken(Config, "\\S", &Value, 0);
-    for (ptr=Value; *ptr !='\0'; ptr++)
+    for (ptr=Config; *ptr !='\0'; ptr++)
     {
+        if (isspace(*ptr))
+        {
+            ptr++;
+            break;
+        }
+
         switch (*ptr)
         {
         case 'n':
@@ -69,11 +73,35 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
         }
     }
 
-    ptr=GetNameValuePair(ptr, "=", "\\S", &Name, &Value);
+}
+
+
+
+int SocketParseConfig(const char *Config, TSockSettings *Settings)
+{
+    const char *ptr;
+    char *Name=NULL, *Value=NULL;
+
+    Settings->Flags=0;
+    Settings->QueueLen=0;
+    Settings->Perms=-1;
+
+    if (! StrValid(Config)) return(0);
+
+    ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
+
+    //if first item has no value, assume it is a list of setting flags
+    //rather than a name=value pair setting
+    if (! StrValid(Value)) SocketParseConfigFlags(Name, Settings);
+
     while (ptr)
     {
         if (strcmp(Name, "listen")==0) Settings->QueueLen=atoi(Value);
-        ptr=GetNameValuePair(ptr, "=", "\\S", &Name, &Value);
+        if (strcmp(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        if (strcmp(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        if (strcmp(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
+
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
 
     Destroy(Name);
@@ -81,6 +109,7 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
 
     return(Settings->Flags);
 }
+
 
 
 
@@ -831,11 +860,13 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         {
             fd=UnixServerInit(SOCK_STREAM, URL+5);
             Type=STREAM_TYPE_UNIX_SERVER;
+            if (Settings.Perms > -1) chmod(URL+5, Settings.Perms);
         }
         else if (strcmp(Proto,"unixdgram")==0)
         {
             fd=UnixServerInit(SOCK_DGRAM, URL+10);
             Type=STREAM_TYPE_UNIX_DGRAM;
+            if (Settings.Perms > -1) chmod(URL+10, Settings.Perms);
         }
         break;
 

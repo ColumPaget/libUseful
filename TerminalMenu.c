@@ -258,8 +258,8 @@ char *TerminalMenuFromText(char *RetStr, STREAM *Term, const char *Options, int 
     if (Node) RetStr=CopyStr(RetStr, Node->Tag);
     else
     {
-	Destroy(RetStr);
-	RetStr=NULL;
+        Destroy(RetStr);
+        RetStr=NULL;
     }
     ListDestroy(MenuList, Destroy);
     Destroy(Token);

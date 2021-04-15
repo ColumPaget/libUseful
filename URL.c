@@ -1,38 +1,10 @@
 #include "URL.h"
 
-char *ParsePort(char *Str, char **Port)
+
+static const char *ParseHostDetailsExtractAuth(const char *Data, char **User, char **Password)
 {
-    char *ptr;
-
-//IP6 addresses, because it's a badly designed protocol, use the same separator as used to identify the port
-//hence we have to enclose them in square braces, which we must handle here
-    ptr=Str;
-    if (*ptr=='[')
-    {
-        while ((*ptr !=']') && (*ptr !='\0')) ptr++;
-    }
-
-//if there's a port specified then copy it to 'Port' and then clip it off the host specification
-    ptr=strchr(ptr,':');
-    if (ptr)
-    {
-        if (Port) *Port=CopyStr(*Port,ptr+1);
-        StrTrunc(Str, ptr-Str);
-    }
-
-    return(ptr);
-}
-
-
-const char *ParseHostDetails(const char *Data,char **Host,char **Port,char **User, char **Password)
-{
-    char *Token=NULL, *wptr;
+    char *Token=NULL;
     const char *ptr, *tptr;
-
-    if (Port) *Port=CopyStr(*Port, "");
-    if (Host) *Host=CopyStr(*Host, "");
-    if (User) *User=CopyStr(*User, "");
-    if (Password) *Password=CopyStr(*Password, "");
 
     ptr=strrchr(Data,'@');
     if (ptr)
@@ -43,23 +15,45 @@ const char *ParseHostDetails(const char *Data,char **Host,char **Port,char **Use
         if (User)
         {
             tptr=GetToken(Token,":",User,0);
-            if (StrValid(tptr)) *Password=CopyStr(*Password,tptr);
+            if (StrValid(tptr) && Password) *Password=CopyStr(*Password,tptr);
         }
     }
     else ptr=Data;
 
-    ptr=GetToken(ptr,"/",&Token,0);
-    ptr=ParsePort(Token, Port);
-    if (Host)
+    Destroy(Token);
+
+    return(ptr);
+}
+
+
+const char *ParseHostDetails(const char *Data, char **Host,char **Port,char **User, char **Password)
+{
+    char *Token=NULL, *wptr;
+    const char *ptr, *tptr;
+
+    if (Port) *Port=CopyStr(*Port, "");
+    if (Host) *Host=CopyStr(*Host, "");
+    if (User) *User=CopyStr(*User, "");
+    if (Password) *Password=CopyStr(*Password, "");
+
+    //if a user:password@host part exists in the URL, then this will extract it
+    ptr=ParseHostDetailsExtractAuth(Data, User, Password);
+
+//IP6 addresses, because it's a badly designed protocol, use the same separator as used to identify the port
+//hence we have to enclose them in square braces, which we must handle here
+    if (*ptr == '[')
     {
-        if (*Token=='[')
-        {
-            StrTruncChar(Token,']');
-            tptr=Token+1;
-        }
-        else tptr=Token;
-        *Host=CopyStr(*Host, tptr);
+        tptr=ptr+1;
+        while ((*ptr !=']') && (*ptr !='\0')) ptr++;
+        if (Host) *Host=CopyStrLen(*Host, tptr, ptr-tptr);
     }
+    else
+    {
+        ptr=GetToken(ptr, ":", &Token, 0);
+        if (Host) *Host=CopyStr(*Host, Token);
+    }
+
+    if (Port) *Port=CopyStr(*Port, ptr);
 
     DestroyString(Token);
 
@@ -102,9 +96,7 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
     // either we've cut out a protocol, or we haven't. If not the next thing is going to be the hostname
     // maybe there we be a path coming after '/', even if '/' is absent this GetToken will return the Host part
     ptr=GetToken(ptr,"/",&Token,0);
-    ParseHostDetails(Token,Host,Port,User,Password);
-
-    //while (ptr && (*ptr=='/')) ptr++;
+    ParseHostDetails(Token, Host, Port, User, Password);
 
     if (StrValid(ptr))
     {

@@ -602,3 +602,67 @@ int FileSystemCopyDir(const char *Src, const char *Dest)
     Destroy(Tempstr);
     Destroy(Path);
 }
+
+
+static int FileSystemParsePermissionsTri(const char **ptr, int ReadPerm, int WritePerm, int ExecPerm)
+{
+    int Perms=0;
+
+    if (**ptr=='r') Perms |= ReadPerm;
+    if (ptr_incr(ptr, 1) ==0) return(Perms);
+    if (**ptr=='w') Perms |= WritePerm;
+    if (ptr_incr(ptr, 1) ==0) return(Perms);
+    if (**ptr=='x') Perms |= ExecPerm;
+    if (ptr_incr(ptr, 1) ==0) return(Perms);
+
+    return(Perms);
+}
+
+
+int FileSystemParsePermissions(const char *PermsStr)
+{
+    int Perms=0;
+    const char *ptr;
+
+    if (! StrValid(PermsStr)) return(0);
+    ptr=PermsStr;
+
+    switch(*ptr)
+    {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+        return(strtol(PermsStr,NULL,8));
+        break;
+
+    case 'a':
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IRUSR|S_IRGRP|S_IROTH, S_IWUSR|S_IWGRP|S_IWOTH, S_IXUSR|S_IXGRP|S_IXOTH);
+        break;
+
+    case 'u':
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IRUSR, S_IWUSR, S_IXUSR);
+        break;
+
+    case 'g':
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IRGRP, S_IWGRP, S_IXGRP);
+        break;
+
+    case 'o':
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IROTH, S_IWOTH, S_IXOTH);
+        break;
+
+    default:
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IRUSR, S_IWUSR, S_IXUSR);
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IRGRP, S_IWGRP, S_IXGRP);
+        Perms |= FileSystemParsePermissionsTri(&ptr, S_IROTH, S_IWOTH, S_IXOTH);
+        break;
+    }
+
+    return(Perms);
+}
+

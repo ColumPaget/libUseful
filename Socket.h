@@ -112,7 +112,12 @@ int IPServerNew(int Type, const char *Address, int Port, int Flags);
 int IPServerAccept(int ServerSock,char **Addr);
 
 //STREAMServerInit and STREAMServerNew create server sockets for tcp:// udp:// unix:// unixdgram:// and tproxy:// protocols
-//STREAMServerNew takes a Config argument that is a string containing characters as follows:
+STREAM *STREAMServerInit(const char *URL);
+
+
+//STREAMServerNew takes a Config argument that can contain a flags string, and/or a set of name=value settings
+
+// the 'flags string' is a string containing characters as follows:
 //  k - disable tcp keepalives
 //  A - Autodetect SSL
 //  B - BROADCAST  set udp socket to be a broadcast socket
@@ -121,8 +126,13 @@ int IPServerAccept(int ServerSock,char **Addr);
 //  R - Don't route. All addresses are treated as local 
 //  P - REUSE_PORT allows multiple processes to listen on the same port
 
-STREAM *STREAMServerInit(const char *URL);
+//Supported name=value pairs are
+//listen=<val> allow <val> number of connections waiting to be accepted on a listening server socket
+//mode=<perms> set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
+//perms=<perms> set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
+//permissions=<perms> set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
 STREAM *STREAMServerNew(const char *URL, const char *Config);
+
 
 //Accept a connection on a tcp:// unix:// or tproxy:// socket
 STREAM *STREAMServerAccept(STREAM *Serv);
