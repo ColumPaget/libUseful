@@ -71,7 +71,6 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
 
     TTYConfigs=CatStr(TTYConfigs, " noshell");
 
-    printf("CMD: %s\n", Tempstr);
     S=STREAMSpawnCommand(Tempstr, TTYConfigs);
     if (S)
     {
@@ -127,7 +126,7 @@ STREAM *SSHOpen(const char *Host, int Port, const char *User, const char *Pass, 
     if (iPath)
     {
         ptr=iPath;
-        if (strncmp(ptr, "//", 2)==0) ptr+=2;
+        if (*ptr=='/') ptr++;
         else if (strncmp(ptr, "/./", 3)==0) ptr+=3;
         else if (strncmp(ptr, "/~/", 3)==0) ptr+=3;
     }
