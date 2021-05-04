@@ -66,8 +66,9 @@ DoSSLServerNegotiation(S, 0);
 
 
 //Pass these flags to DoSSLServerNegotiation
-#define LU_SSL_PFS 1            //use PerfectForwardSecrecy alogorithims
-#define LU_SSL_VERIFY_PEER 2    //verify the certificate offered by the peer
+#define LU_SSL_PFS             1    //use PerfectForwardSecrecy alogorithims
+#define LU_SSL_VERIFY_PEER     2    //verify the certificate offered by the peer
+#define LU_SSL_VERIFY_HOSTNAME 4    //Used internally to indicate a client connection should verify remote hostname
 
 
 #ifdef __cplusplus

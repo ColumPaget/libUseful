@@ -48,7 +48,7 @@ char *ExtractFromWebpage(char *RetStr, char *URL, char *ExtractStr, int MinLengt
 
 char *GetExternalIP(char *RetStr)
 {
-const char *Services[]={"https://api.my-ip.io/ip.txt", "http://api.ipify.org", "http://myexternalip.com/raw", "http://checkip.dyndns.org,*Current IP Address: $(extract_item)</body>", "https://ip.seeip.org/", "https://ipapi.co/ip", "https://ifconfig.me/ip", "http://extreme-ip-lookup.com/,\"query\" : \"$(extract_item)\"", "https://duckduckgo.com/?q=what%27s+my+ip&ia=answer,*\"Answer\":\"Your IP address is $(extract_item) ","https://www.ionos.co.uk/tools/ip-address,*Your IP is:</h2><div class=\"text-md-center text-lg-center heading-1 ml-md-0 ml-lg-0 mw-lg-10 mw-md-10 mx-md-auto mx-lg-auto pt-12\">$(extract_item)<", NULL};
+const char *Services[]={"https://api.my-ip.io/ip.txt", "http://api.ipify.org", "http://myexternalip.com/raw", "http://checkip.dyndns.org,*Current IP Address: $(extract_item)</body>", "https://ip.seeip.org/", "https://ipapi.co/ip", "https://ifconfig.me/ip", "http://extreme-ip-lookup.com/,\"query\" : \"$(extract_item)\"", "https://duckduckgo.com/?q=what%27s+my+ip&ia=answer,*\"Answer\":\"Your IP address is $(extract_item) ","https://www.ionos.co.uk/tools/ip-address,*Your IP is:</h2><div class=\"text-md-center text-lg-center heading-1 ml-md-0 ml-lg-0 mw-lg-10 mw-md-10 mx-md-auto mx-lg-auto pt-12\">$(extract_item)<", "http://my-ip-is.appspot.com/plain", NULL};
 
 unsigned int i, max, start;
 char *Token=NULL;

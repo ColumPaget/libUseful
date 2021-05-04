@@ -92,7 +92,7 @@ void OpenSSLGenerateDHParams()
 
 
 
-void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
+static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
 {
     ListNode *Curr;
     char *VerifyFile=NULL, *VerifyPath=NULL;
@@ -167,7 +167,7 @@ void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
 
 
 
-int INTERNAL_SSL_INIT()
+static int INTERNAL_SSL_INIT()
 {
 #ifdef HAVE_LIBSSL
     char *Tempstr=NULL;
@@ -236,7 +236,7 @@ const char *OpenSSLQueryCipher(STREAM *S)
 
 
 #ifdef HAVE_LIBSSL
-int OpenSSLVerifyCallback(int PreverifyStatus, X509_STORE_CTX *X509)
+static int OpenSSLVerifyCallback(int PreverifyStatus, X509_STORE_CTX *X509)
 {
 //This does nothing. verification is done in 'OpenSSLVerifyCertificate' instead
     return(1);
@@ -244,7 +244,7 @@ int OpenSSLVerifyCallback(int PreverifyStatus, X509_STORE_CTX *X509)
 
 
 
-char *OpenSSLConvertTime(char *RetStr, const ASN1_TIME *Time)
+static char *OpenSSLConvertTime(char *RetStr, const ASN1_TIME *Time)
 {
     int result;
     BIO *b;
@@ -261,13 +261,13 @@ char *OpenSSLConvertTime(char *RetStr, const ASN1_TIME *Time)
 #endif
 
 
-void OpenSSLCertError(STREAM *S, const char *Error)
+static void OpenSSLCertError(STREAM *S, const char *Error)
 {
     STREAMSetValue(S,"SSL:CertificateVerify",Error);
     RaiseError(0, "SSL:CertificateVerify", Error);
 }
 
-int OpenSSLVerifyCertificate(STREAM *S)
+static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 {
     int RetVal=FALSE;
 #ifdef HAVE_LIBSSL
@@ -302,13 +302,16 @@ int OpenSSLVerifyCertificate(STREAM *S)
         }
 
 #ifdef HAVE_X509_CHECK_HOST
+				if (Flags & LU_SSL_VERIFY_HOSTNAME)
+				{
         if (StrValid(S->Path))
         {
             ParseURL(S->Path,NULL,&Name,NULL,NULL,NULL,NULL,NULL);
             val=X509_check_host(cert, Name, StrLen(Name), 0, NULL);
         }
         else val=0;
-
+				}
+				else val=1;
 
         if (val!=1)	OpenSSLCertError(S, "Certificate hostname missmatch");
         else
@@ -418,6 +421,11 @@ int OpenSSLVerifyCertificate(STREAM *S)
             case X509_V_ERR_APPLICATION_VERIFICATION:
                 OpenSSLCertError(S,"application verification failure");
                 break;
+
+        		default:
+                OpenSSLCertError(S,"unknown error");
+                break;
+
             }
         }
     }
@@ -441,7 +449,7 @@ int OpenSSLVerifyCertificate(STREAM *S)
 // default. Currently equivalent to tls but may change in future
 
 #ifdef HAVE_LIBSSL
-int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
+static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
 {
     const char *ptr;
 
@@ -539,7 +547,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             S->State |= SS_SSL;
 
             OpenSSLQueryCipher(S);
-            OpenSSLVerifyCertificate(S);
+            OpenSSLVerifyCertificate(S, LU_SSL_VERIFY_HOSTNAME);
         }
     }
 
@@ -554,7 +562,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 
 
 #ifdef HAVE_LIBSSL
-void OpenSSLSetupECDH(SSL_CTX *ctx)
+static void OpenSSLSetupECDH(SSL_CTX *ctx)
 {
     EC_KEY* ecdh;
 
@@ -570,7 +578,7 @@ void OpenSSLSetupECDH(SSL_CTX *ctx)
 
 
 
-void OpenSSLSetupDH(SSL_CTX *ctx)
+static void OpenSSLSetupDH(SSL_CTX *ctx)
 {
     char *Tempstr=NULL;
     const char *ptr;
@@ -669,7 +677,7 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 
                     case TRUE:
                         S->State |= SS_SSL;
-                        if (Flags & SSL_VERIFY_PEER) OpenSSLVerifyCertificate(S);
+                        if (Flags & LU_SSL_VERIFY_PEER) OpenSSLVerifyCertificate(S, 0);
                         OpenSSLQueryCipher(S);
                         break;
 
