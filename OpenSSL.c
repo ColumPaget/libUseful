@@ -302,16 +302,16 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
         }
 
 #ifdef HAVE_X509_CHECK_HOST
-				if (Flags & LU_SSL_VERIFY_HOSTNAME)
-				{
-        if (StrValid(S->Path))
+        if (Flags & LU_SSL_VERIFY_HOSTNAME)
         {
-            ParseURL(S->Path,NULL,&Name,NULL,NULL,NULL,NULL,NULL);
-            val=X509_check_host(cert, Name, StrLen(Name), 0, NULL);
+            if (StrValid(S->Path))
+            {
+                ParseURL(S->Path,NULL,&Name,NULL,NULL,NULL,NULL,NULL);
+                val=X509_check_host(cert, Name, StrLen(Name), 0, NULL);
+            }
+            else val=0;
         }
-        else val=0;
-				}
-				else val=1;
+        else val=1;
 
         if (val!=1)	OpenSSLCertError(S, "Certificate hostname missmatch");
         else
@@ -422,7 +422,7 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
                 OpenSSLCertError(S,"application verification failure");
                 break;
 
-        		default:
+            default:
                 OpenSSLCertError(S,"unknown error");
                 break;
 
@@ -448,33 +448,63 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 // tls1.2 - allow TLSv.12 and up
 // default. Currently equivalent to tls but may change in future
 
+#define LEVEL_SSL3    3
+#define LEVEL_TLS1   10
+#define LEVEL_TLS1_1 11
+#define LEVEL_TLS1_2 12
+
 #ifdef HAVE_LIBSSL
 static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
 {
     const char *ptr;
+    int level=LEVEL_SSL3, val;
 
+    //first convert things to our own enum values, that way we don't
+    //depend on any openssl #defines that may be missing in some versions
+    //as the SSL_set_min_proto_version function is a new function with
+    //new values that deprecates the old method that used SSL_OP_NO_SSL options
+    ptr=STREAMGetValue(S,"SSL:Level");
+    if (StrValid(ptr))
+    {
+        if (strcasecmp(ptr, "ssl") !=0) level=LEVEL_TLS1;
+
+        if (strcasecmp(ptr, "tls1.1") == 0) level=LEVEL_TLS1_1;
+        if (strcasecmp(ptr, "tls1.2") == 0) level=LEVEL_TLS1_2;
+    }
+
+#ifdef HAVE_SSL_SET_MIN_PROTO_VERSION
+    val=SSL3_VERSION;
+    switch (level)
+    {
+    case LEVEL_TLS1:
+        val=TLS1_VERSION;
+        break;
+    case LEVEL_TLS1_1:
+        val=TLS1_1_VERSION;
+        break;
+    case LEVEL_TLS1_2:
+        val=TLS1_2_VERSION;
+        break;
+    }
+    SSL_set_min_proto_version(ssl, val);
+#else
     //anything before SSLv3 is madness
     Options |= SSL_OP_NO_SSLv2;
 
-    ptr=STREAMGetValue(S,"SSL:Level");
-    if (! StrValid(ptr)) ptr=LibUsefulGetValue("SSL:Level");
-
-    if (StrValid(ptr))
+    switch (level)
     {
-        if (strcasecmp(ptr,"ssl") !=0) Options |= SSL_OP_NO_SSLv3;
-        else if (strcasecmp(ptr,"tls1.2")==0)
-        {
-#ifdef SSL_OP_NO_TLSv1_1
-            Options |= SSL_OP_NO_TLSv1_1;
-#endif
-        }
-        else if (strcasecmp(ptr,"tls1.1")==0)
-        {
-#ifdef SSL_OP_NO_TLSv1
-            Options |= SSL_OP_NO_TLSv1;
-#endif
-        }
+    case LEVEL_TLS1:
+        Options |= SSL_OP_NO_SSLv3;
+        break
+    case LEVEL_TLS1_1:
+        Options |= SSL_OP_NO_SSLv3 | SSL_OP_NP_TLSv1;
+        break
+    case LEVEL_TLS1_2:
+        Options |= SSL_OP_NO_SSLv3 | SSL_OP_NP_TLSv1 | SSL_OP_NO_TLSv1_1;
+        break
     }
+#endif
+
 
     SSL_set_options(ssl, Options);
     return(Options);
