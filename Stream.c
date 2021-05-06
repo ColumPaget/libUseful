@@ -467,7 +467,7 @@ int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
 
 
 
-int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
+static int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
 {
     fd_set selectset;
     int result=0, count=0, len;
@@ -974,7 +974,7 @@ int STREAMParseConfig(const char *Config)
 //will be the LAST one in the list
 static const char *STREAMExtractMasterURL(const char *URL)
 {
-    char *ptr;
+    const char *ptr;
 
     if (strncmp(URL, "cmd:",4) ==0) return(URL); //'cmd:' urls do not go through proxies!
     if (strncmp(URL, "file:",5) ==0) return(URL); //'file:' urls do not go through proxies!
@@ -1587,7 +1587,7 @@ uint64_t STREAMSeek(STREAM *S, int64_t offset, int whence)
 
 
 
-int STREAMInternalPushProcessingModules(STREAM *S, const char *InData, unsigned long InLen, char **OutData, unsigned long *OutLen)
+static int STREAMInternalPushProcessingModules(STREAM *S, const char *InData, unsigned long InLen, char **OutData, unsigned long *OutLen)
 {
     TProcessingModule *Mod;
     ListNode *Curr, *Next;
@@ -1629,7 +1629,7 @@ int STREAMInternalPushProcessingModules(STREAM *S, const char *InData, unsigned 
 
 //this function returns the number of bytes *queued*, not number
 //written
-int STREAMInternalQueueBytes(STREAM *S, const char *Bytes, int Len)
+static int STREAMInternalQueueBytes(STREAM *S, const char *Bytes, int Len)
 {
     int o_len, queued=0, avail, val=0, result=0;
     const char *ptr;

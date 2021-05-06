@@ -3,7 +3,7 @@
 #include "GeneralFunctions.h"
 #include "Markup.h"
 
-char *ExtractFromWebpage(char *RetStr, char *URL, char *ExtractStr, int MinLength)
+char *ExtractFromWebpage(char *RetStr, const char *URL, const char *ExtractStr, int MinLength)
 {
     STREAM *S;
     char *Tempstr=NULL;

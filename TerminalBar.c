@@ -1,6 +1,10 @@
 #include "TerminalBar.h"
 #include "Terminal.h"
 
+
+//this function exists elsewhere, but we don't really want to make it available to users
+void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, int *Flags);
+
 void TerminalBarUpdate(TERMBAR *TB, const char *Text)
 {
     int rows, cols, x=0, y=0, TextLen;

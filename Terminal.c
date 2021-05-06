@@ -1614,7 +1614,7 @@ static int TerminalReadCSISeqSemicolon2(STREAM *S)
 
 
 
-int TerminalReadCSISeqSemicolon(STREAM *S, int val)
+static int TerminalReadCSISeqSemicolon(STREAM *S, int val)
 {
     int inchar;
 
@@ -2058,7 +2058,7 @@ static int TerminalReadCSISeq(STREAM *S, char PrevChar)
 }
 
 
-int TerminalReadCSIMouse(STREAM *S)
+static int TerminalReadCSIMouse(STREAM *S)
 {
     char *Tempstr=NULL;
     int flags, val, keycode=0;

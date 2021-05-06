@@ -141,7 +141,7 @@ pid_t xforkio(int StdIn, int StdOut, int StdErr)
 
 
 
-void InternalSwitchProgram(const char *CommandLine, const char *Config)
+static void InternalSwitchProgram(const char *CommandLine, const char *Config)
 {
     int Flags;
 

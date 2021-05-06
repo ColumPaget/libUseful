@@ -1,5 +1,6 @@
 #include "Encodings.h"
 #include "base64.h"
+#include "Http.h"
 
 int EncodingParse(const char *Str)
 {
