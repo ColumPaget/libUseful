@@ -495,13 +495,14 @@ static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
     {
     case LEVEL_TLS1:
         Options |= SSL_OP_NO_SSLv3;
-        break
+        break;
     case LEVEL_TLS1_1:
-        Options |= SSL_OP_NO_SSLv3 | SSL_OP_NP_TLSv1;
-        break
+
+        Options |= SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1;
+        break;
     case LEVEL_TLS1_2:
-        Options |= SSL_OP_NO_SSLv3 | SSL_OP_NP_TLSv1 | SSL_OP_NO_TLSv1_1;
-        break
+        Options |= SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
+        break;
     }
 #endif
 
