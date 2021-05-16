@@ -2,6 +2,7 @@
 #include "Http.h"
 #include "GeneralFunctions.h"
 #include "Markup.h"
+#include "IPAddress.h"
 
 char *ExtractFromWebpage(char *RetStr, const char *URL, const char *ExtractStr, int MinLength)
 {

@@ -174,6 +174,9 @@ char *ResolveURL(char *RetStr, const char *Parent, const char *SubItem)
     char *Proto=NULL, *Host=NULL, *Port=NULL, *Path=NULL;
     char *BasePath=NULL;
 
+    //if SubItem contains a '://' then it's a full url
+    if (strstr(SubItem, "://")) return(CopyStr(RetStr, SubItem));
+
     ParseURL(Parent,&Proto,&Host,&Port,NULL,NULL,&Path,NULL);
     if (StrValid(Port)) BasePath=FormatStr(BasePath, "%s://%s:%s/", Proto,Host,Port);
     else BasePath=FormatStr(BasePath, "%s://%s/", Proto,Host);

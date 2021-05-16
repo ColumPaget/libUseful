@@ -3,6 +3,7 @@
 #include "URL.h"
 #include "UnixSocket.h"
 #include "FileSystem.h"
+#include "IPAddress.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -18,13 +19,6 @@
 #include <linux/netfilter_ipv4.h>
 #endif
 
-
-typedef struct
-{
-    int Flags;
-    int QueueLen;
-    int Perms;
-} TSockSettings;
 
 
 static void SocketParseConfigFlags(const char *Config, TSockSettings *Settings)
@@ -85,6 +79,9 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
     Settings->Flags=0;
     Settings->QueueLen=0;
     Settings->Perms=-1;
+    ptr=LibUsefulGetValue("TCP:Keepalives");
+    if ( StrValid(ptr) &&  (! strtobool(ptr)) ) Settings->Flags |= SOCK_NOKEEPALIVE;
+
 
     if (! StrValid(Config)) return(0);
 
@@ -92,14 +89,30 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
 
     //if first item has no value, assume it is a list of setting flags
     //rather than a name=value pair setting
-    if (! StrValid(Value)) SocketParseConfigFlags(Name, Settings);
+    if (! StrValid(Value))
+    {
+        SocketParseConfigFlags(Name, Settings);
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    }
 
     while (ptr)
     {
-        if (strcmp(Name, "listen")==0) Settings->QueueLen=atoi(Value);
-        if (strcmp(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        if (strcmp(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        if (strcmp(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        if (strcasecmp(Name, "listen")==0) Settings->QueueLen=atoi(Value);
+        else if (strcasecmp(Name, "ttl")==0) Settings->TTL=atoi(Value);
+        else if (strcasecmp(Name, "tos")==0) Settings->ToS=atoi(Value);
+        else if (strcasecmp(Name, "mark")==0) Settings->Mark=atoi(Value);
+        else if (strcasecmp(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (strcasecmp(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (strcasecmp(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (strcasecmp(Name,"keepalive")==0)
+        {
+            if (StrLen(Value) && (strncasecmp(Value, "n",1)==0)) Settings->Flags |= SOCK_NOKEEPALIVE;
+        }
+        else if (strcasecmp(Name,"timeout")==0)
+        {
+            Settings->Timeout=atoi(Value);
+        }
+        //else STREAMSetValue(S, Name, Value);
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
@@ -108,118 +121,6 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
     Destroy(Value);
 
     return(Settings->Flags);
-}
-
-
-
-
-int IsIP4Address(const char *Str)
-{
-    const char *ptr;
-    int dot_count=0;
-    int AllowDot=FALSE;
-
-    if (! StrValid(Str)) return(FALSE);
-
-    for (ptr=Str; *ptr != '\0'; ptr++)
-    {
-        if (*ptr == '.')
-        {
-            if (! AllowDot) return(FALSE);
-            dot_count++;
-            AllowDot=FALSE;
-        }
-        else
-        {
-            if (! isdigit(*ptr)) return(FALSE);
-            AllowDot=TRUE;
-        }
-    }
-
-    if (dot_count != 3) return(FALSE);
-
-    return(TRUE);
-}
-
-
-int IsIP6Address(const char *Str)
-{
-    const char *ptr;
-    const char *IP6CHARS="0123456789abcdefABCDEF:%";
-    int result=FALSE;
-
-    if (! StrValid(Str)) return(FALSE);
-
-    ptr=Str;
-    if (*ptr == '[') ptr++;
-
-    for (; *ptr != '\0'; ptr++)
-    {
-//dont check after a '%', as this can be a netdev postfix
-        if (*ptr=='%') break;
-        if (*ptr==']') break;
-
-//require at least one ':'
-        if (*ptr==':') result=TRUE;
-
-        if (! strchr(IP6CHARS,*ptr)) return(FALSE);
-    }
-
-    return(result);
-}
-
-
-
-
-/* This is a simple function to decide if a string is an IP address as   */
-/* opposed to a host/domain name.                                        */
-
-int IsIPAddress(const char *Str)
-{
-    if (IsIP4Address(Str) || IsIP6Address(Str)) return(TRUE);
-    return(FALSE);
-}
-
-
-const char *LookupHostIP(const char *Host)
-{
-    struct hostent *hostdata;
-
-    if (! Host) return("");
-
-    hostdata=gethostbyname(Host);
-    if (!hostdata)
-    {
-        return(NULL);
-    }
-
-//inet_ntoa shouldn't need this cast to 'char *', but it emits a warning
-//without it
-    return(inet_ntoa(*(struct in_addr *) *hostdata->h_addr_list));
-}
-
-
-ListNode *LookupHostIPList(const char *Host)
-{
-    struct hostent *hostdata;
-    ListNode *List;
-    char **ptr;
-
-    hostdata=gethostbyname(Host);
-    if (!hostdata)
-    {
-        return(NULL);
-    }
-
-    List=ListCreate();
-//inet_ntoa shouldn't need this cast to 'char *', but it emitts a warning
-//without it
-    for (ptr=hostdata->h_addr_list; *ptr !=NULL; ptr++)
-    {
-        ListAddItem(List, CopyStr(NULL,  (char *) inet_ntoa(*(struct in_addr *) *ptr)));
-    }
-
-    return(List);
 }
 
 
@@ -604,7 +505,7 @@ const char *GetInterfaceIP(const char *Interface)
 /*--------------------------------------------------------------------*/
 /*--- checksum - standard 1s complement checksum                   ---*/
 /*--------------------------------------------------------------------*/
-unsigned short checksum(void *b, int len)
+static unsigned short ip_checksum(void *b, int len)
 {
     unsigned short *buf = b;
     unsigned int sum=0;
@@ -640,7 +541,7 @@ int ICMPSend(int sock, const char *Host, int Type, int Code, int TTL, char *Data
     ICMPHead->un.echo.id=getpid();
     ICMPHead->un.echo.sequence=seq++;
     if ((len > 0) && Data) memcpy(Tempstr + sizeof(struct icmphdr), Data, len);
-    ICMPHead->checksum=checksum(Tempstr, packet_len);
+    ICMPHead->checksum=ip_checksum(Tempstr, packet_len);
 
     memset(&sa, 0, sizeof(sa));
     sa.sin_family=AF_INET;
@@ -666,7 +567,6 @@ int UDPOpen(const char *Addr, int Port, int Flags)
     if (fd > -1) SockSetOptions(fd, Flags, 0);
     return(fd);
 }
-
 
 
 int UDPRecv(int sock,  char *Buffer, int len, char **Addr, int *Port)
@@ -717,91 +617,6 @@ int STREAMSendDgram(STREAM *S, const char *Host, int Port, char *Data, int len)
 }
 
 
-
-
-int IPServerNew(int iType, const char *Address, int Port, int Flags)
-{
-    int sock, val, Type;
-    int BindFlags=0;
-    const char *p_Addr=NULL, *ptr;
-
-//if IP6 not compiled in then throw error if one is passed
-#ifndef USE_INET6
-    if (IsIP6Address(Address)) return(-1);
-#endif
-
-    if (! IsIPAddress(Address)) p_Addr=GetInterfaceIP(Address);
-    else p_Addr=Address;
-
-    switch (iType)
-    {
-    case SOCK_TPROXY:
-#ifdef IP_TRANSPARENT
-        Type=SOCK_STREAM;
-#else
-        RaiseError(0, "IPServerInit","TPROXY/IPTRANSPARENT not available on this machine/platform");
-        return(-1);
-#endif
-        break;
-
-    case 0:
-    case SOCK_STREAM:
-        Type=SOCK_STREAM;
-        break;
-
-    default:
-        Type=iType;
-        break;
-    }
-
-    BindFlags=BIND_CLOEXEC | BIND_LISTEN;
-    if (Flags & SOCK_REUSEPORT) BindFlags |= BIND_REUSEPORT;
-    sock=BindSock(Type, p_Addr, Port, BindFlags);
-
-    if (sock > -1) SockSetOptions(sock, Flags, 0);
-
-#ifdef IP_TRANSPARENT
-    if (iType==SOCK_TPROXY)
-    {
-        val=1;
-        if (setsockopt(sock, IPPROTO_IP, IP_TRANSPARENT, &val, sizeof(int)) !=0)
-        {
-            RaiseError(ERRFLAG_ERRNO, "IPServerInit","set socket to TPROXY/IPTRANSPARENT failed.");
-            close(sock);
-            sock=-1;
-        }
-    }
-#endif
-
-
-    return(sock);
-}
-
-
-
-int IPServerInit(int iType, const char *Address, int Port)
-{
-    return(IPServerNew(iType, Address, Port, 0));
-}
-
-
-int IPServerAccept(int ServerSock, char **Addr)
-{
-    struct sockaddr_storage sa;
-    socklen_t salen;
-    int sock;
-
-    salen=sizeof(sa);
-    sock=accept(ServerSock,(struct sockaddr *) &sa, &salen);
-    if (Addr && (sock > -1))
-    {
-        *Addr=SetStrLen(*Addr,NI_MAXHOST);
-        getnameinfo((struct sockaddr *) &sa, salen, *Addr, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
-    }
-    return(sock);
-}
-
-
 STREAM *STREAMFromSock(int sock, int Type, const char *Peer, const char *DestIP, int DestPort)
 {
     STREAM *S;
@@ -830,130 +645,6 @@ STREAM *STREAMFromSock(int sock, int Type, const char *Peer, const char *DestIP,
 
     DestroyString(Tempstr);
 
-    return(S);
-}
-
-
-
-
-STREAM *STREAMServerNew(const char *URL, const char *Config)
-{
-    char *Proto=NULL, *Host=NULL, *Token=NULL;
-    int fd=-1, Port=0, Type, Flags=0;
-    TSockSettings Settings;
-    STREAM *S=NULL;
-
-    ParseURL(URL, &Proto, &Host, &Token,NULL, NULL,NULL,NULL);
-    if (StrValid(Token)) Port=atoi(Token);
-
-    Flags=SocketParseConfig(Config, &Settings);
-
-    switch (*Proto)
-    {
-    case 'u':
-        if (strcmp(Proto,"udp")==0)
-        {
-            fd=IPServerNew(SOCK_DGRAM, Host, Port, Flags);
-            Type=STREAM_TYPE_UDP;
-        }
-        else if (strcmp(Proto,"unix")==0)
-        {
-            fd=UnixServerInit(SOCK_STREAM, URL+5);
-            Type=STREAM_TYPE_UNIX_SERVER;
-            if (Settings.Perms > -1) chmod(URL+5, Settings.Perms);
-        }
-        else if (strcmp(Proto,"unixdgram")==0)
-        {
-            fd=UnixServerInit(SOCK_DGRAM, URL+10);
-            Type=STREAM_TYPE_UNIX_DGRAM;
-            if (Settings.Perms > -1) chmod(URL+10, Settings.Perms);
-        }
-        break;
-
-    case 't':
-        if (strcmp(Proto,"tcp")==0)
-        {
-            fd=IPServerNew(SOCK_STREAM, Host, Port, Flags);
-            Type=STREAM_TYPE_TCP_SERVER;
-            if (Settings.QueueLen > 0)
-            {
-                listen(fd, Settings.QueueLen);
-#ifdef TCP_FASTOPEN
-                if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", Settings.QueueLen);
-#endif
-            }
-        }
-        else if (strcmp(Proto,"tproxy")==0)
-        {
-#ifdef SOCK_TPROXY
-            fd=IPServerNew(SOCK_TPROXY, Host, Port, Flags);
-            Type=STREAM_TYPE_TPROXY;
-#endif
-        }
-        break;
-    }
-
-    S=STREAMFromSock(fd, Type, NULL, Host, Port);
-    if (S)
-    {
-        S->Path=CopyStr(S->Path, URL);
-        if (Flags & SOCK_TLS_AUTO) S->Flags |= SF_TLS_AUTO;
-    }
-
-    DestroyString(Proto);
-    DestroyString(Host);
-    DestroyString(Token);
-
-    return(S);
-}
-
-
-STREAM *STREAMServerInit(const char *URL)
-{
-    return(STREAMServerNew(URL, ""));
-}
-
-STREAM *STREAMServerAccept(STREAM *Serv)
-{
-    char *Tempstr=NULL, *DestIP=NULL;
-    STREAM *S=NULL;
-    int fd=-1, type=0, DestPort=0, result;
-
-    if (! Serv) return(NULL);
-
-    switch (Serv->Type)
-    {
-    case STREAM_TYPE_UNIX_SERVER:
-        fd=UnixServerAccept(Serv->in_fd);
-        type=STREAM_TYPE_UNIX_ACCEPT;
-        break;
-
-    case STREAM_TYPE_TCP_SERVER:
-        fd=IPServerAccept(Serv->in_fd, &Tempstr);
-        GetSockDetails(fd, &DestIP, &DestPort, NULL, NULL);
-        type=STREAM_TYPE_TCP_ACCEPT;
-        break;
-
-    case STREAM_TYPE_TPROXY:
-        fd=IPServerAccept(Serv->in_fd, &Tempstr);
-        GetSockDestination(fd, &DestIP, &DestPort);
-        type=STREAM_TYPE_TCP_ACCEPT;
-        break;
-
-    default:
-        return(Serv);
-        break;
-    }
-
-    S=STREAMFromSock(fd, type, Tempstr, DestIP, DestPort);
-    if (type==STREAM_TYPE_TCP_ACCEPT)
-    {
-        //if TLS autodetection enabled, perform it now
-        if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, 0);
-    }
-
-    DestroyString(Tempstr);
-    DestroyString(DestIP);
     return(S);
 }
 
@@ -1087,19 +778,28 @@ int IPReconnect(int sock, const char *Host, int Port, int Flags)
 
 
 
-int TCPConnectWithAttributes(const char *LocalHost, const char *Host, int Port, int Flags, int TTL, int ToS)
+int NetConnectWithAttributes(const char *Proto, const char *LocalHost, const char *Host, int Port, const char *Config)
 {
     const char *p_LocalHost=LocalHost;
     int sock, result;
+    TSockSettings Settings;
+
+    memset(&Settings, 0, sizeof(TSockSettings));
+    SocketParseConfig(Config, &Settings);
 
     if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
+    if ((strcasecmp(Proto,"udp")==0) || (strcasecmp(Proto,"bcast")==0))
+    {
+        sock=BindSock(SOCK_DGRAM, p_LocalHost, 0, 0);
+        if (strcasecmp(Proto,"bcast")==0) Settings.Flags |= SOCK_BROADCAST;
+    }
+    else sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
 
-    sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
+    if (Settings.TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings.TTL), sizeof(int));
+    if (Settings.ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings.ToS), sizeof(int));
+    if (Settings.Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings.Mark), sizeof(int));
 
-    if (TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &TTL, sizeof(int));
-    if (ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &ToS, sizeof(int));
-
-    result=IPReconnect(sock,Host,Port,Flags);
+    result=IPReconnect(sock, Host, Port, Settings.Flags);
     if (result==-1)
     {
         close(sock);
@@ -1110,14 +810,10 @@ int TCPConnectWithAttributes(const char *LocalHost, const char *Host, int Port, 
 }
 
 
-int TCPConnect(const char *Host, int Port, int Flags)
+int TCPConnect(const char *Host, int Port, const char *Config)
 {
-    return(TCPConnectWithAttributes("", Host, Port, Flags, 0, 0));
+    return(NetConnectWithAttributes("tcp", "", Host, Port, Config));
 }
-
-
-
-
 
 
 const char *GetRemoteIP(int sock)
@@ -1137,35 +833,6 @@ const char *GetRemoteIP(int sock)
     return((char *) inet_ntoa(sa.sin_addr));
 }
 
-
-const char *IPStrToHostName(const char *IPAddr)
-{
-    struct sockaddr_in sa;
-    struct hostent *hostdata=NULL;
-
-    inet_aton(IPAddr,& sa.sin_addr);
-    hostdata=gethostbyaddr(&sa.sin_addr.s_addr,sizeof((sa.sin_addr.s_addr)),AF_INET);
-    if (hostdata) return(hostdata->h_name);
-    else return("");
-}
-
-
-
-
-const char *IPtoStr(unsigned long Address)
-{
-    struct sockaddr_in sa;
-    sa.sin_addr.s_addr=Address;
-    return(inet_ntoa(sa.sin_addr));
-
-}
-
-unsigned long StrtoIP(const char *Str)
-{
-    struct sockaddr_in sa;
-    if (inet_aton(Str,&sa.sin_addr)) return(sa.sin_addr.s_addr);
-    return(0);
-}
 
 
 int STREAMIsConnected(STREAM *S)
@@ -1212,7 +879,6 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
 //really want the stream to be non blocking, we unset that here
         if (! (Flags & CONNECT_NONBLOCK))  STREAMSetFlags(S, 0, SF_NONBLOCK);
 
-        S->Type=STREAM_TYPE_TCP;
         STREAMSetFlushType(S,FLUSH_LINE,0,0);
         if (Flags & CONNECT_SSL)
         {
@@ -1222,7 +888,6 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
         }
 
         ptr=GetRemoteIP(S->in_fd);
-
         if (ptr)
         {
             if (strncmp(ptr,"::ffff:",7)==0) ptr+=7;
@@ -1246,150 +911,57 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
 extern char *GlobalConnectionChain;
 
 
-int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, int Flags)
+int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, const char *Config)
 {
-    ListNode *Curr;
-    char *Token=NULL, *ptr;
     int result=FALSE;
-    struct timeval tv;
-    int ConnectFlags=0;
-
-
-    S->Path=FormatStr(S->Path,"tcp:%s:%d/",Host,Port);
-    Curr=ListGetNext(S->Values);
-    while (Curr)
-    {
-        GetToken(Curr->Tag,":",&Token,0);
-        if (strcasecmp(Curr->Tag,"TTL")==0) TTL=atoi(Curr->Item);
-        if (strcasecmp(Curr->Tag,"ToS")==0) ToS=atoi(Curr->Item);
-        Curr=ListGetNext(Curr);
-    }
 
 
     if (StrValid(Host))
     {
-        //we may have to connect nonblocking if there is a timeout, so that we don't block in the
-        //'connect' function call, but we don't want to confuse that with a stream that's actually
-        //intended to be non-blocking
-        ConnectFlags=Flags;
-        if (S->Timeout > 0) ConnectFlags |= CONNECT_NONBLOCK;
-
         //Flags are handled in this function
-        S->in_fd=TCPConnectWithAttributes(STREAMGetValue(S, "LocalAddress"), Host,Port,ConnectFlags,TTL,ToS);
+        S->in_fd=NetConnectWithAttributes(Proto, STREAMGetValue(S, "LocalAddress"), Host, Port, Config);
 
         S->out_fd=S->in_fd;
         if (S->in_fd > -1) result=TRUE;
-        if (Flags & CONNECT_NONBLOCK) S->Flags |= SF_NONBLOCK;
     }
 
 
     if (result==TRUE)
     {
+        if (strcasecmp(Proto, "ssl")==0) S->Type=STREAM_TYPE_SSL;
+        else if (strcasecmp(Proto, "tls")==0) S->Type=STREAM_TYPE_SSL;
+        else if (strcasecmp(Proto, "udp")==0) S->Type=STREAM_TYPE_UDP;
+        else if (strcasecmp(Proto, "bcast")==0) S->Type=STREAM_TYPE_UDP;
+        else S->Type=STREAM_TYPE_TCP;
+
+        //if (S->Timeout > 0) S->Flags |= SF_NONBLOCK;
+
+        if (S->Type==STREAM_TYPE_SSL) S->Flags |= CONNECT_SSL;
         if (S->Flags & SF_NONBLOCK)
         {
             S->State |=SS_CONNECTING;
             S->Flags |=SF_NONBLOCK;
         }
-        else result=STREAMDoPostConnect(S, Flags);
+
+        if (STREAMIsConnected(S)) result=STREAMDoPostConnect(S, S->Flags);
     }
 
     return(result);
 }
 
 
-
-//This is a lower-level connect function that assumes a URL has
-//already been broken up into parts
-int STREAMProtocolConnect(STREAM *S, const char *Proto, const char *Host, unsigned int Port, int Flags)
-{
-    int result=FALSE, fd;
-    unsigned int TTL=0, ToS=0;
-
-    STREAMSetFlushType(S,FLUSH_LINE,0,0);
-    if (strcasecmp(Proto,"fifo")==0)
-    {
-        mknod(Host, S_IFIFO|0666, 0);
-        S->in_fd=open(Host, O_RDWR);
-        S->out_fd=S->in_fd;
-    }
-    else if ((strcasecmp(Proto,"unix")==0) || (strcasecmp(Proto,"unixstream")==0)) result=STREAMConnectUnixSocket(S, Host, SOCK_STREAM);
-    else if (strcasecmp(Proto,"unixdgram")==0) result=STREAMConnectUnixSocket(S, Host, SOCK_DGRAM);
-    else if ((strcasecmp(Proto,"udp")==0) || (strcasecmp(Proto,"bcast")==0))
-    {
-        fd=UDPOpen("", 0, Flags);
-        if (fd > -1)
-        {
-            S->in_fd=fd;
-            S->out_fd=fd;
-            S->Type=STREAM_TYPE_UDP;
-            result=IPReconnect(fd,Host,Port,0);
-            if (strcasecmp(Proto,"bcast")==0) SockSetOptions(fd, SOCK_BROADCAST, 0);
-        }
-    }
-    else if (
-        (strcasecmp(Proto,"ssl")==0) ||
-        (strcasecmp(Proto,"tls")==0)
-    ) result=STREAMTCPConnect(S, Host, Port, TTL, ToS, Flags | CONNECT_SSL);
-    else result=STREAMTCPConnect(S, Host, Port, TTL, ToS, Flags);
-
-
-    return(result);
-}
-
-
-
-int STREAMDirectConnect(STREAM *S, const char *URL, int Flags)
-{
-    int result=FALSE;
-    unsigned int Port=0;
-    char *Proto=NULL, *Host=NULL, *Token=NULL, *Path=NULL;
-
-    ParseURL(URL, &Proto, &Host, &Token,NULL, NULL,&Path,NULL);
-    S->Path=CopyStr(S->Path,URL);
-    if (StrValid(Token)) Port=strtoul(Token,0,10);
-    if (strcmp(Proto, "unix")==0) result=STREAMProtocolConnect(S, Proto, URL+5, 0, Flags);
-    else if (strcmp(Proto, "unixdgram")==0) result=STREAMProtocolConnect(S, Proto, URL+10, 0, Flags);
-    else result=STREAMProtocolConnect(S, Proto, Host, Port, Flags);
-
-    DestroyString(Token);
-    DestroyString(Proto);
-    DestroyString(Host);
-    DestroyString(Path);
-
-    return(result);
-}
 
 
 int STREAMConnect(STREAM *S, const char *URL, const char *Config)
 {
     int result=FALSE;
+    char *Proto=NULL, *Host=NULL, *Token=NULL, *Path=NULL;
     char *Name=NULL, *Value=NULL;
     TSockSettings Settings;
     const char *ptr, *p_val;
+    int Flags=0, fd;
+    int Port=0;
 
-    int Flags=0;
-
-    ptr=GetToken(Config, "\\S", &Value, 0);
-    Flags=SocketParseConfig(Value, &Settings);
-
-    p_val=LibUsefulGetValue("TCP:Keepalives");
-    if ( StrValid(p_val) &&  (! strtobool(p_val)) ) Flags |= SOCK_NOKEEPALIVE;
-
-    ptr=GetNameValuePair(ptr," ","=",&Name,&Value);
-    while (ptr)
-    {
-        if (strcasecmp(Name,"keepalive")==0)
-        {
-            if (StrLen(Value) && (strncasecmp(Value, "n",1)==0)) Flags |= SOCK_NOKEEPALIVE;
-        }
-        else if (strcasecmp(Name,"timeout")==0)
-        {
-            S->Timeout=atoi(Value);
-        }
-        else STREAMSetValue(S, Name, Value);
-
-        ptr=GetNameValuePair(ptr," ","=",&Name,&Value);
-    }
 
 //if URL is a comma-seperated list then it's a list of 'connection hops' through proxies
     if (StrValid(GlobalConnectionChain))
@@ -1398,13 +970,33 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
         result=STREAMProcessConnectHops(S, Value);
     }
     else if (strchr(URL, '|')) result=STREAMProcessConnectHops(S, URL);
-    else result=STREAMDirectConnect(S, URL, Flags);
+    else
+    {
+        ParseURL(URL, &Proto, &Host, &Token, NULL, NULL, &Path, NULL);
+        if (StrValid(Token)) Port=strtoul(Token, 0, 10);
 
+        STREAMSetFlushType(S,FLUSH_LINE,0,0);
+        if (strcasecmp(Proto,"fifo")==0)
+        {
+            mknod(Host, S_IFIFO|0666, 0);
+            S->in_fd=open(Host, O_RDWR);
+            S->out_fd=S->in_fd;
+        }
+        else if (strcasecmp(Proto,"unix")==0)  result=STREAMConnectUnixSocket(S, URL+5, SOCK_STREAM); //whole of URL is path
+        else if (strcasecmp(Proto,"unixstream")==0)  result=STREAMConnectUnixSocket(S, URL+11, SOCK_STREAM); //whole of URL is path
+        else if (strcasecmp(Proto,"unixdgram")==0) result=STREAMConnectUnixSocket(S, URL+10, SOCK_DGRAM); //whole of URL is path
+        else result=STREAMNetConnect(S, Proto, Host, Port, Config);
+    }
 
+    DestroyString(Token);
+    DestroyString(Proto);
+    DestroyString(Host);
+    DestroyString(Path);
     DestroyString(Name);
     DestroyString(Value);
 
+
+
     return(result);
 }
-
 

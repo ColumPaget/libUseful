@@ -6,6 +6,7 @@
 #include "Errors.h"
 #include "Stream.h"
 #include "Ssh.h"
+#include "IPAddress.h"
 
 typedef enum {CONNECT_HOP_NONE, CONNECT_HOP_TCP, CONNECT_HOP_HTTPTUNNEL, CONNECT_HOP_SSH, CONNECT_HOP_SSHTUNNEL, CONNECT_HOP_SSHPROXY, CONNECT_HOP_SOCKS4, CONNECT_HOP_SOCKS5, CONNECT_HOP_SHELL_CMD, CONNECT_HOP_TELNET} THopTypes;
 static const char *HopTypes[]= {"none","tcp","https","ssh","sshtunnel","sshproxy","socks4","socks5","shell","telnet",NULL};
@@ -67,7 +68,7 @@ int ConnectHopHTTPSProxy(STREAM *S, const char *Proxy, const char *Destination)
     if (! (S->State & SS_INITIAL_CONNECT_DONE))
     {
         if (Port==0) Port=443;
-        S->in_fd=TCPConnect(Host,Port,0);
+        S->in_fd=TCPConnect(Host, Port, "");
         S->out_fd=S->in_fd;
         if (S->in_fd == -1)
         {
@@ -225,7 +226,7 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
     if (! (S->State & SS_INITIAL_CONNECT_DONE))
     {
         val=atoi(Token);
-        S->in_fd=TCPConnect(Host, val, 0);
+        S->in_fd=TCPConnect(Host, val, "");
         S->out_fd=S->in_fd;
         if (S->in_fd == -1)
         {
@@ -465,7 +466,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
             ListAddNamedItem(S->Items, "LU:AssociatedStream", tmpS);
             for (i=0; i < 60; i++)
             {
-                S->in_fd=TCPConnect("127.0.0.1",Port,0);
+                S->in_fd=TCPConnect("127.0.0.1", Port, "");
                 if (S->in_fd > -1)
                 {
                     S->out_fd=S->in_fd;
@@ -555,7 +556,7 @@ int STREAMProcessConnectHops(STREAM *S, const char *HopList)
             if (count > 0) result=TRUE;
             else
             {
-                if (STREAMDirectConnect(S, HopURL, 0)) result=TRUE;
+                if (STREAMConnect(S, HopURL, "")) result=TRUE;
                 else RaiseError(0, "ConnectHopTCP", "failed to connect to %s for destination %s", HopURL, Dest);
             }
             break;

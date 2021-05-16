@@ -66,12 +66,37 @@ extern "C" {
 #endif
 
 
-//these functions return TRUE if a string appears to be an IP4 or IP6 address
-int IsIP4Address(const char *Str);
-int IsIP6Address(const char *Str);
 
-//returns TRUE for either IP6 or IP4
-int IsIPAddress(const char *Str);
+typedef struct
+{
+    int Flags;
+    int QueueLen;
+    int Timeout;
+    int Perms;
+    int TTL;
+    int ToS;
+    int Mark;
+} TSockSettings;
+
+
+int SocketParseConfig(const char *Config, TSockSettings *Settings);
+
+// Set a single on/off socket option
+int SockSetOpt(int sock, int Opt, const char *Name, int OnOrOff);
+
+// Change socket options. Multiple options can be passed at once in both
+// SetFlags and UnsetFlags.
+// N.B. Flags/options here are the SOCK_ values defined above, like
+// SOCK_BROADCAST, SOCK_DONTROUTE etc, etc
+void SockSetOptions(int sock, int SetFlags, int UnsetFlags);
+
+
+//Mostly used internally. given a socket create a stream and set the Type, Peer, DestIP and DestPort values
+STREAM *STREAMFromSock(int sock, int Type, const char *Peer, const char *DestIP, int DestPort);
+
+//Bind a socket. Type will be 'SOCK_STREAM' or 'SOCK_DGRAM', Address and Port are the Address and
+//port to bind to (not connect to, bind as in a server or the local end of an outgoing connection)
+int BindSock(int Type, const char *Address, int Port, int Flags);
 
 //return the primary IP bound to an interface (e.g. 127.0.0.1 for lo). Currently only returns IP4 addresses
 const char *GetInterfaceIP(const char *Interface);
@@ -152,29 +177,14 @@ int STREAMIsConnected(STREAM *S);
 // get IP address of peer at other end of a connected socket
 const char *GetRemoteIP(int sock);
 
-//lookup the primary IP address of a hostname
-const char *LookupHostIP(const char *Host);
-
-//lookup a list of addresses for a hostname
-ListNode *LookupHostIPList(const char *Host);
-
-
-const char *IPStrToHostName(const char *);
-
-//convert an integer representation of IP4 address to a string
-const char *IPtoStr(unsigned long);
-
-//convert a string representation of IP4 address to an integer representation
-unsigned long StrtoIP(const char *);
-
 
 //Connect to a host and port. Flags can be a bitmask of CONNECT_NONBLOCK, CONNECT_ERROR, SOCK_DONTROUTE and SOCK_NOKEEPALIVE
-int TCPConnect(const char *Host, int Port, int Flags);
-int STREAMTCPConnect(STREAM *S, const char *Host, int Port, int TTL, int ToS, int Flags);
+int TCPConnect(const char *Host, int Port, const char *Config);
+int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, const char *Config);
 int STREAMConnect(STREAM *S, const char *URL, const char *Config);
 
 //these are internal functions that you won't usually be concerned with
-int STREAMProtocolConnect(STREAM *S, const char *Proto, const char *Host, unsigned int Port, int Flags);
+int STREAMProtocolConnect(STREAM *S, const char *URL, const char *Config);
 int STREAMDirectConnect(STREAM *S, const char *URL, int Flags);
 int DoPostConnect(STREAM *S, int Flags);
 

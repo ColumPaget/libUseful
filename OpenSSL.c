@@ -43,7 +43,7 @@ void HandleSSLError(int err)
         printf("accept\n");
         break;
     case SSL_ERROR_WANT_X509_LOOKUP:
-        ("lookup\n");
+        printf("lookup\n");
         break;
     /*
     case SSL_ERROR_WANT_ASYNC: printf("async\n");break;
@@ -54,10 +54,12 @@ void HandleSSLError(int err)
         printf("syscall\n");
         break;
     case SSL_ERROR_SSL:
-        ("ssl\n");
+        printf("ssl\n");
         break;
     }
 }
+
+
 
 void OpenSSLReseedRandom()
 {
@@ -267,6 +269,26 @@ static void OpenSSLCertError(STREAM *S, const char *Error)
     RaiseError(0, "SSL:CertificateVerify", Error);
 }
 
+
+
+static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
+{
+    const EVP_MD *digest;
+    char *Buffer=NULL;
+    unsigned len;
+
+    RetStr=CopyStr(RetStr, "");
+    digest = EVP_sha1();
+    Buffer=SetStrLen(Buffer, 255); //this will hold raw sha1 fingerprint
+    if (X509_digest(cert, digest, (unsigned char*) Buffer, &len) == 0)
+    {
+        RetStr=EncodeBytes(RetStr, Buffer, len, ENCODE_HEX);
+    }
+
+    return(RetStr);
+}
+
+
 static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 {
     int RetVal=FALSE;
@@ -293,6 +315,8 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
         STREAMSetValue(S,"SSL:CertificateNotBefore", Value);
         Value=OpenSSLConvertTime(Value, X509_get_notAfter(cert));
         STREAMSetValue(S,"SSL:CertificateNotAfter", Value);
+        Value=OpenSSLGetCertFingerprint(Value, cert);
+        STREAMSetValue(S,"SSL:CertificateFingerprint", Value);
 
         ptr=GetNameValuePair(ptr,"/","=",&Name,&Value);
         while (ptr)
@@ -548,9 +572,12 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 #ifdef HAVE_SSL_SET_TLSEXT_HOST_NAME
             //extract hostname from 'tcp://Host:Port' path
             ptr=GetToken(S->Path,":",&Token,0);
-            while (*ptr=='/') ptr++;
-            ptr=GetToken(ptr,":",&Token,0);
-            SSL_set_tlsext_host_name(ssl, Token);
+            if (ptr)
+            {
+                while (*ptr=='/') ptr++;
+                ptr=GetToken(ptr,":",&Token,0);
+                SSL_set_tlsext_host_name(ssl, Token);
+            }
 #endif
             /*
             if (S->Timeout > 0)

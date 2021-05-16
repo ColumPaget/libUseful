@@ -5,6 +5,7 @@
 #include "URL.h"
 #include "Expect.h"
 #include "Http.h"
+#include "Gemini.h"
 #include "Ssh.h"
 #include "Pty.h"
 #include "String.h"
@@ -1029,6 +1030,11 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
             if (*ptr=='/') ptr++;
             S=STREAMFileOpen(ptr, Flags);
         }
+        else S=STREAMFileOpen(URL, Flags);
+        break;
+
+    case 'g':
+        if (strcasecmp(Proto, "gemini")==0) S=GeminiOpen(URL, Config);
         else S=STREAMFileOpen(URL, Flags);
         break;
 
