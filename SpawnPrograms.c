@@ -365,12 +365,23 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
 {
     char *Token=NULL, *ExecPath=NULL;
+    const char *ptr;
     STREAM *S=NULL;
+    int UseShell=TRUE;
+
+    //if 'noshell' exists in Config, then we want to do more checking (i.e. exe to be launched must exist on disk)
+    //otherwise this could be a shell command that doesn't exist on disk
+    ptr=GetToken(Config, "\\S", &Token, GETTOKEN_QUOTES);
+    while (ptr)
+    {
+    if (strcmp(Token, "noshell")==0) UseShell=FALSE;
+    ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
+    }
 
     GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);
     ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
 
-    if (StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
+    if (UseShell || StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
 
     Destroy(ExecPath);
     Destroy(Token);
