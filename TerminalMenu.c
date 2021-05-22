@@ -91,8 +91,9 @@ void TerminalMenuDraw(TERMMENU *Menu)
 
     Tempstr=CopyStr(Tempstr, "");
     Tempstr=PadStrTo(Tempstr, ' ', Menu->wid);
-    while (y < yend)
+    while (y <= yend)
     {
+        TerminalCursorMove(Menu->Term, Menu->x, y);
         STREAMWriteString(Tempstr, Menu->Term);
         y++;
     }
