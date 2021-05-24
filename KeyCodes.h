@@ -21,6 +21,7 @@
 #define ESCAPE 0x1b
 #define TKEY_ESCAPE 0x1b
 #define TKEY_TAB '	'
+#define TKEY_BACKSPACE 0x08
 
 #ifndef TKEY_ENTER
 #define TKEY_ENTER  '\n'

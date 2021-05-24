@@ -176,6 +176,14 @@ const char *TerminalTranslateKeyCode(int key)
         return("NUL");
         break;
 
+    case TKEY_TAB:
+	return("	");
+	break;
+
+    case TKEY_BACKSPACE:
+	return("BACKSPACE");
+	break;
+
     case ESCAPE:
         return("ESC");
         break;
