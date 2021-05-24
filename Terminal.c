@@ -11,6 +11,79 @@ static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","b
 TMouseEvent MouseEvent;
 
 
+//Used internally by TerminalStrLen and TerminalStrTrunc this reads through a string and handles
+//escaped characters (\n \b) that seem to be two chars, but are really 1, unicode strings, that
+//see to be 2 or 3 characters, but area really 1, and 'tilde format' strings that describe colors
+//and other terminal actions, which again seem to be 2 characters, but are really 1. If this function
+//encounters something like '~r' which specifies following text is colored red, and which doesn't encode
+//actual characters, it returns false. If it encounters anyting that does encode an actual character, 
+//including an actual character, it returns true
+
+static int TerminalInternalConsumeCharacter(const char **ptr)
+{
+int IsRealChar=FALSE;
+
+	//handle unicode
+        if (**ptr & 128)
+        {
+            switch (**ptr & 224)
+            {
+            case 224:
+                ptr_incr(ptr, 1);
+            case 192:
+                ptr_incr(ptr, 1);
+            }
+
+            IsRealChar=TRUE;
+        }
+        else if (**ptr=='~')
+        {
+            ptr_incr(ptr, 1);
+            if (**ptr=='~') IsRealChar=TRUE; //~~ translates to ~, one character
+            else if (**ptr==':')
+            {
+            	IsRealChar=TRUE; //named unicode glyph. one character
+            }
+            else if (**ptr=='U')
+            {
+                ptr_incr(ptr, 4);
+                IsRealChar=TRUE; //16-bit unicode number. one character
+            }
+        }
+        else if (**ptr=='\\')
+        {
+            ptr_incr(ptr, 1);
+            switch (**ptr)
+            {
+            case '\0':
+                break;
+
+	    //octal value 
+            case '0':
+                ptr_incr(ptr, 4); 
+		IsRealChar=TRUE;
+                break;
+
+            //hex value in form
+            case 'x':
+                ptr_incr(ptr, 3); 
+		IsRealChar=TRUE;
+                break;
+
+            default:
+		IsRealChar=TRUE;
+                break;
+            }
+        }
+        else IsRealChar=TRUE;
+
+return(IsRealChar);
+}
+
+
+
+//this allows us to specify a maximum length to stop counting at
+//which is useful for some internal processes
 static int TerminalInternalStrLen(const char **Str, int MaxLen)
 {
     const char *ptr;
@@ -20,58 +93,7 @@ static int TerminalInternalStrLen(const char **Str, int MaxLen)
 
     for (ptr=*Str; *ptr !='\0'; ptr++)
     {
-        if (*ptr & 128)
-        {
-            switch (*ptr & 224)
-            {
-            case 224:
-                ptr_incr(&ptr, 1);
-            case 192:
-                ptr_incr(&ptr, 1);
-            }
-
-            len++;
-        }
-        else if (*ptr=='~')
-        {
-            ptr_incr(&ptr, 1);
-            if (*ptr=='~') len++; //~~ translates to ~, one character
-            else if (*ptr==':')
-            {
-                len++; //named unicode glyph. one character
-            }
-            else if (*ptr=='U')
-            {
-                ptr_incr(&ptr, 4);
-                len++; //16-bit unicode number. one character
-            }
-        }
-        else if (*ptr=='\\')
-        {
-            ptr_incr(&ptr, 1);
-            switch (*ptr)
-            {
-            case '\0':
-                break;
-
-            //octal value
-            case '0':
-                ptr_incr(&ptr, 4);
-                len++;
-                break;
-
-            //hex value
-            case 'x':
-                ptr_incr(&ptr, 3);
-                len++;
-                break;
-
-            default:
-                len++;
-                break;
-            }
-        }
-        else len++;
+	if (TerminalInternalConsumeCharacter(&ptr)) len++;
 
         if ((MaxLen != -1) && (len > MaxLen))
         {
@@ -100,9 +122,15 @@ char *TerminalStrTrunc(char *Str, int MaxLen)
     int len=0;
 
     ptr=Str;
-    len=TerminalInternalStrLen(&ptr, MaxLen);
-
-    if (len > MaxLen) Str=StrTrunc(Str, ptr+1-Str);
+    for (ptr=Str; *ptr !='\0'; ptr++)
+    {
+	if (TerminalInternalConsumeCharacter(&ptr)) len++;
+    	if (len > MaxLen) 
+	{
+		StrTrunc(Str, len);
+		break;
+	}
+    }
 
     return(Str);
 }
