@@ -78,14 +78,9 @@ extern "C" {
 //Check if SSL Is compiled in/ available for use. returns TRUE or FALSE
 int SSLAvailable();
 
-//reseed random number generator. You wouldn't normally call this to be honest
-void OpenSSLReseedRandom();
-
 //is peer authenticated. Clients  can use certificate authentication and this function checks if they
 //did and if the certificate passed checks
 int OpenSSLIsPeerAuth(STREAM *S);
-
-void OpenSSLGenerateDHParams();
 
 //if you connect a stream to something as a client then you can call this function to activate SSL/TLS on the connection
 //currently 'Flags' does nothing, but is included for possible future uses
@@ -101,6 +96,12 @@ void OpenSSLClose(STREAM *S);
 //call this before doing anything else with a STREAM that's been 'accept'-ed from a server socket. If the stream is encrypted
 //with SSL/TLS  this will return TRUE, FALSE otherwise
 int OpenSSLAutoDetect(STREAM *S);
+
+
+//you can call this to generate a new, random set of DHParams when a server starts up
+//but I wouldn't if I were you. It takes a long time and this function is likely going
+//to be replaced by something more versatile soon
+void OpenSSLGenerateDHParams();
 
 #ifdef __cplusplus
 }
