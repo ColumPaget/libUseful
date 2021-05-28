@@ -797,7 +797,10 @@ int NetConnectWithAttributes(const char *Proto, const char *LocalHost, const cha
 
     if (Settings.TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings.TTL), sizeof(int));
     if (Settings.ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings.ToS), sizeof(int));
+
+#ifdef SO_MARK
     if (Settings.Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings.Mark), sizeof(int));
+#endif
 
     result=IPReconnect(sock, Host, Port, Settings.Flags);
     if (result==-1)
