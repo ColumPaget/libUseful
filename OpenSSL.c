@@ -151,6 +151,8 @@ static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
         RetStr=EncodeBytes(RetStr, Buffer, len, ENCODE_HEX);
     }
 
+    Destroy(Buffer);
+
     return(RetStr);
 }
 
