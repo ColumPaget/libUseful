@@ -431,6 +431,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         else if (strcasecmp(Token, "user-agent")==0) Info->UserAgent=CopyStr(Info->UserAgent, Value);
         else if (strcasecmp(Token, "user")==0) User=CopyStr(User, Value);
         else if (strcasecmp(Token, "password")==0) Pass=CopyStr(Pass, Value);
+        else if (strcasecmp(Token, "keepalive")==0) Info->Flags |= HTTP_KEEPALIVE;
         else SetVar(Info->CustomSendHeaders, Token, Value);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
@@ -850,7 +851,12 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
 
     //probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
     if ((Info->PostContentLength > 0) &&
-            ( (strcasecmp(Info->Method,"POST")==0) || (strcasecmp(Info->Method,"PUT")==0) || (strcasecmp(Info->Method,"PATCH")==0))
+            ( 
+							(strcasecmp(Info->Method,"POST")==0) || 
+							(strcasecmp(Info->Method,"PUT")==0) || 
+							(strcasecmp(Info->Method,"PROPFIND")==0) || 
+							(strcasecmp(Info->Method,"PATCH")==0)
+						)
        )
     {
         Tempstr=FormatStr(Tempstr,"Content-Length: %d\r\n",Info->PostContentLength);
@@ -1210,6 +1216,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                     if (strcasecmp(Info->Method,"POST")==0) break;
                     if (strcasecmp(Info->Method,"PUT")==0) break;
                     if (strcasecmp(Info->Method,"PATCH")==0) break;
+                    if (strcasecmp(Info->Method,"PROPFIND")==0) break;
                 }
             }
 
