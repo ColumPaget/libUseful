@@ -855,6 +855,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
 							(strcasecmp(Info->Method,"POST")==0) || 
 							(strcasecmp(Info->Method,"PUT")==0) || 
 							(strcasecmp(Info->Method,"PROPFIND")==0) || 
+							(strcasecmp(Info->Method,"PROPPATCH")==0) || 
 							(strcasecmp(Info->Method,"PATCH")==0)
 						)
        )
@@ -1217,6 +1218,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                     if (strcasecmp(Info->Method,"PUT")==0) break;
                     if (strcasecmp(Info->Method,"PATCH")==0) break;
                     if (strcasecmp(Info->Method,"PROPFIND")==0) break;
+                    if (strcasecmp(Info->Method,"PROPPATCH")==0) break;
                 }
             }
 
