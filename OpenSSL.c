@@ -146,7 +146,8 @@ static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
     RetStr=CopyStr(RetStr, "");
     digest = EVP_sha1();
     Buffer=SetStrLen(Buffer, 255); //this will hold raw sha1 fingerprint
-    if (X509_digest(cert, digest, (unsigned char*) Buffer, &len) == 0)
+    len=255;
+    if (X509_digest(cert, digest, (unsigned char*) Buffer, &len) > 0)
     {
         RetStr=EncodeBytes(RetStr, Buffer, len, ENCODE_HEX);
     }
@@ -537,8 +538,13 @@ const char *OpenSSLQueryCipher(STREAM *S)
 
         Tempstr=SetStrLen(Tempstr,1024);
         Tempstr=SSL_CIPHER_description(Cipher, Tempstr, 1024);
+	//openssl won't have updated our strlen cache, so we have to here
+	if (Tempstr) StrLenCacheAdd(Tempstr, strlen(Tempstr));
 	StripTrailingWhitespace(Tempstr);
+
         Tempstr=MCatStr(Tempstr, " ", SSL_CIPHER_get_version(Cipher), NULL);
+	//openssl won't have updated our strlen cache, so we have to here
+	if (Tempstr) StrLenCacheAdd(Tempstr, strlen(Tempstr));
 	StripTrailingWhitespace(Tempstr);
         STREAMSetValue(S,"SSL:CipherDetails",Tempstr);
     }
