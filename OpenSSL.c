@@ -537,7 +537,9 @@ const char *OpenSSLQueryCipher(STREAM *S)
 
         Tempstr=SetStrLen(Tempstr,1024);
         Tempstr=SSL_CIPHER_description(Cipher, Tempstr, 1024);
+	StripTrailingWhitespace(Tempstr);
         Tempstr=MCatStr(Tempstr, " ", SSL_CIPHER_get_version(Cipher), NULL);
+	StripTrailingWhitespace(Tempstr);
         STREAMSetValue(S,"SSL:CipherDetails",Tempstr);
     }
 
