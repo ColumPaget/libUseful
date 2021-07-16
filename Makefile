@@ -1,5 +1,5 @@
 CC = gcc
-VERSION = 4.62
+VERSION = 4.63
 CFLAGS = -g -O2 -mmmx -msse -msse2
 LDFLAGS=
 LIBS = -lssl -lcrypto -lc -lc -lc -lc -lc -lc -lc -lc 

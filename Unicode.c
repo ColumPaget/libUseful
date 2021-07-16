@@ -1,11 +1,11 @@
 #include "Unicode.h"
 
-static int UnicodeLevel=0;
+static int GlobalUnicodeLevel=0;
 static ListNode *UnicodeNamesCache=NULL;
 
 void UnicodeSetUTF8(int level)
 {
-    UnicodeLevel=level;
+    GlobalUnicodeLevel=level;
 }
 
 
@@ -120,7 +120,7 @@ unsigned int UnicodeDecode(const char **ptr)
 
 
 
-char *UnicodeStr(char *RetStr, int Code)
+char *UnicodeEncodeChar(char *RetStr, int UnicodeLevel, int Code)
 {
     char *Tempstr=NULL;
 
@@ -147,7 +147,14 @@ char *UnicodeStr(char *RetStr, int Code)
 }
 
 
-char *UnicodeStrFromName(char *RetStr, const char *Name)
+char *UnicodeStr(char *RetStr, int Code)
+{
+return(UnicodeEncodeChar(RetStr, GlobalUnicodeLevel, Code));
+}
+
+
+
+char *UnicodeStrFromNameAtLevel(char *RetStr, int UnicodeLevel, const char *Name)
 {
     STREAM *S;
     char *Tempstr=NULL, *Token=NULL;
@@ -190,5 +197,12 @@ char *UnicodeStrFromName(char *RetStr, const char *Name)
     Destroy(Tempstr);
     Destroy(Token);
 
-    return(UnicodeStr(RetStr, code));
+    return(UnicodeEncodeChar(RetStr, UnicodeLevel, code));
+}
+
+
+
+char *UnicodeStrFromName(char *RetStr, const char *Name)
+{
+return(UnicodeStrFromNameAtLevel(RetStr, GlobalUnicodeLevel, Name));
 }

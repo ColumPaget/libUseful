@@ -83,9 +83,10 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
         }
     }
 
-//End of Parse TagName. Strip any '/'
+//End of Parse TagName.
     wptr=*TagType;
-    if ((len > 0) && (wptr[len-1]=='/')) len--;
+// DON'T Strip any '/' I don't know why I ever thought that was a good idea!
+   // if ((len > 0) && (wptr[len-1]=='/')) len--;
     wptr[len]='\0';
     StrLenCacheAdd(*TagType, len);
 
