@@ -25,6 +25,19 @@ and the following 'tilde command' formatting values
 ~M        switch background to magenta
 ~c        switch color to cyan
 ~C        switch background to cyan
+~+R       switch background to bright red
+~+g       switch color to bright green
+~+G       switch background to bright green
+~+b       switch color to bright blue
+~+B       switch background to bright blue
+~+n       switch color to bright black ('night' or 'noir')
+~+N       switch background to bright black ('night' or 'noir')
+~+y       switch color to bright yellow
+~+Y       switch background to bright yellow
+~+m       switch color to bright magenta
+~+M       switch background to bright magenta
+~+c       switch color to bright cyan
+~+C       switch background to bright cyan
 ~e        switch to bold text
 ~i        switch to inverse text
 ~u        switch to underlined text
@@ -96,7 +109,7 @@ extern "C" {
 #endif
 
 //These values are passed as Color and BgColor to ANSICode to produce escape sequences with those colors
-typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLUE, ANSI_MAGENTA, ANSI_CYAN, ANSI_WHITE, ANSI_RESET, ANSI_RESET2, ANSI_DARKGREY, ANSI_LIGHTRED, ANSI_LIGHTGREEN, ANSI_LIGHTYELLOW, ANSI_LIGHTBLUE, ANSI_LIGHTMAGENTA, ANSI_LIGHTCYAN, ANSI_LIGHTWHITE} T_ANSI_COLORS;
+typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLUE, ANSI_MAGENTA, ANSI_CYAN, ANSI_WHITE, ANSI_RESET, ANSI_RESET2, ANSI_DARKGREY,  ANSI_LIGHTRED, ANSI_LIGHTGREEN, ANSI_LIGHTYELLOW, ANSI_LIGHTBLUE, ANSI_LIGHTMAGENTA, ANSI_LIGHTCYAN, ANSI_LIGHTWHITE} T_ANSI_COLORS;
 
 
 

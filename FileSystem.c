@@ -135,7 +135,7 @@ int FileMoveToDir(const char *FilePath, const char *Dir)
     char *ptr;
     int result;
 
-    Tempstr=MCopyStr(Tempstr, Dir, "/", GetBasename(FilePath));
+    Tempstr=MCopyStr(Tempstr, Dir, "/", GetBasename(FilePath), NULL);
     MakeDirPath(Tempstr, 0700);
     result=rename(FilePath,Tempstr);
     if (result !=0) RaiseError(ERRFLAG_ERRNO, "FileMoveToDir", "cannot rename '%s' to '%s'",FilePath, Tempstr);

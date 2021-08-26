@@ -90,6 +90,11 @@ int DoSSLClientNegotiation(STREAM *S, int Flags);
 //'Flags' can be any of the LU_SSL_ flags listed above
 int DoSSLServerNegotiation(STREAM *S, int Flags);
 
+//functions internally used by STREAM objects. 
+int OpenSSLSTREAMCheckForBytes(STREAM *S);
+int OpenSSLSTREAMReadBytes(STREAM *S, const char *Data, int Len);
+int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len);
+
 //This is called automatically by STREAMClose. You won't generally explicitly call this.
 void OpenSSLClose(STREAM *S);
 

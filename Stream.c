@@ -18,13 +18,6 @@
 #include <linux/fs.h>
 #endif
 
-#ifdef HAVE_LIBSSL
-#include <openssl/crypto.h>
-#include <openssl/x509.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#endif
 
 
 
@@ -502,18 +495,7 @@ static int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLe
 
     while (count < DataLen)
     {
-        if (S->State & SS_SSL)
-        {
-
-#ifdef HAVE_LIBSSL
-            //if this is an SSL stream, it should have an associated SSL object. If it doesn't then the stream
-            //either failed to open, or has been closed with STREAMShutdown
-            vptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-            if (vptr) result=SSL_write((SSL *) vptr, Data + count, DataLen - count);
-            else result=STREAM_CLOSED;
-            if (result < 0) result=STREAM_CLOSED;
-#endif
-        }
+        if (S->State & SS_SSL) result=OpenSSLSTREAMWriteBytes(S, Data+count, DataLen-count);
         else
         {
             if (S->Timeout > 0)
@@ -1294,13 +1276,10 @@ void STREAMClose(STREAM *S)
 int STREAMReadCharsToBuffer(STREAM *S)
 {
     fd_set selectset;
-    int val=0, read_result=0, saved_errno, WaitForBytes=TRUE;
+    int val=0, read_result=0, WaitForBytes=TRUE, saved_errno;
     long bytes_read;
     struct timeval tv;
     char *tmpBuff=NULL, *Peer=NULL;
-#ifdef HAVE_LIBSSL
-    void *SSL_OBJ=NULL;
-#endif
 
     if (! S) return(0);
 
@@ -1343,19 +1322,8 @@ int STREAMReadCharsToBuffer(STREAM *S)
 //if no room in buffer, we can't read in more bytes
     if (S->InEnd >= S->BuffSize) return(1);
 
-
-//This is used in multiple places below, do don't just move it to within the first place
-#ifdef HAVE_LIBSSL
-    SSL_OBJ=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-
-//if there are bytes available in the internal OpenSSL buffers, when we don't have to
-//wait on a select, we can just go straight through to SSL_read
-    if (S->State & SS_SSL)
-    {
-        //ssl pending checks if there's bytes in the SSL buffer, it's not a select
-        if (SSL_pending((SSL *) SSL_OBJ) > 0) WaitForBytes=FALSE;
-    }
-#endif
+    //if using SSL and already has bytes  queued, don't do a wait on select
+    if ( (S->State & SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
 
     //must set this to 1 in case not doing a select, 'cos S->Timeout not set
     read_result=1;
@@ -1394,17 +1362,8 @@ int STREAMReadCharsToBuffer(STREAM *S)
         val=S->BuffSize - S->InEnd;
         tmpBuff=SetStrLen(tmpBuff,val);
 
-        //saved_erno is used in all cases to capture errno before another function
-        //changes it
-#ifdef HAVE_LIBSSL
-        if (S->State & SS_SSL)
-        {
-            bytes_read=SSL_read((SSL *) SSL_OBJ, tmpBuff, val);
-            saved_errno=errno;
-        }
-        else
-#endif
-            if (S->Type==STREAM_TYPE_UDP)
+        if (S->State & SS_SSL) bytes_read=OpenSSLSTREAMReadBytes(S, tmpBuff, val);
+        else if (S->Type==STREAM_TYPE_UDP)
             {
                 bytes_read=UDPRecv(S->in_fd,  tmpBuff, val, &Peer, NULL);
                 saved_errno=errno;

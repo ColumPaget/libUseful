@@ -29,8 +29,8 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
         Tempstr=MCatStr(Tempstr,"-i ",KeyFile," ",NULL);
     }
 
-    if (Flags & SSH_NO_ESCAPE) Tempstr=MCatStr(Tempstr, "-e none ");
-    if (Flags & SSH_COMPRESS) Tempstr=MCatStr(Tempstr, "-C ");
+    if (Flags & SSH_NO_ESCAPE) Tempstr=MCatStr(Tempstr, "-e none ", NULL);
+    if (Flags & SSH_COMPRESS) Tempstr=MCatStr(Tempstr, "-C ", NULL);
 
     ptr=GetToken(Command, "\\S", &Token, 0);
     while (ptr)

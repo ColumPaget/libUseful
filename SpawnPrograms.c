@@ -50,6 +50,7 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
     char *Token=NULL, *FinalCommand=NULL, *ExecPath=NULL;
     char **argv;
     const char *ptr;
+    int max_arg=100;
     int i;
 
     if (Flags & SPAWN_TRUST_COMMAND) FinalCommand=CopyStr(FinalCommand, (char *) Command);
@@ -58,7 +59,7 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
     StripTrailingWhitespace(FinalCommand);
     if (Flags & SPAWN_NOSHELL)
     {
-        argv=(char **) calloc(101,sizeof(char *));
+        argv=(char **) calloc(max_arg+10,sizeof(char *));
         ptr=FinalCommand;
         ptr=GetToken(FinalCommand,"\\S",&Token,GETTOKEN_QUOTES);
         ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
@@ -70,7 +71,7 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
             i=1;
         }
 
-        for (; i < 100; i++)
+        for (; i < max_arg; i++)
         {
             ptr=GetToken(ptr,"\\S",&Token,GETTOKEN_QUOTES);
             if (! ptr) break;
@@ -96,7 +97,7 @@ pid_t xfork(const char *Config)
 {
     pid_t pid;
 
-    LogFileFlushAll(TRUE);
+    //LogFileFlushAll(TRUE);
     pid=fork();
     if (pid==-1) RaiseError(ERRFLAG_ERRNO, "fork", "");
     if (pid==0)
@@ -183,7 +184,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     //default these to stdin, stdout and stderr and then override those later
     int c1=0, c2=1, c3=2;
     int channel1[2], channel2[2], channel3[2], DevNull=-1;
-    int Flags;
+    int Flags=0;
 
 
     Flags=SpawnParseConfig(Config);
@@ -381,7 +382,9 @@ STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
     GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);
     ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
 
-    if (UseShell || StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Command, Config);
+    //take a copy of this as it's going to be passed to another process and
+    Token=CopyStr(Token, Command);
+    if (UseShell || StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Token, Config);
 
     Destroy(ExecPath);
     Destroy(Token);

@@ -969,7 +969,7 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
 //if URL is a comma-seperated list then it's a list of 'connection hops' through proxies
     if (StrValid(GlobalConnectionChain))
     {
-        Value=MCopyStr(Value,GlobalConnectionChain,"|",URL);
+        Value=MCopyStr(Value,GlobalConnectionChain,"|",URL, NULL);
         result=STREAMProcessConnectHops(S, Value);
     }
     else if (strchr(URL, '|')) result=STREAMProcessConnectHops(S, URL);

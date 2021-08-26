@@ -647,6 +647,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 
             OpenSSLQueryCipher(S);
             OpenSSLVerifyCertificate(S, LU_SSL_VERIFY_HOSTNAME);
+	    
         }
     }
 
@@ -748,17 +749,79 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 int OpenSSLIsPeerAuth(STREAM *S)
 {
 #ifdef HAVE_LIBSSL
-    void *ptr;
+    SSL *ssl;
 
-    ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-    if (! ptr) return(FALSE);
+    ssl=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
+    if (! ssl) return(FALSE);
 
-    if (SSL_get_verify_result((SSL *) ptr)==X509_V_OK)
+    if (SSL_get_verify_result(ssl)==X509_V_OK)
     {
-        if (SSL_get_peer_certificate((SSL *) ptr) !=NULL) return(TRUE);
+        if (SSL_get_peer_certificate(ssl) !=NULL) return(TRUE);
     }
 #endif
     return(FALSE);
+}
+
+
+int OpenSSLSTREAMCheckForBytes(STREAM *S)
+{
+int byte_count=0;
+#ifdef HAVE_LIBSSL
+SSL *SSL_OBJ;
+
+//This is used in multiple places below, do don't just move it to within the first place
+    SSL_OBJ=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
+
+//if there are bytes available in the internal OpenSSL buffers, when we don't have to
+//wait on a select, we can just go straight through to SSL_read
+    if (S->State & SS_SSL)
+    {
+        //ssl pending checks if there's bytes in the SSL buffer, it's not a select
+        byte_count=SSL_pending(SSL_OBJ);
+    }
+#endif
+
+return(byte_count);
+}
+
+
+int OpenSSLSTREAMReadBytes(STREAM *S, const char *Data, int len)
+{
+int bytes_read=0;
+#ifdef HAVE_LIBSSL
+SSL *SSL_OBJ;
+
+
+    SSL_OBJ=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
+        if (S->State & SS_SSL)
+        {
+            bytes_read=SSL_read(SSL_OBJ, Data, len);
+        //saved_errno is used in all cases to capture errno before another function changes it
+        //    saved_errno=errno;
+        }
+#endif
+
+return(bytes_read);
+}
+
+int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
+{
+int result=STREAM_CLOSED;
+
+#ifdef HAVE_LIBSSL
+SSL *ssl;
+
+  //if this is an SSL stream, it should have an associated SSL object. If it doesn't then the stream
+  //either failed to open, or has been closed with STREAMShutdown
+  ssl=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
+  if (ssl) 
+  {
+	result=SSL_write(ssl, Data, Len);
+        if (result < 1) result=STREAM_CLOSED;
+  }
+#endif
+
+return(result);
 }
 
 
