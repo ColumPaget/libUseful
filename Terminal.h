@@ -235,6 +235,10 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term);
 //'Str' is a format string with 'tilde commands' in it. The ANSI coded result is output to stream S
 void TerminalPutStr(const char *Str, STREAM *S);
 
+
+//step past a single character. Understands tilde-strings and (some) unicode, consuming them as one character
+int TerminalConsumeCharacter(const char **ptr);
+
 //calculate length of string *after ANSI formating*, so ANSI escape sequences don't count as characters added
 //to the length 
 int TerminalStrLen(const char *Str);

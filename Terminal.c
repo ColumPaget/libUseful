@@ -19,7 +19,7 @@ TMouseEvent MouseEvent;
 //actual characters, it returns false. If it encounters anyting that does encode an actual character, 
 //including an actual character, it returns true
 
-static int TerminalInternalConsumeCharacter(const char **ptr)
+int TerminalConsumeCharacter(const char **ptr)
 {
 int IsRealChar=FALSE;
 
@@ -93,7 +93,7 @@ static int TerminalInternalStrLen(const char **Str, int MaxLen)
 
     for (ptr=*Str; *ptr !='\0'; ptr++)
     {
-	if (TerminalInternalConsumeCharacter(&ptr)) len++;
+	if (TerminalConsumeCharacter(&ptr)) len++;
 
         if ((MaxLen != -1) && (len > MaxLen))
         {
@@ -124,7 +124,7 @@ char *TerminalStrTrunc(char *Str, int MaxLen)
     ptr=Str;
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
-	if (TerminalInternalConsumeCharacter(&ptr)) len++;
+	if (TerminalConsumeCharacter(&ptr)) len++;
     	if (len > MaxLen) 
 	{
 		StrTrunc(Str, len);
