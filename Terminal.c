@@ -42,6 +42,7 @@ int IsRealChar=FALSE;
 	    switch (**ptr)
 	    {
 	    case '+': ptr_incr(ptr, 1); break;  // 'bright' colors, in the form ~+r so eat one more char
+	    case '=': ptr_incr(ptr, 1); break;  // 'fill with char' in the form ~=x (where 'x' is any char) so eat one more char
             case '~': IsRealChar=TRUE;  break;  //~~ translates to ~, one character
             case ':': IsRealChar=TRUE;  break;  //named unicode glyph. one character
             case 'U':                           //16-bit unicode number. one character encoded as a 4-char hex string
@@ -1238,6 +1239,27 @@ return(RetStr);
 }
 
 
+
+char *TerminalFillToEndOfLine(char *RetStr, int fill_char, STREAM *Term)
+{
+const char *ptr=NULL;
+int i,twide, thigh;
+int len=0;
+
+if (StrValid(RetStr))
+{
+ptr=strrchr(RetStr, '\n');
+if (ptr) ptr++;
+else ptr=RetStr;
+len=TerminalStrLen(ptr);
+}
+
+TerminalGeometry(Term, &twide, &thigh);
+for (i=len; i < twide; i++) RetStr=AddCharToStr(RetStr, fill_char);
+
+return(RetStr);
+}
+
 const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
 {
     const char *ptr, *end;
@@ -1341,6 +1363,10 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             case '>':
                 *RetStr=TerminalCommandStr(*RetStr, TERM_CLEAR_ENDLINE, 0, 0);
                 break;
+						case '=':
+								ptr++;
+                *RetStr=TerminalFillToEndOfLine(*RetStr, *ptr, Term);
+						break;
             case '|':
                 Tempstr=CopyStr(Tempstr, "");
                 ptr=TerminalAlignText(ptr+1, &Tempstr, TERM_ALIGN_CENTER, Term);
