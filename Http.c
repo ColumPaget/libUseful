@@ -96,7 +96,7 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
     if (InLen > 0)
     {
         len=Chunk->BuffLen+InLen;
-        Chunk->Buffer=SetStrLen(Chunk->Buffer,len);
+        Chunk->Buffer=SetStrLen(Chunk->Buffer,len+10);
         ptr=Chunk->Buffer+Chunk->BuffLen;
         memcpy(ptr,InBuff,InLen);
         Chunk->Buffer[len]='\0';
@@ -140,7 +140,7 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
         //if we got chunksize of 0 then we're done, return STREAM_CLOSED
         if (Chunk->ChunkSize==0) return(STREAM_CLOSED);
 
-        Chunk->BuffLen=end-ptr;
+        Chunk->BuffLen=end - ptr;
 
         if (Chunk->BuffLen > 0)	memmove(Chunk->Buffer, ptr, Chunk->BuffLen);
         //in case it went negative in the above calcuation
@@ -297,6 +297,17 @@ char *HTTPQuote(char *RetBuff, const char *Str)
 }
 
 
+
+static void HTTPSetLoginCreds(HTTPInfoStruct *Info, const char *User, const char *Password)
+{
+    Info->AuthFlags |= HTTP_AUTH_BASIC;
+    Info->UserName=CopyStr(Info->UserName, User);
+
+//if (StrValid(Password)) CredsStoreAdd(Info->Host, Info->UserName, Password);
+    Info->Credentials=CopyStr(Info->Credentials, Password);
+}
+
+
 void HTTPInfoSetValues(HTTPInfoStruct *Info, const char *Host, int Port, const char *Logon, const char *Password, const char *Method, const char *Doc, const char *ContentType, int ContentLength)
 {
     Info->State=0;
@@ -308,9 +319,8 @@ void HTTPInfoSetValues(HTTPInfoStruct *Info, const char *Host, int Port, const c
     Info->Doc=CopyStr(Info->Doc,Doc);
     Info->PostContentType=CopyStr(Info->PostContentType,ContentType);
     Info->PostContentLength=ContentLength;
-    Info->UserName=CopyStr(Info->UserName, Logon);
 
-    if (StrValid(Password)) CredsStoreAdd(Host, Logon, Password);
+    HTTPSetLoginCreds(Info, Logon, Password);
 }
 
 
@@ -321,7 +331,7 @@ HTTPInfoStruct *HTTPInfoCreate(const char *Protocol, const char *Host, int Port,
     HTTPInfoStruct *Info;
     const char *ptr;
 
-    Info=(HTTPInfoStruct *) calloc(1,sizeof(HTTPInfoStruct));
+    Info=(HTTPInfoStruct *) calloc(1, sizeof(HTTPInfoStruct));
     Info->Protocol=CopyStr(Info->Protocol,Protocol);
     HTTPInfoSetValues(Info, Host, Port, Logon, Password, Method, Doc, ContentType, ContentLength);
 
@@ -439,12 +449,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
     if (Info->PostContentLength > 0) Info->Doc=MCatStr(Info->Doc, "?", Args, NULL);
     else HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
 
-    if (StrValid(User) || StrValid(Pass)) Info->UserName=CopyStr(Info->UserName, User);
-    if (StrValid(Pass))
-    {
-        Info->AuthFlags |= HTTP_AUTH_BASIC;
-        CredsStoreAdd(Info->Host, User, Pass);
-    }
+    HTTPSetLoginCreds(Info, User, Pass);
 
     if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
 
@@ -767,7 +772,7 @@ char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, const char
 
 
 
-static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info, char *AuthInfo)
+static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info, const char *AuthInfo)
 {
     char *SendStr=NULL, *Tempstr=NULL, *Realm=NULL, *Nonce=NULL;
     const char *ptr;
@@ -784,8 +789,18 @@ static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruc
     ptr=GetToken(ptr,":",&Nonce,0);
 
     passlen=CredsStoreLookup(Realm, Info->UserName, &p_Password);
-
+    if (! passlen)
+    {
+        Tempstr=FormatStr(Tempstr, "https://%s:%d",Info->Host, Info->Port);
+        passlen=CredsStoreLookup(Tempstr, Info->UserName, &p_Password);
+    }
     if (! passlen) passlen=CredsStoreLookup(Info->Host, Info->UserName, &p_Password);
+    if (!passlen)
+    {
+        p_Password=Info->Credentials;
+        passlen=StrLen(Info->Credentials);
+    }
+
 
     if (passlen)
     {
@@ -851,13 +866,13 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
 
     //probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
     if ((Info->PostContentLength > 0) &&
-            ( 
-							(strcasecmp(Info->Method,"POST")==0) || 
-							(strcasecmp(Info->Method,"PUT")==0) || 
-							(strcasecmp(Info->Method,"PROPFIND")==0) || 
-							(strcasecmp(Info->Method,"PROPPATCH")==0) || 
-							(strcasecmp(Info->Method,"PATCH")==0)
-						)
+            (
+                (strcasecmp(Info->Method,"POST")==0) ||
+                (strcasecmp(Info->Method,"PUT")==0) ||
+                (strcasecmp(Info->Method,"PROPFIND")==0) ||
+                (strcasecmp(Info->Method,"PROPPATCH")==0) ||
+                (strcasecmp(Info->Method,"PATCH")==0)
+            )
        )
     {
         Tempstr=FormatStr(Tempstr,"Content-Length: %d\r\n",Info->PostContentLength);

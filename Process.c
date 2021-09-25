@@ -228,7 +228,7 @@ int WritePidFile(const char *ProgName)
 
 //Don't close 'fd'!
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
 
     return(fd);
 }
@@ -433,7 +433,7 @@ int JoinNamespace(const char *Namespace, int type)
     RaiseError(0, "namespaces", "setns unavailable");
 #endif
 
-    DestroyString(Tempstr);
+    Destroy(Tempstr);
     return(result);
 }
 
@@ -670,11 +670,13 @@ int ProcessContainer(const char *Config)
         }
         ProcessContainerFilesys(Config, ChRoot, Flags);
 
-//fork again because CLONE_NEWPID only takes effect after another fork, and creates an 'init' process
-
+        //fork again because CLONE_NEWPID only takes effect after another fork, and creates an 'init' process
         child=fork();
         if (child==0)
         {
+            //we do not call CredsStoreOnFork here becausee it's assumed that we want to take the creds store with us, as
+            //these forks are in order to change aspects of our program, rather than spawn a new process
+
             //must do proc after the fork so that CLONE_NEWPID takes effect
             mkdir("proc",0755);
             FileSystemMount("","proc","proc","");
@@ -722,14 +724,14 @@ int ProcessContainer(const char *Config)
         else _exit(0);
     }
 
-    DestroyString(Tempstr);
-    DestroyString(SetupScript);
-    DestroyString(HostName);
-    DestroyString(Namespace);
-    DestroyString(Name);
-    DestroyString(Value);
-    DestroyString(ChRoot);
-    DestroyString(Dir);
+    Destroy(Tempstr);
+    Destroy(SetupScript);
+    Destroy(HostName);
+    Destroy(Namespace);
+    Destroy(Name);
+    Destroy(Value);
+    Destroy(ChRoot);
+    Destroy(Dir);
 
     return(result);
 }
@@ -740,14 +742,16 @@ int ProcessApplyConfig(const char *Config)
 {
     char *Chroot=NULL;
     char *Name=NULL, *Value=NULL, *Capabilities=NULL;
-    const char *ptr;
+    const char *ptr=NULL;
     struct rlimit limit;
     rlim_t val;
     int Flags=0, i;
     long uid=0, gid=0;
     int lockfd;
 
-    ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
+    ptr=Config;
+    while (isspace(*ptr)) ptr++;
+    ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     while (ptr)
     {
 
@@ -825,7 +829,6 @@ int ProcessApplyConfig(const char *Config)
     }
 
 
-
 //set all signal handlers to default
     if (Flags & PROC_SIGDEF)
     {
@@ -841,7 +844,7 @@ int ProcessApplyConfig(const char *Config)
         {
 //Set controlling tty to be stdin. This means that CTRL-C, SIGWINCH etc is handled for the
 //stdin file descriptor, not for any other
-            ioctl(0,TIOCSCTTY,0);
+            ioctl(0, TIOCSCTTY, 0);
             //tcsetpgrp(0, getpgrp());
         }
     }
@@ -863,6 +866,7 @@ int ProcessApplyConfig(const char *Config)
             Flags |= PROC_SETUP_FAIL;
         }
     }
+
 
 
     if (! (Flags & PROC_SETUP_FAIL))
@@ -927,21 +931,23 @@ int ProcessApplyConfig(const char *Config)
         }
     }
 
-    DestroyString(Value);
-    DestroyString(Name);
-    DestroyString(Chroot);
-    DestroyString(Capabilities);
+    Destroy(Value);
+    Destroy(Name);
+    Destroy(Chroot);
+    Destroy(Capabilities);
 
     return(Flags);
 }
 
 
-/* This function turns our process into a demon */
+// This function turns our process into a demon
+// though this requires forks, we do not call CredsStoreOnFork as we want to take the Credentials Store with us.
 pid_t demonize()
 {
     int result, i=0;
 
     LogFileFlushAll(TRUE);
+
 //Don't fork with context here, as a demonize involves two forks, so
 //it's wasted work here.
     result=fork();

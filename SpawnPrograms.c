@@ -57,6 +57,7 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
     else FinalCommand=MakeShellSafeString(FinalCommand, (char *) Command, 0);
 
     StripTrailingWhitespace(FinalCommand);
+
     if (Flags & SPAWN_NOSHELL)
     {
         argv=(char **) calloc(max_arg+10,sizeof(char *));
@@ -97,12 +98,15 @@ pid_t xfork(const char *Config)
 {
     pid_t pid;
 
-    //LogFileFlushAll(TRUE);
+    LogFileFlushAll(TRUE);
     pid=fork();
     if (pid==-1) RaiseError(ERRFLAG_ERRNO, "fork", "");
     if (pid==0)
     {
-        ProcessApplyConfig(Config);
+        //we must handle creds store straight away, because it's memory is likely configured
+        //with SMEM_NOFORK and thus the memory is invalid on fork
+        CredsStoreOnFork();
+        if (StrValid(Config)) ProcessApplyConfig(Config);
     }
     return(pid);
 }
@@ -270,7 +274,7 @@ pid_t PipeSpawn(int *infd,int  *outfd,int  *errfd, const char *Command, const ch
 
 pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flags, const char *Config)
 {
-    pid_t pid=-1, ConfigFlags;
+    pid_t pid=-1, ConfigFlags=0;
     int tty, pty, i;
 
     if (PseudoTTYGrab(&pty, &tty, Flags))
@@ -280,7 +284,7 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
         {
             close(pty);
 
-            //doesn't seem to exist under macosx!
+            // TIOCSCTTY doesn't seem to exist under macosx!
 #ifdef TIOCSCTTY
             ioctl(tty,TIOCSCTTY,0);
 #endif
@@ -375,8 +379,8 @@ STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
     ptr=GetToken(Config, "\\S", &Token, GETTOKEN_QUOTES);
     while (ptr)
     {
-    if (strcmp(Token, "noshell")==0) UseShell=FALSE;
-    ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
+        if (strcmp(Token, "noshell")==0) UseShell=FALSE;
+        ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
     }
 
     GetToken(Command, "\\S", &Token, GETTOKEN_QUOTES);

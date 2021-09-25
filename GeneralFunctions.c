@@ -32,6 +32,17 @@ int ptr_incr(const char **ptr, int count)
     return(TRUE);
 }
 
+const char *traverse_until(const char *ptr, char terminator)
+{
+    while ((*ptr != terminator) && (*ptr != '\0'))
+    {
+        //handle quoted chars
+        if ((*ptr=='\\') && (*(ptr+1) != '\0')) ptr++;
+        ptr++;
+    }
+    return(ptr);
+}
+
 
 const char *traverse_quoted(const char *ptr)
 {
@@ -39,13 +50,7 @@ const char *traverse_quoted(const char *ptr)
 
     Quote=*ptr;
     ptr++;
-    while ((*ptr != Quote) && (*ptr != '\0'))
-    {
-        //handle quoted chars
-        if ((*ptr=='\\') && (*(ptr+1) != '\0')) ptr++;
-        ptr++;
-    }
-    return(ptr);
+    return(traverse_until(ptr, Quote));
 }
 
 

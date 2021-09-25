@@ -537,15 +537,20 @@ const char *OpenSSLQueryCipher(STREAM *S)
         STREAMSetValue(S,"SSL:Cipher",Tempstr);
 
         Tempstr=SetStrLen(Tempstr,1024);
-        Tempstr=SSL_CIPHER_description(Cipher, Tempstr, 1024);
-	//openssl won't have updated our strlen cache, so we have to here
-	if (Tempstr) StrLenCacheAdd(Tempstr, strlen(Tempstr));
-	StripTrailingWhitespace(Tempstr);
+        memset(Tempstr, 0, 1024);
+        SSL_CIPHER_description(Cipher, Tempstr, 1024);
+        //openssl won't have updated our strlen cache, so we have to here
+        if (Tempstr)
+        {
+            StrLenCacheAdd(Tempstr, strlen(Tempstr));
+            StripTrailingWhitespace(Tempstr);
+        }
 
         Tempstr=MCatStr(Tempstr, " ", SSL_CIPHER_get_version(Cipher), NULL);
-	//openssl won't have updated our strlen cache, so we have to here
-	if (Tempstr) StrLenCacheAdd(Tempstr, strlen(Tempstr));
-	StripTrailingWhitespace(Tempstr);
+        strrep(Tempstr, '\n', ' ');
+        //openssl won't have updated our strlen cache, so we have to here
+        if (Tempstr) StrLenCacheAdd(Tempstr, strlen(Tempstr));
+        StripTrailingWhitespace(Tempstr);
         STREAMSetValue(S,"SSL:CipherDetails",Tempstr);
     }
 
@@ -560,7 +565,7 @@ const char *OpenSSLQueryCipher(STREAM *S)
 
 
 //this can be externally called to generate new, randomized DHParams
-//for a server using PFS. One day this probably needs to be able to 
+//for a server using PFS. One day this probably needs to be able to
 //save the resulting params
 void OpenSSLGenerateDHParams()
 {
@@ -647,7 +652,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 
             OpenSSLQueryCipher(S);
             OpenSSLVerifyCertificate(S, LU_SSL_VERIFY_HOSTNAME);
-	    
+
         }
     }
 
@@ -765,9 +770,9 @@ int OpenSSLIsPeerAuth(STREAM *S)
 
 int OpenSSLSTREAMCheckForBytes(STREAM *S)
 {
-int byte_count=0;
+    int byte_count=0;
 #ifdef HAVE_LIBSSL
-SSL *SSL_OBJ;
+    SSL *SSL_OBJ;
 
 //This is used in multiple places below, do don't just move it to within the first place
     SSL_OBJ=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
@@ -781,47 +786,47 @@ SSL *SSL_OBJ;
     }
 #endif
 
-return(byte_count);
+    return(byte_count);
 }
 
 
 int OpenSSLSTREAMReadBytes(STREAM *S, const char *Data, int len)
 {
-int bytes_read=0;
+    int bytes_read=0;
 #ifdef HAVE_LIBSSL
-SSL *SSL_OBJ;
+    SSL *SSL_OBJ;
 
 
     SSL_OBJ=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-        if (S->State & SS_SSL)
-        {
-            bytes_read=SSL_read(SSL_OBJ, Data, len);
+    if (S->State & SS_SSL)
+    {
+        bytes_read=SSL_read(SSL_OBJ, Data, len);
         //saved_errno is used in all cases to capture errno before another function changes it
         //    saved_errno=errno;
-        }
+    }
 #endif
 
-return(bytes_read);
+    return(bytes_read);
 }
 
 int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
 {
-int result=STREAM_CLOSED;
+    int result=STREAM_CLOSED;
 
 #ifdef HAVE_LIBSSL
-SSL *ssl;
+    SSL *ssl;
 
-  //if this is an SSL stream, it should have an associated SSL object. If it doesn't then the stream
-  //either failed to open, or has been closed with STREAMShutdown
-  ssl=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-  if (ssl) 
-  {
-	result=SSL_write(ssl, Data, Len);
+    //if this is an SSL stream, it should have an associated SSL object. If it doesn't then the stream
+    //either failed to open, or has been closed with STREAMShutdown
+    ssl=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
+    if (ssl)
+    {
+        result=SSL_write(ssl, Data, Len);
         if (result < 1) result=STREAM_CLOSED;
-  }
+    }
 #endif
 
-return(result);
+    return(result);
 }
 
 

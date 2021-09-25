@@ -332,20 +332,21 @@ int PseudoTTYGrabUnix98(int *master, int *slave, int TermFlags)
     {
         if (grantpt(*master)==-1) RaiseError(ERRFLAG_ERRNO, "pty", "grantpt failed");
         if (unlockpt(*master)==-1) RaiseError(ERRFLAG_ERRNO, "pty", "unlockpt failed");
-        Tempstr=SetStrLen(Tempstr,100);
-        memset(Tempstr, 0, 100);
 
 #ifdef HAVE_PTSNAME_R
-        if (ptsname_r(*master,Tempstr,100) != 0)
+        Tempstr=SetStrLen(Tempstr,100);
+        memset(Tempstr, 0, 100);
+        if (ptsname_r(*master,Tempstr,100) != 0) Tempstr=CopyStr(Tempstr, ptsname(*master));
+#else
+        Tempstr=CopyStr(Tempstr, ptsname(*master));
 #endif
 
-            Tempstr=CopyStr(Tempstr, ptsname(*master));
         if (StrValid(Tempstr))
         {
             if ( (*slave=open(Tempstr,O_RDWR)) >-1)
             {
                 if (TermFlags !=0) TTYConfig(*slave,0,TermFlags);
-                DestroyString(Tempstr);
+                Destroy(Tempstr);
                 return(TRUE);
             }
             else RaiseError(ERRFLAG_ERRNO, "pty", "failed to open %s", Tempstr);

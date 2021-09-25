@@ -1364,19 +1364,19 @@ int STREAMReadCharsToBuffer(STREAM *S)
 
         if (S->State & SS_SSL) bytes_read=OpenSSLSTREAMReadBytes(S, tmpBuff, val);
         else if (S->Type==STREAM_TYPE_UDP)
-            {
-                bytes_read=UDPRecv(S->in_fd,  tmpBuff, val, &Peer, NULL);
-                saved_errno=errno;
-                STREAMSetValue(S, "Peer", Peer);
-                Destroy(Peer);
-            }
-            else
-            {
-                if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
-                bytes_read=read(S->in_fd, tmpBuff, val);
-                saved_errno=errno;
-                if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
-            }
+        {
+            bytes_read=UDPRecv(S->in_fd,  tmpBuff, val, &Peer, NULL);
+            saved_errno=errno;
+            STREAMSetValue(S, "Peer", Peer);
+            Destroy(Peer);
+        }
+        else
+        {
+            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
+            bytes_read=read(S->in_fd, tmpBuff, val);
+            saved_errno=errno;
+            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
+        }
 
         if (bytes_read > 0)
         {

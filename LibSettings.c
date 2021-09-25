@@ -75,4 +75,5 @@ int LibUsefulGetInteger(const char *Name)
 void LibUsefulAtExit()
 {
     if (LibUsefulFlags & LU_CONTAINER) FileSystemUnMount("/","lazy");
+    CredsStoreDestroy();
 }

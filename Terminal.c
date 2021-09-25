@@ -16,69 +16,77 @@ TMouseEvent MouseEvent;
 //see to be 2 or 3 characters, but area really 1, and 'tilde format' strings that describe colors
 //and other terminal actions, which again seem to be 2 characters, but are really 1. If this function
 //encounters something like '~r' which specifies following text is colored red, and which doesn't encode
-//actual characters, it returns false. If it encounters anyting that does encode an actual character, 
+//actual characters, it returns false. If it encounters anyting that does encode an actual character,
 //including an actual character, it returns true
 
 int TerminalConsumeCharacter(const char **ptr)
 {
-int IsRealChar=FALSE;
+    int IsRealChar=FALSE;
 
-	//handle unicode
-        if (**ptr & 128)
+    //handle unicode
+    if (**ptr & 128)
+    {
+        switch (**ptr & 224)
         {
-            switch (**ptr & 224)
-            {
-            case 224:
-                ptr_incr(ptr, 1);
-            case 192:
-                ptr_incr(ptr, 1);
-            }
+        case 224:
+            ptr_incr(ptr, 1);
+        case 192:
+            ptr_incr(ptr, 1);
+        }
 
+        IsRealChar=TRUE;
+    }
+    else if (**ptr=='~')
+    {
+        ptr_incr(ptr, 1);
+        switch (**ptr)
+        {
+        case '+':
+            ptr_incr(ptr, 1);
+            break;  // 'bright' colors, in the form ~+r so eat one more char
+        case '=':
+            ptr_incr(ptr, 1);
+            break;  // 'fill with char' in the form ~=x (where 'x' is any char) so eat one more char
+        case '~':
             IsRealChar=TRUE;
+            break;  //~~ translates to ~, one character
+        case ':':
+            IsRealChar=TRUE;
+            break;  //named unicode glyph. one character
+        case 'U':                           //16-bit unicode number. one character encoded as a 4-char hex string
+            ptr_incr(ptr, 4);
+            IsRealChar=TRUE;
+            break;
         }
-        else if (**ptr=='~')
+    }
+    else if (**ptr=='\\')
+    {
+        ptr_incr(ptr, 1);
+        switch (**ptr)
         {
-            ptr_incr(ptr, 1);
-	    switch (**ptr)
-	    {
-	    case '+': ptr_incr(ptr, 1); break;  // 'bright' colors, in the form ~+r so eat one more char
-	    case '=': ptr_incr(ptr, 1); break;  // 'fill with char' in the form ~=x (where 'x' is any char) so eat one more char
-            case '~': IsRealChar=TRUE;  break;  //~~ translates to ~, one character
-            case ':': IsRealChar=TRUE;  break;  //named unicode glyph. one character
-            case 'U':                           //16-bit unicode number. one character encoded as a 4-char hex string
-                ptr_incr(ptr, 4);
-                IsRealChar=TRUE; 
-	    break;
-	    }
+        case '\0':
+            break;
+
+        //octal value
+        case '0':
+            ptr_incr(ptr, 4);
+            IsRealChar=TRUE;
+            break;
+
+        //hex value in form
+        case 'x':
+            ptr_incr(ptr, 3);
+            IsRealChar=TRUE;
+            break;
+
+        default:
+            IsRealChar=TRUE;
+            break;
         }
-        else if (**ptr=='\\')
-        {
-            ptr_incr(ptr, 1);
-            switch (**ptr)
-            {
-            case '\0':
-                break;
+    }
+    else IsRealChar=TRUE;
 
-	    //octal value 
-            case '0':
-                ptr_incr(ptr, 4); 
-		IsRealChar=TRUE;
-                break;
-
-            //hex value in form
-            case 'x':
-                ptr_incr(ptr, 3); 
-		IsRealChar=TRUE;
-                break;
-
-            default:
-		IsRealChar=TRUE;
-                break;
-            }
-        }
-        else IsRealChar=TRUE;
-
-return(IsRealChar);
+    return(IsRealChar);
 }
 
 
@@ -94,7 +102,7 @@ static int TerminalInternalStrLen(const char **Str, int MaxLen)
 
     for (ptr=*Str; *ptr !='\0'; ptr++)
     {
-	if (TerminalConsumeCharacter(&ptr)) len++;
+        if (TerminalConsumeCharacter(&ptr)) len++;
 
         if ((MaxLen != -1) && (len > MaxLen))
         {
@@ -125,12 +133,12 @@ char *TerminalStrTrunc(char *Str, int MaxLen)
     ptr=Str;
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
-	if (TerminalConsumeCharacter(&ptr)) len++;
-    	if (len > MaxLen) 
-	{
-		StrTrunc(Str, len);
-		break;
-	}
+        if (TerminalConsumeCharacter(&ptr)) len++;
+        if (len > MaxLen)
+        {
+            StrTrunc(Str, len);
+            break;
+        }
     }
 
     return(Str);
@@ -206,12 +214,12 @@ const char *TerminalTranslateKeyCode(int key)
         break;
 
     case TKEY_TAB:
-	return("	");
-	break;
+        return("	");
+        break;
 
     case TKEY_BACKSPACE:
-	return("BACKSPACE");
-	break;
+        return("BACKSPACE");
+        break;
 
     case ESCAPE:
         return("ESC");
@@ -1183,81 +1191,81 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
 char *TerminalColorCommandStr(char *RetStr, char inchar, int offset)
 {
 
-switch (inchar)
-{
-            case 'r': 
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_RED + offset, 0);
-                break;
-            case 'R':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_RED + offset);
-                break;
-            case 'g':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_GREEN + offset, 0);
-                break;
-            case 'G':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_GREEN + offset);
-                break;
-            case 'b':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLUE + offset, 0);
-                break;
-            case 'B':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLUE + offset);
-                break;
-            case 'n':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLACK + offset, 0);
-                break;
-            case 'N':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLACK + offset);
-                break;
-            case 'w':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_WHITE + offset, 0);
-                break;
-            case 'W':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_WHITE + offset);
-                break;
-            case 'y':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_YELLOW + offset, 0);
-                break;
-            case 'Y':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_YELLOW + offset);
-                break;
-            case 'm':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_MAGENTA + offset, 0);
-                break;
-            case 'M':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_MAGENTA + offset);
-                break;
-            case 'c':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_CYAN + offset, 0);
-                break;
-            case 'C':
-                RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_CYAN + offset);
-                break;
-}
+    switch (inchar)
+    {
+    case 'r':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_RED + offset, 0);
+        break;
+    case 'R':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_RED + offset);
+        break;
+    case 'g':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_GREEN + offset, 0);
+        break;
+    case 'G':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_GREEN + offset);
+        break;
+    case 'b':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLUE + offset, 0);
+        break;
+    case 'B':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLUE + offset);
+        break;
+    case 'n':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLACK + offset, 0);
+        break;
+    case 'N':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLACK + offset);
+        break;
+    case 'w':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_WHITE + offset, 0);
+        break;
+    case 'W':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_WHITE + offset);
+        break;
+    case 'y':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_YELLOW + offset, 0);
+        break;
+    case 'Y':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_YELLOW + offset);
+        break;
+    case 'm':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_MAGENTA + offset, 0);
+        break;
+    case 'M':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_MAGENTA + offset);
+        break;
+    case 'c':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_CYAN + offset, 0);
+        break;
+    case 'C':
+        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_CYAN + offset);
+        break;
+    }
 
-return(RetStr);
+    return(RetStr);
 }
 
 
 
 char *TerminalFillToEndOfLine(char *RetStr, int fill_char, STREAM *Term)
 {
-const char *ptr=NULL;
-int i,twide, thigh;
-int len=0;
+    const char *ptr=NULL;
+    int i,twide, thigh;
+    int len=0;
 
-if (StrValid(RetStr))
-{
-ptr=strrchr(RetStr, '\n');
-if (ptr) ptr++;
-else ptr=RetStr;
-len=TerminalStrLen(ptr);
-}
+    if (StrValid(RetStr))
+    {
+        ptr=strrchr(RetStr, '\n');
+        if (ptr) ptr++;
+        else ptr=RetStr;
+        len=TerminalStrLen(ptr);
+    }
 
-TerminalGeometry(Term, &twide, &thigh);
-for (i=len; i < twide; i++) RetStr=AddCharToStr(RetStr, fill_char);
+    TerminalGeometry(Term, &twide, &thigh);
+    for (i=len; i < twide; i++) RetStr=AddCharToStr(RetStr, fill_char);
 
-return(RetStr);
+    return(RetStr);
 }
 
 const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
@@ -1321,29 +1329,29 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             case '~':
                 *RetStr=AddCharToStr(*RetStr, *ptr);
                 break;
-						case '+': 
-							ptr++;
-							*RetStr=TerminalColorCommandStr(*RetStr, *ptr, ANSI_DARKGREY);
-							break;
+            case '+':
+                ptr++;
+                *RetStr=TerminalColorCommandStr(*RetStr, *ptr, ANSI_DARKGREY);
+                break;
 
-						case 'r':
-						case 'R':
-						case 'g':
-						case 'G':
-						case 'b':
-						case 'B':
-						case 'y':
-						case 'Y':
-						case 'm':
-						case 'M':
-						case 'c':
-						case 'C':
-						case 'w':
-						case 'W':
-						case 'n':
-						case 'N':
-							*RetStr=TerminalColorCommandStr(*RetStr, *ptr, 0);
-							break;
+            case 'r':
+            case 'R':
+            case 'g':
+            case 'G':
+            case 'b':
+            case 'B':
+            case 'y':
+            case 'Y':
+            case 'm':
+            case 'M':
+            case 'c':
+            case 'C':
+            case 'w':
+            case 'W':
+            case 'n':
+            case 'N':
+                *RetStr=TerminalColorCommandStr(*RetStr, *ptr, 0);
+                break;
 
             case 'e':
                 *RetStr=TerminalCommandStr(*RetStr, TERM_TEXT, ANSI_BOLD, 0);
@@ -1363,10 +1371,10 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             case '>':
                 *RetStr=TerminalCommandStr(*RetStr, TERM_CLEAR_ENDLINE, 0, 0);
                 break;
-						case '=':
-								ptr++;
+            case '=':
+                ptr++;
                 *RetStr=TerminalFillToEndOfLine(*RetStr, *ptr, Term);
-						break;
+                break;
             case '|':
                 Tempstr=CopyStr(Tempstr, "");
                 ptr=TerminalAlignText(ptr+1, &Tempstr, TERM_ALIGN_CENTER, Term);

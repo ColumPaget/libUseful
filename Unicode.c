@@ -149,7 +149,7 @@ char *UnicodeEncodeChar(char *RetStr, int UnicodeLevel, int Code)
 
 char *UnicodeStr(char *RetStr, int Code)
 {
-return(UnicodeEncodeChar(RetStr, GlobalUnicodeLevel, Code));
+    return(UnicodeEncodeChar(RetStr, GlobalUnicodeLevel, Code));
 }
 
 
@@ -204,5 +204,5 @@ char *UnicodeStrFromNameAtLevel(char *RetStr, int UnicodeLevel, const char *Name
 
 char *UnicodeStrFromName(char *RetStr, const char *Name)
 {
-return(UnicodeStrFromNameAtLevel(RetStr, GlobalUnicodeLevel, Name));
+    return(UnicodeStrFromNameAtLevel(RetStr, GlobalUnicodeLevel, Name));
 }
