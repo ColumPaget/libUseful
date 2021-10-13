@@ -284,10 +284,7 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
         {
             close(pty);
 
-            // TIOCSCTTY doesn't seem to exist under macosx!
-#ifdef TIOCSCTTY
-            ioctl(tty,TIOCSCTTY,0);
-#endif
+						ProcessSetControlTTY(tty);
             setsid();
 
             ///now that we've dupped it, we don't need to keep it open

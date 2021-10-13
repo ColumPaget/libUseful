@@ -107,6 +107,17 @@ int ProcessSetCapabilities(const char *CapNames)
 }
 
 
+//Set controlling tty to be fd. 
+//This means that CTRL-C, SIGWINCH etc is handled for the selected fd
+//and not any other
+void ProcessSetControlTTY(int fd)
+{
+// TIOCSCTTY doesn't seem to exist under macosx!
+#ifdef TIOCSCTTY
+            ioctl(fd,TIOCSCTTY,0);
+#endif
+}
+
 
 //The command-line args that we've been passed (argv) will occupy a block of contiguous memory that
 //contains these args and the environment strings. In order to change the command-line args we isolate
@@ -747,7 +758,7 @@ int ProcessApplyConfig(const char *Config)
     rlim_t val;
     int Flags=0, i;
     long uid=0, gid=0;
-    int lockfd;
+    int lockfd, ctty_fd=0;
 
     ptr=Config;
     while (isspace(*ptr)) ptr++;
@@ -770,6 +781,11 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"daemon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
+        else if (strcasecmp(Name,"ctty")==0) 
+				{
+						ctty_fd=atoi(Value);
+						Flags |= PROC_CTRL_TTY;
+				}
         else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"outnull")==0)
         {
@@ -840,13 +856,7 @@ int ProcessApplyConfig(const char *Config)
     {
         if (Flags & PROC_SETSID) setsid();
         if (Flags & PROC_NEWPGROUP) setpgid(0, 0);
-        if (Flags & PROC_CTRL_TTY)
-        {
-//Set controlling tty to be stdin. This means that CTRL-C, SIGWINCH etc is handled for the
-//stdin file descriptor, not for any other
-            ioctl(0, TIOCSCTTY, 0);
-            //tcsetpgrp(0, getpgrp());
-        }
+        if (Flags & PROC_CTRL_TTY) ProcessSetControlTTY(ctty_fd);
     }
 
 
