@@ -2439,10 +2439,22 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 
 char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
 {
+    int TTYFlags=0;
+
     TerminalPutStr("\r~>",S);
     TerminalPutStr(Prompt, S);
     STREAMFlush(S);
-    return(TerminalReadText(RetStr, Flags, S));
+    if (Flags & (TERM_HIDETEXT | TERM_SHOWSTARS | TERM_SHOWTEXTSTARS))
+    {
+        TTYFlags=TTYGetConfig(S->in_fd);
+        TTYSetEcho(S->in_fd, FALSE);
+        TTYSetCanonical(S->in_fd, FALSE);
+    }
+    RetStr=TerminalReadText(RetStr, Flags, S);
+    if (TTYFlags & TTYFLAG_ECHO) TTYSetEcho(S->in_fd, TRUE);
+    if (TTYFlags & TTYFLAG_CANON) TTYSetCanonical(S->in_fd, TRUE);
+
+    return(RetStr);
 }
 
 

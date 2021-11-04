@@ -93,6 +93,10 @@ ctrl_tty        set controlling tty of process to be it's standard-in. Signals a
 ctty=<fd>       set controlling tty of process to be 'fd' (where fd is a file descriptor number). Same as ctrl_tty above, but using an
                 arbitary file descriptor rather than stdin.
 
+innull          redirect process stdin to /dev/null
+outnull         redirect process stdout and stderr to /dev/null
+errnull         redirect process stderr to /dev/null
+
 sigdef          set all signal handlers to the default values (throw away any sighandlers set by parent process)
 sigdefault      set all signal handlers to the default values (throw away any sighandlers set by parent process)
 
