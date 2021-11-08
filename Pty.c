@@ -201,9 +201,9 @@ void TTYConfig(int tty, int LineSpeed, int Flags)
         tty_data.c_cc[VSUSP]=old_tty_data->c_cc[VSUSP];
         tty_data.c_cc[VINTR]=old_tty_data->c_cc[VINTR];
     }
+
     if (Flags & TTYFLAG_ECHO) tty_data.c_lflag |= ECHO;
 
-    TTYSetCanonical(tty, Flags & TTYFLAG_CANON);
 
 //Higher line speeds protected with #ifdef because not all
 //operating systems seem to have them
@@ -290,6 +290,10 @@ void TTYConfig(int tty, int LineSpeed, int Flags)
 
     tcflush(tty,TCIFLUSH);
     tcsetattr(tty,TCSANOW,&tty_data);
+
+//must call this last, or else changes made by this function will
+//be overwritten by tcsetattr above	
+    TTYSetCanonical(tty, Flags & TTYFLAG_CANON);
 
     DestroyString(Tempstr);
 }
