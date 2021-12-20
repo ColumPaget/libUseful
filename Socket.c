@@ -776,33 +776,27 @@ int IPReconnect(int sock, const char *Host, int Port, int Flags)
 }
 
 
-
-
-int NetConnectWithAttributes(const char *Proto, const char *LocalHost, const char *Host, int Port, const char *Config)
+int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char *Host, int Port, TSockSettings *Settings)
 {
     const char *p_LocalHost=LocalHost;
     int sock, result;
-    TSockSettings Settings;
-
-    memset(&Settings, 0, sizeof(TSockSettings));
-    SocketParseConfig(Config, &Settings);
 
     if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
     if ((strcasecmp(Proto,"udp")==0) || (strcasecmp(Proto,"bcast")==0))
     {
         sock=BindSock(SOCK_DGRAM, p_LocalHost, 0, 0);
-        if (strcasecmp(Proto,"bcast")==0) Settings.Flags |= SOCK_BROADCAST;
+        if (strcasecmp(Proto,"bcast")==0) Settings->Flags |= SOCK_BROADCAST;
     }
     else sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
 
-    if (Settings.TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings.TTL), sizeof(int));
-    if (Settings.ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings.ToS), sizeof(int));
+    if (Settings->TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings->TTL), sizeof(int));
+    if (Settings->ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings->ToS), sizeof(int));
 
 #ifdef SO_MARK
-    if (Settings.Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings.Mark), sizeof(int));
+    if (Settings->Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings->Mark), sizeof(int));
 #endif
 
-    result=IPReconnect(sock, Host, Port, Settings.Flags);
+    result=IPReconnect(sock, Host, Port, Settings->Flags);
     if (result==-1)
     {
         close(sock);
@@ -811,6 +805,19 @@ int NetConnectWithAttributes(const char *Proto, const char *LocalHost, const cha
 
     return(sock);
 }
+
+
+
+int NetConnectWithAttributes(const char *Proto, const char *LocalHost, const char *Host, int Port, const char *Config)
+{
+    TSockSettings Settings;
+
+    memset(&Settings, 0, sizeof(TSockSettings));
+    SocketParseConfig(Config, &Settings);
+
+return(NetConnectWithSettings(Proto, LocalHost, Host, Port, &Settings));
+}
+
 
 
 int TCPConnect(const char *Host, int Port, const char *Config)
@@ -862,19 +869,8 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
 {
     int result=FALSE;
     const char *ptr;
-    struct timeval tv;
 
     if (! S) return(FALSE);
-    if ((S->in_fd > -1) && (S->Timeout > 0) )
-    {
-        MillisecsToTV(S->Timeout * 10, &tv);
-        if (FDSelect(S->in_fd, SELECT_WRITE, &tv) != SELECT_WRITE)
-        {
-            close(S->in_fd);
-            S->in_fd=-1;
-            S->out_fd=-1;
-        }
-    }
 
     if (S->in_fd > -1)
     {
@@ -914,16 +910,38 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
 extern char *GlobalConnectionChain;
 
 
+
+static int STREAMWaitConnect(STREAM *S)
+{
+    struct timeval tv;
+
+    if ((S->in_fd > -1) && (S->Timeout > 0) )
+    {
+	//timeout is expressed in centisecs, so multiply by 10 to give millsecs then convert to a tv
+        MillisecsToTV(S->Timeout * 10, &tv);
+
+	if (FDSelect(S->in_fd, SELECT_WRITE, &tv) != SELECT_WRITE) return(FALSE);
+    }
+
+return(STREAMIsConnected(S));
+}
+
+
+
 int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, const char *Config)
 {
     int result=FALSE;
+    TSockSettings Settings;
+
+    memset(&Settings, 0, sizeof(TSockSettings));
+    SocketParseConfig(Config, &Settings);
 
 
     if (StrValid(Host))
     {
         //Flags are handled in this function
-        S->in_fd=NetConnectWithAttributes(Proto, STREAMGetValue(S, "LocalAddress"), Host, Port, Config);
-
+        S->in_fd=NetConnectWithSettings(Proto, STREAMGetValue(S, "LocalAddress"), Host, Port, &Settings);
+	S->Timeout=Settings.Timeout;
         S->out_fd=S->in_fd;
         if (S->in_fd > -1) result=TRUE;
     }
@@ -946,7 +964,7 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
             S->Flags |=SF_NONBLOCK;
         }
 
-        if (STREAMIsConnected(S)) result=STREAMDoPostConnect(S, S->Flags);
+	if (STREAMWaitConnect(S)) result=STREAMDoPostConnect(S, S->Flags);
     }
 
     return(result);

@@ -442,6 +442,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         else if (strcasecmp(Token, "user")==0) User=CopyStr(User, Value);
         else if (strcasecmp(Token, "password")==0) Pass=CopyStr(Pass, Value);
         else if (strcasecmp(Token, "keepalive")==0) Info->Flags |= HTTP_KEEPALIVE;
+        else if (strcasecmp(Token, "timeout")==0) Info->Timeout=atoi(Value);
         else SetVar(Info->CustomSendHeaders, Token, Value);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
@@ -1123,7 +1124,7 @@ int HTTPProcessResponse(HTTPInfoStruct *HTTPInfo)
 
 STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
 {
-    char *Proto=NULL, *Host=NULL, *Tempstr=NULL;
+    char *Proto=NULL, *Host=NULL, *URL=NULL, *Tempstr=NULL;
     const char *ptr;
     int Port=0, Flags=0;
     STREAM *S;
@@ -1152,10 +1153,12 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
         }
     }
 
-    if (StrValid(Info->ConnectionChain)) Tempstr=FormatStr(Tempstr,"%s|%s:%s:%d/",Info->ConnectionChain,Proto,Host,Port);
-    else Tempstr=FormatStr(Tempstr,"%s:%s:%d/",Proto,Host,Port);
+    if (StrValid(Info->ConnectionChain)) URL=FormatStr(URL,"%s|%s:%s:%d/",Info->ConnectionChain,Proto,Host,Port);
+    else URL=FormatStr(URL,"%s:%s:%d/",Proto,Host,Port);
 
-    S=STREAMOpen(Tempstr, "");
+    Tempstr=FormatStr(Tempstr, "rw timeout=%d", Info->Timeout);
+
+    S=STREAMOpen(URL, Tempstr);
     if (S)
     {
         S->Type=STREAM_TYPE_HTTP;
@@ -1170,9 +1173,10 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
 
     Info->S=S;
 
-    DestroyString(Proto);
     DestroyString(Tempstr);
+    DestroyString(Proto);
     DestroyString(Host);
+    DestroyString(URL);
 
     return(S);
 }

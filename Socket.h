@@ -178,7 +178,28 @@ int STREAMIsConnected(STREAM *S);
 const char *GetRemoteIP(int sock);
 
 
-//Connect to a host and port. Flags can be a bitmask of CONNECT_NONBLOCK, CONNECT_ERROR, SOCK_DONTROUTE and SOCK_NOKEEPALIVE
+//Connect to a host and port. 'Config' is a string consisting of inital flags, followed by name-value pairs
+//initial flag chars are:
+
+// r  - 'read' mode (a non-op as all sockets are readable)
+// w  - 'write' mode (a non-op as all sockets are writeable)
+// n  - nonblocking socket
+// E  - report socket connection errors
+// k  - TURN OFF socket keep alives
+// B  - broadcast socket
+// F  - TCP Fastopen
+// R  - Don't route (equivalent to applying SOCKOPT_DONTROUTE)
+// N  - TCP no-delay (disable Nagle algo)
+
+//Name-value pairs are:
+
+//   ttl=<seconds>       set ttl of socket
+//   tos=<value>         set tos of socket
+//   mark=<value>        set SOCKOPT_MARK if supported
+//   keepalive=<y/n>     turn on/off socket keepalives
+//   timeout=<centisecs> connect/read timeout for socket
+//
+// Example:  TCPConnect("myhost.com", 80, "rF ttl=10 timeout=100 keepalive=n");
 int TCPConnect(const char *Host, int Port, const char *Config);
 int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, const char *Config);
 int STREAMConnect(STREAM *S, const char *URL, const char *Config);
