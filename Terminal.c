@@ -23,21 +23,10 @@ int TerminalConsumeCharacter(const char **ptr)
 {
     int IsRealChar=FALSE;
 
-    //handle unicode
-    if (**ptr & 128)
-    {
-        switch (**ptr & 224)
-        {
-        case 224:
-            ptr_incr(ptr, 1);
-        case 192:
-            ptr_incr(ptr, 1);
-        }
 
-        IsRealChar=TRUE;
-    }
-    else if (**ptr=='~')
-    {
+		switch (**ptr)
+		{
+    case '~':
         ptr_incr(ptr, 1);
         switch (**ptr)
         {
@@ -58,9 +47,9 @@ int TerminalConsumeCharacter(const char **ptr)
             IsRealChar=TRUE;
             break;
         }
-    }
-    else if (**ptr=='\\')
-    {
+		break;
+
+    case '\\':
         ptr_incr(ptr, 1);
         switch (**ptr)
         {
@@ -83,8 +72,25 @@ int TerminalConsumeCharacter(const char **ptr)
             IsRealChar=TRUE;
             break;
         }
+		break;
+
+		default:
+    //handle unicode
+    if (**ptr & 128)
+    {
+        switch (**ptr & 224)
+        {
+        case 224:
+            ptr_incr(ptr, 1);
+        case 192:
+            ptr_incr(ptr, 1);
+        }
+
+        IsRealChar=TRUE;
     }
     else IsRealChar=TRUE;
+		break;
+    }
 
     return(IsRealChar);
 }
@@ -127,19 +133,21 @@ int TerminalStrLen(const char *Str)
 
 char *TerminalStrTrunc(char *Str, int MaxLen)
 {
-    const char *ptr;
+    char *ptr;
     int len=0;
 
     ptr=Str;
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
         if (TerminalConsumeCharacter(&ptr)) len++;
-        if (len > MaxLen)
-        {
-            StrTrunc(Str, len);
-            break;
-        }
-    }
+    		if (len > MaxLen) 
+				{
+					*ptr='\0';
+					StrLenCacheAdd(Str, len);
+					break;
+				}
+		}
+
 
     return(Str);
 }

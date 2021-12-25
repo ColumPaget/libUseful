@@ -68,7 +68,6 @@ void TerminalMenuDraw(TERMMENU *Menu)
 
         Contents=ReplaceStr(Contents, Curr->Tag, "~0", p_Attribs);
         Contents=TerminalStrTrunc(Contents, Menu->wid-4);
-
         Tempstr=MCopyStr(Tempstr, p_Attribs, p_Cursor, Contents, NULL);
 
         Output=CopyStr(Output, "");
