@@ -447,9 +447,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
 
-    if (Info->PostContentLength > 0) Info->Doc=MCatStr(Info->Doc, "?", Args, NULL);
-    else HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
-
+    HTTPInfoPOSTSetContent(Info, "", Args, 0, 0);
     HTTPSetLoginCreds(Info, User, Pass);
 
     if (StrEnd(Info->Doc)) Info->Doc=CopyStr(Info->Doc, "/");
