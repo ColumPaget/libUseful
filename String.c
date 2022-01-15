@@ -72,6 +72,11 @@ char *strrep(char *str, char oldchar, char newchar)
     {
         if (*ptr==oldchar) *ptr=newchar;
     }
+
+    //if replacement char is a null, then replacing it will change length of string
+    //so detete it from strlen cache
+    if (newchar=='\0') StrLenCacheDel(str);
+
     return(str);
 }
 
@@ -84,6 +89,11 @@ char *strmrep(char *str, char *oldchars, char newchar)
     {
         if (strchr(oldchars,*ptr)) *ptr=newchar;
     }
+
+    //if replacement char is a null, then replacing it will change length of string
+    //so detete it from strlen cache
+    if (newchar=='\0') StrLenCacheDel(str);
+
     return(str);
 }
 

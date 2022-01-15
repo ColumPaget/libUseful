@@ -125,6 +125,10 @@ extern "C" {
 #endif
 
 
+// add template for a new/custom oauth type
+void AddOAuthType(const char *Name, const char *Stage1Args, const char *Stage2Args, const char *VerifyTemplate);
+
+
 OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, const char *ClientSecret, const char *Scopes, const char *RefreshURL);
 void OAuthDestroy(void *p_OAUTH);
 
