@@ -1155,7 +1155,6 @@ void STREAMTruncate(STREAM *S, long size)
 //doesn't require caching (maybe becasue it's a logfile rather than data)
 void STREAMCloseFile(STREAM *S)
 {
-    printf("STREAMCLOSE: %s\n", S->Path);
     if (
         (StrEnd(S->Path)) ||
         (strcmp(S->Path,"-") !=0) //don't do this for stdin/stdout
