@@ -11,13 +11,13 @@ static ListNode *OAuthKeyChain=NULL;
 
 void AddOAuthType(const char *Name, const char *Stage1Args, const char *Stage2Args, const char *VerifyTemplate)
 {
-char *Tempstr=NULL;
+    char *Tempstr=NULL;
 
-if (! OAuthTypes) OAuthTypes=ListCreate();
-Tempstr=MCopyStr(Tempstr, Stage1Args, ",", Stage2Args, ",", VerifyTemplate, NULL);
-SetVar(OAuthTypes, Name, Tempstr);
+    if (! OAuthTypes) OAuthTypes=ListCreate();
+    Tempstr=MCopyStr(Tempstr, Stage1Args, ",", Stage2Args, ",", VerifyTemplate, NULL);
+    SetVar(OAuthTypes, Name, Tempstr);
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 }
 
 void SetupOAuthTypes()
@@ -35,33 +35,33 @@ void SetupOAuthTypes()
 //no redirect_uri at all.
 char *OAuthBuildURL(char *RetStr, const char *Template, ListNode *Vars)
 {
-char *Tempstr=NULL, *Name=NULL, *Value=NULL;
-const char *ptr;
+    char *Tempstr=NULL, *Name=NULL, *Value=NULL;
+    const char *ptr;
 
-Tempstr=SubstituteVarsInString(Tempstr, Template, Vars, 0);
-if (strchr(Tempstr, '?')) 
-{
-	ptr=GetToken(Tempstr, "?", &Value, 0);
-	RetStr=MCopyStr(RetStr, Value, "?", NULL);
-}
-else 
-{
-	RetStr=CopyStr(RetStr,"");
-	ptr=Tempstr;
-}
+    Tempstr=SubstituteVarsInString(Tempstr, Template, Vars, 0);
+    if (strchr(Tempstr, '?'))
+    {
+        ptr=GetToken(Tempstr, "?", &Value, 0);
+        RetStr=MCopyStr(RetStr, Value, "?", NULL);
+    }
+    else
+    {
+        RetStr=CopyStr(RetStr,"");
+        ptr=Tempstr;
+    }
 
-ptr=GetNameValuePair(ptr, "&", "=", &Name, &Value);
-while (ptr)
-{
-if (StrValid(Name) && StrValid(Value)) RetStr=MCatStr(RetStr, Name, "=", Value, "&", NULL);
-ptr=GetNameValuePair(ptr, "&", "=", &Name, &Value);
-}
+    ptr=GetNameValuePair(ptr, "&", "=", &Name, &Value);
+    while (ptr)
+    {
+        if (StrValid(Name) && StrValid(Value)) RetStr=MCatStr(RetStr, Name, "=", Value, "&", NULL);
+        ptr=GetNameValuePair(ptr, "&", "=", &Name, &Value);
+    }
 
-Destroy(Tempstr);
-Destroy(Name);
-Destroy(Value);
+    Destroy(Tempstr);
+    Destroy(Name);
+    Destroy(Value);
 
-return(RetStr);
+    return(RetStr);
 }
 
 
@@ -106,14 +106,14 @@ OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, con
     else if (strcasecmp(Type, "implicit")==0) Ctx->Flags |= OAUTH_IMPLICIT;
     else if (strcasecmp(Type, "pkce")==0)
     {
-    GenerateRandomBytes(&Token, 44, ENCODE_RBASE64);
-    strrep(Token, '=', '\0');
-    StripTrailingWhitespace(Token);
-    SetVar(Ctx->Vars,"code_verifier",Token);
-    HashBytes(&Tempstr, "sha256", Token, StrLen(Token), ENCODE_RBASE64);
-    strrep(Tempstr, '=', '\0');
-    StripTrailingWhitespace(Tempstr);
-    SetVar(Ctx->Vars,"code_challenge",Tempstr);
+        GenerateRandomBytes(&Token, 44, ENCODE_RBASE64);
+        strrep(Token, '=', '\0');
+        StripTrailingWhitespace(Token);
+        SetVar(Ctx->Vars,"code_verifier",Token);
+        HashBytes(&Tempstr, "sha256", Token, StrLen(Token), ENCODE_RBASE64);
+        strrep(Tempstr, '=', '\0');
+        StripTrailingWhitespace(Tempstr);
+        SetVar(Ctx->Vars,"code_challenge",Tempstr);
     }
 
     if (! OAuthKeyChain) OAuthKeyChain=ListCreate();
@@ -417,7 +417,7 @@ int OAuthStage1(OAUTH *Ctx, const char *URL)
     if (StrLen(Ctx->VerifyTemplate))
     {
         Ctx->VerifyURL=SubstituteVarsInString(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars,0);
-    		Ctx->VerifyURL=OAuthBuildURL(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars);
+        Ctx->VerifyURL=OAuthBuildURL(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars);
     }
 
     DestroyString(Tempstr);
