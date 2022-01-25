@@ -1156,8 +1156,15 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
 
     Tempstr=FormatStr(Tempstr, "rw timeout=%d", Info->Timeout);
 
-    S=STREAMOpen(URL, Tempstr);
-    if (S)
+    //we cannot create Info->S if there is one, but we can't free/destroy it
+    //thus we map it to 'S' and if we don't connect, we set 'S' to null and
+    //return that.
+    if (! Info->S) Info->S=STREAMCreate();
+    S=Info->S;
+    //must do this before STREAMConnect as otherwise we get 'hostname mismatch' errors during SSL setup
+    //because the underlying system doesn't know what the URL is to checkt the hostname
+    S->Path=FormatStr(S->Path,"%s://%s:%d/%s", Proto, Host, Port, Info->Doc);
+    if (STREAMConnect(S, URL, Tempstr))
     {
         S->Type=STREAM_TYPE_HTTP;
         HTTPSendHeaders(S,Info);
@@ -1165,11 +1172,9 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     else
     {
         RaiseError(ERRFLAG_ERRNO, "http", "failed to connect to %s:%d",Host,Port);
-        STREAMClose(S);
         S=NULL;
     }
 
-    Info->S=S;
 
     DestroyString(Tempstr);
     DestroyString(Proto);
@@ -1198,7 +1203,6 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
 
     if (S)
     {
-        S->Path=FormatStr(S->Path,"%s://%s:%d/%s",Info->Protocol,Info->Host,Info->Port,Info->Doc);
         STREAMSetItem(S, "HTTP:InfoStruct", Info);
     }
     return(S);
@@ -1208,13 +1212,18 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
 STREAM *HTTPTransact(HTTPInfoStruct *Info)
 {
     int result=HTTP_NOCONNECT;
+    STREAM *S=NULL;
 
+    //we cannot close Info->S within this function, as it may be used by functions outside of this one
+    //so we map it to 'S' and set 'S' to null if connection fails and return that
     while (1)
     {
-        if (! Info->S) Info->S=HTTPConnect(Info);
-        else if (! (Info->State & HTTP_HEADERS_SENT)) HTTPSendHeaders(Info->S,Info);
+	S=Info->S;
 
-        if (Info->S && STREAMIsConnected(Info->S))
+        if (! S) S=HTTPConnect(Info);
+        else if (! (Info->State & HTTP_HEADERS_SENT)) HTTPSendHeaders(S,Info);
+
+        if (S && STREAMIsConnected(S))
         {
             Info->ResponseCode=CopyStr(Info->ResponseCode,"");
 
@@ -1226,7 +1235,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
 
                 if (StrValid(Info->PostData))
                 {
-                    STREAMWriteLine(Info->PostData,Info->S);
+                    STREAMWriteLine(Info->PostData, S);
                     if (Info->Flags & HTTP_DEBUG) fprintf(stderr,"\n%s\n",Info->PostData);
                 }
                 else
@@ -1243,21 +1252,22 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
             //Must clear this once the headers and clientdata sent
             Info->State=0;
 
-            HTTPReadHeaders(Info->S,Info);
+            HTTPReadHeaders(S, Info);
             result=HTTPProcessResponse(Info);
-            STREAMSetValue(Info->S,"HTTP:URL",Info->Doc);
+            STREAMSetValue(S,"HTTP:URL",Info->Doc);
 
-            if (Info->Flags & HTTP_CHUNKED) HTTPAddChunkedProcessor(Info->S);
+            if (Info->Flags & HTTP_CHUNKED) HTTPAddChunkedProcessor(S);
 
             if (Info->Flags & HTTP_GZIP)
             {
-                STREAMAddStandardDataProcessor(Info->S,"uncompress","gzip","");
+                STREAMAddStandardDataProcessor(S,"uncompress","gzip","");
             }
             else if (Info->Flags & HTTP_DEFLATE)
             {
-                STREAMAddStandardDataProcessor(Info->S,"uncompress","zlib","");
+                STREAMAddStandardDataProcessor(S,"uncompress","zlib","");
             }
-            if (Info->Flags & (HTTP_CHUNKED | HTTP_GZIP | HTTP_DEFLATE)) STREAMReBuildDataProcessors(Info->S);
+
+            if (Info->Flags & (HTTP_CHUNKED | HTTP_GZIP | HTTP_DEFLATE)) STREAMReBuildDataProcessors(S);
 
             //tranaction succeeded, stop trying, break out of loop
             if (result == HTTP_OKAY) break;
@@ -1293,17 +1303,14 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                 (StrEnd(Info->ProxyAuthorization))
             ) break;
 
-
-            //must do this or STREAMClose destroys Info object!
-            STREAMSetItem(Info->S, "HTTP:InfoStruct", NULL);
-            STREAMClose(Info->S);
-            Info->S=NULL;
+	    //if we get here then we didn't get a successful http connection, so we set S to null
+            S=NULL;
         }
         else break;
     }
 
 
-    return(Info->S);
+    return(S);
 }
 
 

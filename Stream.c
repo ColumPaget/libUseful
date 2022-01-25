@@ -1839,7 +1839,8 @@ int STREAMReadBytesToTerm(STREAM *S, char *Buffer, int BuffSize,unsigned char Te
 char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
 {
     int result, len=0, avail=0, bytes_read=0;
-    char *RetStr=NULL, *p_Term;
+    char *RetStr=NULL;
+    const unsigned char *p_Term;
     int IsClosed=FALSE;
 
 
@@ -2336,7 +2337,7 @@ int STREAMCommit(STREAM *S)
     Item=STREAMGetItem(S, "HTTP:InfoStruct");
     if (Item)
     {
-        if (HTTPTransact((HTTPInfoStruct *) Item)) return(TRUE);
+        if (HTTPTransact((HTTPInfoStruct *) Item) != NULL) return(TRUE);
     }
 
     return(FALSE);
