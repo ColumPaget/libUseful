@@ -585,7 +585,7 @@ void OpenSSLGenerateDHParams()
 
 int DoSSLClientNegotiation(STREAM *S, int Flags)
 {
-    int result=FALSE, Options=0, i, val;
+    int result=FALSE, i, val;
     char *Token=NULL;
 #ifdef HAVE_LIBSSL
     const SSL_METHOD *Method;
@@ -670,7 +670,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 
 int DoSSLServerNegotiation(STREAM *S, int Flags)
 {
-    int result=FALSE, Options=0;
+    int result=FALSE;
 #ifdef HAVE_LIBSSL
     const SSL_METHOD *Method;
     SSL_CTX *ctx;
@@ -850,6 +850,8 @@ void OpenSSLClose(STREAM *S)
         ListDeleteNode(Node);
     }
 #endif
+
+    S->State &= ~SS_SSL;
 }
 
 

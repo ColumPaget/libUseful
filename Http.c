@@ -998,7 +998,7 @@ void HTTPReadHeaders(STREAM *S, HTTPInfoStruct *Info)
     Info->ContentLength=0;
 
 //Not needed
-//Info->RedirectPath=CopyStr(Info->RedirectPath,"");
+    Info->RedirectPath=CopyStr(Info->RedirectPath,"");
     Info->Flags &= ~(HTTP_CHUNKED | HTTP_GZIP | HTTP_DEFLATE);
     Tempstr=STREAMReadLine(Tempstr,S);
     if (Tempstr)
@@ -1167,7 +1167,6 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     if (STREAMConnect(S, URL, Tempstr))
     {
         S->Type=STREAM_TYPE_HTTP;
-        HTTPSendHeaders(S,Info);
     }
     else
     {
@@ -1175,6 +1174,7 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
         S=NULL;
     }
 
+    if (S) STREAMSetItem(S, "HTTP:InfoStruct", Info);
 
     DestroyString(Tempstr);
     DestroyString(Proto);
@@ -1190,22 +1190,75 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
 {
     STREAM *S=NULL;
 
-    if (
-        (g_HTTPFlags & HTTP_REQ_HTTPS) ||
-        (g_HTTPFlags & HTTP_TRY_HTTPS)
-    )
+    S=Info->S;
+    if ( (! S) || (! STREAMIsConnected(S)) )
     {
-        S=HTTPSetupConnection(Info, TRUE);
-        if (g_HTTPFlags & HTTP_REQ_HTTPS) return(S);
+        //if we require HTTPS or 'try first' HTTPS  is set, try that https first
+        if ( (g_HTTPFlags & HTTP_REQ_HTTPS) || (g_HTTPFlags & HTTP_TRY_HTTPS)) S=HTTPSetupConnection(Info, TRUE);
+
+        //if https isn't required, then we can try unencrypted HTTP
+        if ( (!S) && (! (g_HTTPFlags & HTTP_REQ_HTTPS)) ) S=HTTPSetupConnection(Info, FALSE);
     }
 
-    if (!S) S=HTTPSetupConnection(Info, FALSE);
+    if (S && (! (Info->State & HTTP_HEADERS_SENT)) ) HTTPSendHeaders(S,Info);
 
-    if (S)
-    {
-        STREAMSetItem(S, "HTTP:InfoStruct", Info);
-    }
     return(S);
+}
+
+
+
+static void HTTPTransactSetupDataProcessors(HTTPInfoStruct *Info, STREAM *S)
+{
+    if (Info->Flags & HTTP_CHUNKED) HTTPAddChunkedProcessor(S);
+
+    if (Info->Flags & HTTP_GZIP)
+    {
+        STREAMAddStandardDataProcessor(S,"uncompress","gzip","");
+    }
+    else if (Info->Flags & HTTP_DEFLATE)
+    {
+        STREAMAddStandardDataProcessor(S,"uncompress","zlib","");
+    }
+
+    if (Info->Flags & (HTTP_CHUNKED | HTTP_GZIP | HTTP_DEFLATE)) STREAMReBuildDataProcessors(S);
+}
+
+
+static int HTTPTransactHandleAuthRequest(HTTPInfoStruct *Info, int AuthResult)
+{
+    switch (AuthResult)
+    {
+    //here this flag just means the server asked us to authenticate, not specifically that it asked
+    //for basic authentication
+    case HTTP_AUTH_BASIC:
+
+        //if we're using OAUTH then try doing a refresh to get new creds.
+        //Set a flag (HTTP_AUTH_RETURN) that means we'll give up if we fail again
+        if (Info->AuthFlags & HTTP_AUTH_OAUTH)
+        {
+            //if HTTP_AUTH_RETURN is set, then we alread tried getting a refresh
+            if (Info->AuthFlags & HTTP_AUTH_RETURN) return(FALSE);
+            Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, TRUE), NULL);
+            Info->AuthFlags |= HTTP_AUTH_RETURN;
+            return(TRUE);
+        }
+        //for normal authentication, if we've sent the authentication, or if we have no auth details, then give up
+        else if (
+            (Info->AuthFlags & HTTP_AUTH_SENT) ||
+            (Info->AuthFlags & HTTP_AUTH_RETURN) ||
+            (! StrValid(Info->Authorization))
+        ) return(FALSE);
+        break;
+
+
+    //if we got asked for proxy authentication bu have no auth details, then give up
+    case HTTP_AUTH_PROXY:
+        if (! StrValid(Info->ProxyAuthorization)) return(FALSE);
+        break;
+    }
+
+    //if we get here then there was no questions raised about authentication!
+    return(TRUE);
 }
 
 
@@ -1218,10 +1271,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
     //so we map it to 'S' and set 'S' to null if connection fails and return that
     while (1)
     {
-	S=Info->S;
-
-        if (! S) S=HTTPConnect(Info);
-        else if (! (Info->State & HTTP_HEADERS_SENT)) HTTPSendHeaders(S,Info);
+        S=HTTPConnect(Info);
 
         if (S && STREAMIsConnected(S))
         {
@@ -1256,18 +1306,18 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
             result=HTTPProcessResponse(Info);
             STREAMSetValue(S,"HTTP:URL",Info->Doc);
 
-            if (Info->Flags & HTTP_CHUNKED) HTTPAddChunkedProcessor(S);
-
-            if (Info->Flags & HTTP_GZIP)
+            //we got redirected somewhere else. Shutdown the current stream and go around again
+            //this time our URL will be the redirected url
+            if (result==HTTP_REDIRECT)
             {
-                STREAMAddStandardDataProcessor(S,"uncompress","gzip","");
-            }
-            else if (Info->Flags & HTTP_DEFLATE)
-            {
-                STREAMAddStandardDataProcessor(S,"uncompress","zlib","");
+                STREAMShutdown(S);
+                continue;
             }
 
-            if (Info->Flags & (HTTP_CHUNKED | HTTP_GZIP | HTTP_DEFLATE)) STREAMReBuildDataProcessors(S);
+            //this means we got redirected back to the page we just asked for! this is bad and could
+            //put us in a loop, so we just give up before doing anything else
+            if (result == HTTP_CIRCULAR_REDIRECTS) break;
+
 
             //tranaction succeeded, stop trying, break out of loop
             if (result == HTTP_OKAY) break;
@@ -1275,40 +1325,22 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
             if (result == HTTP_NOTFOUND) break;
             if (result == HTTP_NOTMODIFIED) break;
             if (result == HTTP_ERROR) break;
-            if (result == HTTP_CIRCULAR_REDIRECTS) break;
 
 
-            //here this flag just means the server asked us to authenticate
-            if (result == HTTP_AUTH_BASIC)
-            {
-                //if we're using OAUTH then try doing a refresh. Set a flag that means we'll give up if we fail again
-                if (Info->AuthFlags & HTTP_AUTH_OAUTH)
-                {
-                    if (Info->AuthFlags & HTTP_AUTH_RETURN) break;
-                    Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, TRUE), NULL);
-                    Info->AuthFlags |= HTTP_AUTH_RETURN;
-                }
-                //for normal authentication, if we've sent the authentication, or if we have no auth details, then give up
-                else if (
-                    (Info->AuthFlags & HTTP_AUTH_SENT) ||
-                    (Info->AuthFlags & HTTP_AUTH_RETURN) ||
-                    (StrEnd(Info->Authorization))
-                ) break;
+            //if this returns FALSE, then the server asked us for authentication details and we have nay
+            //but if it returns true it either means that the server didn't ask for this, or else that
+            //we're using something like OAuth, in which case this function will try to refresh our auth
+            //credentials, and return TRUE which means 'try again now'
+            if (! HTTPTransactHandleAuthRequest(Info, result)) break;
 
-            }
-
-            //if we got asked for proxy authentication bu have no auth details, then give up
-            if (
-                (result == HTTP_AUTH_PROXY) &&
-                (StrEnd(Info->ProxyAuthorization))
-            ) break;
-
-	    //if we get here then we didn't get a successful http connection, so we set S to null
+            //if we get here then we didn't get a successful http connection, so we set S to null
             S=NULL;
         }
         else break;
     }
 
+    //add data processors to deal with chunked data, gzip compression etc, because even if the
+    if (S)	HTTPTransactSetupDataProcessors(Info, S);
 
     return(S);
 }

@@ -1118,7 +1118,8 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
 //nor any associated streams
 void STREAMDestroy(void *p_S)
 {
-    STREAM *S;
+    STREAM *S, *tmpS;
+    ListNode *Curr, *Next;
 
     if (! p_S) return;
 
@@ -1135,6 +1136,29 @@ void STREAMDestroy(void *p_S)
         if (! (S->Flags & SF_MMAP)) Destroy(S->InputBuff);
         Destroy(S->OutputBuff);
     }
+
+    //associate streams are streams that support other streams, like the ssh connection that
+    //supports a port-forward through ssh. We close these down when the owner stream is closed
+    Curr=ListGetNext(S->Items);
+    while (Curr)
+    {
+        Next=ListGetNext(Curr);
+        if (strcmp(Curr->Tag, "LU:AssociatedStream")==0)
+        {
+            tmpS=(STREAM *) Curr->Item;
+            STREAMClose(tmpS);
+            ListDeleteNode(Curr);
+        }
+        else if (strcmp(Curr->Tag, "HTTP:InfoStruct")==0)
+        {
+            HTTPInfoDestroy(Curr->Item);
+            ListDeleteNode(Curr);
+        }
+
+
+        Curr=Next;
+    }
+
 
     ListDestroy(S->Items, NULL);
     ListDestroy(S->Values,(LIST_ITEM_DESTROY_FUNC) Destroy);
@@ -1188,8 +1212,7 @@ void STREAMCloseFile(STREAM *S)
 
 void STREAMShutdown(STREAM *S)
 {
-    ListNode *Curr, *Next;
-    STREAM *tmpS;
+    ListNode *Curr;
     int val;
 
     if (! S) return;
@@ -1229,27 +1252,6 @@ void STREAMShutdown(STREAM *S)
         Curr=ListGetNext(Curr);
     }
 
-    //associate streams are streams that support other streams, like the ssh connection that
-    //supports a port-forward through ssh. We close these down when the owner stream is closed
-    Curr=ListGetNext(S->Items);
-    while (Curr)
-    {
-        Next=ListGetNext(Curr);
-        if (strcmp(Curr->Tag, "LU:AssociatedStream")==0)
-        {
-            tmpS=(STREAM *) Curr->Item;
-            STREAMClose(tmpS);
-            ListDeleteNode(Curr);
-        }
-        else if (strcmp(Curr->Tag, "HTTP:InfoStruct")==0)
-        {
-            HTTPInfoDestroy(Curr->Item);
-            ListDeleteNode(Curr);
-        }
-
-
-        Curr=Next;
-    }
 
     //now we actually close the file descriptors for this stream.
     if ((S->out_fd != S->in_fd) && (S->out_fd > -1)) close(S->out_fd);
@@ -1269,6 +1271,7 @@ void STREAMShutdown(STREAM *S)
 void STREAMClose(STREAM *S)
 {
     STREAMShutdown(S);
+
     STREAMDestroy(S);
 }
 
