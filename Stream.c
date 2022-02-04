@@ -1265,6 +1265,8 @@ void STREAMShutdown(STREAM *S)
         close(S->in_fd);
         S->in_fd=-1;
     }
+   
+    S->State=0;
 }
 
 

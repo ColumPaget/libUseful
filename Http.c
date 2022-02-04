@@ -1127,7 +1127,6 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     int Port=0, Flags=0;
     STREAM *S;
 
-
     //proto in here will not be http/https but tcp/ssl/tls
     Proto=CopyStr(Proto,"tcp");
     if (Info->Flags & HTTP_PROXY)
@@ -1164,6 +1163,10 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     //must do this before STREAMConnect as otherwise we get 'hostname mismatch' errors during SSL setup
     //because the underlying system doesn't know what the URL is to checkt the hostname
     S->Path=FormatStr(S->Path,"%s://%s:%d/%s", Proto, Host, Port, Info->Doc);
+
+
+    if (Info->Flags & HTTP_DEBUG) fprintf(stderr,"Connect: %s  Config: %s\n", URL, Tempstr);
+
     if (STREAMConnect(S, URL, Tempstr))
     {
         S->Type=STREAM_TYPE_HTTP;
@@ -1191,13 +1194,14 @@ STREAM *HTTPConnect(HTTPInfoStruct *Info)
     STREAM *S=NULL;
 
     S=Info->S;
-    if ( (! S) || (! STREAMIsConnected(S)) )
+
+    //returns false if S is null, so is safe to call
+    if (! STREAMIsConnected(S))
     {
         //if we require HTTPS or 'try first' HTTPS  is set, try that https first
         if ( (g_HTTPFlags & HTTP_REQ_HTTPS) || (g_HTTPFlags & HTTP_TRY_HTTPS)) S=HTTPSetupConnection(Info, TRUE);
-
         //if https isn't required, then we can try unencrypted HTTP
-        if ( (!S) && (! (g_HTTPFlags & HTTP_REQ_HTTPS)) ) S=HTTPSetupConnection(Info, FALSE);
+        if ( (! STREAMIsConnected(S)) && (! (g_HTTPFlags & HTTP_REQ_HTTPS)) ) S=HTTPSetupConnection(Info, FALSE);
     }
 
     if (S && (! (Info->State & HTTP_HEADERS_SENT)) ) HTTPSendHeaders(S,Info);
@@ -1273,7 +1277,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
     {
         S=HTTPConnect(Info);
 
-        if (S && STREAMIsConnected(S))
+        if (STREAMIsConnected(S))
         {
             Info->ResponseCode=CopyStr(Info->ResponseCode,"");
 
