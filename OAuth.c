@@ -27,7 +27,7 @@ void SetupOAuthTypes()
     AddOAuthType( "password",  "client_name=$(client_id)&scope=$(scope)&redirect_uris=$(redirect_uri)&grant_type=password", "client_id=$(client_id)&client_secret=$(client_secret)&grant_type=password&username=$(username)&password=$(password)", "");
     AddOAuthType( "getpocket.com",  "consumer_key=$(client_id)&scope=$(scope)&redirect_uri=$(redirect_uri)", "consumer_key=$(client_id)&code=$(code)", "https://getpocket.com/auth/authorize?request_token=$(code)&redirect_uri=$(redirect_uri)");
     AddOAuthType( "auth",  "", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(code)&grant_type=authorization_code&redirect_uri=$(redirect_uri)", "$(url)?response_type=code&client_id=$(client_id)&redirect_uri=$(redirect_uri)&scope=$(scope)&state=$(session)");
-    AddOAuthType( "pkce", "", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(code)&grant_type=authorization_code&code_verifier=$(code_verifier)&redirect_uri=$(redirect_uri)", "$(url)?client_id=$(client_id)&response_type=code&code_challenge=$(code_challenge)&code_challenge_method=S256&redirect_uri=$(redirect_uri)&scope=$(scope)");
+    AddOAuthType( "pkce", "", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(code)&grant_type=authorization_code&code_verifier=$(code_verifier)&redirect_uri=$(redirect_uri)", "$(url)?client_id=$(client_id)&response_type=code&code_challenge=$(code_challenge)&code_challenge_method=S256&redirect_uri=$(redirect_uri)&scope=$(scope)&token_access_type=$(token_access_type)");
 }
 
 
