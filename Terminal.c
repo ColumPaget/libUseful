@@ -8,7 +8,6 @@
 
 static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
-TMouseEvent MouseEvent;
 
 
 //Used internally by TerminalStrLen and TerminalStrTrunc this reads through a string and handles
@@ -2176,13 +2175,13 @@ static int TerminalReadCSISeq(STREAM *S, char PrevChar)
 static int TerminalReadCSIMouse(STREAM *S)
 {
     char *Tempstr=NULL;
-    int flags, val, keycode=0;
+    int flags, x, y, val, keycode=0;
 
-    MouseEvent.flags=STREAMReadChar(S)-32;
-    MouseEvent.x=STREAMReadChar(S)-32;
-    MouseEvent.y=STREAMReadChar(S)-32;
+    flags=STREAMReadChar(S)-32;
+    x=STREAMReadChar(S)-32;
+    y=STREAMReadChar(S)-32;
 
-    switch (MouseEvent.flags)
+    switch (flags)
     {
     case 0:
         keycode=MOUSE_BTN_1;
@@ -2204,7 +2203,8 @@ static int TerminalReadCSIMouse(STREAM *S)
         break;
     }
 
-    MouseEvent.button=keycode;
+    Tempstr=FormatStr(Tempstr, "%d:%d:%d", keycode, x, y);
+    STREAMSetValue(S, "LU_MouseEvent", Tempstr);
 
     Destroy(Tempstr);
 
@@ -2534,5 +2534,18 @@ void TerminalSetKeyCallback(STREAM *Term, TKEY_CALLBACK_FUNC Func)
 
 TMouseEvent *TerminalGetMouse(STREAM *Term)
 {
-    return(&MouseEvent);
+static TMouseEvent MouseEvent;
+char *ptr;
+
+ptr=(char *) STREAMGetValue(Term, "LU_MouseEvent");
+if (! StrValid(ptr)) return NULL;
+
+MouseEvent.button=strtol(ptr, &ptr, 10);
+if (*ptr==':') ptr++;
+MouseEvent.x=strtol(ptr, &ptr, 10);
+if (*ptr==':') ptr++;
+MouseEvent.y=strtol(ptr, &ptr, 10);
+if (*ptr==':') ptr++;
+
+return(&MouseEvent);
 }
