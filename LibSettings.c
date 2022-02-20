@@ -71,6 +71,13 @@ int LibUsefulGetInteger(const char *Name)
     return(0);
 }
 
+int LibUsefulDebugActive()
+{
+   if (StrValid(getenv("LIBUSEFUL_DEBUG"))) return(TRUE);
+   if (LibUsefulGetBool("libUseful:Debug")) return(TRUE);
+	 return(FALSE);
+}
+
 
 void LibUsefulAtExit()
 {

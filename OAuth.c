@@ -291,12 +291,14 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
     int len, result=FALSE;
 
     Tempstr=MCopyStr(Tempstr,URL,"?",PostArgs,NULL);
+		if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: OAuthGrant: %s\n", Tempstr);
     S=HTTPMethod("POST",URL,"application/x-www-form-urlencoded; charset=UTF-8",PostArgs,StrLen(PostArgs));
     if (S)
     {
         sleep(1);
         Tempstr=STREAMReadDocument(Tempstr, S);
 
+				if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: OAuthGrant Response: %s\n", Tempstr);
         result=OAuthParseReply(Ctx, STREAMGetValue(S, "HTTP:Content-Type"), Tempstr);
         STREAMClose(S);
     }
