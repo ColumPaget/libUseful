@@ -146,16 +146,16 @@ void StrLenCacheAdd(const char *Str, size_t len)
         StrLenCacheMinLen=100;
     }
 
-        //is string already in cache?
-        for (i=0; i < StrLenCacheSize; i++)
+    //is string already in cache?
+    for (i=0; i < StrLenCacheSize; i++)
+    {
+        if (StrLenCache[i].Str == NULL) emptyslot=i;
+        else if (StrLenCache[i].Str == Str)
         {
-            if (StrLenCache[i].Str == NULL) emptyslot=i;
-            else if (StrLenCache[i].Str == Str)
-            {
-                StrLenCache[i].len=len;
-                return;
-            }
+            StrLenCache[i].len=len;
+            return;
         }
+    }
 
 //strlen caching has been seen to give a benefit with very large strings, but modern processors with built-in strlen
 //functions are proabably faster.

@@ -564,7 +564,7 @@ static int pmatch_search(const char **P_PtrPtr, const char **S_PtrPtr, const cha
 
 //any number of '*' at the end of the pattern don't count once we've run out of string
 //? however does, because '?' is saying 'one character' whereas '*' is zero or more
-while (**P_PtrPtr=='*') (*P_PtrPtr)++;
+    while (**P_PtrPtr=='*') (*P_PtrPtr)++;
 
 
 // if pattern not exhausted then we didn't get a match

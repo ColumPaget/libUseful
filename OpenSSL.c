@@ -27,6 +27,7 @@ static DH *CachedDH=NULL;
 #define LEVEL_TLS1   10
 #define LEVEL_TLS1_1 11
 #define LEVEL_TLS1_2 12
+#define LEVEL_TLS1_3 13
 
 
 
@@ -337,6 +338,7 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 // tls - allow all TLS types
 // tls1.1 - allow TLSv1.1 and up
 // tls1.2 - allow TLSv.12 and up
+// tls1.3 - allow TLSv.13 and up
 // default. Currently equivalent to tls but may change in future
 
 static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
@@ -344,17 +346,32 @@ static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
     const char *ptr;
     int level=LEVEL_SSL3, val;
 
+
+    //set Permitted ciphers
+    ptr=STREAMGetValue(S, "SSL:PermittedCiphers");
+    if (! StrValid(ptr)) ptr=LibUsefulGetValue("SSL:PermittedCiphers");
+    if (StrValid(ptr)) 
+    {
+	SSL_set_cipher_list(ssl, ptr);
+
+	#ifdef SSL_set_ciphersuites
+	SSL_set_ciphersuites(ssl, ptr);
+	#endif
+    }
+
     //first convert things to our own enum values, that way we don't
     //depend on any openssl #defines that may be missing in some versions
     //as the SSL_set_min_proto_version function is a new function with
     //new values that deprecates the old method that used SSL_OP_NO_SSL options
     ptr=STREAMGetValue(S,"SSL:Level");
+    if (! StrValid(ptr)) ptr=LibUsefulGetValue("SSL:Level");
     if (StrValid(ptr))
     {
         if (strcasecmp(ptr, "ssl") !=0) level=LEVEL_TLS1;
 
         if (strcasecmp(ptr, "tls1.1") == 0) level=LEVEL_TLS1_1;
         if (strcasecmp(ptr, "tls1.2") == 0) level=LEVEL_TLS1_2;
+        if (strcasecmp(ptr, "tls1.3") == 0) level=LEVEL_TLS1_3;
     }
 
 #ifdef HAVE_SSL_SET_MIN_PROTO_VERSION
@@ -370,6 +387,12 @@ static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
     case LEVEL_TLS1_2:
         val=TLS1_2_VERSION;
         break;
+
+#ifdef TLS1_3_VERSION
+    case LEVEL_TLS1_3:
+        val=TLS1_3_VERSION;
+        break;
+#endif
     }
     SSL_set_min_proto_version(ssl, val);
 #else
@@ -405,6 +428,7 @@ static void OpenSSLSetupECDH(SSL_CTX *ctx)
     ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
 //ecdh = EC_KEY_new_by_curve_name( NID_secp384r1);
 
+    if (ecdh)
     {
         SSL_CTX_set_tmp_ecdh(ctx, ecdh);
         EC_KEY_free(ecdh);
@@ -431,6 +455,7 @@ static void OpenSSLReseedRandom()
 
 
 
+
 static void OpenSSLSetupDH(SSL_CTX *ctx)
 {
     char *Tempstr=NULL;
@@ -442,20 +467,17 @@ static void OpenSSLSetupDH(SSL_CTX *ctx)
     else
     {
         ptr=LibUsefulGetValue("SSL:DHParams-File");
-        if (StrValid(ptr)) Tempstr=CopyStr(Tempstr,ptr);
-
-        paramfile = fopen(Tempstr, "r");
-        if (paramfile)
+        if (StrValid(ptr))
         {
-            CachedDH = PEM_read_DHparams(paramfile, NULL, NULL, NULL);
-            dh=CachedDH;
-            fclose(paramfile);
-        }
+            Tempstr=CopyStr(Tempstr,ptr);
 
-        if (! dh)
-        {
-            OpenSSLGenerateDHParams();
-            dh=CachedDH;
+            paramfile = fopen(Tempstr, "r");
+            if (paramfile)
+            {
+                CachedDH = PEM_read_DHparams(paramfile, NULL, NULL, NULL);
+                dh=CachedDH;
+                fclose(paramfile);
+            }
         }
     }
 
@@ -487,7 +509,7 @@ static int INTERNAL_SSL_INIT()
     SSL_load_error_strings();
     Tempstr=MCopyStr(Tempstr,"openssl:",SSLeay_version(SSLEAY_VERSION)," : ", SSLeay_version(SSLEAY_BUILT_ON), " : ",SSLeay_version(SSLEAY_CFLAGS),NULL);
     LibUsefulSetValue("SSL:Library", Tempstr);
-    LibUsefulSetValue("SSL:Level", "tls");
+    if (! StrValid(LibUsefulGetValue("SSL:Level"))) LibUsefulSetValue("SSL:Level", "tls");
     DestroyString(Tempstr);
     InitDone=TRUE;
     return(TRUE);
@@ -612,9 +634,6 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             STREAMSetItem(S,"LIBUSEFUL-SSL:OBJ",(void *) ssl);
             OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE);
 
-            ptr=LibUsefulGetValue("SSL:PermittedCiphers");
-            if (StrValid(ptr)) SSL_set_cipher_list(ssl, ptr);
-
 #ifdef HAVE_SSL_SET_TLSEXT_HOST_NAME
             //extract hostname from 'tcp://Host:Port' path
             ptr=GetToken(S->Path,":",&Token,0);
@@ -708,8 +727,6 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                 STREAMSetItem(S,"LIBUSEFUL-SSL:CTX",(void *) ctx);
                 STREAMSetItem(S,"LIBUSEFUL-SSL:OBJ",(void *) ssl);
 
-                ptr=LibUsefulGetValue("SSL:PermittedCiphers");
-                if (StrValid(ptr)) SSL_set_cipher_list(ssl, ptr);
                 SSL_set_accept_state(ssl);
 
                 while (1)

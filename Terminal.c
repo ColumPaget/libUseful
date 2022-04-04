@@ -2534,18 +2534,18 @@ void TerminalSetKeyCallback(STREAM *Term, TKEY_CALLBACK_FUNC Func)
 
 TMouseEvent *TerminalGetMouse(STREAM *Term)
 {
-static TMouseEvent MouseEvent;
-char *ptr;
+    static TMouseEvent MouseEvent;
+    char *ptr;
 
-ptr=(char *) STREAMGetValue(Term, "LU_MouseEvent");
-if (! StrValid(ptr)) return NULL;
+    ptr=(char *) STREAMGetValue(Term, "LU_MouseEvent");
+    if (! StrValid(ptr)) return NULL;
 
-MouseEvent.button=strtol(ptr, &ptr, 10);
-if (*ptr==':') ptr++;
-MouseEvent.x=strtol(ptr, &ptr, 10);
-if (*ptr==':') ptr++;
-MouseEvent.y=strtol(ptr, &ptr, 10);
-if (*ptr==':') ptr++;
+    MouseEvent.button=strtol(ptr, &ptr, 10);
+    if (*ptr==':') ptr++;
+    MouseEvent.x=strtol(ptr, &ptr, 10);
+    if (*ptr==':') ptr++;
+    MouseEvent.y=strtol(ptr, &ptr, 10);
+    if (*ptr==':') ptr++;
 
-return(&MouseEvent);
+    return(&MouseEvent);
 }

@@ -73,9 +73,9 @@ int LibUsefulGetInteger(const char *Name)
 
 int LibUsefulDebugActive()
 {
-   if (StrValid(getenv("LIBUSEFUL_DEBUG"))) return(TRUE);
-   if (LibUsefulGetBool("libUseful:Debug")) return(TRUE);
-	 return(FALSE);
+    if (StrValid(getenv("LIBUSEFUL_DEBUG"))) return(TRUE);
+    if (LibUsefulGetBool("libUseful:Debug")) return(TRUE);
+    return(FALSE);
 }
 
 
