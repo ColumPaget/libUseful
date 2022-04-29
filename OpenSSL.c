@@ -350,13 +350,13 @@ static int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
     //set Permitted ciphers
     ptr=STREAMGetValue(S, "SSL:PermittedCiphers");
     if (! StrValid(ptr)) ptr=LibUsefulGetValue("SSL:PermittedCiphers");
-    if (StrValid(ptr)) 
+    if (StrValid(ptr))
     {
-	SSL_set_cipher_list(ssl, ptr);
+        SSL_set_cipher_list(ssl, ptr);
 
-	#ifdef SSL_set_ciphersuites
-	SSL_set_ciphersuites(ssl, ptr);
-	#endif
+#ifdef SSL_set_ciphersuites
+        SSL_set_ciphersuites(ssl, ptr);
+#endif
     }
 
     //first convert things to our own enum values, that way we don't
