@@ -44,8 +44,9 @@ const char *ParseHostDetails(const char *Data, char **Host,char **Port,char **Us
     if (*ptr == '[')
     {
         tptr=ptr+1;
-        while ((*ptr !=']') && (*ptr !='\0')) ptr++;
-        if (Host) *Host=CopyStrLen(*Host, tptr, ptr-tptr);
+        ptr=GetToken(ptr+1, "]", &Token, 0);
+        if (Host) *Host=CopyStr(*Host, Token);
+				if (*ptr == ':') ptr++;
     }
     else
     {

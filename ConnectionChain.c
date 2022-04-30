@@ -214,55 +214,60 @@ int ConnectHopSocks5Auth(STREAM *S, const char *User, const char *Pass)
 
 static char *ConnectHopSocks5WriteAddress(char *Dest, int AddrType, const char *Addr)
 {
-char *ptr;
-int val;
+    char *ptr;
+    int val;
 
-ptr=Dest;
-        *ptr=AddrType;
+    ptr=Dest;
+    *ptr=AddrType;
+    ptr++;
+    switch (AddrType)
+    {
+    case HT_IP4:
+        *((uint32_t *) ptr)=StrtoIP(Addr);
+        ptr+=4;
+        break;
+
+    case HT_IP6:
+        StrtoIP6(Addr, (struct in6_addr *) ptr);
+        ptr+=16;
+        break;
+
+    default:
+        val=StrLen(Addr);
+        *ptr=val;
         ptr++;
-        switch (AddrType)
-        {
-        case HT_IP4:
-            *((uint32_t *) ptr) =StrtoIP(Addr);
-            ptr+=4;
-            break;
+        memcpy(ptr, Addr, val);
+        ptr+=val;
+        break;
+    }
 
-        case HT_IP6:
-            break;
-
-        default:
-            val=StrLen(Addr);
-            *ptr=val;
-            ptr++;
-            memcpy(ptr, Addr, val);
-            ptr+=val;
-            break;
-        }
-
-return(ptr);
+    return(ptr);
 }
+
 
 static int ConnectHopSocks5ReadAddress(STREAM *S)
 {
-    char *Tempstr=NULL;
+    char *Tempstr=NULL, *IP6=NULL;
     int result, val;
-    uint64_t IP4addr;
+    uint32_t IP4addr;
 
     Tempstr=SetStrLen(Tempstr, 1024);
     //read address type
     result=STREAMReadBytes(S,Tempstr,1);
     if (result == 1)
     {
-printf("HT: %d\n", Tempstr[0]);
         switch (Tempstr[0])
         {
         case HT_IP4:
-            result=STREAMReadBytes(S,&IP4addr,4);
+            result=STREAMReadBytes(S,(char *) &IP4addr,4);
             if (IP4addr != 0) STREAMSetValue(S, "IPAddress", IPtoStr(IP4addr));
             break;
 
         case HT_IP6:
-            result=STREAMReadBytes(S,Tempstr,16);
+            IP6=SetStrLen(IP6, 32);
+            result=STREAMReadBytes(S,IP6,16);
+            Tempstr=IP6toStr(Tempstr, IP6);
+            if (IP4addr != 0) STREAMSetValue(S, "IPAddress", Tempstr);
             break;
 
         default:
@@ -273,6 +278,7 @@ printf("HT: %d\n", Tempstr[0]);
         }
     }
     Destroy(Tempstr);
+    Destroy(IP6);
 
     return(TRUE);
 }
@@ -362,7 +368,7 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
 //Socks 5 has a 'reserved' byte after the connection type
         *ptr=0;
         ptr++;
-	ptr=ConnectHopSocks5WriteAddress(ptr, HostType, Token);
+        ptr=ConnectHopSocks5WriteAddress(ptr, HostType, Token);
     }
 
 
@@ -408,13 +414,13 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
     Tempstr=SetStrLen(Tempstr, 32);
     if (SocksLevel==CONNECT_HOP_SOCKS5)
     {
-	//read socks version (5) response code (0 for success) and a reserved byte
+        //read socks version (5) response code (0 for success) and a reserved byte
         result=STREAMReadBytes(S,Tempstr,3);
         if ((result == 3) && (Tempstr[0]==5) && (Tempstr[1]==0))
         {
             RetVal=TRUE;
             ConnectHopSocks5ReadAddress(S);
-	    //read port
+            //read port
             result=STREAMReadBytes(S,Tempstr,2);
         }
     }

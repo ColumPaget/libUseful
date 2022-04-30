@@ -233,42 +233,27 @@ void SockSetOptions(int sock, int SetFlags, int UnsetFlags)
 int IP6SockAddrCreate(struct sockaddr **ret_sa, const char *Addr, int Port)
 {
     struct sockaddr_in6 *sa6;
-    char *Token=NULL, *wptr;
+    char *Token=NULL;
     const char *ptr;
     socklen_t salen;
 
 
     sa6=(struct sockaddr_in6 *) calloc(1,sizeof(struct sockaddr_in6));
+
     if (StrValid(Addr))
     {
-        if (IsIP4Address(Addr))
-        {
-            Token=MCopyStr(Token,"::ffff:",Addr,NULL);
-            ptr=Token;
-        }
-        else
-        {
-            ptr=GetToken(Addr, "%",&Token,0);
-            if (StrValid(ptr)) sa6->sin6_scope_id=if_nametoindex(ptr);
-
-            ptr=Token;
-            if (*ptr == '[')
-            {
-                ptr++;
-                wptr=strchr(ptr,']');
-                if (wptr) *wptr='\0';
-            }
-        }
-
-        inet_pton(AF_INET6, ptr, &(sa6->sin6_addr));
+        ptr=GetToken(Addr, "%",&Token,0);
+				if (StrValid(ptr)) sa6->sin6_scope_id=if_nametoindex(ptr);
+        StrtoIP6(Token, &(sa6->sin6_addr));
     }
     else sa6->sin6_addr=in6addr_any;
+
+	Token=IP6toStr(Token, &(sa6->sin6_addr));
     sa6->sin6_port=htons(Port);
     sa6->sin6_family=AF_INET6;
 
     *ret_sa=(struct sockaddr *) sa6;
     salen=sizeof(struct sockaddr_in6);
-
 
     DestroyString(Token);
 
@@ -935,7 +920,6 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
 
     memset(&Settings, 0, sizeof(TSockSettings));
     SocketParseConfig(Config, &Settings);
-
 
     if (StrValid(Host))
     {
