@@ -453,10 +453,6 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 //Copy all bytes from 'Src' to a new file at 'DestPath'
 unsigned long STREAMCopy(STREAM *Src, const char *DestPath);
 
-//this function parses the 'config' argument to STREAMOpen, returning flags that mean something to the stream functions. 
-// It wouldn't normally be used externally to that function.
-int STREAMParseConfig(const char *Config);
-
 // resize a streams internal buffers to 'size' bytes long. 'Flags' can be SF_SECURE for a secure stream, or just zero otherwise
 void STREAMReAllocBuffer(STREAM *S, int size, int Flags);
 

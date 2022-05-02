@@ -112,7 +112,6 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
         {
             Settings->Timeout=atoi(Value);
         }
-        //else STREAMSetValue(S, Name, Value);
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
@@ -917,9 +916,19 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
 {
     int result=FALSE;
     TSockSettings Settings;
+		char *Name=NULL, *Value=NULL;
+		const char *ptr;
 
     memset(&Settings, 0, sizeof(TSockSettings));
     SocketParseConfig(Config, &Settings);
+
+		ptr=GetToken(Config, "\\S", &Value, 0); //throw away flags that will already have been parsed by SocketParseConfig
+		ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+		while (ptr)
+		{
+		STREAMSetValue(S, Name, Value);
+		ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+		}
 
     if (StrValid(Host))
     {
@@ -949,7 +958,10 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         }
 
         if (STREAMWaitConnect(S)) result=STREAMDoPostConnect(S, S->Flags);
-    }
+		}
+
+		Destroy(Name);
+		Destroy(Value);
 
     return(result);
 }

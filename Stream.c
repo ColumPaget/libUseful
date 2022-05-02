@@ -877,10 +877,12 @@ int STREAMParseConfig(const char *Config)
 
     if (StrValid(Config))
     {
+				//first read fopen-style 'open' flags like 'rw'
         ptr=Config;
         while (*ptr != '\0')
         {
-            if (*ptr==' ') break;
+						//any space indicates end of open flags
+            if (isspace(*ptr)) break;
             switch (*ptr)
             {
             case 'c':
@@ -989,9 +991,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     ParseURL(ptr, &Proto, &Host, &Token, &User, &Pass, &Path, &Args);
     if (StrValid(Token)) Port=strtoul(Token,NULL,10);
 
-    ptr=GetToken(Config,"\\S",&Token,0);
-    Flags=STREAMParseConfig(Token);
-
+    Flags=STREAMParseConfig(Config);
 
     switch (*Proto)
     {
