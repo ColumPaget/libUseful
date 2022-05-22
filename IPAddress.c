@@ -152,7 +152,7 @@ unsigned long StrtoIP(const char *Str)
 void StrtoIP6(const char *Str, struct in6_addr *dest)
 {
     char *Token=NULL;
-    char *ptr;
+    const char *ptr;
 
     if (StrValid(Str))
     {
@@ -168,7 +168,7 @@ void StrtoIP6(const char *Str, struct in6_addr *dest)
             if (*ptr == '[')
             {
 								ptr=GetToken(ptr+1, "]", &Token, 0);
-            		ptr=(char *) Token;
+            		ptr=Token;
             }
         }
 

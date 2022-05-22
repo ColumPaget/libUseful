@@ -266,7 +266,7 @@ static int ConnectHopSocks5ReadAddress(STREAM *S)
         case HT_IP6:
             IP6=SetStrLen(IP6, 32);
             result=STREAMReadBytes(S,IP6,16);
-            Tempstr=IP6toStr(Tempstr, IP6);
+            Tempstr=IP6toStr(Tempstr, (struct in6_addr *) IP6);
             if (IP4addr != 0) STREAMSetValue(S, "IPAddress", Tempstr);
             break;
 
