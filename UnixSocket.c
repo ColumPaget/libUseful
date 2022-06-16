@@ -73,12 +73,23 @@ int STREAMConnectUnixSocket(STREAM *S, const char *Path, int ConType)
 }
 
 
+int UnixSocketBindPath(int sock, const char *Path)
+{
+    struct sockaddr_un sa;
+    socklen_t salen;
+
+    unlink(Path);
+    sun_set_path(&sa, Path);
+    salen=sizeof(struct sockaddr_un);
+    if (bind(sock,(struct sockaddr *) &sa, salen)==0) return(TRUE);
+
+		return(FALSE);
+}
+
 
 int UnixServerInit(int Type, const char *Path)
 {
     int sock;
-    struct sockaddr_un sa;
-    socklen_t salen;
     int result;
 
 //if (Type==0) Type=SOCK_STREAM;
@@ -93,12 +104,7 @@ int UnixServerInit(int Type, const char *Path)
 //No reason to pass server/listen sockets across an exec
     fcntl(sock, F_SETFD, FD_CLOEXEC);
 
-    unlink(Path);
-    sun_set_path(&sa, Path);
-    salen=sizeof(struct sockaddr_un);
-    result=bind(sock,(struct sockaddr *) &sa, salen);
-
-    if (result != 0) RaiseError(ERRFLAG_ERRNO, "UnixServerInit","failed to bind unix sock to %s.",Path);
+    if ( UnixSocketBindPath(sock, Path) ) RaiseError(ERRFLAG_ERRNO, "UnixServerInit","failed to bind unix sock to %s.",Path);
     else if (Type==SOCK_STREAM)
     {
         result=listen(sock,10);
@@ -106,11 +112,9 @@ int UnixServerInit(int Type, const char *Path)
     }
 
     if (result==0) return(sock);
-    else
-    {
-        close(sock);
-        return(-1);
-    }
+
+    close(sock);
+    return(-1);
 }
 
 
