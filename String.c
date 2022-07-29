@@ -672,8 +672,9 @@ char *StripCRLF(char *Str)
 char *StripQuotes(char *Str)
 {
     int len;
-    char *ptr, StartQuote='\0';
+    char *ptr, *end, StartQuote='\0';
 
+    if (! Str) return(Str);
     ptr=Str;
     while (isspace(*ptr)) ptr++;
 
@@ -681,10 +682,14 @@ char *StripQuotes(char *Str)
     {
         StartQuote=*ptr;
         len=StrLenFromCache(ptr);
-        if ((len > 0) && (StartQuote != '\0') && (ptr[len-1]==StartQuote))
+
+        end=ptr+len-1;
+
+        if ((len > 0) && (StartQuote != '\0') && (*end==StartQuote))
         {
-            if (ptr[len-1]==StartQuote) ptr[len-1]='\0';
-            memmove(Str,ptr+1,len);
+            *end='\0';
+            len--;
+            memmove(Str, ptr+1,len);
             StrLenCacheAdd(Str, len);
         }
     }

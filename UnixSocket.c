@@ -83,7 +83,7 @@ int UnixSocketBindPath(int sock, const char *Path)
     salen=sizeof(struct sockaddr_un);
     if (bind(sock,(struct sockaddr *) &sa, salen)==0) return(TRUE);
 
-		return(FALSE);
+    return(FALSE);
 }
 
 

@@ -242,12 +242,12 @@ int IP6SockAddrCreate(struct sockaddr **ret_sa, const char *Addr, int Port)
     if (StrValid(Addr))
     {
         ptr=GetToken(Addr, "%",&Token,0);
-				if (StrValid(ptr)) sa6->sin6_scope_id=if_nametoindex(ptr);
+        if (StrValid(ptr)) sa6->sin6_scope_id=if_nametoindex(ptr);
         StrtoIP6(Token, &(sa6->sin6_addr));
     }
     else sa6->sin6_addr=in6addr_any;
 
-	Token=IP6toStr(Token, &(sa6->sin6_addr));
+    Token=IP6toStr(Token, &(sa6->sin6_addr));
     sa6->sin6_port=htons(Port);
     sa6->sin6_family=AF_INET6;
 
@@ -916,19 +916,19 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
 {
     int result=FALSE;
     TSockSettings Settings;
-		char *Name=NULL, *Value=NULL;
-		const char *ptr;
+    char *Name=NULL, *Value=NULL;
+    const char *ptr;
 
     memset(&Settings, 0, sizeof(TSockSettings));
     SocketParseConfig(Config, &Settings);
 
-		ptr=GetToken(Config, "\\S", &Value, 0); //throw away flags that will already have been parsed by SocketParseConfig
-		ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
-		while (ptr)
-		{
-		STREAMSetValue(S, Name, Value);
-		ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
-		}
+    ptr=GetToken(Config, "\\S", &Value, 0); //throw away flags that will already have been parsed by SocketParseConfig
+    ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    while (ptr)
+    {
+        STREAMSetValue(S, Name, Value);
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    }
 
     if (StrValid(Host))
     {
@@ -958,10 +958,10 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         }
 
         if (STREAMWaitConnect(S)) result=STREAMDoPostConnect(S, S->Flags);
-		}
+    }
 
-		Destroy(Name);
-		Destroy(Value);
+    Destroy(Name);
+    Destroy(Value);
 
     return(result);
 }

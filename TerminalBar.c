@@ -101,6 +101,91 @@ char *TerminalBarReadText(char *RetStr, TERMBAR *TB, int Flags, const char *Prom
 }
 
 
+void TerminalBarMenuUpdate(TERMBAR *TB, ListNode *Items)
+{
+    ListNode *Curr;
+    char *Tempstr=NULL;
+
+    Curr=ListGetNext(Items);
+    while (Curr)
+    {
+        if (Items->Side==Curr)
+        {
+            Tempstr=MCatStr(Tempstr, TB->MenuCursorLeft, Curr->Tag, TB->MenuCursorRight,NULL);
+        }
+        else Tempstr=MCatStr(Tempstr, TB->MenuPadLeft,Curr->Tag,TB->MenuPadRight,NULL);
+
+        Curr=ListGetNext(Curr);
+    }
+
+    TerminalBarUpdate(TB, Tempstr);
+
+    DestroyString(Tempstr);
+}
+
+
+
+char *TerminalBarMenu(char *RetStr, TERMBAR *TB, const char *ItemStr)
+{
+    ListNode *Items, *Curr;
+    const char *ptr;
+    char *Token=NULL;
+    int inchar, Done=FALSE;
+
+    Items=ListCreate();
+    ptr=GetToken(ItemStr, ",", &Token, GETTOKEN_QUOTES);
+    while (ptr)
+    {
+        ListAddNamedItem(Items, Token, NULL);
+        ptr=GetToken(ptr, ",", &Token, GETTOKEN_QUOTES);
+    }
+
+    Curr=ListGetNext(Items);
+    Items->Side=Curr;
+
+    TerminalBarMenuUpdate(TB, Items);
+    inchar=TerminalReadChar(TB->Term);
+    while (! Done)
+    {
+        switch (inchar)
+        {
+        case EOF:
+            Done=TRUE;
+            break;
+
+        case '<':
+        case TKEY_LEFT:
+            Curr=ListGetPrev(Items->Side);
+            if (Curr) Items->Side=Curr;
+            break;
+
+        case '>':
+        case TKEY_RIGHT:
+            Curr=ListGetNext(Items->Side);
+            if (Curr) Items->Side=Curr;
+            break;
+
+        case '\r':
+        case '\n':
+            RetStr=CopyStr(RetStr, Items->Side->Tag);
+            Done=TRUE;
+            break;
+        }
+
+        if (Done) break;
+        TerminalBarMenuUpdate(TB, Items);
+        inchar=TerminalReadChar(TB->Term);
+    }
+
+
+    DestroyString(Token);
+    ListDestroy(Items, NULL);
+
+    return(RetStr);
+}
+
+
+
 
 
 void TerminalBarsInit(STREAM *S)

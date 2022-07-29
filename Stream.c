@@ -877,11 +877,11 @@ int STREAMParseConfig(const char *Config)
 
     if (StrValid(Config))
     {
-				//first read fopen-style 'open' flags like 'rw'
+        //first read fopen-style 'open' flags like 'rw'
         ptr=Config;
         while (*ptr != '\0')
         {
-						//any space indicates end of open flags
+            //any space indicates end of open flags
             if (isspace(*ptr)) break;
             switch (*ptr)
             {
