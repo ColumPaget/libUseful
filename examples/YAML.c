@@ -9,6 +9,7 @@ P=ParserParseDocument("yaml", "this: this is some text\nthat: that is some text\
 Tempstr=ParserExport(Tempstr, "json", P);
 Tempstr=ParserExport(Tempstr, "xml", P);
 Tempstr=ParserExport(Tempstr, "yaml", P);
+Tempstr=ParserExport(Tempstr, "cmon", P);
 printf("%s\n", Tempstr);
 
 Destroy(Tempstr);

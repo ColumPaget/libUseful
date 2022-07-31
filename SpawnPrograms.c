@@ -10,6 +10,8 @@
 #include <sys/ioctl.h>
 
 #define SPAWN_COMBINE_STDERR 1
+#define SPAWN_STDOUT_NULL 2
+#define SPAWN_STDERR_NULL 4
 
 int SpawnParseConfig(const char *Config)
 {
@@ -21,17 +23,8 @@ int SpawnParseConfig(const char *Config)
     while (ptr)
     {
         if (strcasecmp(Token,"+stderr")==0) Flags |= SPAWN_COMBINE_STDERR;
-        else if (strcasecmp(Token,"stderr2null")==0)
-        {
-            close(2);
-            open("/dev/null", O_WRONLY);
-        }
-        else if (strcasecmp(Token,"stdout2null")==0)
-        {
-            close(1);
-            open("/dev/null", O_WRONLY);
-        }
-
+        else if (strcasecmp(Token,"stderr2null")==0) Flags |= SPAWN_STDERR_NULL;
+        else if (strcasecmp(Token,"stdout2null")==0) Flags |= SPAWN_STDOUT_NULL;
 
         ptr=GetToken(ptr," |,",&Token,GETTOKEN_MULTI_SEP);
     }
@@ -222,6 +215,12 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
         /* we are the child */
         if (infd) close(channel1[1]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
+
+				if (Flags & SPAWN_STDOUT_NULL) 
+				{
+					close(*outfd);
+					outfd=NULL;
+				}
 
         if (outfd) close(channel2[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
