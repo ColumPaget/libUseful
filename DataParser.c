@@ -184,56 +184,56 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
 
 const char *ParserYAMLFoldedText(const char *Doc, char **RetStr)
 {
-const char *ptr, *tptr;
-char *Token=NULL;
-int IndentLevel=0;
-int count=0;
+    const char *ptr, *tptr;
+    char *Token=NULL;
+    int IndentLevel=0;
+    int count=0;
 
-*RetStr=CopyStr(*RetStr, NULL);
-ptr=Doc;
-for (tptr=ptr; *tptr==' '; tptr++) IndentLevel++;
-while (*ptr != '\0')
-{
-  count=0;
-  for (tptr=ptr; *tptr==' '; tptr++) count++;
-	if (count >= IndentLevel)
-	{
-		ptr=GetToken(tptr, "\n", &Token, 0);
-		*RetStr=MCatStr(*RetStr, Token, " ",NULL);
-	}
-	else break;
-}
+    *RetStr=CopyStr(*RetStr, NULL);
+    ptr=Doc;
+    for (tptr=ptr; *tptr==' '; tptr++) IndentLevel++;
+    while (*ptr != '\0')
+    {
+        count=0;
+        for (tptr=ptr; *tptr==' '; tptr++) count++;
+        if (count >= IndentLevel)
+        {
+            ptr=GetToken(tptr, "\n", &Token, 0);
+            *RetStr=MCatStr(*RetStr, Token, " ",NULL);
+        }
+        else break;
+    }
 
-Destroy(Token);
-return(ptr);
+    Destroy(Token);
+    return(ptr);
 }
 
 
 
 const char *ParserYAMLBlockText(const char *Doc, char **RetStr)
 {
-const char *ptr, *tptr;
-char *Token=NULL;
-int IndentLevel=0;
-int count=0;
+    const char *ptr, *tptr;
+    char *Token=NULL;
+    int IndentLevel=0;
+    int count=0;
 
-*RetStr=CopyStr(*RetStr, NULL);
-ptr=Doc;
-for (tptr=ptr; *tptr==' '; tptr++) IndentLevel++;
-while (*ptr != '\0')
-{
-  count=0;
-  for (tptr=ptr; *tptr==' '; tptr++) count++;
-	if (count >= IndentLevel)
-	{
-		ptr=GetToken(tptr, "\n", &Token, 0);
-		*RetStr=MCatStr(*RetStr, Token, "\n",NULL);
-	}
-	else break;
-}
+    *RetStr=CopyStr(*RetStr, NULL);
+    ptr=Doc;
+    for (tptr=ptr; *tptr==' '; tptr++) IndentLevel++;
+    while (*ptr != '\0')
+    {
+        count=0;
+        for (tptr=ptr; *tptr==' '; tptr++) count++;
+        if (count >= IndentLevel)
+        {
+            ptr=GetToken(tptr, "\n", &Token, 0);
+            *RetStr=MCatStr(*RetStr, Token, "\n",NULL);
+        }
+        else break;
+    }
 
-Destroy(Token);
-return(ptr);
+    Destroy(Token);
+    return(ptr);
 }
 
 
@@ -252,8 +252,8 @@ static const char *ParserYAMLItems(int ParserType, const char *Doc, ListNode *Pa
         {
         case ':':
             Name=CopyStr(Name, PrevToken);
-						StripTrailingWhitespace(Name);
-						StripLeadingWhitespace(Name);
+            StripTrailingWhitespace(Name);
+            StripLeadingWhitespace(Name);
             PrevToken=CopyStr(PrevToken,"");
             break;
 
@@ -266,8 +266,8 @@ static const char *ParserYAMLItems(int ParserType, const char *Doc, ListNode *Pa
             {
                 StripTrailingWhitespace(PrevToken);
                 StripLeadingWhitespace(PrevToken);
-								if (strcmp(PrevToken, ">")==0) ptr=ParserYAMLFoldedText(ptr, &PrevToken);
-								if (strcmp(PrevToken, "|")==0) ptr=ParserYAMLBlockText(ptr, &PrevToken);
+                if (strcmp(PrevToken, ">")==0) ptr=ParserYAMLFoldedText(ptr, &PrevToken);
+                if (strcmp(PrevToken, "|")==0) ptr=ParserYAMLBlockText(ptr, &PrevToken);
                 ParserAddValue(Parent, Name, PrevToken);
             }
 
@@ -563,7 +563,7 @@ static ListNode *ParserXMLItemsAddSubItem(ListNode *Parent, const char *Name, ch
     ListNode *Node=NULL;
 
     if (Parent->ItemType==ITEM_ROOT) Node=ListAddTypedItem(Parent, ITEM_STRING, Name, Value);
-    else if (Parent->ItemType==ITEM_STRING)
+    else if (ParserItemIsValue(Parent)) //if the parent is currently set as a value, then change it to an entity so we can add subitems
     {
         Parent->ItemType=ITEM_ENTITY;
         Parent->Item=ListCreate();
@@ -600,7 +600,7 @@ static const char *ParserXMLItems(int ParserType, const char *Doc, ListNode *Par
                 ptr=GetToken(ptr, XML_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP);
                 if (StrValid(Parent->Tag) && (strcasecmp(Token, Parent->Tag)==0))
                 {
-                    if (Parent->ItemType==ITEM_STRING) Parent->Item=CopyStr(Parent->Item, PrevToken);
+                    if (ParserItemIsValue(Parent)) Parent->Item=CopyStr(Parent->Item, PrevToken);
                     DestroyString(PrevToken);
                     DestroyString(Token);
                     return(ptr);
@@ -685,17 +685,17 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
 
         case ':':
         case '{':
-						StripQuotes(PrevToken);
+            StripQuotes(PrevToken);
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, PrevToken, IndentLevel+1);
             Token=CopyStr(Token,"");
             break;
 
         case '=':
-						if (IndentLevel==0) ptr=GetToken(ptr,"\n",&Token, GETTOKEN_QUOTES);
+            if (IndentLevel==0) ptr=GetToken(ptr,"\n",&Token, GETTOKEN_QUOTES);
             else ptr=GetToken(ptr," ",&Token, GETTOKEN_QUOTES);
             StripLeadingWhitespace(Token);
             StripTrailingWhitespace(Token);
-						StripQuotes(PrevToken);
+            StripQuotes(PrevToken);
             ParserAddValue(Parent, PrevToken, Token);
             break;
 
@@ -706,8 +706,8 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
         }
         PrevToken=CopyStr(PrevToken, Token);
-				StripTrailingWhitespace(PrevToken);
-				StripLeadingWhitespace(PrevToken);
+        StripTrailingWhitespace(PrevToken);
+        StripLeadingWhitespace(PrevToken);
     }
 
     DestroyString(PrevToken);
@@ -768,7 +768,7 @@ const char *ParserParseItems(int Type, const char *Doc, ListNode *Parent, int In
     case PARSER_CMON:
         return(ParserCMONItems(Type, Doc, Parent, IndentLevel));
         break;
- 
+
     }
     return(NULL);
 }
@@ -826,7 +826,7 @@ ListNode *ParserFindItem(ListNode *Items, const char *Name)
         if (*ptr=='\0') return(Node);
     }
     else if (! Items->Side) Node=Items;
-    else if (Items->Side->ItemType != ITEM_STRING) Node=(ListNode *) Items->Side;
+    else if (! ParserItemIsValue(Items->Side)) Node=(ListNode *) Items->Side;
 
 
     if (Node && StrValid(ptr))
@@ -835,7 +835,7 @@ ListNode *ParserFindItem(ListNode *Items, const char *Name)
         while (ptr)
         {
             if (Node->ItemType== ITEM_ROOT) Node=(ListNode *) ListFindNamedItem(Node,Token);
-            else if (Node->ItemType != ITEM_STRING) Node=(ListNode *) ListFindNamedItem((ListNode *) Node->Item,Token);
+            else if (! ParserItemIsValue(Node)) Node=(ListNode *) ListFindNamedItem((ListNode *) Node->Item,Token);
 
             if (! Node) break;
             ptr=GetToken(ptr,"/",&Token,0);
@@ -865,6 +865,13 @@ ListNode *ParserOpenItem(ListNode *Items, const char *Name)
 }
 
 
+int ParserItemIsValue(ListNode *Node)
+{
+  if (Node->ItemType == ITEM_STRING) return(TRUE);
+  if (Node->ItemType == ITEM_INTEGER) return(TRUE);
+	return(FALSE);
+}
+
 const char *ParserGetValue(ListNode *Items, const char *Name)
 {
     ListNode *Node;
@@ -892,124 +899,124 @@ const char *ParserGetValue(ListNode *Items, const char *Name)
 
 char *ParserExportJSON(char *RetStr, int Type,  ListNode *Item)
 {
-        switch (Item->ItemType)
-        {
-        case ITEM_STRING:
-            if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": \"", (const char *) Item->Item, "\"", NULL);
-            break;
-        case ITEM_INTEGER:
-            if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": ", (const char *) Item->Item, NULL);
-            break;
-        case ITEM_ENTITY:
-            RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n{\n", NULL);
-            RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
-            RetStr=MCatStr(RetStr, "\n}\n", NULL);
-            break;
-        }
+    switch (Item->ItemType)
+    {
+    case ITEM_STRING:
+        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": \"", (const char *) Item->Item, "\"", NULL);
+        break;
+    case ITEM_INTEGER:
+        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": ", (const char *) Item->Item, NULL);
+        break;
+    case ITEM_ENTITY:
+        RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n{\n", NULL);
+        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
+        RetStr=MCatStr(RetStr, "\n}\n", NULL);
+        break;
+    }
 
-        if (Item->Next) RetStr=CatStr(RetStr, ",\n");
+    if (Item->Next) RetStr=CatStr(RetStr, ",\n");
 
-return(RetStr);
+    return(RetStr);
 }
 
 
 char *ParserExportXML(char *RetStr, int Type, ListNode *Item)
 {
-        switch (Item->ItemType)
-        {
-        case ITEM_STRING:
-        case ITEM_INTEGER:
-            if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "<", Item->Tag, ">", (const char *) Item->Item, "</", Item->Tag, ">\n", NULL);
-            break;
+    switch (Item->ItemType)
+    {
+    case ITEM_STRING:
+    case ITEM_INTEGER:
+        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "<", Item->Tag, ">", (const char *) Item->Item, "</", Item->Tag, ">\n", NULL);
+        break;
 
-        case ITEM_ENTITY:
-            RetStr=MCatStr(RetStr, "<", Item->Tag, ">\n", NULL);
-            RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
-            RetStr=MCatStr(RetStr, "</", Item->Tag, ">\n", NULL);
-            break;
-        }
+    case ITEM_ENTITY:
+        RetStr=MCatStr(RetStr, "<", Item->Tag, ">\n", NULL);
+        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
+        RetStr=MCatStr(RetStr, "</", Item->Tag, ">\n", NULL);
+        break;
+    }
 
-return(RetStr);
+    return(RetStr);
 }
 
 
 char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
 {
-char *Token=NULL;
-const char *ptr;
+    char *Token=NULL;
+    const char *ptr;
 
-				if (Indent > 0) RetStr=PadStr(RetStr, ' ', Indent);
-        switch (Item->ItemType)
+    if (Indent > 0) RetStr=PadStr(RetStr, ' ', Indent);
+    switch (Item->ItemType)
+    {
+    case ITEM_STRING:
+    case ITEM_INTEGER:
+        if (StrValid(Item->Tag))
         {
-        case ITEM_STRING:
-        case ITEM_INTEGER:
-            if (StrValid(Item->Tag))
-						{
-							if (strchr((const char *) Item->Item, '\n')) 
-							{
-								RetStr=MCatStr(RetStr, Item->Tag, ":|\n", NULL);
-								ptr=GetToken((const char *) Item->Item, "\n", &Token, 0);
-								while (ptr)
-								{
-								RetStr=PadStr(RetStr, ' ', Indent+2);
-								RetStr=MCatStr(RetStr, Token, "\n", NULL);
-								ptr=GetToken(ptr, "\n", &Token, 0);
-								}
-							}
-							else RetStr=MCatStr(RetStr, Item->Tag, ": ", (const char *) Item->Item, "\n", NULL);
-						}
-            break;
-
-        case ITEM_ENTITY:
-            RetStr=MCatStr(RetStr, Item->Tag, ":\n", NULL);
-            RetStr=ParserExportItems(RetStr, Type, Indent+2, (PARSER *) Item->Item);
-            break;
+            if (strchr((const char *) Item->Item, '\n'))
+            {
+                RetStr=MCatStr(RetStr, Item->Tag, ":|\n", NULL);
+                ptr=GetToken((const char *) Item->Item, "\n", &Token, 0);
+                while (ptr)
+                {
+                    RetStr=PadStr(RetStr, ' ', Indent+2);
+                    RetStr=MCatStr(RetStr, Token, "\n", NULL);
+                    ptr=GetToken(ptr, "\n", &Token, 0);
+                }
+            }
+            else RetStr=MCatStr(RetStr, Item->Tag, ": ", (const char *) Item->Item, "\n", NULL);
         }
+        break;
 
-Destroy(Token);
+    case ITEM_ENTITY:
+        RetStr=MCatStr(RetStr, Item->Tag, ":\n", NULL);
+        RetStr=ParserExportItems(RetStr, Type, Indent+2, (PARSER *) Item->Item);
+        break;
+    }
 
-return(RetStr);
+    Destroy(Token);
+
+    return(RetStr);
 }
 
 
 
 char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
 {
-char *Token=NULL;
-const char *ptr;
+    char *Token=NULL;
+    const char *ptr;
 
-				if (Indent > 0) RetStr=PadStr(RetStr, ' ', Indent);
-        switch (Item->ItemType)
+    if (Indent > 0) RetStr=PadStr(RetStr, ' ', Indent);
+    switch (Item->ItemType)
+    {
+    case ITEM_STRING:
+    case ITEM_INTEGER:
+        if (StrValid(Item->Tag))
         {
-        case ITEM_STRING:
-        case ITEM_INTEGER:
-            if (StrValid(Item->Tag)) 
-						{
-							Token=QuoteCharsInStr(Token, (const char *) Item->Item, "\n\r");
-							RetStr=MCatStr(RetStr, "'", Item->Tag, "'='", Token, "' ", NULL);
-							if (Indent ==0) RetStr=CatStr(RetStr, "\n");
-						}
-            break;
+            Token=QuoteCharsInStr(Token, (const char *) Item->Item, "\n\r");
+            RetStr=MCatStr(RetStr, "'", Item->Tag, "'='", Token, "' ", NULL);
+            if (Indent ==0) RetStr=CatStr(RetStr, "\n");
+        }
+        break;
 
-        case ITEM_ENTITY:
-						if (Indent==0)
-						{
+    case ITEM_ENTITY:
+        if (Indent==0)
+        {
             RetStr=MCatStr(RetStr, "'", Item->Tag, "': ", NULL);
             RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
-						RetStr=CatStr(RetStr, "\n");
-						}
-						else
-						{
+            RetStr=CatStr(RetStr, "\n");
+        }
+        else
+        {
             RetStr=MCatStr(RetStr, Item->Tag, "{ ", NULL);
             RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
-						RetStr=CatStr(RetStr, " }");
-						}
-            break;
+            RetStr=CatStr(RetStr, " }");
         }
+        break;
+    }
 
-Destroy(Token);
+    Destroy(Token);
 
-return(RetStr);
+    return(RetStr);
 }
 
 
@@ -1021,13 +1028,21 @@ char *ParserExportItems(char *RetStr, int Type, int Indent, PARSER *P)
     Curr=ListGetNext(P);
     while (Curr)
     {
-				switch (Type)
-				{
-					case PARSER_JSON: RetStr=ParserExportJSON(RetStr, Type, Curr); break;
-					case PARSER_XML: RetStr=ParserExportXML(RetStr, Type, Curr); break;
-					case PARSER_YAML: RetStr=ParserExportYAML(RetStr, Type, Indent, Curr); break;
-					case PARSER_CMON: RetStr=ParserExportCMON(RetStr, Type, Indent, Curr); break;
-				}
+        switch (Type)
+        {
+        case PARSER_JSON:
+            RetStr=ParserExportJSON(RetStr, Type, Curr);
+            break;
+        case PARSER_XML:
+            RetStr=ParserExportXML(RetStr, Type, Curr);
+            break;
+        case PARSER_YAML:
+            RetStr=ParserExportYAML(RetStr, Type, Indent, Curr);
+            break;
+        case PARSER_CMON:
+            RetStr=ParserExportCMON(RetStr, Type, Indent, Curr);
+            break;
+        }
         Curr=ListGetNext(Curr);
     }
 
@@ -1039,9 +1054,9 @@ char *ParserExport(char *RetStr, const char *Format, PARSER *P)
     int Type;
 
     Type=ParserIdentifyDocType(Format);
-		if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "{\n");
+    if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "{\n");
     RetStr=ParserExportItems(RetStr, Type, 0, P);
-		if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "}");
+    if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "}");
 
-		return(RetStr);
+    return(RetStr);
 }

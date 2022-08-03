@@ -216,11 +216,11 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
         if (infd) close(channel1[1]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
 
-				if (Flags & SPAWN_STDOUT_NULL) 
-				{
-					close(*outfd);
-					outfd=NULL;
-				}
+        if (Flags & SPAWN_STDOUT_NULL)
+        {
+            close(*outfd);
+            outfd=NULL;
+        }
 
         if (outfd) close(channel2[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
