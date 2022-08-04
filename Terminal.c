@@ -801,6 +801,17 @@ int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
             if (mod !=NULL) *mod |= KEYMOD_ALT;
             str+=4;
         }
+        else if ((strncasecmp(str, "lalt-", 4)==0) || (strncasecmp(str, "lalt_", 4)==0))
+        {
+            if (mod !=NULL) *mod |= KEYMOD_ALT;
+            str+=5;
+        }
+        else if ((strncasecmp(str, "ralt-", 4)==0) || (strncasecmp(str, "ralt_", 4)==0))
+        {
+            if (mod !=NULL) *mod |= KEYMOD_ALT2;
+            str+=5;
+        }
+ 
         else break;
     }
 
