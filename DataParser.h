@@ -125,6 +125,9 @@ ListNode *ParserFindItem(ListNode *Items, const char *Name);
 ListNode *ParserOpenItem(ListNode *Items, const char *Name);
 int ParserItemIsValue(ListNode *Node);
 const char *ParserGetValue(ListNode *Items, const char *Name);
+void ParserAddValue(ListNode *Parent, const char *Name, const char *Value);
+ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name);
+ListNode *ParserAddArray(ListNode *Parent, const char *Name);
 char *ParserExport(char *RetStr, const char *Format, PARSER *P);
 
 #ifdef __cplusplus

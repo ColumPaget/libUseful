@@ -5,6 +5,10 @@
 const char *ParserParseItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel);
 char *ParserExportItems(char *RetStr, int Type, int Indent, PARSER *P);
 
+PARSER *ParserCreate()
+{
+return(ListCreate());
+}
 
 void ParserItemsDestroy(ListNode *Items)
 {
@@ -43,11 +47,12 @@ int ParserIdentifyDocType(const char *TypeStr)
     return(Type);
 }
 
-const char *ParserAddNewStructure(const char *Data, int ParserType, ListNode *Parent, int Type, const char *Name, int IndentLevel)
+
+
+ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name)
 {
     ListNode *Item, *Node;
     char *Token=NULL;
-    const char *ptr;
 
     Item=ListCreate();
     Item->Tag=CopyStr(Item->Tag,Name);
@@ -60,11 +65,33 @@ const char *ParserAddNewStructure(const char *Data, int ParserType, ListNode *Pa
     }
 
     Node->ItemType=Type;
-    ptr=ParserParseItems(ParserType, Data, Item, IndentLevel);
-
     DestroyString(Token);
+
+return(Node);
+}
+
+
+const char *ParserAddNewStructure(const char *Data, int ParserType, ListNode *Parent, int Type, const char *Name, int IndentLevel)
+{
+    const char *ptr;
+    ListNode *Node;
+
+    Node=ParserNewObject(Parent, Type, Name);
+    ptr=ParserParseItems(ParserType, Data, (ListNode *) Node->Item, IndentLevel);
+
     return(ptr);
 }
+
+
+ListNode *ParserAddArray(ListNode *Parent, const char *Name)
+{
+ListNode *Node;
+
+Node=ParserNewObject(Parent, ITEM_ARRAY, Name);
+if (Node) return(Node->Item);
+return(NULL);
+}
+
 
 
 void ParserAddValue(ListNode *Parent, const char *Name, const char *Value)
@@ -662,7 +689,7 @@ static const char *ParserXMLItems(int ParserType, const char *Doc, ListNode *Par
 
 
 
-#define CMON_TOKENS " |	|#|=|:|;|{|}|\r|\n"
+#define CMON_TOKENS " |	|#|=|:|;|{|}|[|]|\r|\n"
 
 static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel)
 {
@@ -690,6 +717,12 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             Token=CopyStr(Token,"");
             break;
 
+				case '[':
+            StripQuotes(PrevToken);
+            ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ARRAY, PrevToken, IndentLevel+1);
+            Token=CopyStr(Token,"");
+						break;
+
         case '=':
             if (IndentLevel==0) ptr=GetToken(ptr,"\n",&Token, GETTOKEN_QUOTES);
             else ptr=GetToken(ptr," ",&Token, GETTOKEN_QUOTES);
@@ -701,6 +734,7 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
 
         case '}':
         case ';':
+        case ']':
         case '\n':
             BreakOut=TRUE;
             break;
@@ -714,6 +748,9 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
     DestroyString(Token);
     return(ptr);
 }
+
+
+
 
 
 
@@ -980,6 +1017,7 @@ char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
 
 
 
+
 char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
 {
     char *Token=NULL;
@@ -994,8 +1032,16 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
         {
             Token=QuoteCharsInStr(Token, (const char *) Item->Item, "\n\r");
             RetStr=MCatStr(RetStr, "'", Item->Tag, "'='", Token, "' ", NULL);
-            if (Indent ==0) RetStr=CatStr(RetStr, "\n");
+            //if (Indent ==0) 
+            RetStr=CatStr(RetStr, "\n");
         }
+        break;
+
+    case ITEM_ARRAY:
+fprintf(stderr, "TAG: [%s]\n", Item->Tag);
+            RetStr=MCatStr(RetStr, Item->Tag, " [\n", NULL);
+            RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
+            RetStr=CatStr(RetStr, "]\n");
         break;
 
     case ITEM_ENTITY:
@@ -1007,7 +1053,7 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
         }
         else
         {
-            RetStr=MCatStr(RetStr, Item->Tag, "{ ", NULL);
+            RetStr=MCatStr(RetStr, Item->Tag, " { ", NULL);
             RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
             RetStr=CatStr(RetStr, " }");
         }

@@ -165,6 +165,9 @@ int ANSIParseColor(const char *Str);
 // and TERM_BOTTOMBAR to create a region at the bottom of the screen to hold an information or input bar
 int TerminalInit(STREAM *S, int Flags);
 
+// Initalize stream to be a terminal using 'Config' 
+void TerminalSetup(STREAM *S, const char *Config);
+
 // Specify if system supports utf8. This is global for all terminals. 'level' can be
 //   0 - not supported
 //   1 - unicode values below 0x8000 supported
@@ -234,6 +237,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term);
 
 //'Str' is a format string with 'tilde commands' in it. The ANSI coded result is output to stream S
 void TerminalPutStr(const char *Str, STREAM *S);
+
 
 
 //step past a single character. Understands tilde-strings and (some) unicode, consuming them as one character
