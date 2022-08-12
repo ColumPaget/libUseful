@@ -611,6 +611,8 @@ static int FileSystemParsePermissionsTri(const char **ptr, int ReadPerm, int Wri
 {
     int Perms=0;
 
+		if (**ptr=='+') ptr++;
+		if (**ptr=='=') ptr++;
     if (**ptr=='r') Perms |= ReadPerm;
     if (ptr_incr(ptr, 1) ==0) return(Perms);
     if (**ptr=='w') Perms |= WritePerm;
