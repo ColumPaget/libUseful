@@ -1038,10 +1038,13 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
         break;
 
     case ITEM_ARRAY:
-fprintf(stderr, "TAG: [%s]\n", Item->Tag);
             RetStr=MCatStr(RetStr, Item->Tag, " [\n", NULL);
             RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
             RetStr=CatStr(RetStr, "]\n");
+        break;
+
+            if (Indent ==0) RetStr=CatStr(RetStr, "\n");
+        }
         break;
 
     case ITEM_ENTITY:

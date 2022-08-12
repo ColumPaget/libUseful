@@ -16,6 +16,7 @@
 #define KEYMOD_SHIFT 1
 #define KEYMOD_CTRL  2
 #define KEYMOD_ALT   4
+#define KEYMOD_ALT2   8
 
 //Keycode definitions
 #define ESCAPE 0x1b
