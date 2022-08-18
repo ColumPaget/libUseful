@@ -260,6 +260,14 @@ int SwitchUID(int uid)
 {
     struct passwd *pw;
 
+    pw=getpwuid(uid);
+
+    //must initgroups before switch user, as the user we switch too
+    //may not have permission to do so
+    #ifdef HAVE_INITGROUPS
+    if (pw) initgroups(pw->pw_name, 0);
+    #endif
+
 #ifdef HAVE_SETRESUID
     if ((uid==-1) || (setresuid(uid,uid,uid) !=0))
 #else
@@ -270,13 +278,13 @@ int SwitchUID(int uid)
         if (LibUsefulGetBool("SwitchUserAllowFail")) return(FALSE);
         exit(1);
     }
-    pw=getpwuid(uid);
+
     if (pw)
     {
         setenv("HOME",pw->pw_dir,TRUE);
         setenv("USER",pw->pw_name,TRUE);
-    }
 
+    }
     return(TRUE);
 }
 

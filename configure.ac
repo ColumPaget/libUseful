@@ -41,6 +41,14 @@ then
 AC_DEFINE([HAVE_SETRESUID])
 fi
 
+AC_CHECK_LIB(c,initgroups,,)
+cf_have_initgroups=$ac_cv_lib_c_initgroups
+if test "$cf_have_initgroups" = "yes"
+then
+AC_DEFINE([HAVE_INITGROUPS])
+fi
+
+
 AC_CHECK_LIB(c,get_current_dir_name,,)
 cf_have_get_current_dir_name=$ac_cv_lib_c_get_current_dir_name
 if test "$cf_have_get_current_dir_name" = "yes"
