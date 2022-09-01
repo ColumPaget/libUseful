@@ -56,7 +56,10 @@ ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name)
 
     Item=ListCreate();
     Item->Tag=CopyStr(Item->Tag,Name);
-    if (Name) Node=ListAddNamedItem(Parent, Name, Item);
+    if (StrValid(Name))
+    {
+	Node=ListAddNamedItem(Parent, Name, Item);
+    }
     else
     {
         if (StrValid(Parent->Tag)) Token=FormatStr(Token, "%s:%d",Parent->Tag, ListSize(Parent));
@@ -833,19 +836,6 @@ ListNode *ParserParseDocument(const char *TypeStr, const char *Doc)
 }
 
 
-
-void ListDump(ListNode *List)
-{
-    ListNode *Curr;
-
-    Curr=ListGetNext(List);
-    while (Curr)
-    {
-        printf("  %s\n",Curr->Tag);
-        Curr=ListGetNext(Curr);
-    }
-
-}
 
 
 ListNode *ParserFindItem(ListNode *Items, const char *Name)
