@@ -300,11 +300,14 @@ char *HTTPQuote(char *RetBuff, const char *Str)
 
 static void HTTPSetLoginCreds(HTTPInfoStruct *Info, const char *User, const char *Password)
 {
-    Info->AuthFlags |= HTTP_AUTH_BASIC;
+    if (Info->AuthFlags == 0) Info->AuthFlags |= HTTP_AUTH_BASIC;
+		if (Info->AuthFlags != HTTP_AUTH_OAUTH)
+		{
     Info->UserName=CopyStr(Info->UserName, User);
 
 //if (StrValid(Password)) CredsStoreAdd(Info->Host, Info->UserName, Password);
     Info->Credentials=CopyStr(Info->Credentials, Password);
+		}
 }
 
 
@@ -320,7 +323,7 @@ void HTTPInfoSetValues(HTTPInfoStruct *Info, const char *Host, int Port, const c
     Info->PostContentType=CopyStr(Info->PostContentType,ContentType);
     Info->PostContentLength=ContentLength;
 
-    HTTPSetLoginCreds(Info, Logon, Password);
+    if (StrValid(Logon) || StrValid(Password)) HTTPSetLoginCreds(Info, Logon, Password);
 }
 
 
@@ -771,7 +774,7 @@ char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, const char
 
 
 
-static char *HTTPHeadersAppendAuth(char *RetStr, char *AuthHeader, HTTPInfoStruct *Info, const char *AuthInfo)
+static char *HTTPHeadersAppendAuth(char *RetStr, const char *AuthHeader, HTTPInfoStruct *Info, const char *AuthInfo)
 {
     char *SendStr=NULL, *Tempstr=NULL, *Realm=NULL, *Nonce=NULL;
     const char *ptr;
@@ -890,7 +893,8 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
     {
         Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, FALSE), NULL);
     }
-    else if (StrValid(Info->Authorization)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
+
+    if (StrValid(Info->Authorization)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Authorization);
     else if (Info->AuthFlags & (HTTP_AUTH_HOST | HTTP_AUTH_BASIC | HTTP_AUTH_DIGEST)) SendStr=HTTPHeadersAppendAuth(SendStr, "Authorization", Info, Info->Host);
 
     if (Info->ProxyAuthorization) SendStr=HTTPHeadersAppendAuth(SendStr, "Proxy-Authorization", Info, Info->ProxyAuthorization);

@@ -510,7 +510,7 @@ static void OAuthCleanupCredsFile(const char *Path)
 int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
 {
     STREAM *S;
-    char *Tempstr=NULL, *Token=NULL, *Name=NULL, *Path;
+    char *Tempstr=NULL, *Token=NULL, *Name=NULL, *Path=NULL;
     const char *ptr;
     int result=FALSE;
     int MatchingLines=0;
