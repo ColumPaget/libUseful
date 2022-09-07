@@ -264,9 +264,9 @@ int SwitchUID(int uid)
 
     //must initgroups before switch user, as the user we switch too
     //may not have permission to do so
-    #ifdef HAVE_INITGROUPS
+#ifdef HAVE_INITGROUPS
     if (pw) initgroups(pw->pw_name, 0);
-    #endif
+#endif
 
 #ifdef HAVE_SETRESUID
     if ((uid==-1) || (setresuid(uid,uid,uid) !=0))

@@ -301,13 +301,13 @@ char *HTTPQuote(char *RetBuff, const char *Str)
 static void HTTPSetLoginCreds(HTTPInfoStruct *Info, const char *User, const char *Password)
 {
     if (Info->AuthFlags == 0) Info->AuthFlags |= HTTP_AUTH_BASIC;
-		if (Info->AuthFlags != HTTP_AUTH_OAUTH)
-		{
-    Info->UserName=CopyStr(Info->UserName, User);
+    if (Info->AuthFlags != HTTP_AUTH_OAUTH)
+    {
+        Info->UserName=CopyStr(Info->UserName, User);
 
 //if (StrValid(Password)) CredsStoreAdd(Info->Host, Info->UserName, Password);
-    Info->Credentials=CopyStr(Info->Credentials, Password);
-		}
+        Info->Credentials=CopyStr(Info->Credentials, Password);
+    }
 }
 
 

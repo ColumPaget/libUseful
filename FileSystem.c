@@ -258,11 +258,11 @@ int FileChGroup(const char *FileName, const char *Group)
 
 int FileChMod(const char *Path, const char *Mode)
 {
-int perms;
+    int perms;
 
-perms=FileSystemParsePermissions(Mode);
-if (chmod(Path, perms) ==0) return(TRUE);
-return(FALSE);
+    perms=FileSystemParsePermissions(Mode);
+    if (chmod(Path, perms) ==0) return(TRUE);
+    return(FALSE);
 }
 
 
@@ -622,8 +622,8 @@ static int FileSystemParsePermissionsTri(const char **ptr, int ReadPerm, int Wri
 {
     int Perms=0;
 
-		if (**ptr=='+') ptr++;
-		if (**ptr=='=') ptr++;
+    if (**ptr=='+') ptr++;
+    if (**ptr=='=') ptr++;
     if (**ptr=='r') Perms |= ReadPerm;
     if (ptr_incr(ptr, 1) ==0) return(Perms);
     if (**ptr=='w') Perms |= WritePerm;

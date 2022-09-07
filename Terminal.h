@@ -113,7 +113,11 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 
 
 
+
 //These flags are mostly used internally
+
+#define TERM_AUTODETECT -1
+
 #define TERM_HIDETEXT  1   //hide text (default is show it)
 #define TERM_SHOWSTARS 2   //show stars instead of text (for passwords)
 #define TERM_SHOWTEXTSTARS 4 //show stars+last character typed
