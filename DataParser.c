@@ -97,9 +97,9 @@ ListNode *ParserAddArray(ListNode *Parent, const char *Name)
 
 
 
-void ParserAddValue(ListNode *Parent, const char *Name, const char *Value)
+ListNode *ParserAddValue(ListNode *Parent, const char *Name, const char *Value)
 {
-    ListNode *Node;
+    ListNode *Node=NULL;
     int ItemType=ITEM_STRING;
     char *NewItem=NULL;
 
@@ -128,13 +128,14 @@ void ParserAddValue(ListNode *Parent, const char *Name, const char *Value)
         }
 
         NewItem=CopyStr(NULL, Value);
-        StripQuotes(NewItem);
         Node=ListAddNamedItem(Parent, Name, NewItem);
         Node->ItemType=ItemType;
     }
 
 //never do this. NewItem is now in the Parser List
 //Destroy(NewItem);
+
+    return(Node);
 }
 
 
@@ -159,6 +160,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
 
         case ']':
             //we can have an item right before a ']' that doesn't terminate with a ',' because the ']' terminates it
+            StripQuotes(PrevToken);
             ParserAddValue(Parent, Name, PrevToken);
 
             if (ptr && (*ptr==',')) ptr++;
@@ -173,6 +175,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
 
         case '}':
             //we can have an item right before a '}' that doesn't terminate with a ',' because the '}' terminates it
+            StripQuotes(PrevToken);
             ParserAddValue(Parent, Name, PrevToken);
 
             if (ptr && (*ptr==',')) ptr++;
@@ -190,6 +193,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
 
         case '\n':
         case ',':
+            StripQuotes(PrevToken);
             ParserAddValue(Parent, Name, PrevToken);
             break;
 
@@ -298,6 +302,7 @@ static const char *ParserYAMLItems(int ParserType, const char *Doc, ListNode *Pa
                 StripLeadingWhitespace(PrevToken);
                 if (strcmp(PrevToken, ">")==0) ptr=ParserYAMLFoldedText(ptr, &PrevToken);
                 if (strcmp(PrevToken, "|")==0) ptr=ParserYAMLBlockText(ptr, &PrevToken);
+                StripQuotes(PrevToken);
                 ParserAddValue(Parent, Name, PrevToken);
             }
 
@@ -403,6 +408,7 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
         case '	':
         case ':':
         case '=':
+
             if (NewKey)
             {
                 Name=CopyStr(Name, PrevToken);
@@ -414,6 +420,7 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
                 NewKey=FALSE;
             }
             else Value=CatStr(Value, Token);
+            while (isspace(*ptr)) ptr++;
             break;
 
         case '\r':
@@ -447,6 +454,7 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
                 Token=CopyStr(Token,"");
             }
             NewKey=TRUE;
+            while (isspace(*ptr)) ptr++;
             break;
 
         default:
@@ -488,6 +496,7 @@ static const char *ParserRSSEnclosure(ListNode *Parent, const char *Data)
             break;
         case '=':
             ptr=GetToken(ptr, XML_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_QUOTES);
+            StripQuotes(Token);
             ParserAddValue(Parent, Name, Token);
             break;
         default:
@@ -535,7 +544,11 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
                 else if (strcasecmp(Token,"channel")==0) /*ignore */ ;
                 else if (strcasecmp(Token,"rss")==0) /*ignore */ ;
                 //if this is a 'close' for a previous 'open' then add all the data we collected
-                else if (strcasecmp(Token, Name)==0) ParserAddValue(Parent, Name, PrevToken);
+                else if (strcasecmp(Token, Name)==0)
+                {
+                    StripQuotes(Token);
+                    ParserAddValue(Parent, Name, PrevToken);
+                }
                 break;
 
             case 'i':

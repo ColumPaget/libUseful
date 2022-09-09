@@ -1005,15 +1005,15 @@ void TerminalGeometry(STREAM *S, int *wid, int *len)
     ptr=STREAMGetValue(S, "Terminal:force_cols");
     if (StrValid(ptr))
     {
-    val=atoi(ptr);
-    if (val > 0) w.ws_col=val;
+        val=atoi(ptr);
+        if (val > 0) w.ws_col=val;
     }
 
     ptr=STREAMGetValue(S, "Terminal:force_rows");
     if (StrValid(ptr))
     {
-    val=atoi(ptr);
-    if (val > 0) w.ws_row=val;
+        val=atoi(ptr);
+        if (val > 0) w.ws_row=val;
     }
 
     *wid=w.ws_col;
