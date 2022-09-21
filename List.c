@@ -281,6 +281,7 @@ void ListClear(ListNode *ListStart, LIST_ITEM_DESTROY_FUNC ItemDestroyer)
     }
 
     ListStart->Next=NULL;
+    ListStart->Side=NULL;
     ListStart->Head=ListStart;
     ListStart->Prev=ListStart;
     ListSetNoOfItems(ListStart,0);
