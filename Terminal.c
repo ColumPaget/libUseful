@@ -811,7 +811,6 @@ int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
             if (mod !=NULL) *mod |= KEYMOD_ALT2;
             str+=5;
         }
-
         else break;
     }
 
@@ -970,14 +969,6 @@ int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
 
     }
 
-    //if control is pressed, and the key is an alphabetic character, then
-    //convert it to a control char
-
-    if ((*mod & KEYMOD_CTRL) && (*str > 65) && (*str < 122))
-    {
-        *mod=0; //do not add a mod for these, as the character code alone implies it
-        return((tolower(*str) - 'a') +1);
-    }
     return((int) *str);
 }
 
@@ -986,6 +977,15 @@ int TerminalTranslateKeyStr(const char *str)
     int key, mod;
 
     key=TerminalTranslateKeyStrWithMod(str, &mod);
+
+    //if control is pressed, and the key is an alphabetic character, then
+    //convert it to a control char
+    if ((mod & KEYMOD_CTRL) && (*str > 65) && (*str < 122))
+    {
+        mod &= ~KEYMOD_CTRL; //do not add a mod for these, as the character code alone implies it
+        return((tolower(*str) - 'a') +1);
+    }
+
     if (mod==KEYMOD_SHIFT) key+=TKEY_SHIFT_BASE;
     if (mod==KEYMOD_CTRL) key+=TKEY_CTRL_BASE;
     if (mod==KEYMOD_ALT) key+=TKEY_ALT_BASE;
