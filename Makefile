@@ -1,11 +1,11 @@
 CC = gcc
-VERSION = 4.81
+VERSION = 4.82
 CFLAGS = -g -O2 
 LDFLAGS=
 LIBS = -lc -lc -lc -lc -lc -lc -lc -lc -lc 
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -D_FILE_OFFSET_BITS=64 -DHAVE_LIBC=1 -DHAVE_PTSNAME_R=1 -DHAVE_LIBC=1 -DHAVE_CLEARENV=1 -DHAVE_LIBC=1 -DHAVE_SETRESUID=1 -DHAVE_LIBC=1 -DHAVE_INITGROUPS=1 -DHAVE_LIBC=1 -DHAVE_GET_CURR_DIR=1 -DHAVE_LIBC=1 -DHAVE_UMOUNT2=1 -DHAVE_LIBC=1 -DHAVE_UMOUNT=1 -DHAVE_LIBC=1 -DHAVE_MKOSTEMP=1 -DHAVE_LIBC=1 -DHAVE_POLL=1 -DHAVE_MADVISE -DHAVE_MADVISE_NOFORK -DHAVE_MADVISE_DONTDUMP -DHAVE_MLOCK -DVERSION=\"$(VERSION)\"
 prefix=/usr/local
-OBJ=String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSocket.o Stream.o Errors.o Unicode.o Terminal.o TerminalWidget.o TerminalMenu.o TerminalChoice.o TerminalBar.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o Http.o Gemini.o Smtp.o inet.o Expect.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o Hash.o Ssh.o Compression.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Process.o Encodings.o RawData.o SecureMem.o CommandLineParser.o SysInfo.o
+OBJ=String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSocket.o Stream.o Errors.o Unicode.o TerminalKeys.o Terminal.o TerminalWidget.o TerminalMenu.o TerminalChoice.o TerminalBar.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o Http.o Gemini.o Smtp.o inet.o Expect.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o Hash.o Ssh.o Compression.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Process.o Encodings.o RawData.o SecureMem.o CommandLineParser.o SysInfo.o
 
 
 all: $(OBJ)
@@ -52,6 +52,9 @@ Stream.o: Stream.h Stream.c
 
 Unicode.o: Unicode.c Unicode.h
 	$(CC) $(FLAGS) -c Unicode.c
+
+TerminalKeys.o: TerminalKeys.h TerminalKeys.c
+	$(CC) $(FLAGS) -c TerminalKeys.c
 
 Terminal.o: Terminal.h Terminal.c
 	$(CC) $(FLAGS) -c Terminal.c
