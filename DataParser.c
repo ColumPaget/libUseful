@@ -726,7 +726,12 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             ptr=GetToken(ptr,"\n",&Token,0);
             break;
 
-        case ':':
+       case ':':
+            StripQuotes(PrevToken);
+            ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY_LINE, PrevToken, IndentLevel+1);
+            Token=CopyStr(Token,"");
+						break;
+
         case '{':
             StripQuotes(PrevToken);
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, PrevToken, IndentLevel+1);
@@ -740,18 +745,27 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case '=':
-            if (IndentLevel==0) ptr=GetToken(ptr,"\n",&Token, GETTOKEN_QUOTES);
-            else ptr=GetToken(ptr," ",&Token, GETTOKEN_QUOTES);
+            if (Parent->ItemType==ITEM_ENTITY_LINE) ptr=GetToken(ptr, "\\S" , &Token, GETTOKEN_QUOTES);
+            else ptr=GetToken(ptr, "\n", &Token, GETTOKEN_QUOTES);
             StripLeadingWhitespace(Token);
             StripTrailingWhitespace(Token);
             StripQuotes(PrevToken);
             ParserAddValue(Parent, PrevToken, Token);
+printf("PAV: [%s] [%s]\n", PrevToken, Token);
             break;
 
-        case '}':
-        case ';':
-        case ']':
         case '\n':
+					if (Parent->ItemType==ITEM_ENTITY_LINE) 
+					{
+            BreakOut=TRUE;
+						Parent->ItemType=ITEM_ENTITY;
+printf("BR: \n");
+					}
+				break;
+
+        case ';':
+        case '}':
+        case ']':
             BreakOut=TRUE;
             break;
         }

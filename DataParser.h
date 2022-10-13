@@ -152,6 +152,7 @@ typedef struct lnode PARSER;
 #define ITEM_ENTITY  2
 #define ITEM_ARRAY   3
 #define ITEM_INTEGER 4
+#define ITEM_ENTITY_LINE 102
 
 ListNode *ParserParseDocument(const char *DocType, const char *Doc);
 void ParserItemsDestroy(ListNode *Items);
