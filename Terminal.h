@@ -228,6 +228,26 @@ void TerminalReset(STREAM *S);
 #define XtermUnFullscreen(S) ((void) STREAMWriteLine("\x1[10;0t", (S)))
 
 
+//Xterm clipboard functions. Should work with any terminal that supports OSC52 clipboard query.
+//With Xterm this feature has to be turned on by the 'allowWindowOps' resource, e.g.:
+// xterm -xrm "*allowWindowOps: true"
+//Applications that read keystrokes can call 'XtermRequestClipboard' or 'XtermRequestSelection'
+//and then wait for the XTERM_CLIPBOARD or XTERM_SELECTION 'keystrokes'. When these are received
+//call 'XtermReadClipboard' or 'XtermReadSelection' to get the Clipboard or selection data
+
+#define XtermRequestClipboard(S) ( XtermStringCommand("\x1b]52;", "c;?", "\007", (S)) )
+#define XtermRequestSelection(S) ( XtermStringCommand("\x1b]52;", "p;?", "\007", (S)) )
+#define XtermReadClipboard(S) ( STREAMGetValue((S), "LU_XTERM_CLIPBOARD") )
+#define XtermReadSelection(S) ( STREAMGetValue((S), "LU_XTERM_SELECTION") )
+
+//These function request the clipboard or the primary seleciton, and wait until it is recieved.
+//For Terminals that don't support this function, the program will hang until the stream
+//times out, so it's likely a good idea to use STREAMTimeout(S, 5); so it only hangs for 5
+//centisecs. Any keypresses queued when this function is called will be lost.
+char *XtermGetClipboard(char *RetStr, STREAM *S);
+char *XtermGetSelection(char *RetStr, STREAM *S);
+
+//generic function for building xterm query escape sequences
 void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);
 
 //put a character. Char can be a value outside the ANSI range which will result in an xterm unicode character string being output

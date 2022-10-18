@@ -751,7 +751,6 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             StripTrailingWhitespace(Token);
             StripQuotes(PrevToken);
             ParserAddValue(Parent, PrevToken, Token);
-printf("PAV: [%s] [%s]\n", PrevToken, Token);
             break;
 
         case '\n':
@@ -759,7 +758,6 @@ printf("PAV: [%s] [%s]\n", PrevToken, Token);
 					{
             BreakOut=TRUE;
 						Parent->ItemType=ITEM_ENTITY;
-printf("BR: \n");
 					}
 				break;
 

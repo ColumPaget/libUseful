@@ -745,6 +745,45 @@ void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix
 }
 
 
+char *XtermGetClipboard(char *RetStr, STREAM *S)
+{
+int inchar;
+
+RetStr=CopyStr(RetStr, "");
+XtermRequestClipboard(S);
+inchar=TerminalReadChar(S);
+while (inchar > 0)
+{
+if (inchar == XTERM_CLIPBOARD) 
+{
+RetStr=CopyStr(RetStr, XtermReadClipboard(S));
+break;
+}
+inchar=TerminalReadChar(S);
+}
+
+return(RetStr);
+}
+
+char *XtermGetSelection(char *RetStr, STREAM *S)
+{
+int inchar;
+
+RetStr=CopyStr(RetStr, "");
+XtermRequestSelection(S);
+inchar=TerminalReadChar(S);
+while (inchar > 0)
+{
+if (inchar == XTERM_SELECTION) 
+{
+RetStr=CopyStr(RetStr, XtermReadSelection(S));
+break;
+}
+inchar=TerminalReadChar(S);
+}
+
+return(RetStr);
+}
 
 
 int TerminalReadChar(STREAM *S)
@@ -764,6 +803,11 @@ int TerminalReadChar(STREAM *S)
         case '[':
             return(TerminalReadCSISeq(S));
             break;
+
+        case ']':
+            return(TerminalReadOSCSeq(S));
+            break;
+
 
         case 'O':
             return(TerminalReadSSCSeq(S));

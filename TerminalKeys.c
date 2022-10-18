@@ -1,5 +1,6 @@
 #include "TerminalKeys.h"
 #include "KeyCodes.h"
+#include "Encodings.h"
 
 const char *TerminalTranslateKeyCode(int key)
 {
@@ -1577,6 +1578,49 @@ int TerminalReadCSISeq(STREAM *S)
 }
 
 
+// sequences that begin with '<esc>]' or the 'Operating System Command (OSC)'
+int TerminalReadOSCSeq(STREAM *S)
+{
+    int inchar, Key=0;
+		char *Str=NULL, *Type=NULL, *Data=NULL;
+		const char *ptr;
+
+    inchar=STREAMReadChar(S);
+    switch (inchar)
+		{
+		case '5':
+    inchar=STREAMReadChar(S);
+		if (inchar=='2')
+		{
+    	inchar=STREAMReadChar(S);
+			if (inchar == ';') 
+			{
+				Str=STREAMReadToTerminator(Str, S, '\007');
+				ptr=GetToken(Str, ";", &Type, 0);
+				ptr=GetToken(ptr, "\007", &Data, 0);
+				Str=DecodeToText(Str, Data, ENCODE_BASE64);
+				if (*Type == 'c') 
+				{
+					STREAMSetValue(S, "LU_XTERM_CLIPBOARD", Str);
+					Key=XTERM_CLIPBOARD;
+				}
+				else if (*Type == 'p')
+				{
+					STREAMSetValue(S, "LU_XTERM_SELECTION", Str);
+					Key=XTERM_SELECTION;
+				}
+			}
+		}
+		break;
+
+		}
+
+		Destroy(Str);
+		Destroy(Type);
+		Destroy(Data);
+
+return(Key);
+}
 
 // sequences that begin with '<esc>O'. This is 'single shift character' and is normally used for output, but
 // is used for some input keys including some from the keypad 

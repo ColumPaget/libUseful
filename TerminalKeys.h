@@ -7,6 +7,7 @@ const char *TerminalTranslateKeyCode(int key);
 int TerminalTranslateKeyStrWithMod(const char *str, int *mod);
 int TerminalTranslateKeyStr(const char *str);
 int TerminalReadCSISeq(STREAM *S);
+int TerminalReadOSCSeq(STREAM *S);
 int TerminalReadSSCSeq(STREAM *S);
 
 #endif
