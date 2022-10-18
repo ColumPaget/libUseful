@@ -276,10 +276,10 @@ const char *TerminalTranslateKeyCode(int key)
         break;
 
 
-    case TKEY_FOCUS_IN:
+    case XTERM_FOCUS_IN:
         return("FOCUS_IN");
         break;
-    case TKEY_FOCUS_OUT:
+    case XTERM_FOCUS_OUT:
         return("FOCUS_OUT");
         break;
     case TKEY_INSERT:
@@ -370,12 +370,6 @@ const char *TerminalTranslateKeyCode(int key)
     case TKEY_SHIFT_PAUSE:
         return("SHIFT_PAUSE");
         break;
-    case TKEY_SHIFT_FOCUS_IN:
-        return("SHIFT_FOCUS_IN");
-        break;
-    case TKEY_SHIFT_FOCUS_OUT:
-        return("SHIFT_FOCUS_OUT");
-        break;
     case TKEY_SHIFT_INSERT:
         return("SHIFT_INSERT");
         break;
@@ -416,12 +410,6 @@ const char *TerminalTranslateKeyCode(int key)
     case TKEY_CTRL_PAUSE:
         return("CTRL_PAUSE");
         break;
-    case TKEY_CTRL_FOCUS_IN:
-        return("CTRL_FOCUS_IN");
-        break;
-    case TKEY_CTRL_FOCUS_OUT:
-        return("CTRL_FOCUS_OUT");
-        break;
     case TKEY_CTRL_INSERT:
         return("CTRL_INSERT");
         break;
@@ -461,12 +449,6 @@ const char *TerminalTranslateKeyCode(int key)
         break;
     case TKEY_ALT_PAUSE:
         return("ALT_PAUSE");
-        break;
-    case TKEY_ALT_FOCUS_IN:
-        return("ALT_FOCUS_IN");
-        break;
-    case TKEY_ALT_FOCUS_OUT:
-        return("ALT_FOCUS_OUT");
         break;
     case TKEY_ALT_INSERT:
         return("ALT_INSERT");
@@ -1554,10 +1536,10 @@ int TerminalReadCSISeq(STREAM *S)
         return(TKEY_END);
         break;
     case 'I':
-        return(TKEY_FOCUS_IN);
+        return(XTERM_FOCUS_IN);
         break;
     case 'O':
-        return(TKEY_FOCUS_OUT);
+        return(XTERM_FOCUS_OUT);
         break;
 
     case '0':

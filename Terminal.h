@@ -125,12 +125,13 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TERM_RAWKEYS 64      //switch a terminal into 'raw' mode rather than canonical (usually you want this)
 #define TERMBAR_UPPER 128
 #define TERMBAR_LOWER 256
-#define TERM_SAVEATTRIBS 512
-#define TERM_SAVE_ATTRIBS 512
-#define TERM_MOUSE        1024 //send xterm mouse events for buttons 1 2 and 3
-#define TERM_WHEELMOUSE   2048 //send xterm mouse events for buttons 1 2 and 3, and wheel buttons (4 and 5)
+#define TERM_SAVEATTRIBS  512    // save terminal attributes to they can be reset by TerminalReset (you usually want this)
+#define TERM_SAVE_ATTRIBS 512    // save terminal attributes to they can be reset by TerminalReset (you usually want this)
+#define TERM_MOUSE        1024   //send xterm mouse events for buttons 1 2 and 3
+#define TERM_WHEELMOUSE   2048   //send xterm mouse events for buttons 1 2 and 3, and wheel buttons (4 and 5)
 #define TERM_ALIGN_CENTER 4096
 #define TERM_ALIGN_RIGHT  8192
+#define TERM_FOCUS_EVENTS 16384  //send window focusin/focusout events (these appear as keystrokes XTERM_FOCUS_IN and XTERM_FOCUS_OUT)
 
 //These flags can be passed in the Flags argument of ANSICode
 #define ANSI_HIDE			65536

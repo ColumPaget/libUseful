@@ -263,6 +263,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
             {
                 if (ForeColor) *ForeColor=ANSIParseColor(Value);
             }
+					  else if (strcmp(Name,"focus")==0) *Flags |= TERM_FOCUS_EVENTS;
             break;
 
         case 'b':
@@ -280,7 +281,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
 
         case 'h':
         case 'H':
-            if (strcasecmp(Name, "hidecursor") ==0) *Flags |= TERM_HIDECURSOR;
+            if (strcasecmp(Name,"hidecursor") ==0) *Flags |= TERM_HIDECURSOR;
             if (strcasecmp(Name,"hidetext")==0) *Flags |= TERM_HIDETEXT;
             if (strcasecmp(Name,"height")==0) *height=atoi(Value);
             break;
@@ -961,6 +962,8 @@ int TerminalInit(STREAM *S, int Flags)
     TerminalBarsInit(S);
     if (Flags & TERM_WHEELMOUSE) STREAMWriteLine("\x1b[?1000h", S);
     else if (Flags & TERM_MOUSE) STREAMWriteLine("\x1b[?9h", S);
+
+    if (Flags & TERM_FOCUS_EVENTS) STREAMWriteLine("\x1b[?1004h", S);
 
     Destroy(Tempstr);
     return(TRUE);
