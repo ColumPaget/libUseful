@@ -1247,7 +1247,7 @@ void STREAMShutdown(STREAM *S)
         if (strncmp(Curr->Tag,"HelperPID",9)==0)
         {
             val=atoi(Curr->Item);
-            if (val > 1) kill(val, SIGKILL);
+            if (val > 1) kill(0-val, SIGKILL);
         }
         Curr=ListGetNext(Curr);
     }
@@ -1273,7 +1273,6 @@ void STREAMShutdown(STREAM *S)
 void STREAMClose(STREAM *S)
 {
     STREAMShutdown(S);
-
     STREAMDestroy(S);
 }
 

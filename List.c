@@ -464,7 +464,6 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
     if (! Root) return(NULL);
     Node=ListFindNamedItemInsert(Root, Name);
-
     if ((! Node) || (Node==Node->Head) || (! Node->Tag)) return(NULL);
 
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
@@ -477,6 +476,8 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
         {
             if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
             else result=strcasecmp(Node->Tag,Name);
+
+	    if (result !=0) return(NULL);
 
             if (
                 (result==0) &&
