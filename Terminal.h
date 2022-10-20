@@ -240,6 +240,8 @@ void TerminalReset(STREAM *S);
 #define XtermRequestSelection(S) ( XtermStringCommand("\x1b]52;", "p;?", "\007", (S)) )
 #define XtermReadClipboard(S) ( STREAMGetValue((S), "LU_XTERM_CLIPBOARD") )
 #define XtermReadSelection(S) ( STREAMGetValue((S), "LU_XTERM_SELECTION") )
+#define XtermSetClipboard(S, data) ( XtermStringBase64Command("\x1b]52;c;", (Data), "\007", (S)) )
+#define XtermSetSelection(S, data) ( XtermStringBase64Command("\x1b]52;p;", (Data), "\007", (S)) )
 
 //These function request the clipboard or the primary seleciton, and wait until it is recieved.
 //For Terminals that don't support this function, the program will hang until the stream

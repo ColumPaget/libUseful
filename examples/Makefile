@@ -4,8 +4,6 @@ all:
 	gcc -oJSON.exe JSON.c $(LIBS)
 	gcc -oYAML.exe YAML.c $(LIBS)
 	gcc -oTerminal.exe Terminal.c $(LIBS)
-	gcc -oTerminalFocus.exe TerminalFocus.c $(LIBS)
-	gcc -oClipboard.exe Clipboard.c $(LIBS)
 	gcc -oTermBar.exe TermBar.c $(LIBS)
 	gcc -oVars.exe Vars.c $(LIBS)
 	gcc -oParseRSS.exe ParseRSS.c $(LIBS)

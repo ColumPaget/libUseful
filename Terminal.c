@@ -6,6 +6,7 @@
 #include <termios.h>
 #include "TerminalKeys.h" //for TerminalBarsInit
 #include "TerminalBar.h" //for TerminalBarsInit
+#include "Encodings.h"
 
 static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
@@ -263,7 +264,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
             {
                 if (ForeColor) *ForeColor=ANSIParseColor(Value);
             }
-					  else if (strcmp(Name,"focus")==0) *Flags |= TERM_FOCUS_EVENTS;
+            else if (strcmp(Name,"focus")==0) *Flags |= TERM_FOCUS_EVENTS;
             break;
 
         case 'b':
@@ -745,45 +746,55 @@ void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix
     Destroy(Cmd);
 }
 
+void XtermStringBase64Command(const char *Prefix, const char *Str, const char *Postfix, STREAM *S)
+{
+    char *Tempstr=NULL;
+
+    Tempstr=EncodeBytes(Tempstr, Str, StrLen(Str), ENCODE_BASE64);
+    XtermStringCommand(Prefix, Tempstr, Postfix, S);
+    Destroy(Tempstr);
+}
+
+
 
 char *XtermGetClipboard(char *RetStr, STREAM *S)
 {
-int inchar;
+    int inchar;
 
-RetStr=CopyStr(RetStr, "");
-XtermRequestClipboard(S);
-inchar=TerminalReadChar(S);
-while (inchar > 0)
-{
-if (inchar == XTERM_CLIPBOARD) 
-{
-RetStr=CopyStr(RetStr, XtermReadClipboard(S));
-break;
-}
-inchar=TerminalReadChar(S);
-}
+    RetStr=CopyStr(RetStr, "");
+    XtermRequestClipboard(S);
+    inchar=TerminalReadChar(S);
+    while (inchar > 0)
+    {
+        if (inchar == XTERM_CLIPBOARD)
+        {
+            RetStr=CopyStr(RetStr, XtermReadClipboard(S));
+            break;
+        }
+        inchar=TerminalReadChar(S);
+    }
 
-return(RetStr);
+    return(RetStr);
 }
 
 char *XtermGetSelection(char *RetStr, STREAM *S)
 {
-int inchar;
+    int inchar;
 
-RetStr=CopyStr(RetStr, "");
-XtermRequestSelection(S);
-inchar=TerminalReadChar(S);
-while (inchar > 0)
-{
-if (inchar == XTERM_SELECTION) 
-{
-RetStr=CopyStr(RetStr, XtermReadSelection(S));
-break;
-}
-inchar=TerminalReadChar(S);
-}
+    RetStr=CopyStr(RetStr, "");
+    XtermRequestSelection(S);
+    inchar=TerminalReadChar(S);
+    while (inchar > 0)
+    {
+        if (inchar == XTERM_SELECTION)
+        {
+            RetStr=CopyStr(RetStr, XtermReadSelection(S));
+            break;
+        }
+        inchar=TerminalReadChar(S);
+    }
 
-return(RetStr);
+    return(RetStr);
 }
 
 

@@ -718,7 +718,7 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
     while (ptr && (! BreakOut))
     {
         //while (isspace(*ptr)) ptr++;
-        ptr=GetToken(ptr, CONFIG_FILE_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
+        ptr=GetToken(ptr, CMON_TOKENS, &Token,GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
 
         switch (*Token)
         {
@@ -726,11 +726,11 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             ptr=GetToken(ptr,"\n",&Token,0);
             break;
 
-       case ':':
+        case ':':
             StripQuotes(PrevToken);
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY_LINE, PrevToken, IndentLevel+1);
             Token=CopyStr(Token,"");
-						break;
+            break;
 
         case '{':
             StripQuotes(PrevToken);
@@ -745,21 +745,22 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case '=':
-            if (Parent->ItemType==ITEM_ENTITY_LINE) ptr=GetToken(ptr, "\\S" , &Token, GETTOKEN_QUOTES);
+            if (Parent->ItemType==ITEM_ENTITY_LINE) ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
             else ptr=GetToken(ptr, "\n", &Token, GETTOKEN_QUOTES);
             StripLeadingWhitespace(Token);
             StripTrailingWhitespace(Token);
             StripQuotes(PrevToken);
+            StripQuotes(Token);
             ParserAddValue(Parent, PrevToken, Token);
             break;
 
         case '\n':
-					if (Parent->ItemType==ITEM_ENTITY_LINE) 
-					{
-            BreakOut=TRUE;
-						Parent->ItemType=ITEM_ENTITY;
-					}
-				break;
+            if (Parent->ItemType==ITEM_ENTITY_LINE)
+            {
+                BreakOut=TRUE;
+                Parent->ItemType=ITEM_ENTITY;
+            }
+            break;
 
         case ';':
         case '}':
@@ -955,15 +956,23 @@ char *ParserExportJSON(char *RetStr, int Type,  ListNode *Item)
     {
     case ITEM_STRING:
         if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": \"", (const char *) Item->Item, "\"", NULL);
+        else RetStr=MCatStr(RetStr, "\"", (const char *) Item->Item, "\"", NULL);
         break;
     case ITEM_INTEGER:
         if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": ", (const char *) Item->Item, NULL);
+        else RetStr=CatStr(RetStr, (const char *) Item->Item);
         break;
     case ITEM_ENTITY:
         RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n{\n", NULL);
         RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
         RetStr=MCatStr(RetStr, "\n}\n", NULL);
         break;
+    case ITEM_ARRAY:
+        RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n[\n", NULL);
+        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
+        RetStr=MCatStr(RetStr, "\n]\n", NULL);
+        break;
+
     }
 
     if (Item->Next) RetStr=CatStr(RetStr, ",\n");
@@ -1043,18 +1052,16 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
     {
     case ITEM_STRING:
     case ITEM_INTEGER:
-        if (StrValid(Item->Tag))
-        {
-            Token=QuoteCharsInStr(Token, (const char *) Item->Item, "\n\r");
-            RetStr=MCatStr(RetStr, "'", Item->Tag, "'='", Token, "' ", NULL);
-            //if (Indent ==0)
-            RetStr=CatStr(RetStr, "\n");
-        }
+        Token=QuoteCharsInStr(Token, (const char *) Item->Item, "\r\n");
+        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "'", Item->Tag, "'='", Token, "' ", NULL);
+        else RetStr=MCatStr(RetStr, "'", Token, "' ", NULL);
+        if (Indent==1) RetStr=CatStr(RetStr, " ");
+        else RetStr=CatStr(RetStr, "\n");
         break;
 
     case ITEM_ARRAY:
         RetStr=MCatStr(RetStr, Item->Tag, " [\n", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
+        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
         RetStr=CatStr(RetStr, "]\n");
         break;
 
@@ -1068,7 +1075,7 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
         else
         {
             RetStr=MCatStr(RetStr, Item->Tag, " { ", NULL);
-            RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
+            RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
             RetStr=CatStr(RetStr, " }");
         }
         break;
