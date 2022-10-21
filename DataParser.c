@@ -746,7 +746,7 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case '=':
-            if (Parent->ItemType==ITEM_ENTITY_LINE) ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
+            if (Parent->ItemType==ITEM_ENTITY_LINE) ptr=GetToken(ptr, "\\S|\n", &Token, GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
             else ptr=GetToken(ptr, "\n", &Token, GETTOKEN_QUOTES);
             StripLeadingWhitespace(Token);
             StripTrailingWhitespace(Token);
@@ -756,11 +756,7 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
             break;
 
         case '\n':
-            if (Parent->ItemType==ITEM_ENTITY_LINE)
-            {
-                BreakOut=TRUE;
-                Parent->ItemType=ITEM_ENTITY;
-            }
+            if (Parent->ItemType==ITEM_ENTITY_LINE) BreakOut=TRUE;
             break;
 
         case ';':
