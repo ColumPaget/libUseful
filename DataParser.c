@@ -55,6 +55,7 @@ ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name)
     char *Token=NULL;
 
     Item=ListCreate();
+    Item->ItemType=Type;
     Item->Tag=CopyStr(Item->Tag,Name);
     if (StrValid(Name))
     {
@@ -940,6 +941,8 @@ const char *ParserGetValue(ListNode *Items, const char *Name)
         else
         {
             if (Node->ItemType==ITEM_ENTITY) Node=(ListNode *) Node->Item;
+            else if (Node->ItemType==ITEM_ENTITY_LINE) Node=(ListNode *) Node->Item;
+
             if (Node) Node=ListFindNamedItem(Node, Name);
             if (Node) return((const char *) Node->Item);
         }
