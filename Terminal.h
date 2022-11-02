@@ -249,6 +249,7 @@ void TerminalReset(STREAM *S);
 //centisecs. Any keypresses queued when this function is called will be lost.
 char *XtermGetClipboard(char *RetStr, STREAM *S);
 char *XtermGetSelection(char *RetStr, STREAM *S);
+void XTermSetTerminalSize(STREAM *S, int wide, int high);
 
 //generic function for building xterm query escape sequences
 void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);

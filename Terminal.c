@@ -735,6 +735,17 @@ void TerminalPutStr(const char *Str, STREAM *S)
 }
 
 
+void XtermSetTerminalSize(STREAM *Term, int wide, int high)
+{
+char *Tempstr=NULL;
+
+Tempstr=FormatStr(Tempstr, "\x1b[8;%d;%dt", high, wide);
+STREAMWriteLine(Tempstr, Term);
+STREAMFlush(Term);
+Destroy(Tempstr);
+}
+
+
 void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S)
 {
     char *Cmd=NULL, *Tempstr=NULL;
