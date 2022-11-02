@@ -246,8 +246,8 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
     char *Name=NULL, *Value=NULL;
     const char *ptr;
 
-    *width=TERM_AUTODETECT;
-    *height=TERM_AUTODETECT;
+    if (width) *width=TERM_AUTODETECT;
+    if (height) *height=TERM_AUTODETECT;
 
     ptr=GetNameValuePair(Config, " ","=",&Name,&Value);
     while (ptr)
@@ -284,7 +284,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
         case 'H':
             if (strcasecmp(Name,"hidecursor") ==0) *Flags |= TERM_HIDECURSOR;
             if (strcasecmp(Name,"hidetext")==0) *Flags |= TERM_HIDETEXT;
-            if (strcasecmp(Name,"height")==0) *height=atoi(Value);
+            if (height && (strcasecmp(Name,"height")==0)) *height=atoi(Value);
             break;
 
         case 'm':
@@ -314,7 +314,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
         case 'w':
         case 'W':
             if (strcasecmp(Name,"wheelmouse")==0) *Flags=TERM_WHEELMOUSE;
-            if (strcasecmp(Name,"width")==0) *width=atoi(Value);
+            if (width && (strcasecmp(Name,"width")==0) ) *width=atoi(Value);
             break;
         }
 

@@ -3,7 +3,7 @@
 
 
 //this function exists elsewhere, but we don't really want to make it available to users
-void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, int *Flags);
+void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, int *Flags, int *wide, int *high);
 
 void TerminalBarUpdate(TERMBAR *TB, const char *Text)
 {
@@ -269,7 +269,7 @@ void TerminalBarSetConfig(TERMBAR *TB, const char *Config)
 
     //then check for default options, backcolor and forecolor reversed because terminal bars
     //are inverse text
-    TerminalInternalConfig(Config, &(TB->BackColor), &(TB->ForeColor), &(TB->Flags));
+    TerminalInternalConfig(Config, &(TB->BackColor), &(TB->ForeColor), &(TB->Flags), NULL, NULL);
 
     DestroyString(Name);
     DestroyString(Value);
