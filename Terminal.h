@@ -165,6 +165,9 @@ char *ANSICode(int Color, int BgColor, int Flags);
 //parse a color name ('red', 'yellow' etc) and return the equivalent ANSI_ flag
 int ANSIParseColor(const char *Str);
 
+char *TerminalStripControlSequences(char *RetStr, const char *Str);
+
+
 // initialize STREAM to be a terminal. This captures terminal width and height (rows and columns) and sets up the scrolling area.
 // Flags can include TERM_HIDECURSOR, to start with cursor hidden, TERM_RAWKEYS to disable 'canonical' mode and get raw keystrokes
 // and TERM_BOTTOMBAR to create a region at the bottom of the screen to hold an information or input bar

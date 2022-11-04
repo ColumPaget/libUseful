@@ -154,6 +154,34 @@ char *TerminalStrTrunc(char *Str, int MaxLen)
 }
 
 
+char *TerminalStripControlSequences(char *RetStr, const char *Str)
+{
+const char *ptr;
+
+RetStr=CopyStr(RetStr, "");
+
+for (ptr=Str; *ptr !='\0'; ptr++)
+{
+if (*ptr == ESCAPE)
+{
+	ptr++;
+	switch (*ptr)
+	{
+		case '[':
+			ptr++;
+			if (*ptr=='0') while ((*ptr != '\0') && (*ptr != 'm')) ptr++;
+		break;
+	}
+}
+else 
+{
+RetStr=AddCharToStr(RetStr, *ptr);
+}
+
+}
+
+return(RetStr);
+}
 
 
 char *ANSICode(int Color, int BgColor, int Flags)
