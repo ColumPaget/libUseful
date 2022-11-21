@@ -56,7 +56,7 @@ static void *SelectAddFD(TSelectSet *Set, int type, int fd)
 static int SelectWait(TSelectSet *Set, struct timeval *tv)
 {
     long long timeout, next;
-    double start, diff, val;
+    uint64_t start, diff;
     int result;
 
 
