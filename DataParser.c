@@ -764,10 +764,18 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
         case ']':
             BreakOut=TRUE;
             break;
+
+        case ' ':
+        case '	':
+        case '\r':
+            break;
+
+        default:
+            PrevToken=CopyStr(PrevToken, Token);
+            StripTrailingWhitespace(PrevToken);
+            StripLeadingWhitespace(PrevToken);
+            break;
         }
-        PrevToken=CopyStr(PrevToken, Token);
-        StripTrailingWhitespace(PrevToken);
-        StripLeadingWhitespace(PrevToken);
     }
 
     DestroyString(PrevToken);

@@ -156,31 +156,31 @@ char *TerminalStrTrunc(char *Str, int MaxLen)
 
 char *TerminalStripControlSequences(char *RetStr, const char *Str)
 {
-const char *ptr;
+    const char *ptr;
 
-RetStr=CopyStr(RetStr, "");
+    RetStr=CopyStr(RetStr, "");
 
-for (ptr=Str; *ptr !='\0'; ptr++)
-{
-if (*ptr == ESCAPE)
-{
-	ptr++;
-	switch (*ptr)
-	{
-		case '[':
-			ptr++;
-			if (*ptr=='0') while ((*ptr != '\0') && (*ptr != 'm')) ptr++;
-		break;
-	}
-}
-else 
-{
-RetStr=AddCharToStr(RetStr, *ptr);
-}
+    for (ptr=Str; *ptr !='\0'; ptr++)
+    {
+        if (*ptr == ESCAPE)
+        {
+            ptr++;
+            switch (*ptr)
+            {
+            case '[':
+                ptr++;
+                if (*ptr=='0') while ((*ptr != '\0') && (*ptr != 'm')) ptr++;
+                break;
+            }
+        }
+        else
+        {
+            RetStr=AddCharToStr(RetStr, *ptr);
+        }
 
-}
+    }
 
-return(RetStr);
+    return(RetStr);
 }
 
 
@@ -765,12 +765,12 @@ void TerminalPutStr(const char *Str, STREAM *S)
 
 void XtermSetTerminalSize(STREAM *Term, int wide, int high)
 {
-char *Tempstr=NULL;
+    char *Tempstr=NULL;
 
-Tempstr=FormatStr(Tempstr, "\x1b[8;%d;%dt", high, wide);
-STREAMWriteLine(Tempstr, Term);
-STREAMFlush(Term);
-Destroy(Tempstr);
+    Tempstr=FormatStr(Tempstr, "\x1b[8;%d;%dt", high, wide);
+    STREAMWriteLine(Tempstr, Term);
+    STREAMFlush(Term);
+    Destroy(Tempstr);
 }
 
 

@@ -477,7 +477,7 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
             if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
             else result=strcasecmp(Node->Tag,Name);
 
-	    if (result !=0) return(NULL);
+            if (result !=0) return(NULL);
 
             if (
                 (result==0) &&
