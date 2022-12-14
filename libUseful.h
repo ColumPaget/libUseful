@@ -27,6 +27,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "Server.h"
 #include "UnixSocket.h"
 #include "String.h"
+#include "StringList.h"
 #include "Expect.h"
 #include "List.h"
 #include "Stream.h"
