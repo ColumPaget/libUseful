@@ -16,3 +16,4 @@ all:
 	gcc -oErrors.exe Errors.c $(LIBS)
 	gcc -ossh-tunnel.exe ssh-tunnel.c $(LIBS)
 	gcc -oSSLClient.exe SSLClient.c $(LIBS)
+	gcc -oConfig.exe Config.c $(LIBS)
