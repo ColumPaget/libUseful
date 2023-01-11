@@ -2344,5 +2344,17 @@ int STREAMCommit(STREAM *S)
         if (HTTPTransact((HTTPInfoStruct *) Item) != NULL) return(TRUE);
     }
 
+    //for streams where we are talking to someting on pipes 
+    //(usually cmd: type streams where we are talking to a command on it's stdin)
+    // close our stdout
+    if (S->Type==STREAM_TYPE_PIPE)
+    {
+	STREAMFlush(S);
+        close(S->out_fd);
+        S->out_fd=-1;
+        return(TRUE);
+    }
+
+
     return(FALSE);
 }
