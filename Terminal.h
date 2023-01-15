@@ -243,8 +243,8 @@ void TerminalReset(STREAM *S);
 #define XtermRequestSelection(S) ( XtermStringCommand("\x1b]52;", "p;?", "\007", (S)) )
 #define XtermReadClipboard(S) ( STREAMGetValue((S), "LU_XTERM_CLIPBOARD") )
 #define XtermReadSelection(S) ( STREAMGetValue((S), "LU_XTERM_SELECTION") )
-#define XtermSetClipboard(S, data) ( XtermStringBase64Command("\x1b]52;c;", (Data), "\007", (S)) )
-#define XtermSetSelection(S, data) ( XtermStringBase64Command("\x1b]52;p;", (Data), "\007", (S)) )
+#define XtermSetClipboard(S, Data) ( XtermStringBase64Command("\x1b]52;c;", (Data), "\007", (S)) )
+#define XtermSetSelection(S, Data) ( XtermStringBase64Command("\x1b]52;p;", (Data), "\007", (S)) )
 
 //These function request the clipboard or the primary seleciton, and wait until it is recieved.
 //For Terminals that don't support this function, the program will hang until the stream
@@ -252,7 +252,9 @@ void TerminalReset(STREAM *S);
 //centisecs. Any keypresses queued when this function is called will be lost.
 char *XtermGetClipboard(char *RetStr, STREAM *S);
 char *XtermGetSelection(char *RetStr, STREAM *S);
-void XTermSetTerminalSize(STREAM *S, int wide, int high);
+
+#define XTermSetTerminalSize(S, wide, high) XtermSetTerminalSize(S, wide, high)
+void XtermSetTerminalSize(STREAM *S, int wide, int high);
 
 //generic function for building xterm query escape sequences
 void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);
