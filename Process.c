@@ -810,6 +810,7 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"caps")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"mlock")==0) mlockall(MCL_FUTURE);
+        else if (strcasecmp(Name,"memlock")==0) mlockall(MCL_FUTURE);
         else if (strcasecmp(Name,"mem")==0)
         {
             val=(rlim_t) FromMetric(Value, 0);
