@@ -1,17 +1,18 @@
 #include "Process.h"
 #include "errno.h"
 #include "includes.h"
-#include "Time.h"
 #include <pwd.h>
+#include <sched.h>
 #include <sys/mount.h>
 #include <sys/resource.h>
-#include "FileSystem.h"
-#include "Log.h"
-#include <sched.h>
+#include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <glob.h>
+#include "Log.h"
+#include "Time.h"
+#include "FileSystem.h"
 
 //needed for 'flock' used by CreatePidFile and CreateLockFile
 #include <sys/file.h>
@@ -808,6 +809,7 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"caps")==0) Capabilities=CopyStr(Capabilities, Value);
+        else if (strcasecmp(Name,"mlock")==0) mlockall(MCL_FUTURE);
         else if (strcasecmp(Name,"mem")==0)
         {
             val=(rlim_t) FromMetric(Value, 0);
