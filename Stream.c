@@ -1312,6 +1312,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
         S->InStart=0;
     }
 
+
 //if buffer is half full, or full 'cept for space at the start, then make room
     if (
         (S->InStart > (S->BuffSize / 2)) ||
@@ -2344,12 +2345,12 @@ int STREAMCommit(STREAM *S)
         if (HTTPTransact((HTTPInfoStruct *) Item) != NULL) return(TRUE);
     }
 
-    //for streams where we are talking to someting on pipes 
+    //for streams where we are talking to someting on pipes
     //(usually cmd: type streams where we are talking to a command on it's stdin)
     // close our stdout
     if (S->Type==STREAM_TYPE_PIPE)
     {
-	STREAMFlush(S);
+        STREAMFlush(S);
         close(S->out_fd);
         S->out_fd=-1;
         return(TRUE);

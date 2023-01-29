@@ -103,6 +103,7 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
 pid_t PseudoTTYSpawn(int *pty, const char *Command, const char *Config);
 STREAM *STREAMSpawnCommand(const char *Command, const char *Config);
 STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config);
+int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **CmdS, STREAM **PtyS);
 
 #ifdef __cplusplus
 }

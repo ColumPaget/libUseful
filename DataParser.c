@@ -399,10 +399,10 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
             StripTrailingWhitespace(Name);
 
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, Name, IndentLevel+1);
-	    //if we finished parsing a structure, we must reset everything for a new data line
+            //if we finished parsing a structure, we must reset everything for a new data line
             Name=CopyStr(Name,"");
             Token=CopyStr(Token,"");
-	    NewKey=TRUE;
+            NewKey=TRUE;
             break;
 
         //these are all possible seperators in key=value lines
@@ -410,7 +410,7 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
         case '	':
         case ':':
         case '=':
-	    //new key indicates that this is the first separator of this line. Further ones will be treated as characters rather than separators
+            //new key indicates that this is the first separator of this line. Further ones will be treated as characters rather than separators
             if (NewKey)
             {
                 Name=CopyStr(Name, PrevToken);
@@ -455,11 +455,11 @@ static const char *ParserConfigItems(int ParserType, const char *Doc, ListNode *
                 //we don't want \r \n or ; tokens included in anything
                 Token=CopyStr(Token,"");
             }
-	    //any of \n ; or } indicate we start reading a fresh entry, but this newkey will not work for }
-	    //as } causes us to return from ParserAddNewDataStructure and we must set NewKey=TRUE outside of that
+            //any of \n ; or } indicate we start reading a fresh entry, but this newkey will not work for }
+            //as } causes us to return from ParserAddNewDataStructure and we must set NewKey=TRUE outside of that
             NewKey=TRUE;
 
-	    //spaces at the start of the new line are not separators, bypass them
+            //spaces at the start of the new line are not separators, bypass them
             while (isspace(*ptr)) ptr++;
             break;
 
@@ -860,8 +860,8 @@ ListNode *ParserParseDocument(const char *TypeStr, const char *Doc)
     Type=ParserIdentifyDocType(TypeStr);
     if (Type==-1)
     {
-	RaiseError(0, "ParserParseDocument", "Unknown Document Type: %s", TypeStr);
-	return(NULL);
+        RaiseError(0, "ParserParseDocument", "Unknown Document Type: %s", TypeStr);
+        return(NULL);
     }
 
     Items=ListCreate();
@@ -1140,8 +1140,8 @@ char *ParserExport(char *RetStr, const char *Format, PARSER *P)
     Type=ParserIdentifyDocType(Format);
     if (Type==-1)
     {
-	RaiseError(0, "ParserExport", "Unknown Document Type: %s", Format);
-	return(RetStr);
+        RaiseError(0, "ParserExport", "Unknown Document Type: %s", Format);
+        return(RetStr);
     }
 
     if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "{\n");

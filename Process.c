@@ -850,7 +850,6 @@ int ProcessApplyConfig(const char *Config)
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
 
-
 //set all signal handlers to default
     if (Flags & PROC_SIGDEF)
     {

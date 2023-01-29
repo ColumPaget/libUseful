@@ -392,3 +392,33 @@ STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
 
     return(S);
 }
+
+
+
+int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **CmdS, STREAM **PtyS)
+{
+    int pty, tty;
+    int result=FALSE;
+    char *Tempstr=NULL, *Args=NULL;
+
+    *PtyS=NULL;
+    *CmdS=NULL;
+
+    if (PseudoTTYGrab(&pty, &tty, 0))
+    {
+        Args=FormatStr(Args, "%s setsid ctty=%d nosig", Config, tty);
+        Tempstr=MCopyStr(Tempstr, "cmd:", Command, NULL);
+        *CmdS=STREAMOpen(Tempstr, Args);
+        if (*CmdS)
+        {
+            *PtyS=STREAMFromFD(pty);
+            STREAMSetTimeout(*PtyS, 1000);
+            result=TRUE;
+        }
+    }
+
+    Destroy(Tempstr);
+    Destroy(Args);
+
+    return(result);
+}

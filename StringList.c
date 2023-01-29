@@ -4,23 +4,23 @@
 
 int InStringList(const char *Item, const char *List, const char *Sep)
 {
-const char *ptr;
-char *Token=NULL;
-int RetVal=FALSE;
+    const char *ptr;
+    char *Token=NULL;
+    int RetVal=FALSE;
 
-ptr=GetToken(List, Sep, &Token, 0);
-while (ptr)
-{
-if (strcmp(Item, Token)==0)
-{
-  RetVal=TRUE;
-  break;
-}
-ptr=GetToken(ptr, Sep, &Token, 0);
-}
+    ptr=GetToken(List, Sep, &Token, 0);
+    while (ptr)
+    {
+        if (strcmp(Item, Token)==0)
+        {
+            RetVal=TRUE;
+            break;
+        }
+        ptr=GetToken(ptr, Sep, &Token, 0);
+    }
 
-Destroy(Token);
+    Destroy(Token);
 
-return(RetVal);
+    return(RetVal);
 }
 
