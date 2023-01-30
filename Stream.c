@@ -557,8 +557,7 @@ int STREAMFlush(STREAM *S)
     //if nothing left in stream (There shouldn't be) then wipe data because
     //there might have been passwords sent on the stream, and we don't want
     //that hanging about in memory
-    if (S->OutEnd==0) xmemset(S->OutputBuff,0,S->BuffSize);
-
+		if (S->OutputBuff && (S->OutEnd==0)) xmemset(S->OutputBuff,0,S->BuffSize);
     return(val);
 }
 
@@ -569,7 +568,7 @@ void STREAMClear(STREAM *S)
     S->InEnd=0;
     //clear input buffer, because anything might be hanging about in there and
     //we don't want sensitive data persisiting in memory
-    xmemset(S->InputBuff,0,S->BuffSize);
+    if (S->InputBuff) xmemset(S->InputBuff,0,S->BuffSize);
 }
 
 
@@ -984,7 +983,6 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     char *Proto=NULL, *Host=NULL, *Token=NULL, *User=NULL, *Pass=NULL, *Path=NULL, *Args=NULL;
     const char *ptr;
     int Port=0, Flags=0;
-
 
     Proto=CopyStr(Proto,"");
     ptr=STREAMExtractMasterURL(URL);

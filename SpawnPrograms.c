@@ -406,7 +406,11 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
 
     if (PseudoTTYGrab(&pty, &tty, TTYFLAG_PTY))
     {
-        Args=FormatStr(Args, "%s setsid ctty=%d nosig", Config, tty);
+				//handle situation where Config might be null
+				if (StrValid(Config)) Tempstr=CopyStr(Tempstr, Config);
+				else Tempstr=CopyStr(Tempstr, "rw");
+
+        Args=FormatStr(Args, "%s setsid ctty=%d nosig", Tempstr, tty);
         Tempstr=MCopyStr(Tempstr, "cmd:", Command, NULL);
         *CmdS=STREAMOpen(Tempstr, Args);
         if (*CmdS)
