@@ -404,7 +404,7 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
     *PtyS=NULL;
     *CmdS=NULL;
 
-    if (PseudoTTYGrab(&pty, &tty, 0))
+    if (PseudoTTYGrab(&pty, &tty, TTYFLAG_PTY))
     {
         Args=FormatStr(Args, "%s setsid ctty=%d nosig", Config, tty);
         Tempstr=MCopyStr(Tempstr, "cmd:", Command, NULL);
