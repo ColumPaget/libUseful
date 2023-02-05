@@ -39,7 +39,7 @@ int SetGlobalConnectionChain(const char *Chain)
 
 //if a proxy helper was launched by the current program (check using getpid) then
 //this is called by 'atexit' on exit, to shutdown that helper
-static void ConnectionHopCloseAll()
+void ConnectionHopCloseAll()
 {
     ListNode *Curr;
     STREAM *S;
@@ -556,7 +556,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
                 Tempstr=FormatStr(Tempstr, "%d", getpid());
                 STREAMSetValue(tmpS, "LU:LauncherPID", Tempstr);
                 ListAddNamedItem(ProxyHelpers, ProxyURL, tmpS);
-                atexit(ConnectionHopCloseAll);
+          			LibUsefulSetupAtExit();
             }
         }
 

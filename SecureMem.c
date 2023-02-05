@@ -344,11 +344,7 @@ char *CredsStoreWriteField(char *Dest, const char *Field)
 SECURESTORE *CredsStoreCreate()
 {
     CredsStore=SecureStoreCreate(0);
-    if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED))
-    {
-        atexit(LibUsefulAtExit);
-        LibUsefulFlags |= LU_ATEXIT_REGISTERED;
-    }
+    LibUsefulSetupAtExit();
 
     return(CredsStore);
 }

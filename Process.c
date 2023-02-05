@@ -728,8 +728,8 @@ int ProcessContainer(const char *Config)
 
             if (result)
             {
-                if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
-                LibUsefulFlags |= LU_CONTAINER | LU_ATEXIT_REGISTERED;
+                LibUsefulSetupAtExit();
+                LibUsefulFlags |= LU_CONTAINER;
 
                 if (StrValid(Dir)) chdir(Dir);
             }
@@ -809,8 +809,18 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"caps")==0) Capabilities=CopyStr(Capabilities, Value);
-        else if (strcasecmp(Name,"mlock")==0) mlockall(MCL_FUTURE);
-        else if (strcasecmp(Name,"memlock")==0) mlockall(MCL_FUTURE);
+        else if (strcasecmp(Name,"mlock")==0)
+				{
+					LibUsefulFlags |= LU_MLOCKALL;
+					mlockall(MCL_FUTURE);
+          if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
+				}
+        else if (strcasecmp(Name,"memlock")==0)
+				{
+					LibUsefulFlags |= LU_MLOCKALL;
+					mlockall(MCL_FUTURE);
+          LibUsefulSetupAtExit();
+				}
         else if (strcasecmp(Name,"mem")==0)
         {
             val=(rlim_t) FromMetric(Value, 0);

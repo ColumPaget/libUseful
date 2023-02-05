@@ -128,6 +128,8 @@ void StrLenCacheUpdate(const char *Str, int incr)
 {
     int i;
 
+		if (LibUsefulFlags & LU_STRLEN_NOCACHE) return;
+
     for (i=0; i < StrLenCacheSize; i++)
     {
         if (StrLenCache[i].Str == Str) StrLenCache[i].len+=incr;
@@ -138,6 +140,8 @@ void StrLenCacheUpdate(const char *Str, int incr)
 void StrLenCacheAdd(const char *Str, size_t len)
 {
     int i, emptyslot=-1;
+
+		if (LibUsefulFlags & LU_STRLEN_NOCACHE) return;
 
     if (! StrLenCache)
     {
@@ -268,7 +272,7 @@ char *CatStrLen(char *Dest, const char *Src, size_t len)
     int dstlen;
 
     dstlen=StrLenFromCache(Dest);
-    Dest=SetStrLen(Dest,dstlen+len);
+    Dest=SetStrLen(Dest, dstlen+len);
     dst=Dest+dstlen;
     src=Src;
     end=src+len;

@@ -697,7 +697,10 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             val=UnicodeDecode(&ptr);
             if (val > 0) *RetStr=TerminalCommandStr(*RetStr, TERM_UNICODE, val, 0);
         }
-        else *RetStr=AddCharToStr(*RetStr, *ptr);
+        else
+				{
+					*RetStr=AddCharToStr(*RetStr, *ptr);
+				}
     }
 
     Destroy(Tempstr);
