@@ -15,6 +15,17 @@ static uint64_t LU_CachedMillisecs=0;
 static struct tm LU_CachedTM;
 
 
+void TimeZoneSet(const char *TimeZone)
+{
+    if (StrValid(TimeZone))
+    {
+        setenv("TZ",TimeZone,TRUE);
+        tzset();
+    }
+    else unsetenv("TZ");
+}
+
+
 uint64_t GetTime(int Flags)
 {
     struct timeval tv;
@@ -35,19 +46,14 @@ uint64_t GetTime(int Flags)
 
 char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZone)
 {
+#define DATE_BUFF_LEN 255
     time_t val;
     struct tm *TMS;
     static char *Buffer=NULL;
-    char *Tempstr=NULL;
-#define DATE_BUFF_LEN 255
+    char *SavedTimeZone=NULL;
 
-
-    if (StrValid(TimeZone))
-    {
-        if (getenv("TZ")) Tempstr=CopyStr(Tempstr,getenv("TZ"));
-        setenv("TZ",TimeZone,TRUE);
-        tzset();
-    }
+     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
+     TimeZoneSet(TimeZone);
 
     /*
     if (Secs==LU_CachedTime) TMS=&LU_CachedTM;
@@ -66,14 +72,9 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
     Buffer=SetStrLen(Buffer,val);
     strftime(Buffer,val,DateFormat,TMS);
 
-    if (StrValid(TimeZone))
-    {
-        if (! Tempstr) unsetenv("TZ");
-        else setenv("TZ",Tempstr,TRUE);
-        tzset();
-    }
+    TimeZoneSet(SavedTimeZone);
 
-    DestroyString(Tempstr);
+    DestroyString(SavedTimeZone);
     return(Buffer);
 }
 
@@ -89,29 +90,24 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
 {
     time_t Secs=0;
     struct tm TMS;
-    char *Tempstr=NULL;
+    char *SavedTimeZone=NULL;
+
 
     if (StrEnd(DateFormat)) return(0);
     if (StrEnd(Str)) return(0);
 
-    if (StrValid(TimeZone))
-    {
-        if (getenv("TZ")) Tempstr=CopyStr(Tempstr,getenv("TZ"));
-        setenv("TZ",TimeZone,TRUE);
-        tzset();
-    }
+     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
+     TimeZoneSet(TimeZone);
 
     memset(&TMS,0,sizeof(struct tm));
     strptime(Str,DateFormat,&TMS);
     TMS.tm_isdst=-1;
     Secs=mktime(&TMS);
 
-    if (StrValid(TimeZone))
-    {
-        if (! Tempstr) unsetenv("TZ");
-        else setenv("TZ",Tempstr,TRUE);
-        tzset();
-    }
+    TimeZoneSet(SavedTimeZone);
+
+    Destroy(SavedTimeZone);
+
     return(Secs);
 }
 
@@ -120,29 +116,32 @@ long TimezoneOffset(const char *TimeZone)
 {
     long Secs=0;
     char *Tempstr=NULL;
+    char *SavedTimeZone=NULL;
 
-    if (StrValid(TimeZone))
-    {
-        if (getenv("TZ")) Tempstr=CopyStr(Tempstr,getenv("TZ"));
-        setenv("TZ",TimeZone,TRUE);
-        tzset();
-    }
+     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
+     TimeZoneSet(TimeZone);
 
 //TO DO: portable offset calculation
 #ifdef linux
     Secs=timezone;
 #endif
 
-    if (StrValid(TimeZone))
-    {
-        if (! Tempstr) unsetenv("TZ");
-        else setenv("TZ",Tempstr,TRUE);
-        tzset();
-    }
+    TimeZoneSet(SavedTimeZone);
+    Destroy(SavedTimeZone);
 
     return(Secs);
 }
 
+
+char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const char *DstZone)
+{
+time_t secs;
+
+secs=DateStrToSecs(LU_STD_DATE_FMT, Time, SrcZone);
+RetStr=CopyStr(RetStr, GetDateStrFromSecs(LU_STD_DATE_FMT, secs, DstZone));
+
+return(RetStr);
+}
 
 
 void MillisecsToTV(int millisecs, struct timeval *tv)
@@ -176,4 +175,6 @@ void SetTimeout(int timeout, SIGNAL_HANDLER_FUNC Handler)
     sigaction(SIGALRM,&SigAct,NULL);
     alarm(timeout);
 }
+
+
 

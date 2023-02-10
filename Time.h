@@ -39,6 +39,9 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
 //Convert a date/time string 'Str' to number of seconds since epoch
 time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZone);
 
+//
+char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const char *DstZone);
+
 //this sets a SIGALRM timer, causing a signal to be sent to our process after 'timeout' seconds.
 //You can either pass a signal handler function, or pass NULL to use the default libUseful internal
 //signal handler (SIGNAL_HANDLER_FUNC is of the form 'void MyHandler(int sig)' )
