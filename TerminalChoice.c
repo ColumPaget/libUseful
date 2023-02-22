@@ -3,12 +3,15 @@
 void TerminalChoiceDraw(TERMCHOICE *Chooser)
 {
     ListNode *Curr;
-    char *Tempstr=NULL;
+    char *Tempstr=NULL, *LPad=NULL, *RPad=NULL;
 
     if (Chooser->Flags & TERMMENU_POSITIONED) TerminalCommand(TERM_CURSOR_MOVE, Chooser->x, Chooser->y, Chooser->Term);
     else Tempstr=CopyStr(Tempstr, "\r");
 
     if (StrValid(Chooser->Text)) Tempstr=CatStr(Tempstr, Chooser->Text);
+
+    LPad=PadStr(LPad, ' ', TerminalStrLen(Chooser->MenuCursorLeft));
+    RPad=PadStr(RPad, ' ', TerminalStrLen(Chooser->MenuCursorRight));
 
     Curr=ListGetNext(Chooser->Options);
     while (Curr)
@@ -17,7 +20,7 @@ void TerminalChoiceDraw(TERMCHOICE *Chooser)
         {
             Tempstr=MCatStr(Tempstr, Chooser->MenuCursorLeft, Curr->Tag, Chooser->MenuCursorRight, NULL);
         }
-        else Tempstr=MCatStr(Tempstr, Chooser->MenuPadLeft,Curr->Tag, Chooser->MenuPadRight, NULL);
+        else Tempstr=MCatStr(Tempstr, LPad, Curr->Tag, RPad, NULL);
 
         Curr=ListGetNext(Curr);
     }
@@ -26,6 +29,8 @@ void TerminalChoiceDraw(TERMCHOICE *Chooser)
     STREAMFlush(Chooser->Term);
 
     Destroy(Tempstr);
+    Destroy(LPad);
+    Destroy(RPad);
 }
 
 

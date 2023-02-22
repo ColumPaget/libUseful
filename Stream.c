@@ -557,7 +557,7 @@ int STREAMFlush(STREAM *S)
     //if nothing left in stream (There shouldn't be) then wipe data because
     //there might have been passwords sent on the stream, and we don't want
     //that hanging about in memory
-		if (S->OutputBuff && (S->OutEnd==0)) xmemset(S->OutputBuff,0,S->BuffSize);
+    if (S->OutputBuff && (S->OutEnd==0)) xmemset(S->OutputBuff,0,S->BuffSize);
     return(val);
 }
 

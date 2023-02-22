@@ -13,6 +13,7 @@ TERMMENU *TerminalMenuCreate(STREAM *Term, int x, int y, int wid, int high)
     Item->high=high;
     Item->Options=ListCreate();
     Item->MenuAttribs=CopyStr(Item->MenuAttribs, "~C~n");
+    Item->SelectedAttribs=CopyStr(Item->SelectedAttribs, "~C~e");
     Item->MenuCursorLeft=CopyStr(Item->MenuCursorLeft, "~W~n");
 
     return(Item);
@@ -52,7 +53,7 @@ void TerminalMenuDraw(TERMMENU *Menu)
         TerminalCursorMove(Menu->Term, Menu->x, y);
         if (Menu->Options->Side==Curr)
         {
-            p_Attribs=Menu->MenuCursorLeft;
+            p_Attribs=Menu->SelectedAttribs;
             p_Cursor="> ";
         }
         else if (Curr->Flags & TERMMENU_SELECTED)

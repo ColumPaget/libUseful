@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <syslog.h>
 #include <glob.h>
 #include "Log.h"
 #include "Time.h"
@@ -750,6 +751,17 @@ int ProcessContainer(const char *Config)
     return(result);
 }
 
+void ProcessSetRLimit(int Type, const char *Value)
+{
+    struct rlimit limit;
+    rlim_t val;
+
+    val=(rlim_t) FromMetric(Value, 0);
+    limit.rlim_cur=val;
+    limit.rlim_max=val;
+    setrlimit(Type, &limit);
+
+}
 
 
 int ProcessApplyConfig(const char *Config)
@@ -757,8 +769,6 @@ int ProcessApplyConfig(const char *Config)
     char *Chroot=NULL;
     char *Name=NULL, *Value=NULL, *Capabilities=NULL;
     const char *ptr=NULL;
-    struct rlimit limit;
-    rlim_t val;
     int Flags=0, i;
     long uid=0, gid=0;
     int lockfd, ctty_fd=0;
@@ -772,6 +782,7 @@ int ProcessApplyConfig(const char *Config)
         if (strcasecmp(Name,"nice")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"prio")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"priority")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
+        else if (strcasecmp(Name,"openlog")==0) openlog(Value, LOG_PID, LOG_USER);
         else if (strcasecmp(Name,"chroot")==0)
         {
             Chroot=CopyStr(Chroot, Value);
@@ -810,52 +821,23 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"caps")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"mlock")==0)
-				{
-					LibUsefulFlags |= LU_MLOCKALL;
-					mlockall(MCL_FUTURE);
-          if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
-				}
+        {
+            LibUsefulFlags |= LU_MLOCKALL;
+            mlockall(MCL_CURRENT | MCL_FUTURE);
+            LibUsefulSetupAtExit();
+        }
         else if (strcasecmp(Name,"memlock")==0)
-				{
-					LibUsefulFlags |= LU_MLOCKALL;
-					mlockall(MCL_FUTURE);
-          LibUsefulSetupAtExit();
-				}
-        else if (strcasecmp(Name,"mem")==0)
         {
-            val=(rlim_t) FromMetric(Value, 0);
-            limit.rlim_cur=val;
-            limit.rlim_max=val;
-            setrlimit(RLIMIT_DATA, &limit);
+            LibUsefulFlags |= LU_MLOCKALL;
+            mlockall(MCL_CURRENT | MCL_FUTURE);
+            LibUsefulSetupAtExit();
         }
-        else if (strcasecmp(Name,"fsize")==0)
-        {
-            val=(rlim_t) FromMetric(Value, 0);
-            limit.rlim_cur=val;
-            limit.rlim_max=val;
-            setrlimit(RLIMIT_FSIZE, &limit);
-        }
-        else if (strcasecmp(Name,"files")==0)
-        {
-            val=(rlim_t) FromMetric(Value, 0);
-            limit.rlim_cur=val;
-            limit.rlim_max=val;
-            setrlimit(RLIMIT_NOFILE, &limit);
-        }
-        else if (strcasecmp(Name,"coredumps")==0)
-        {
-            val=(rlim_t) FromMetric(Value, 0);
-            limit.rlim_cur=val;
-            limit.rlim_max=val;
-            setrlimit(RLIMIT_CORE, &limit);
-        }
-        else if ( (strcasecmp(Name,"procs")==0) || (strcasecmp(Name,"nproc")==0) )
-        {
-            val=(rlim_t) FromMetric(Value, 0);
-            limit.rlim_cur=val;
-            limit.rlim_max=val;
-            setrlimit(RLIMIT_NPROC, &limit);
-        }
+        else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);
+        else if (strcasecmp(Name,"mlockmax")==0) ProcessSetRLimit(RLIMIT_MEMLOCK, Value);
+        else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);
+        else if (strcasecmp(Name,"files")==0) ProcessSetRLimit(RLIMIT_NOFILE, Value);
+        else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
+        else if ( (strcasecmp(Name,"procs")==0) || (strcasecmp(Name,"nproc")==0) ) ProcessSetRLimit(RLIMIT_NPROC, Value);
 
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
@@ -866,6 +848,9 @@ int ProcessApplyConfig(const char *Config)
         for (i =0; i < NSIG; i++) signal(i,SIG_DFL);
     }
 
+//if we're to run as a daemon service, then do so
+//which will mean a new group, new sid and closing our tty.
+//Otherwise setup these things for a process with a ttty
     if (Flags & PROC_DAEMON) demonize();
     else
     {

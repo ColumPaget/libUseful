@@ -556,7 +556,7 @@ int ConnectHopSSH(STREAM *S, int Type, const char *ProxyURL, const char *Destina
                 Tempstr=FormatStr(Tempstr, "%d", getpid());
                 STREAMSetValue(tmpS, "LU:LauncherPID", Tempstr);
                 ListAddNamedItem(ProxyHelpers, ProxyURL, tmpS);
-          			LibUsefulSetupAtExit();
+                LibUsefulSetupAtExit();
             }
         }
 

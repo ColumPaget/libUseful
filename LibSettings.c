@@ -46,11 +46,11 @@ void LibUsefulSetValue(const char *Name, const char *Value)
     if (strcasecmp(Name,"HTTP:NoCompression")==0) LibUsefulSetHTTPFlag(HTTP_NOCOMPRESS, Value);
     if (strcasecmp(Name,"HTTP:NoRedirect")==0) LibUsefulSetHTTPFlag(HTTP_NOREDIRECT, Value);
     if (strcasecmp(Name,"HTTP:NoCache")==0) LibUsefulSetHTTPFlag(HTTP_NOCACHE, Value);
-    if (strcasecmp(Name,"StrLenCache")==0) 
-		{
-			if (! strtobool(Value)) LibUsefulFlags |= LU_STRLEN_NOCACHE;
-			else LibUsefulFlags &= ~LU_STRLEN_NOCACHE;
-		}
+    if (strcasecmp(Name,"StrLenCache")==0)
+    {
+        if (! strtobool(Value)) LibUsefulFlags |= LU_STRLEN_NOCACHE;
+        else LibUsefulFlags &= ~LU_STRLEN_NOCACHE;
+    }
     SetVar(LibUsefulSettings,Name,Value);
 }
 
@@ -89,13 +89,13 @@ void LibUsefulAtExit()
 {
     if (LibUsefulFlags & LU_MLOCKALL) munlockall();
     if (LibUsefulFlags & LU_CONTAINER) FileSystemUnMount("/","lazy");
-		ConnectionHopCloseAll();
+    ConnectionHopCloseAll();
     CredsStoreDestroy();
 }
 
 
 void LibUsefulSetupAtExit()
 {
-  if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
-	LibUsefulFlags |= LU_ATEXIT_REGISTERED;
+    if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
+    LibUsefulFlags |= LU_ATEXIT_REGISTERED;
 }

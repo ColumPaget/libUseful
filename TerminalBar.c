@@ -104,8 +104,10 @@ char *TerminalBarReadText(char *RetStr, TERMBAR *TB, int Flags, const char *Prom
 void TerminalBarMenuUpdate(TERMBAR *TB, ListNode *Items)
 {
     ListNode *Curr;
-    char *Tempstr=NULL;
+    char *Tempstr=NULL, *LPad=NULL, *RPad=NULL;
 
+    LPad=PadStr(LPad, ' ', TerminalStrLen(TB->MenuCursorLeft));
+    RPad=PadStr(RPad, ' ', TerminalStrLen(TB->MenuCursorRight));
     Curr=ListGetNext(Items);
     while (Curr)
     {
@@ -113,13 +115,15 @@ void TerminalBarMenuUpdate(TERMBAR *TB, ListNode *Items)
         {
             Tempstr=MCatStr(Tempstr, TB->MenuCursorLeft, Curr->Tag, TB->MenuCursorRight,NULL);
         }
-        else Tempstr=MCatStr(Tempstr, TB->MenuPadLeft,Curr->Tag,TB->MenuPadRight,NULL);
+        else Tempstr=MCatStr(Tempstr, LPad, Curr->Tag, RPad, NULL);
 
         Curr=ListGetNext(Curr);
     }
 
     TerminalBarUpdate(TB, Tempstr);
 
+    DestroyString(LPad);
+    DestroyString(RPad);
     DestroyString(Tempstr);
 }
 

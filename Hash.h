@@ -43,6 +43,9 @@ printf("Hash was: %s\n",HashStr);
 
 #define HashUpdate(Hash, text, len) (Hash->Update(Hash, text, len))
 
+//for backwards compatiblity
+#define HashEncodingFromStr(Str) (EncodingParse(Str))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,7 +72,6 @@ struct t_hash
 };
 
 char *HashAvailableTypes(char *RetStr);
-int HashEncodingFromStr(const char *Str);
 HASH *HashInit(const char *Type);
 int HashFinish(HASH *Hash, int Encoding, char **Return);
 void HMACSetKey(HASH *HMAC, const char *Key, int Len);

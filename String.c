@@ -128,7 +128,7 @@ void StrLenCacheUpdate(const char *Str, int incr)
 {
     int i;
 
-		if (LibUsefulFlags & LU_STRLEN_NOCACHE) return;
+    if (LibUsefulFlags & LU_STRLEN_NOCACHE) return;
 
     for (i=0; i < StrLenCacheSize; i++)
     {
@@ -141,7 +141,7 @@ void StrLenCacheAdd(const char *Str, size_t len)
 {
     int i, emptyslot=-1;
 
-		if (LibUsefulFlags & LU_STRLEN_NOCACHE) return;
+    if (LibUsefulFlags & LU_STRLEN_NOCACHE) return;
 
     if (! StrLenCache)
     {

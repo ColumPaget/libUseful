@@ -52,8 +52,8 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
     static char *Buffer=NULL;
     char *SavedTimeZone=NULL;
 
-     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
-     TimeZoneSet(TimeZone);
+    SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
+    TimeZoneSet(TimeZone);
 
     /*
     if (Secs==LU_CachedTime) TMS=&LU_CachedTM;
@@ -96,8 +96,8 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
     if (StrEnd(DateFormat)) return(0);
     if (StrEnd(Str)) return(0);
 
-     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
-     TimeZoneSet(TimeZone);
+    SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
+    TimeZoneSet(TimeZone);
 
     memset(&TMS,0,sizeof(struct tm));
     strptime(Str,DateFormat,&TMS);
@@ -118,8 +118,8 @@ long TimezoneOffset(const char *TimeZone)
     char *Tempstr=NULL;
     char *SavedTimeZone=NULL;
 
-     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
-     TimeZoneSet(TimeZone);
+    SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));
+    TimeZoneSet(TimeZone);
 
 //TO DO: portable offset calculation
 #ifdef linux
@@ -135,12 +135,12 @@ long TimezoneOffset(const char *TimeZone)
 
 char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const char *DstZone)
 {
-time_t secs;
+    time_t secs;
 
-secs=DateStrToSecs(LU_STD_DATE_FMT, Time, SrcZone);
-RetStr=CopyStr(RetStr, GetDateStrFromSecs(LU_STD_DATE_FMT, secs, DstZone));
+    secs=DateStrToSecs(LU_STD_DATE_FMT, Time, SrcZone);
+    RetStr=CopyStr(RetStr, GetDateStrFromSecs(LU_STD_DATE_FMT, secs, DstZone));
 
-return(RetStr);
+    return(RetStr);
 }
 
 
