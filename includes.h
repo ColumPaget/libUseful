@@ -11,6 +11,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <memory.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>

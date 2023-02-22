@@ -9,6 +9,7 @@
 #include "Ssh.h"
 #include "Pty.h"
 #include "String.h"
+#include "Users.h"
 #include <sys/file.h>
 #include "SecureMem.h"
 #include <sys/mman.h>

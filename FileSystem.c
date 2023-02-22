@@ -1,5 +1,6 @@
 #include "FileSystem.h"
 #include "Errors.h"
+#include "Users.h"
 #include <glob.h>
 //#include <sys/ioctl.h>
 //#include <sys/resource.h>

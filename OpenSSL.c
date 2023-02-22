@@ -3,6 +3,7 @@
 #include "URL.h"
 #include "Time.h"
 #include "Encodings.h"
+#include "Entropy.h"
 
 #include <arpa/inet.h>
 #include <net/if.h>

@@ -21,7 +21,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 //__TIME__
 
 #include "includes.h"
-#include "memory.h"
+#include "GeneralFunctions.h"
+#include "Entropy.h"
 #include "IPAddress.h"
 #include "Socket.h"
 #include "Server.h"
@@ -34,7 +35,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "base64.h"
 #include "Tokenizer.h"
 #include "FileSystem.h"
-#include "GeneralFunctions.h"
 #include "DataProcessing.h"
 #include "Encodings.h"
 #include "Hash.h"
@@ -62,5 +62,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "Process.h"
 #include "SecureMem.h"
 #include "SysInfo.h"
+#include "Users.h"
+#include "UnitsOfMeasure.h"
 
 #endif

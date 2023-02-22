@@ -46,18 +46,6 @@ pid_t demonize();
 //singply try to close all file descriptors from 3 to 1024, leaving stdin, stdout and stderr alone
 void CloseOpenFiles();
 
-//switch user or group by id (call SwitchGID first, or you may not have permissions to switch user)
-int SwitchUID(int uid);
-int SwitchGID(int gid);
-
-//switch user or group by name (call SwitchGgroup first, or you may not have permissions to switch user)
-int SwitchUser(const char *User);
-int SwitchGroup(const char *Group);
-
-//returns a string pointing to a users home directory. DO NOT FREE THIS STRING. Take a copy of it, as it's
-//an internal buffer and will change on the next call to this function
-char *GetCurrUserHomeDir();
-
 //write a file containing the current pid. The file can either be an absolute path to a file anywhere
 //or a relative path that creates a file in /var/run. The file is locked with flock
 //returns a file descriptor to the current file

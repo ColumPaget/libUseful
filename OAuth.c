@@ -4,7 +4,8 @@
 #include "DataParser.h"
 #include "Encodings.h"
 #include "Hash.h"
-
+#include "Users.h"
+#include "Entropy.h"
 
 static ListNode *OAuthTypes=NULL;
 static ListNode *OAuthKeyChain=NULL;

@@ -12,6 +12,11 @@ typedef void (*ARRAY_ITEM_DESTROY_FUNC)(void *);
 #define StringArrayDestroy(a) ArrayDestroy((void **) (a), (Destroy))
 
 void **ArrayAdd(void **Array, void *Item);
+
+//return item at 'pos' in array WITHOUT GOING PAST A NULL. Returns NULL if item can't be reached.
+void *ArrayGetItem(void *array[], int pos);
+
 void ArrayDestroy(void **Array, ARRAY_ITEM_DESTROY_FUNC DestroyFunc);
+
 
 #endif
