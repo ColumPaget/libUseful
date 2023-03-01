@@ -1,5 +1,15 @@
 #include "TerminalChoice.h"
 
+
+TERMCHOICE *TerminalChoiceCreate(STREAM *Term, const char *Config)
+{
+    TERMCHOICE *TC;
+
+    TC=TerminalWidgetCreate(Term, "cursor_left=< cursor_right=>");
+    TerminalWidgetParseConfig(TC, Config);
+    return(TC);
+}
+
 void TerminalChoiceDraw(TERMCHOICE *Chooser)
 {
     ListNode *Curr;
@@ -10,15 +20,15 @@ void TerminalChoiceDraw(TERMCHOICE *Chooser)
 
     if (StrValid(Chooser->Text)) Tempstr=CatStr(Tempstr, Chooser->Text);
 
-    LPad=PadStr(LPad, ' ', TerminalStrLen(Chooser->MenuCursorLeft));
-    RPad=PadStr(RPad, ' ', TerminalStrLen(Chooser->MenuCursorRight));
+    LPad=PadStr(LPad, ' ', TerminalStrLen(Chooser->CursorLeft));
+    RPad=PadStr(RPad, ' ', TerminalStrLen(Chooser->CursorRight));
 
     Curr=ListGetNext(Chooser->Options);
     while (Curr)
     {
         if (Chooser->Options->Side==Curr)
         {
-            Tempstr=MCatStr(Tempstr, Chooser->MenuCursorLeft, Curr->Tag, Chooser->MenuCursorRight, NULL);
+            Tempstr=MCatStr(Tempstr, Chooser->CursorLeft, Curr->Tag, Chooser->CursorRight, NULL);
         }
         else Tempstr=MCatStr(Tempstr, LPad, Curr->Tag, RPad, NULL);
 

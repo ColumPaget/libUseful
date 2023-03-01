@@ -28,7 +28,7 @@ int LookupGID(const char *Group);
 //lookup username from uid
 const char *LookupUserName(uid_t uid);
 
-//lookup groupname from uid
+//lookup groupname from gid
 const char *LookupGroupName(gid_t gid);
 
 

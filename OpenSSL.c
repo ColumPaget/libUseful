@@ -853,7 +853,6 @@ void OpenSSLClose(STREAM *S)
     ListNode *Node;
 
 #ifdef HAVE_LIBSSL
-
     Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
     if (Node)
     {
@@ -873,7 +872,7 @@ void OpenSSLClose(STREAM *S)
 }
 
 
-
+//Autodetect if a stream is TLS/SSL
 int OpenSSLAutoDetect(STREAM *S)
 {
     int result, val, RetVal=FALSE;
@@ -905,3 +904,5 @@ int OpenSSLAutoDetect(STREAM *S)
 
     return(RetVal);
 }
+
+

@@ -21,8 +21,8 @@ if (key==TKEY_HOME)
 	UpperTB->ForeColor=ANSI_RED;
 	UpperTB->BackColor=ANSI_YELLOW;
 	UpperTB->Flags=ANSI_INVERSE;
-	UpperTB->MenuCursorLeft=CopyStr(UpperTB->MenuCursorLeft," {");
-	UpperTB->MenuCursorRight=CopyStr(UpperTB->MenuCursorRight,"} ");
+	UpperTB->CursorLeft=CopyStr(UpperTB->CursorLeft," {");
+	UpperTB->CursorRight=CopyStr(UpperTB->CursorRight,"} ");
 	Tempstr=TerminalBarMenu(Tempstr, UpperTB, "this,that,the other");
 	printf("%s\r\n",Tempstr);
 }

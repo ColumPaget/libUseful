@@ -106,14 +106,14 @@ void TerminalBarMenuUpdate(TERMBAR *TB, ListNode *Items)
     ListNode *Curr;
     char *Tempstr=NULL, *LPad=NULL, *RPad=NULL;
 
-    LPad=PadStr(LPad, ' ', TerminalStrLen(TB->MenuCursorLeft));
-    RPad=PadStr(RPad, ' ', TerminalStrLen(TB->MenuCursorRight));
+    LPad=PadStr(LPad, ' ', TerminalStrLen(TB->CursorLeft));
+    RPad=PadStr(RPad, ' ', TerminalStrLen(TB->CursorRight));
     Curr=ListGetNext(Items);
     while (Curr)
     {
         if (Items->Side==Curr)
         {
-            Tempstr=MCatStr(Tempstr, TB->MenuCursorLeft, Curr->Tag, TB->MenuCursorRight,NULL);
+            Tempstr=MCatStr(Tempstr, TB->CursorLeft, Curr->Tag, TB->CursorRight,NULL);
         }
         else Tempstr=MCatStr(Tempstr, LPad, Curr->Tag, RPad, NULL);
 
@@ -254,8 +254,8 @@ void TerminalBarSetConfig(TERMBAR *TB, const char *Config)
         case 'M':
             if (strcasecmp(Name,"MenuPadLeft")==0) TB->MenuPadLeft=CopyStr(TB->MenuPadLeft, Value);
             if (strcasecmp(Name,"MenuPadRight")==0) TB->MenuPadRight=CopyStr(TB->MenuPadRight, Value);
-            if (strcasecmp(Name,"MenuCursorLeft")==0) TB->MenuCursorLeft=CopyStr(TB->MenuCursorLeft, Value);
-            if (strcasecmp(Name,"MenuCursorRight")==0) TB->MenuCursorRight=CopyStr(TB->MenuCursorRight, Value);
+            if (strcasecmp(Name,"CursorLeft")==0) TB->CursorLeft=CopyStr(TB->CursorLeft, Value);
+            if (strcasecmp(Name,"CursorRight")==0) TB->CursorRight=CopyStr(TB->CursorRight, Value);
             break;
 
         case 'x':
@@ -291,8 +291,8 @@ TERMBAR *TerminalBarCreate(STREAM *Term, const char *Config, const char *Text)
     TB->Flags = ANSI_INVERSE;
     TB->MenuPadLeft=CopyStr(NULL, "  ");
     TB->MenuPadRight=CopyStr(NULL, "  ");
-    TB->MenuCursorLeft=CopyStr(NULL, " [");
-    TB->MenuCursorRight=CopyStr(NULL, "] ");
+    TB->CursorLeft=CopyStr(NULL, " [");
+    TB->CursorRight=CopyStr(NULL, "] ");
 
     TerminalBarSetConfig(TB, Config);
     STREAMSetItem(Term, "termbar", TB);
@@ -310,8 +310,8 @@ void TerminalBarDestroy(TERMBAR *TB)
 {
     DestroyString(TB->MenuPadLeft);
     DestroyString(TB->MenuPadRight);
-    DestroyString(TB->MenuCursorLeft);
-    DestroyString(TB->MenuCursorRight);
+    DestroyString(TB->CursorLeft);
+    DestroyString(TB->CursorRight);
     free(TB);
 }
 

@@ -98,6 +98,7 @@ Unicode:NamesFile     path to file that maps names->unicode code points
 #define  LU_CONTAINER           2
 #define  LU_STRLEN_NOCACHE      4
 #define  LU_MLOCKALL            8
+#define  LU_RESIST_PTRACE      16
 
 extern int LibUsefulFlags;
 

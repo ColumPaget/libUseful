@@ -43,8 +43,6 @@ printf("Hash was: %s\n",HashStr);
 
 #define HashUpdate(Hash, text, len) (Hash->Update(Hash, text, len))
 
-//for backwards compatiblity
-#define HashEncodingFromStr(Str) (EncodingParse(Str))
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,9 +50,10 @@ extern "C" {
 
 typedef struct t_hash HASH;
 
-typedef void (*HASH_UPDATE)(HASH *Hash, const char *Data, int DataLen);
-typedef HASH *(*HASH_CLONE)(HASH *Hash);
-typedef int (*HASH_FINISH)(HASH *Hash, char **RetStr);
+typedef int (*HASH_INIT_FUNC)(HASH *Hash, const char *Name, int Bits);
+typedef void (*HASH_UPDATE_FUNC)(HASH *Hash, const char *Data, int DataLen);
+typedef HASH *(*HASH_CLONE_FUNC)(HASH *Hash);
+typedef int (*HASH_FINISH_FUNC)(HASH *Hash, char **RetStr);
 
 struct t_hash
 {
@@ -66,11 +65,16 @@ struct t_hash
     char *Key2;
     unsigned int Key2Len;
     void *Ctx;
-    HASH_UPDATE Update;
-    HASH_FINISH Finish;
-    HASH_CLONE Clone;
+    HASH_INIT_FUNC Init;
+    HASH_UPDATE_FUNC Update;
+    HASH_FINISH_FUNC Finish;
+    HASH_CLONE_FUNC Clone;
 };
 
+
+void HashRegister(const char *Name, int Len, HASH_INIT_FUNC Init);
+//for backwards compatiblity provide this function. It just calls'EncodingParse'
+int HashEncodingFromStr(const char *Str);
 char *HashAvailableTypes(char *RetStr);
 HASH *HashInit(const char *Type);
 int HashFinish(HASH *Hash, int Encoding, char **Return);

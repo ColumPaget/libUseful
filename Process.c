@@ -687,6 +687,18 @@ void ProcessSetRLimit(int Type, const char *Value)
 }
 
 
+static int ProcessResistPtrace()
+{
+#ifdef PR_SET_DUMPABLE
+#include <sys/prctl.h>
+    prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
+    if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0) return(TRUE);
+#endif
+
+    return(FALSE);
+}
+
+
 int ProcessApplyConfig(const char *Config)
 {
     char *Chroot=NULL;
@@ -761,9 +773,12 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"files")==0) ProcessSetRLimit(RLIMIT_NOFILE, Value);
         else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
         else if ( (strcasecmp(Name,"procs")==0) || (strcasecmp(Name,"nproc")==0) ) ProcessSetRLimit(RLIMIT_NPROC, Value);
+        else if (strcasecmp(Name, "resist_ptrace")==0) LibUsefulFlags |= LU_RESIST_PTRACE;
 
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
+
+    if (LibUsefulFlags & LU_RESIST_PTRACE) ProcessResistPtrace();
 
 //set all signal handlers to default
     if (Flags & PROC_SIGDEF)
@@ -839,7 +854,15 @@ int ProcessApplyConfig(const char *Config)
         if (gid > 0) SwitchGID(gid);
         if (uid > 0) SwitchUID(uid);
 
-
+        if (LibUsefulFlags & LU_RESIST_PTRACE)
+        {
+            // do this again, and switching uid or gid can reset this
+            if (! ProcessResistPtrace())
+            {
+                RaiseError(0, "resist_ptrace", "failed to activate ptrace resistance");
+                exit(1);
+            }
+        }
 
 //Must do this last! After parsing Config, and also after functions like
 //SwitchUser that will need access to /etc/passwd
