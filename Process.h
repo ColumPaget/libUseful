@@ -51,6 +51,7 @@ void CloseOpenFiles();
 //returns a file descriptor to the current file
 int WritePidFile(const char *ProgName);
 
+//create/use a lockfile at 'FilePath'. If file is locked already then wait 'Timeout' for it to be free
 int CreateLockFile(const char *FilePath, int Timeout);
 
 //pass argv from main to this function if you want to rewrite the process name that you see in 'ps'

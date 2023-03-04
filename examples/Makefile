@@ -18,3 +18,4 @@ all:
 	gcc -ossh-tunnel.exe ssh-tunnel.c $(LIBS)
 	gcc -oConfig.exe Config.c $(LIBS)
 	gcc -oSSLClient.exe SSLClient.c $(LIBS)
+	gcc -oStrLen.exe StrLen.c $(LIBS)

@@ -1,4 +1,5 @@
 #include "includes.h"
+#include "GeneralFunctions.h"
 #include "DataProcessing.h"
 #include "SpawnPrograms.h"
 #include "Pty.h"
@@ -10,6 +11,7 @@
 #include "Pty.h"
 #include "String.h"
 #include "Users.h"
+#include "UnitsOfMeasure.h"
 #include <sys/file.h>
 #include "SecureMem.h"
 #include <sys/mman.h>
@@ -748,7 +750,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     if (Flags & STREAM_APPEND) Mode |=O_APPEND;
     if (Flags & SF_CREATE) Mode |=O_CREAT;
 
-    if (strcmp(Path,"-")==0)
+    if (CompareStr(Path,"-")==0)
     {
         if (Mode==O_RDONLY) fd=0;
         else fd=1;
@@ -1043,7 +1045,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     case 't':
     case 's':
     case 'u':
-        if ( (strcmp(URL,"-")==0) || (strcasecmp(URL,"stdio:")==0) ) S=STREAMFromDualFD(dup(0), dup(1));
+        if ( (CompareStr(URL,"-")==0) || (strcasecmp(URL,"stdio:")==0) ) S=STREAMFromDualFD(dup(0), dup(1));
         else if (strcasecmp(URL,"stdin:")==0) S=STREAMFromFD(dup(0));
         else if (strcasecmp(URL,"stdout:")==0) S=STREAMFromFD(dup(1));
         else if (strcasecmp(Proto,"ssh")==0) S=SSHOpen(Host, Port, User, Pass, Path, Flags);
@@ -1069,7 +1071,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         break;
 
     default:
-        if (strcmp(URL,"-")==0) S=STREAMFromDualFD(dup(0),dup(1));
+        if (CompareStr(URL,"-")==0) S=STREAMFromDualFD(dup(0),dup(1));
         else S=STREAMFileOpen(URL, Flags);
         break;
     }
@@ -1142,13 +1144,13 @@ void STREAMDestroy(void *p_S)
     while (Curr)
     {
         Next=ListGetNext(Curr);
-        if (strcmp(Curr->Tag, "LU:AssociatedStream")==0)
+        if (CompareStr(Curr->Tag, "LU:AssociatedStream")==0)
         {
             tmpS=(STREAM *) Curr->Item;
             STREAMClose(tmpS);
             ListDeleteNode(Curr);
         }
-        else if (strcmp(Curr->Tag, "HTTP:InfoStruct")==0)
+        else if (CompareStr(Curr->Tag, "HTTP:InfoStruct")==0)
         {
             HTTPInfoDestroy(Curr->Item);
             ListDeleteNode(Curr);
@@ -1180,7 +1182,7 @@ void STREAMCloseFile(STREAM *S)
 {
     if (
         (StrEnd(S->Path)) ||
-        (strcmp(S->Path,"-") !=0) //don't do this for stdin/stdout
+        (CompareStr(S->Path,"-") !=0) //don't do this for stdin/stdout
     )
     {
         if (S->out_fd != -1)
@@ -1983,6 +1985,7 @@ int STREAMReadToString(STREAM *S, char **RetStr, int *len, const char *Term)
     int match=0, termlen=0, inchar;
 
     if (len) *len=0;
+    //a terminator is usually short, so don't use StrLenFromCache
     termlen=StrLen(Term);
     inchar=STREAMReadChar(S);
 
@@ -2014,22 +2017,31 @@ int STREAMReadToString(STREAM *S, char **RetStr, int *len, const char *Term)
 char *STREAMReadDocument(char *RetStr, STREAM *S)
 {
     char *Tempstr=NULL;
-    int result, bytes_read=0;
+    int result, size, bytes_read=0, max;
 
-    if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) )
-    {
-        RetStr=SetStrLen(RetStr, S->Size);
-        while (bytes_read < S->Size)
+		max=LibUsefulGetInteger("MaxDocumentSize");
+    if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) ) size=S->Size;
+		else size=max;
+
+        while (bytes_read < size)
         {
-            result=STREAMReadBytes(S, RetStr+bytes_read,S->Size - bytes_read);
+        		RetStr=SetStrLen(RetStr, size);
+            result=STREAMReadBytes(S, RetStr+bytes_read, size - bytes_read);
             if (result > 0) bytes_read+=result;
             else break;
         }
-        RetStr[bytes_read]='\0';
+        StrTrunc(RetStr,bytes_read);
+
+				if ((bytes_read==size) && (result > 0))
+				{
+					if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));
+				}
+
+/*
     }
     else
     {
-        RetStr=CopyStr(RetStr,"");
+		
         Tempstr=STREAMReadLine(Tempstr, S);
         while (Tempstr)
         {
@@ -2037,6 +2049,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
             Tempstr=STREAMReadLine(Tempstr, S);
         }
     }
+*/
 
     Destroy(Tempstr);
     return(RetStr);
@@ -2094,7 +2107,7 @@ int STREAMFindCompare(const char *Line, const char *Item, const char *Delimiter,
     if (StrValid(Delimiter)) ptr=strstr(Line, Delimiter);
 
     if (ptr) result=strncmp(Item, Line, ptr-Line);
-    else result=strcmp(Item, Line);
+    else result=CompareStr(Item, Line);
 
     if (RetStr && (result==0)) *RetStr=CopyStr(*RetStr, Line);
 
@@ -2217,7 +2230,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
     else len=(long) Max;
 
 
-#ifdef USE_SENDFILE
+#ifdef HAVE_SENDFILE
 #include <sys/sendfile.h>
 
 //if we are not using ssl and not using processor modules, we can use
@@ -2239,7 +2252,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 
     while (len > 0)
     {
-#ifdef USE_SENDFILE
+#ifdef HAVE_SENDFILE
         if (UseSendFile)
         {
             result=sendfile(Out->out_fd, In->in_fd,0,len);

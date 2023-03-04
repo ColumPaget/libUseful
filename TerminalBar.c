@@ -122,9 +122,9 @@ void TerminalBarMenuUpdate(TERMBAR *TB, ListNode *Items)
 
     TerminalBarUpdate(TB, Tempstr);
 
+    DestroyString(Tempstr);
     DestroyString(LPad);
     DestroyString(RPad);
-    DestroyString(Tempstr);
 }
 
 

@@ -9,6 +9,9 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "defines.h"
 #include "includes.h"
 
+//functions related to entropy. Will try using the 'getentropy' function, or else reading from /dev/urandom
+//or finally will make a somewhat desperate effort to get entropy from time data
+
 
 #ifdef __cplusplus
 extern "C" {

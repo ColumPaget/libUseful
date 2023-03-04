@@ -46,7 +46,7 @@ int HashInitWhirlpool(HASH *Hash, const char *Name, int Len)
     Hash->Update=HashUpdateWhirlpool;
     Hash->Finish=HashFinishWhirlpool;
     Hash->Clone=HashCloneWhirlpool;
-		return(TRUE);
+    return(TRUE);
 }
 
 void HashRegisterWhirlpool()

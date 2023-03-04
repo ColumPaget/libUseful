@@ -35,7 +35,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     ptr=GetToken(Command, "\\S", &Token, 0);
     while (ptr)
     {
-        if (strcmp(Token,"none")==0) Tempstr=CatStr(Tempstr, "-N ");
+        if (CompareStr(Token,"none")==0) Tempstr=CatStr(Tempstr, "-N ");
         else if (strncmp(Token, "stdin:",6)==0) Tempstr=MCatStr(Tempstr,"-W ", Token+6, NULL);
         else if (strncmp(Token, "jump:",5)==0) Tempstr=MCatStr(Tempstr,"-J ", Token+5, NULL);
         else if (strncmp(Token, "tunnel:",7)==0)

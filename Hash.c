@@ -180,11 +180,11 @@ HASH *HashInit(const char *Type)
     HASH *Hash=NULL;
     ListNode *Node;
     HASH_INIT_FUNC InitFunc;
-		char *InitialType=NULL;
+    char *InitialType=NULL;
 
     if (! HashTypes) HashRegisterAll();
-		
-		GetToken(Type, ",", &InitialType, 0);
+
+    GetToken(Type, ",", &InitialType, 0);
     Node=ListFindNamedItem(HashTypes, InitialType);
     if (Node)
     {
@@ -200,7 +200,7 @@ HASH *HashInit(const char *Type)
     }
     else RaiseError(0, "HashInit", "Unsupported Hash Type: '%s'", InitialType);
 
-		Destroy(InitialType);
+    Destroy(InitialType);
 
     return(Hash);
 }
@@ -214,12 +214,12 @@ int HashFinish(HASH *Hash, int Encoding, char **Return)
 
     len=Hash->Finish(Hash, &Bytes);
 
-		//The first hashtype is the 'InitialType' of HashInit, and will
-		//already have been processed, so throw it awway here
+    //The first hashtype is the 'InitialType' of HashInit, and will
+    //already have been processed, so throw it awway here
     ptr=GetToken(Hash->Type, ",", &Token, 0);
     while (StrValid(ptr))
     {
-				//process each has type in the hash chain
+        //process each has type in the hash chain
         ptr=GetToken(ptr, ",", &Token, 0);
         len=HashBytes(&Hashed, Token, Bytes, len, 0);
         Bytes=SetStrLen(Bytes, len);

@@ -220,7 +220,7 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
             while (Tempstr)
             {
                 StripTrailingWhitespace(Tempstr);
-                if (StrLen(Tempstr) ==0) break;
+                if (! StrValid(Tempstr)) break;
                 Tempstr=STREAMReadLine(Tempstr, S);
             }
         }
@@ -411,13 +411,13 @@ int OAuthStage1(OAUTH *Ctx, const char *URL)
     //Tempstr=SubstituteVarsInString(Tempstr, Ctx->Stage1, Ctx->Vars, 0);
     Tempstr=OAuthBuildURL(Tempstr, Ctx->Stage1, Ctx->Vars);
 
-    if (StrLen(Tempstr))
+    if (StrValid(Tempstr))
     {
         if (Ctx->Flags & OAUTH_IMPLICIT) result=OAuthImplicit(Ctx, URL, Tempstr);
         else result=OAuthGrant(Ctx, URL, Tempstr);
     }
 
-    if (StrLen(Ctx->VerifyTemplate))
+    if (StrValid(Ctx->VerifyTemplate))
     {
         Ctx->VerifyURL=SubstituteVarsInString(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars,0);
         Ctx->VerifyURL=OAuthBuildURL(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars);

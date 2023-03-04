@@ -16,6 +16,10 @@ Utility functions to hand a string of strings, separated by a separator string o
 extern "C" {
 #endif
 
+//check if Item is in string 'List' where 'List' is separated into strings by 'Sep'
+//e.g. InStringList("that", "this,that,theother", ",");
+
+
 int InStringList(const char *Item, const char *List, const char *Sep);
 
 

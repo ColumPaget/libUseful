@@ -150,7 +150,7 @@ int HashInitSHA(HASH *Hash, const char *Name, int Len)
         break;
     }
 
-		return(TRUE);
+    return(TRUE);
 }
 
 

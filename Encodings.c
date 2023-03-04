@@ -39,7 +39,7 @@ int EncodingParse(const char *Str)
 
         case 'c':
         case 'C':
-            if (strcmp(Str,"crypt")==0) Encode=ENCODE_CRYPT;
+            if (CompareStr(Str,"crypt")==0) Encode=ENCODE_CRYPT;
             break;
 
         case 'd':
@@ -75,15 +75,15 @@ int EncodingParse(const char *Str)
 
         case 'q':
         case 'Q':
-            if (strcmp(Str,"quoted-printable")==0) Encode=ENCODE_QUOTED_MIME;
-            if (strcmp(Str,"quoted-http")==0) Encode=ENCODE_QUOTED_HTTP;
+            if (CompareStr(Str,"quoted-printable")==0) Encode=ENCODE_QUOTED_MIME;
+            if (CompareStr(Str,"quoted-http")==0) Encode=ENCODE_QUOTED_HTTP;
             break;
 
 
         case 'r':
         case 'R':
-            if (strcmp(Str,"r64")==0) Encode=ENCODE_RBASE64;
-            if (strcmp(Str,"rfc4648")==0) Encode=ENCODE_RBASE64;
+            if (CompareStr(Str,"r64")==0) Encode=ENCODE_RBASE64;
+            if (CompareStr(Str,"rfc4648")==0) Encode=ENCODE_RBASE64;
             break;
 
         case 'u':

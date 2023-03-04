@@ -262,6 +262,7 @@ char *SubstituteVarsInString(char *Buffer, const char *Fmt, ListNode *Vars, int 
             FmtPtr++;
             StrLenCacheAdd(ReturnStr, len);
             ReturnStr=ParseVar(ReturnStr, &FmtPtr, Vars, Flags);
+            //this will likely be a short string, so don't use StrLenFromCache
             len=StrLen(ReturnStr);
             break;
 
@@ -368,6 +369,7 @@ int ExtractVarsFromString(const char *Data, const char *FormatStr, ListNode *Var
         case '*':
             FmtPtr++;
             Token=ExtractVarsGetLiteralString(Token,FmtPtr);
+            //this will likely be a short string, so don't use StrLenFromCache
             len=StrLen(Token);
             while (
                 (*MsgPtr != '\0') &&

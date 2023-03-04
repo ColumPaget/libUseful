@@ -39,7 +39,7 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
 //Convert a date/time string 'Str' to number of seconds since epoch
 time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZone);
 
-//
+//convert Time from timezone 'SrcZone' to 'DstZone'
 char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const char *DstZone);
 
 //this sets a SIGALRM timer, causing a signal to be sent to our process after 'timeout' seconds.
@@ -47,8 +47,10 @@ char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const
 //signal handler (SIGNAL_HANDLER_FUNC is of the form 'void MyHandler(int sig)' )
 void SetTimeout(int timeout, SIGNAL_HANDLER_FUNC);
 
+//return the offset in seconds of "TimeZone"
 long TimezoneOffset(const char *TimeZone);
 
+//convert a milliseconds value to a timeval
 void MillisecsToTV(int millisecs, struct timeval *tv);
 
 #ifdef __cplusplus

@@ -18,8 +18,8 @@ A number of general functions that don't fit anywhere else
 extern "C" {
 #endif
 
-//Destroy is defined in String.c 'cos of StrLen caching, but you can use it to destroy anything
-//void Destroy(void *Obj);
+//Destroy an allocated object. Will not crash if passed NULL. 
+void Destroy(void *Obj);
 
 //fill 'size' bytes pointed to by 'Str' with char 'fill'. 'Str' is treated as a volatile, which is intended to prevent
 //the compiler from optimizing this function out. Use this function to blank memory holding sensitive information, as

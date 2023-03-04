@@ -95,7 +95,7 @@ int ConnectHopHTTPSProxy(STREAM *S, const char *Proxy, const char *Destination)
         if (*Token=='2') result=TRUE;
         else RaiseError(0, "ConnectHopHTTPSProxy", "proxy request to %s:%d failed. %s", Host, Port, Tempstr);
 
-        while (StrLen(Tempstr))
+        while (StrValid(Tempstr))
         {
             Tempstr=STREAMReadLine(Tempstr,S);
             StripTrailingWhitespace(Tempstr);
@@ -659,7 +659,7 @@ int STREAMProcessConnectHops(STREAM *S, const char *HopList)
 
     if (StrValid(HopURL))
     {
-        if (! StrLen(S->Path)) S->Path=CopyStr(S->Path,HopURL);
+        if (! StrValid(S->Path)) S->Path=CopyStr(S->Path,HopURL);
         if (strncmp(HopURL,"ssl:",4)==0) DoSSLClientNegotiation(S,0);
     }
 

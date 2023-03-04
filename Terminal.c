@@ -6,6 +6,7 @@
 #include <termios.h>
 #include "TerminalKeys.h" //for TerminalBarsInit
 #include "TerminalBar.h" //for TerminalBarsInit
+#include "TerminalTheme.h"
 #include "Encodings.h"
 
 static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
@@ -368,6 +369,7 @@ const char *TerminalAlignText(const char *Text, char **RetStr, int Flags, STREAM
     if (Flags & TERM_ALIGN_CENTER) pos=cols / 2 - len / 2;
     else if (Flags & TERM_ALIGN_RIGHT) pos=cols - len;
 
+    //this could be a longer string, and so could be in cache
     len=StrLenFromCache(*RetStr);
     for (i=0; i < pos; i++)
     {
@@ -474,65 +476,74 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
 }
 
 
-
-
-char *TerminalColorCommandStr(char *RetStr, char inchar, int offset)
+const char *TerminalParseColor(const char *Str, int *Fg, int *Bg)
 {
+const char *ptr;
+int offset=0;
 
-    switch (inchar)
+		ptr=Str;
+		if (*ptr=='+') 
+		{
+				offset=ANSI_DARKGREY;
+				ptr++;
+		}
+		
+    switch (*ptr)
     {
     case 'r':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_RED + offset, 0);
+        *Fg=ANSI_RED + offset;
         break;
     case 'R':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_RED + offset);
+        *Bg=ANSI_RED + offset;
         break;
     case 'g':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_GREEN + offset, 0);
+        *Fg=ANSI_GREEN + offset;
         break;
     case 'G':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_GREEN + offset);
+        *Bg=ANSI_GREEN + offset;
         break;
     case 'b':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLUE + offset, 0);
+        *Fg=ANSI_BLUE + offset;
         break;
     case 'B':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLUE + offset);
+        *Bg=ANSI_BLUE + offset;
         break;
     case 'n':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_BLACK + offset, 0);
+        *Fg=ANSI_BLACK + offset;
         break;
     case 'N':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_BLACK + offset);
+        *Bg=ANSI_BLACK + offset;
         break;
     case 'w':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_WHITE + offset, 0);
+        *Fg=ANSI_WHITE + offset;
         break;
     case 'W':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_WHITE + offset);
+        *Fg=ANSI_WHITE + offset;
         break;
     case 'y':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_YELLOW + offset, 0);
+        *Fg=ANSI_YELLOW + offset;
         break;
     case 'Y':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_YELLOW + offset);
+        *Bg=ANSI_YELLOW + offset;
         break;
     case 'm':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_MAGENTA + offset, 0);
+        *Fg=ANSI_MAGENTA + offset;
         break;
     case 'M':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_MAGENTA + offset);
+        *Bg=ANSI_MAGENTA + offset;
         break;
     case 'c':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, ANSI_CYAN + offset, 0);
+        *Fg=ANSI_CYAN + offset;
         break;
     case 'C':
-        RetStr=TerminalCommandStr(RetStr, TERM_COLOR, 0, ANSI_CYAN + offset);
+        *Bg=ANSI_CYAN + offset;
         break;
     }
 
-    return(RetStr);
+
+    return(ptr);
 }
+
 
 
 
@@ -561,6 +572,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
     const char *ptr, *end;
     char *Tempstr=NULL;
     long val;
+	  int Fg, Bg;
 
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
@@ -617,11 +629,8 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             case '~':
                 *RetStr=AddCharToStr(*RetStr, *ptr);
                 break;
-            case '+':
-                ptr++;
-                *RetStr=TerminalColorCommandStr(*RetStr, *ptr, ANSI_DARKGREY);
-                break;
 
+            case '+':
             case 'r':
             case 'R':
             case 'g':
@@ -638,7 +647,10 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             case 'W':
             case 'n':
             case 'N':
-                *RetStr=TerminalColorCommandStr(*RetStr, *ptr, 0);
+								Fg=0;
+								Bg=0;
+								ptr=TerminalParseColor(ptr, &Fg, &Bg);
+                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, Fg, Bg);
                 break;
 
             case 'e':
@@ -744,8 +756,10 @@ void TerminalPutChar(int Char, STREAM *S)
     else
     {
         Tempstr=UnicodeStr(Tempstr, Char);
+
+	//do not use StrLenFromCache here, as string will be short
         if (S) STREAMWriteLine(Tempstr, S);
-        else write(1,Tempstr,StrLenFromCache(Tempstr));
+        else write(1,Tempstr,StrLen(Tempstr));
     }
 
     Destroy(Tempstr);
@@ -757,10 +771,13 @@ void TerminalPutChar(int Char, STREAM *S)
 void TerminalPutStr(const char *Str, STREAM *S)
 {
     char *Tempstr=NULL;
+    int len;
 
     Tempstr=TerminalFormatStr(Tempstr, Str, S);
-    if (S) STREAMWriteLine(Tempstr, S);
-    else write(1,Tempstr,StrLenFromCache(Tempstr));
+    //this could be a long-ish string, so we do use StrLenFromCache
+    len=StrLenFromCache(Tempstr);
+    if (S) STREAMWriteBytes(S, Tempstr, len);
+    else write(1,Tempstr,len);
 
     Destroy(Tempstr);
 }
@@ -837,6 +854,38 @@ char *XtermGetSelection(char *RetStr, STREAM *S)
     }
 
     return(RetStr);
+}
+
+
+void XtermSetDefaultColors(STREAM *S, const char *Str)
+{
+const char *ptr;
+char *Output=NULL;
+int Fg=0, Bg=0;
+
+for (ptr=Str; *ptr != '\0'; ptr++)
+{
+if (*ptr == '~') 
+{
+	ptr++;
+	if (*ptr==0) break;
+	ptr=TerminalParseColor(ptr, &Fg, &Bg);
+}
+}
+
+if (Fg > 0) 
+{
+		Output=FormatStr(Output,"\x1b]10;%d\007",Fg);
+		STREAMWriteLine(Output, S);
+}
+
+if (Bg > 0) 
+{
+		Output=FormatStr(Output,"\x1b]11;%d\007",Bg);
+		STREAMWriteLine(Output, S);
+}
+
+Destroy(Output);
 }
 
 
@@ -1005,6 +1054,7 @@ int TerminalInit(STREAM *S, int Flags)
     STREAMSetValue(S, "Terminal:rows", Tempstr);
     STREAMSetValue(S, "Terminal:top", "0");
 
+
     if (Flags & TERM_HIDECURSOR) TerminalCursorHide(S);
     if (isatty(S->in_fd))
     {
@@ -1012,6 +1062,8 @@ int TerminalInit(STREAM *S, int Flags)
         if (Flags & TERM_RAWKEYS) ttyflags |= TTYFLAG_IN_CRLF | TTYFLAG_OUT_CRLF;
         if (ttyflags) TTYConfig(S->in_fd, 0, ttyflags);
     }
+
+		XtermSetDefaultColors(S, TerminalThemeGet("Terminal:Attribs"));
     TerminalBarsInit(S);
     if (Flags & TERM_WHEELMOUSE) STREAMWriteLine("\x1b[?1000h", S);
     else if (Flags & TERM_MOUSE) STREAMWriteLine("\x1b[?9h", S);

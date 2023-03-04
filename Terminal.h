@@ -259,6 +259,8 @@ void XtermSetTerminalSize(STREAM *S, int wide, int high);
 //generic function for building xterm query escape sequences
 void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);
 
+void XtermSetDefaultColors(STREAM *S, const char *Colors);
+
 //put a character. Char can be a value outside the ANSI range which will result in an xterm unicode character string being output
 void TerminalPutChar(int Char, STREAM *S);
 

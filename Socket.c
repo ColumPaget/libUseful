@@ -106,7 +106,7 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
         else if (strcasecmp(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
         else if (strcasecmp(Name,"keepalive")==0)
         {
-            if (StrLen(Value) && (strncasecmp(Value, "n",1)==0)) Settings->Flags |= SOCK_NOKEEPALIVE;
+            if (StrValid(Value) && (strncasecmp(Value, "n",1)==0)) Settings->Flags |= SOCK_NOKEEPALIVE;
         }
         else if (strcasecmp(Name,"timeout")==0)
         {

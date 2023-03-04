@@ -206,8 +206,8 @@ char **BuildMultiSeparators(const char *Pattern)
     count=0;
     while (ptr && (*ptr !='\0'))
     {
-        while (*ptr=='|') ptr++;
-        if (*ptr!='\0')
+	while (*ptr=='|') ptr++;
+        if (*ptr != '\0')
         {
             next=strchr(ptr,'|');
             if (next) separators[count]=CopyStrLen(NULL, ptr, next-ptr);
@@ -266,10 +266,14 @@ const char *GetTokenPostProcess(const char *SearchStr, const char *SepStart, con
 {
     const char *sptr, *eptr;
 
+//There are two StrLens in this function. Don't try to replace them because
+// 1) the only trigger in rare occurances
+// 2) SearchStr will likely be a pointer into a string, so don't try StrLenFromCache
+
     if (! SepStart)
     {
         *Token=CopyStr(*Token, SearchStr);
-        return(SearchStr+StrLen(SearchStr));
+        return(SearchStr + StrLen(SearchStr));
     }
 
     sptr=SearchStr;
@@ -310,7 +314,7 @@ const char *GetTokenPostProcess(const char *SearchStr, const char *SepStart, con
 //return empty string, but not null
     if ((! SepEnd) || (*SepEnd=='\0'))
     {
-        SepEnd=SearchStr+StrLen((char *) SearchStr);
+        SepEnd=SearchStr + StrLen(SearchStr);
     }
 
     return(SepEnd);
@@ -360,6 +364,8 @@ const char *GetToken(const char *SearchStr, const char *Separator, char **Token,
         //and point 'SepEnd' to the end of the string, and return it
         if (! SepStart)
         {
+            //don't use StrLenFromCache on SearchStr, as it's a pointer into a string and will
+            //only be in the cache at the start of the search
             SepEnd=SearchStr+StrLen(SearchStr);
             *Token=CopyStr(*Token,SearchStr);
             return(SepEnd);

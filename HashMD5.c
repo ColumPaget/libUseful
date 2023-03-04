@@ -51,7 +51,7 @@ int HashInitMD5(HASH *Hash, const char *Name, int Len)
     Hash->Finish=HashFinishMD5;
     Hash->Clone=HashCloneMD5;
 
-		return(TRUE);
+    return(TRUE);
 }
 
 

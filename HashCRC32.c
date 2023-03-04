@@ -26,12 +26,12 @@ int HashFinishCRC(HASH *Hash, char **HashStr)
     int len=0;
 
     *HashStr=CopyStr(*HashStr, "");
-        len=sizeof(unsigned long);
-        crc32Finish((unsigned long *) Hash->Ctx);
-        crc=htonl(* (unsigned long *) Hash->Ctx);
+    len=sizeof(unsigned long);
+    crc32Finish((unsigned long *) Hash->Ctx);
+    crc=htonl(* (unsigned long *) Hash->Ctx);
 
-        *HashStr=SetStrLen(*HashStr,len);
-        memcpy(*HashStr,&crc,len);
+    *HashStr=SetStrLen(*HashStr,len);
+    memcpy(*HashStr,&crc,len);
     return(len);
 }
 
@@ -43,7 +43,7 @@ int HashInitCRC(HASH *Hash, const char *Name, int Len)
     Hash->Update=HashUpdateCRC;
     Hash->Finish=HashFinishCRC;
     Hash->Clone=HashCloneCRC;
-		return(TRUE);
+    return(TRUE);
 }
 
 void HashRegisterCRC32()

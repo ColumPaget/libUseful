@@ -23,6 +23,8 @@ void LibUsefulInitSettings()
     SetVar(LibUsefulSettings,"LibUseful:Version",__LIBUSEFUL_VERSION__);
     Tempstr=MCopyStr(Tempstr,__LIBUSEFUL_BUILD_DATE__," ",__LIBUSEFUL_BUILD_TIME__,NULL);
     SetVar(LibUsefulSettings,"LibUseful:BuildTime",Tempstr);
+		Tempstr=FormatStr(Tempstr, "%d", 4096 * 10000);
+		SetVar(LibUsefulSettings,"MaxDocumentSize", Tempstr);
     DestroyString(Tempstr);
 }
 
@@ -58,7 +60,7 @@ const char *LibUsefulGetValue(const char *Name)
 {
     if (! LibUsefulSettings) LibUsefulInitSettings();
 
-    if (!StrLen(Name)) return("");
+    if (!StrValid(Name)) return("");
     return(GetVar(LibUsefulSettings,Name));
 }
 
@@ -87,7 +89,10 @@ int LibUsefulDebugActive()
 
 void LibUsefulAtExit()
 {
+    #ifdef HAVE_MUNLOCKALL
     if (LibUsefulFlags & LU_MLOCKALL) munlockall();
+    #endif
+
     if (LibUsefulFlags & LU_CONTAINER) FileSystemUnMount("/","lazy");
     ConnectionHopCloseAll();
     CredsStoreDestroy();

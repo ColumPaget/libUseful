@@ -2,6 +2,22 @@
 #include "Encodings.h"
 #include "Hash.h"
 #include "Time.h"
+#include "StrLenCache.h"
+
+
+
+
+void Destroy(void *Obj)
+{
+    if (Obj)
+    {
+        //If the object is a cached string, the remove it from cache
+        StrLenCacheDel(Obj);
+        free(Obj);
+    }
+}
+
+
 
 
 //xmemset uses a 'volatile' pointer so that it won't be optimized out
@@ -114,7 +130,7 @@ char *MakeShellSafeString(char *RetStr, const char *String, int SafeLevel)
     }
     else Tempstr=QuoteCharsInStr(RetStr,String,BadChars);
 
-    if (strcmp(Tempstr,String) !=0)
+    if (CompareStr(Tempstr,String) !=0)
     {
         //if (EventCallback) EventCallback(String);
     }

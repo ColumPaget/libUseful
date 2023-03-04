@@ -758,13 +758,17 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"mlock")==0)
         {
             LibUsefulFlags |= LU_MLOCKALL;
+	    #ifdef HAVE_MLOCKALL
             mlockall(MCL_CURRENT | MCL_FUTURE);
+	    #endif
             LibUsefulSetupAtExit();
         }
         else if (strcasecmp(Name,"memlock")==0)
         {
             LibUsefulFlags |= LU_MLOCKALL;
+	    #ifdef HAVE_MLOCKALL
             mlockall(MCL_CURRENT | MCL_FUTURE);
+	    #endif
             LibUsefulSetupAtExit();
         }
         else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);

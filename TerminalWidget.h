@@ -1,4 +1,9 @@
 /*
+Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
+/*
  *
  * You probably have no interest in this module, it provides shared functionality used by TerminalMenu and TerminalChoice
  */

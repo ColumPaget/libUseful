@@ -8,6 +8,7 @@
 #include "Errors.h"
 #include "FileSystem.h"
 #include <sys/ioctl.h>
+#include <wait.h>
 
 #define SPAWN_COMBINE_STDERR 1
 #define SPAWN_STDOUT_NULL 2
@@ -376,7 +377,7 @@ STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
     ptr=GetToken(Config, "\\S", &Token, GETTOKEN_QUOTES);
     while (ptr)
     {
-        if (strcmp(Token, "noshell")==0) UseShell=FALSE;
+        if (CompareStr(Token, "noshell")==0) UseShell=FALSE;
         ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
     }
 
@@ -425,4 +426,29 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
     Destroy(Args);
 
     return(result);
+}
+
+
+int STREAMSpawnWaitExit(STREAM *S)
+{
+char *Tempstr=NULL;
+pid_t pid;
+int result, status, exited=-1;
+
+STREAMCommit(S);
+pid=atoi(STREAMGetValue(S, "PeerPID"));
+STREAMSetTimeout(S, 10);
+Tempstr=SetStrLen(Tempstr, 4096);
+result=STREAMReadBytes(S, Tempstr, 4096);
+while (result != STREAM_CLOSED)
+{
+exited=waitpid(pid, &status, WNOHANG);
+if (exited == pid) break;
+result=STREAMReadBytes(S, Tempstr, 4096);
+}
+
+if (exited != pid) waitpid(pid, &status, 0);
+
+Destroy(Tempstr);
+return(status);
 }

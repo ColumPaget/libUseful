@@ -547,8 +547,10 @@ ListNode *MapChainGetNext(ListNode *CurrItem)
 
             //This is a disaster for straight forward lists though, because they have only one chain that gets revisited on
             //every search for an item
-
+#ifdef __GNUC__
             __builtin_prefetch (CurrItem->Next->Next, 0, 0);
+#endif
+
             if (CurrItem->Next->Next->Tag) __builtin_prefetch (CurrItem->Next->Next->Tag, 0, 0);
         }
         return(CurrItem->Next);

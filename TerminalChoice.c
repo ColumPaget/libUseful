@@ -1,11 +1,12 @@
 #include "TerminalChoice.h"
-
+#include "TerminalTheme.h"
 
 TERMCHOICE *TerminalChoiceCreate(STREAM *Term, const char *Config)
 {
     TERMCHOICE *TC;
 
     TC=TerminalWidgetCreate(Term, "cursor_left=< cursor_right=>");
+		TerminalThemeApply(TC, "Choice");
     TerminalWidgetParseConfig(TC, Config);
     return(TC);
 }
@@ -28,7 +29,7 @@ void TerminalChoiceDraw(TERMCHOICE *Chooser)
     {
         if (Chooser->Options->Side==Curr)
         {
-            Tempstr=MCatStr(Tempstr, Chooser->CursorLeft, Curr->Tag, Chooser->CursorRight, NULL);
+            Tempstr=MCatStr(Tempstr, Chooser->CursorAttribs, Chooser->CursorLeft, Curr->Tag, Chooser->CursorRight, "~0", NULL);
         }
         else Tempstr=MCatStr(Tempstr, LPad, Curr->Tag, RPad, NULL);
 

@@ -424,7 +424,7 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
     if (StrValid(Token)) Info->Port=atoi(Token);
 
 
-    if (StrValid(Proto) && (strcmp(Proto,"https")==0)) Info->Flags |= HTTP_SSL;
+    if (StrValid(Proto) && (CompareStr(Proto,"https")==0)) Info->Flags |= HTTP_SSL;
 
 
     ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
@@ -1066,7 +1066,7 @@ int HTTPProcessResponse(HTTPInfoStruct *HTTPInfo)
         case 303:
         case 307:
         case 308:
-            if (HTTPInfo->PreviousRedirect && (strcmp(HTTPInfo->RedirectPath,HTTPInfo->PreviousRedirect)==0)) result=HTTP_CIRCULAR_REDIRECTS;
+            if (HTTPInfo->PreviousRedirect && (CompareStr(HTTPInfo->RedirectPath,HTTPInfo->PreviousRedirect)==0)) result=HTTP_CIRCULAR_REDIRECTS;
             else
             {
                 if (HTTPInfo->Flags & HTTP_DEBUG) fprintf(stderr,"HTTP: Redirected to %s\n",HTTPInfo->RedirectPath);
@@ -1078,7 +1078,7 @@ int HTTPProcessResponse(HTTPInfoStruct *HTTPInfo)
 
                 //if HTTP_SSL_REWRITE is set, then all redirects get forced to https
                 if (HTTPInfo->Flags & HTTP_SSL_REWRITE) Proto=CopyStr(Proto,"https");
-                if (strcmp(Proto,"https")==0) HTTPInfo->Flags |= HTTP_SSL;
+                if (CompareStr(Proto,"https")==0) HTTPInfo->Flags |= HTTP_SSL;
                 else HTTPInfo->Flags &= ~HTTP_SSL;
 
                 //303 Redirects must be get!
@@ -1149,7 +1149,7 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
 
         if (Port==0)
         {
-            if (strcmp(Proto,"ssl")==0) Port=443;
+            if (CompareStr(Proto,"ssl")==0) Port=443;
             else Port=80;
         }
     }

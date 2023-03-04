@@ -7,6 +7,12 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define LIBUSEFUL_HASH_WHIRL_H
 
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "Hash.h"
 
 void HashRegisterWhirlpool();

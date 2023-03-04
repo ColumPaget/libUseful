@@ -11,42 +11,11 @@ cf_have_libssl=no
 cf_have_libcrypto=no
 cf_have_libz=no
 
-cf_have_ptsname_r=no
-cf_have_setresuid=no
-cf_have_clearenv=no
-
 cf_use_simd=no
 cf_use_sendfile=no
 cf_use_xattr=no
 
-
-AC_CHECK_LIB(c,ptsname_r,,)
-cf_have_ptsname_r=$ac_cv_lib_c_ptsname_r
-if test "$cf_have_ptsname_r" = "yes"
-then
-AC_DEFINE([HAVE_PTSNAME_R])
-fi
-
-AC_CHECK_LIB(c,clearenv,,)
-cf_have_clearenv=$ac_cv_lib_c_clearenv
-if test "$cf_have_clearenv" = "yes"
-then
-AC_DEFINE([HAVE_CLEARENV])
-fi
-
-AC_CHECK_LIB(c,setresuid,,)
-cf_have_setresuid=$ac_cv_lib_c_setresuid
-if test "$cf_have_setresuid" = "yes"
-then
-AC_DEFINE([HAVE_SETRESUID])
-fi
-
-AC_CHECK_LIB(c,initgroups,,)
-cf_have_initgroups=$ac_cv_lib_c_initgroups
-if test "$cf_have_initgroups" = "yes"
-then
-AC_DEFINE([HAVE_INITGROUPS])
-fi
+cf_use_hashopenssl=auto
 
 
 AC_CHECK_LIB(c,get_current_dir_name,,)
@@ -57,50 +26,7 @@ AC_DEFINE([HAVE_GET_CURR_DIR])
 fi
 
 
-
-AC_CHECK_LIB(c,umount2,,)
-cf_have_umount2=$ac_cv_lib_c_umount2
-if test "$cf_have_umount2" = "yes"
-then
-AC_DEFINE([HAVE_UMOUNT2])
-fi
-
-AC_CHECK_LIB(c,umount,,)
-cf_have_umount=$ac_cv_lib_c_umount
-if test "$cf_have_umount" = "yes"
-then
-AC_DEFINE([HAVE_UMOUNT])
-fi
-
-AC_CHECK_LIB(c,mkostemp,,)
-cf_have_mkostemp=$ac_cv_lib_c_mkostemp
-if test "$cf_have_mkostemp" = "yes"
-then
-AC_DEFINE([HAVE_MKOSTEMP])
-fi
-
-AC_CHECK_LIB(c,poll,,)
-cf_have_poll=$ac_cv_lib_c_poll
-if test "$cf_have_poll" = "yes"
-then
-AC_DEFINE([HAVE_POLL])
-fi
-
-AC_CHECK_LIB(c,htonll,,)
-cf_have_htonll=$ac_cv_lib_c_htonll
-if test "$cf_have_htonll" = "yes"
-then
-AC_DEFINE([HAVE_HTONLL])
-fi
-
-
-AC_CHECK_LIB(c,ntohll,,)
-cf_have_ntohll=$ac_cv_lib_c_ntohll
-if test "$cf_have_ntohll" = "yes"
-then
-AC_DEFINE([HAVE_NTOHLL])
-fi
-
+AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy)
 
 
 AC_ARG_ENABLE(sendfile, [  --enable-sendfile       enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval )
@@ -108,12 +34,12 @@ AC_ARG_ENABLE(sendfile, [  --enable-sendfile       enable 'fastcopy' sendfile su
 if test "$cf_use_sendfile" != "no"
 then
 AC_CHECK_HEADER(sys/sendfile.h,cf_use_sendfile=yes,cf_use_sendfile=no,)
-fi 
-
-if test "$cf_use_sendfile" = "yes"
+if test "$cf_use_sendfile" != "no"
 then
-AC_DEFINE([USE_SENDFILE])
+AC_CHECK_FUNC(sendfile, AC_DEFINE([HAVE_SENDFILE]))
 fi
+
+fi 
 
 
 
@@ -142,19 +68,19 @@ AC_ARG_ENABLE(namespaces, [  --enable-namespaces       enable linux namespace su
 
 if test "$cf_use_namespaces" = "yes"
 then
-	AC_CHECK_LIB(c,unshare,,)
-	cf_have_unshare=$ac_cv_lib_c_unshare
-	if test "$cf_have_unshare" = "yes"
-	then
-		AC_DEFINE([HAVE_UNSHARE])
-	fi
+        AC_CHECK_LIB(c,unshare,,)
+        cf_have_unshare=$ac_cv_lib_c_unshare
+        if test "$cf_have_unshare" = "yes"
+        then
+                AC_DEFINE([HAVE_UNSHARE])
+        fi
 
-	AC_CHECK_LIB(c,setns,,)
-	cf_have_setns=$ac_cv_lib_c_setns
-	if test "$cf_have_setns" = "yes"
-	then
-		AC_DEFINE([HAVE_SETNS])
-	fi
+        AC_CHECK_LIB(c,setns,,)
+        cf_have_setns=$ac_cv_lib_c_setns
+        if test "$cf_have_setns" = "yes"
+        then
+                AC_DEFINE([HAVE_SETNS])
+        fi
 fi
 
 
@@ -205,7 +131,12 @@ then
 fi
 
 
-AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_bf_cbc EVP_rc2_cbc EVP_rc4 EVP_rc5_32_12_16_cbc EVP_des_cbc EVP_desx_cbc EVP_cast5_cbc EVP_idea_cbc EVP_aes_128_cbc EVP_aes_256_cbc X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version)
+
+if test "$cf_have_libssl" = "yes"
+then
+cf_use_zlib=yes
+
+AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free EVP_bf_cbc EVP_rc2_cbc EVP_rc4 EVP_rc5_32_12_16_cbc EVP_des_cbc EVP_desx_cbc EVP_cast5_cbc EVP_idea_cbc EVP_aes_128_cbc EVP_aes_256_cbc X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version)
 
 
 AC_CHECK_DECLS(OpenSSL_add_all_algorithms,AC_DEFINE([HAVE_OPENSSL_ADD_ALL_ALGORITHMS]),[],[[#include <openssl/ssl.h>]])
@@ -222,11 +153,13 @@ AC_CHECK_DECLS(SSL_set_tlsext_host_name,AC_DEFINE([HAVE_SSL_SET_TLSEXT_HOST_NAME
 		AC_MSG_RESULT([yes])
 #    AC_DEFINE(USE_OPENSSL_ADD_ALL_ALGORITHMS, 1, [Use OpenSSL_add_all_algorithms]) 
 	],[AC_MSG_RESULT([no])])
+
+
+
+
 fi
 
-if test "$cf_have_libssl" = "yes"
-then
-cf_use_zlib=yes
+
 fi
 
 
@@ -277,7 +210,7 @@ echo "Filesystem attribues (xattr) NOT enabled"
 fi
 
 
-if test "$cf_use_sendfile" = "yes"
+if test "$ac_cv_func_sendfile" = "yes"
 then
 echo "Linux sendfile syscall enabled"
 else

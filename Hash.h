@@ -72,9 +72,13 @@ struct t_hash
 };
 
 
+//this function is used internally to register a hash type
 void HashRegister(const char *Name, int Len, HASH_INIT_FUNC Init);
+
 //for backwards compatiblity provide this function. It just calls'EncodingParse'
 int HashEncodingFromStr(const char *Str);
+
+//produce a comma separated list of available hash types
 char *HashAvailableTypes(char *RetStr);
 HASH *HashInit(const char *Type);
 int HashFinish(HASH *Hash, int Encoding, char **Return);
@@ -82,7 +86,11 @@ void HMACSetKey(HASH *HMAC, const char *Key, int Len);
 void HashDestroy(HASH *Hash);
 int HashBytes(char **Return, const char *Type, const char *text, int len, int Encoding);
 int HashBytes2(const char *Type, int Encoding, const char *text, int len, char **RetStr);
+
+//read from a stream (usually a file) and return the hash of it's contents
 int HashSTREAM(char **Return, const char *Type, STREAM *S, int Encoding);
+
+//hash a file at 'Path'
 int HashFile(char **Return, const char *Type, const char *Path, int Encoding);
 int PBK2DF2(char **Return, char *Type, char *Bytes, int Len, char *Salt, int SaltLen, uint32_t Rounds, int Encoding);
 
