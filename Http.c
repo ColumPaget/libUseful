@@ -99,7 +99,7 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
         Chunk->Buffer=SetStrLen(Chunk->Buffer,len+10);
         ptr=Chunk->Buffer+Chunk->BuffLen;
         memcpy(ptr,InBuff,InLen);
-        Chunk->Buffer[len]='\0';
+        StrTrunc(Chunk->Buffer, len);
         Chunk->BuffLen=len;
     }
     else len=Chunk->BuffLen;
@@ -152,10 +152,9 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
 
 
 //either path we've been through above can result in a full chunk in the buffer
-    if (len >= Chunk->ChunkSize)
+    if ((len >= Chunk->ChunkSize))
     {
         bytes_out=Chunk->ChunkSize;
-
         //We should really grow OutBuff to take all the data
         //but for the sake of simplicity we'll just use the space
         //supplied
@@ -166,7 +165,6 @@ int HTTPChunkedRead(TProcessingModule *Mod, const char *InBuff, unsigned long In
         Chunk->BuffLen   -= bytes_out;
         Chunk->ChunkSize -= bytes_out;
         memmove(Chunk->Buffer, ptr, end-ptr);
-
     }
 
     if (Chunk->ChunkSize < 0) Chunk->ChunkSize=0;

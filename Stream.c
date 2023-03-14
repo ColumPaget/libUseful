@@ -560,7 +560,7 @@ int STREAMFlush(STREAM *S)
     //if nothing left in stream (There shouldn't be) then wipe data because
     //there might have been passwords sent on the stream, and we don't want
     //that hanging about in memory
-    if (S->OutputBuff && (S->OutEnd==0)) xmemset(S->OutputBuff,0,S->BuffSize);
+    if (S->OutputBuff && (S->OutEnd==0)) xmemset(S->OutputBuff, 0, S->BuffSize);
     return(val);
 }
 
@@ -571,7 +571,7 @@ void STREAMClear(STREAM *S)
     S->InEnd=0;
     //clear input buffer, because anything might be hanging about in there and
     //we don't want sensitive data persisiting in memory
-    if (S->InputBuff) xmemset(S->InputBuff,0,S->BuffSize);
+    if (S->InputBuff) xmemset(S->InputBuff, 0, S->BuffSize);
 }
 
 
@@ -611,7 +611,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
             {
                 OutputBuff=SetStrLen(OutputBuff,olen);
                 //if InLen == -1 then we are requesting a flush
-                if (result < 0) result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, TRUE);
+                if (InLen==STREAM_CLOSED) result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, TRUE);
                 else result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, FALSE);
                 if (result != STREAM_CLOSED) state=0;
 
@@ -1278,13 +1278,94 @@ void STREAMClose(STREAM *S)
 }
 
 
+
+
+//this function is used by STREAMReadCharsToBuffer. It checks for/ waits for input
+static int STREAMReadCharsToBuffer_WaitForBytes(STREAM *S)
+{
+int WaitForBytes=TRUE;
+int read_result, val;
+fd_set selectset;
+struct timeval tv;
+
+    //if using SSL and already has bytes queued, don't do a wait on select
+    if ( (S->State & SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
+
+    //must set this to 1 in case not doing a select, 'cos if S->Timeout is not set
+    //then we won't wait at all, won't set read_result, so we must do it here
+    read_result=1;
+
+    //if we ned to wait, then do so
+    if ((S->Timeout > 0) && WaitForBytes)
+    {
+        FD_ZERO(&selectset);
+        FD_SET(S->in_fd, &selectset);
+	//convert S->Timeout from centisecs number to a tv struct
+        MillisecsToTV(S->Timeout * 10, &tv);
+
+	//okay, wait for somethign to happen
+        val=select(S->in_fd+1,&selectset,NULL,NULL,&tv);
+
+        switch (val)
+        {
+        //we are only checking one FD, so should be 1
+        case 1:
+            read_result=1;
+            break;
+
+        case 0:
+            errno=ETIMEDOUT;
+            read_result=STREAM_TIMEOUT;
+            break;
+
+        default:
+            if (errno==EINTR) read_result=STREAM_TIMEOUT;
+            else read_result=STREAM_CLOSED;
+            break;
+        }
+
+    }
+
+return(read_result);
+}
+
+static int STREAMReadCharsToBuffer_UDP(STREAM *S, char *Buffer, int Len)
+{
+int bytes_read;
+char *Peer=NULL;
+
+    bytes_read=UDPRecv(S->in_fd,  Buffer, Len, &Peer, NULL);
+    //if select said there was stuff to read, but there wasn't, then the socket must be closed
+    //sockets can return '0' when closed, so we normalize this to -1 here
+    if (bytes_read < 1) bytes_read=-1;
+    STREAMSetValue(S, "Peer", Peer);
+
+    Destroy(Peer);
+
+    return(bytes_read);
+}
+
+
+static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
+        {
+int bytes_read;
+
+            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
+            bytes_read=read(S->in_fd, Buffer, Len);
+    //if select said there was stuff to read, but there wasn't, then the socket must be closed
+    //sockets can return '0' when closed, so we normalize this to -1 here
+    if (bytes_read < 1) bytes_read=-1;
+            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
+
+return(bytes_read);
+        }
+
+
 int STREAMReadCharsToBuffer(STREAM *S)
 {
-    fd_set selectset;
-    int val=0, read_result=0, WaitForBytes=TRUE, saved_errno;
+    int val=0, read_result=0;
     long bytes_read;
-    struct timeval tv;
-    char *tmpBuff=NULL, *Peer=NULL;
+    char *tmpBuff=NULL;
 
     if (! S) return(0);
 
@@ -1328,39 +1409,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
 //if no room in buffer, we can't read in more bytes
     if (S->InEnd >= S->BuffSize) return(1);
 
-    //if using SSL and already has bytes  queued, don't do a wait on select
-    if ( (S->State & SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
-
-    //must set this to 1 in case not doing a select, 'cos S->Timeout not set
-    read_result=1;
-
-    if ((S->Timeout > 0) && WaitForBytes)
-    {
-        FD_ZERO(&selectset);
-        FD_SET(S->in_fd, &selectset);
-        MillisecsToTV(S->Timeout * 10, &tv);
-        val=select(S->in_fd+1,&selectset,NULL,NULL,&tv);
-
-        switch (val)
-        {
-        //we are only checking one FD, so should be 1
-        case 1:
-            read_result=1;
-            break;
-
-        case 0:
-            errno=ETIMEDOUT;
-            read_result=STREAM_TIMEOUT;
-            break;
-
-        default:
-            if (errno==EINTR) read_result=STREAM_TIMEOUT;
-            else read_result=STREAM_CLOSED;
-            break;
-        }
-
-    }
-
+    read_result=STREAMReadCharsToBuffer_WaitForBytes(S);
 
     //Here we perform the actual read
     if (read_result==1)
@@ -1368,31 +1417,18 @@ int STREAMReadCharsToBuffer(STREAM *S)
         val=S->BuffSize - S->InEnd;
         tmpBuff=SetStrLen(tmpBuff,val);
 
+	//OpenSSL can return 0 bytes, even if select said there was stuff to be read from the 
+	//socket, due to keepalives etc
         if (S->State & SS_SSL) bytes_read=OpenSSLSTREAMReadBytes(S, tmpBuff, val);
-        else if (S->Type==STREAM_TYPE_UDP)
-        {
-            bytes_read=UDPRecv(S->in_fd,  tmpBuff, val, &Peer, NULL);
-            saved_errno=errno;
-            STREAMSetValue(S, "Peer", Peer);
-            Destroy(Peer);
-        }
-        else
-        {
-            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
-            bytes_read=read(S->in_fd, tmpBuff, val);
-            saved_errno=errno;
-            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
-        }
+        else if (S->Type==STREAM_TYPE_UDP) bytes_read=STREAMReadCharsToBuffer_UDP(S, tmpBuff, val);
+        else bytes_read=STREAMReadCharsToBuffer_Default(S, tmpBuff, val);
 
-        if (bytes_read > 0)
+        if (bytes_read >= 0)
         {
             S->BytesRead+=bytes_read;
             read_result=1;
         }
-        //Timeouts, EAGAIN, etc are handled via select, so if we
-        //get here the stream has closed, even if we're being told
-        //EAGAIN
-        else read_result=STREAM_CLOSED;
+	else read_result=STREAM_CLOSED;
     }
 
 //messing with this block tends to break STREAMSendFile
@@ -1414,6 +1450,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
 //may not appear
 
     Destroy(tmpBuff);
+
     return(read_result);
 }
 
@@ -2019,37 +2056,37 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     char *Tempstr=NULL;
     int result, size, bytes_read=0, max;
 
-		max=LibUsefulGetInteger("MaxDocumentSize");
+    max=LibUsefulGetInteger("MaxDocumentSize");
     if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) ) size=S->Size;
-		else size=max;
+    else size=max;
 
-        while (bytes_read < size)
-        {
-        		RetStr=SetStrLen(RetStr, size);
-            result=STREAMReadBytes(S, RetStr+bytes_read, size - bytes_read);
-            if (result > 0) bytes_read+=result;
-            else break;
-        }
-        StrTrunc(RetStr,bytes_read);
-
-				if ((bytes_read==size) && (result > 0))
-				{
-					if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));
-				}
-
-/*
-    }
-    else
+    while (bytes_read < size)
     {
-		
-        Tempstr=STREAMReadLine(Tempstr, S);
-        while (Tempstr)
-        {
-            RetStr=CatStr(RetStr, Tempstr);
-            Tempstr=STREAMReadLine(Tempstr, S);
-        }
+        RetStr=SetStrLen(RetStr, size);
+        result=STREAMReadBytes(S, RetStr+bytes_read, size - bytes_read);
+        if (result >= 0) bytes_read+=result;
+        else break;
     }
-*/
+    StrTrunc(RetStr,bytes_read);
+
+    if ((bytes_read==size) && (result > 0))
+    {
+        if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));
+    }
+
+    /*
+        }
+        else
+        {
+
+            Tempstr=STREAMReadLine(Tempstr, S);
+            while (Tempstr)
+            {
+                RetStr=CatStr(RetStr, Tempstr);
+                Tempstr=STREAMReadLine(Tempstr, S);
+            }
+        }
+    */
 
     Destroy(Tempstr);
     return(RetStr);

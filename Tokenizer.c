@@ -206,7 +206,7 @@ char **BuildMultiSeparators(const char *Pattern)
     count=0;
     while (ptr && (*ptr !='\0'))
     {
-	while (*ptr=='|') ptr++;
+        while (*ptr=='|') ptr++;
         if (*ptr != '\0')
         {
             next=strchr(ptr,'|');

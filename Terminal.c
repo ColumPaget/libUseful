@@ -478,16 +478,16 @@ char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
 
 const char *TerminalParseColor(const char *Str, int *Fg, int *Bg)
 {
-const char *ptr;
-int offset=0;
+    const char *ptr;
+    int offset=0;
 
-		ptr=Str;
-		if (*ptr=='+') 
-		{
-				offset=ANSI_DARKGREY;
-				ptr++;
-		}
-		
+    ptr=Str;
+    if (*ptr=='+')
+    {
+        offset=ANSI_DARKGREY;
+        ptr++;
+    }
+
     switch (*ptr)
     {
     case 'r':
@@ -572,7 +572,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
     const char *ptr, *end;
     char *Tempstr=NULL;
     long val;
-	  int Fg, Bg;
+    int Fg, Bg;
 
     for (ptr=Str; *ptr !='\0'; ptr++)
     {
@@ -647,9 +647,9 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
             case 'W':
             case 'n':
             case 'N':
-								Fg=0;
-								Bg=0;
-								ptr=TerminalParseColor(ptr, &Fg, &Bg);
+                Fg=0;
+                Bg=0;
+                ptr=TerminalParseColor(ptr, &Fg, &Bg);
                 *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, Fg, Bg);
                 break;
 
@@ -757,7 +757,7 @@ void TerminalPutChar(int Char, STREAM *S)
     {
         Tempstr=UnicodeStr(Tempstr, Char);
 
-	//do not use StrLenFromCache here, as string will be short
+        //do not use StrLenFromCache here, as string will be short
         if (S) STREAMWriteLine(Tempstr, S);
         else write(1,Tempstr,StrLen(Tempstr));
     }
@@ -859,33 +859,33 @@ char *XtermGetSelection(char *RetStr, STREAM *S)
 
 void XtermSetDefaultColors(STREAM *S, const char *Str)
 {
-const char *ptr;
-char *Output=NULL;
-int Fg=0, Bg=0;
+    const char *ptr;
+    char *Output=NULL;
+    int Fg=0, Bg=0;
 
-for (ptr=Str; *ptr != '\0'; ptr++)
-{
-if (*ptr == '~') 
-{
-	ptr++;
-	if (*ptr==0) break;
-	ptr=TerminalParseColor(ptr, &Fg, &Bg);
-}
-}
+    for (ptr=Str; *ptr != '\0'; ptr++)
+    {
+        if (*ptr == '~')
+        {
+            ptr++;
+            if (*ptr==0) break;
+            ptr=TerminalParseColor(ptr, &Fg, &Bg);
+        }
+    }
 
-if (Fg > 0) 
-{
-		Output=FormatStr(Output,"\x1b]10;%d\007",Fg);
-		STREAMWriteLine(Output, S);
-}
+    if (Fg > 0)
+    {
+        Output=FormatStr(Output,"\x1b]10;%d\007",Fg);
+        STREAMWriteLine(Output, S);
+    }
 
-if (Bg > 0) 
-{
-		Output=FormatStr(Output,"\x1b]11;%d\007",Bg);
-		STREAMWriteLine(Output, S);
-}
+    if (Bg > 0)
+    {
+        Output=FormatStr(Output,"\x1b]11;%d\007",Bg);
+        STREAMWriteLine(Output, S);
+    }
 
-Destroy(Output);
+    Destroy(Output);
 }
 
 
@@ -1063,7 +1063,7 @@ int TerminalInit(STREAM *S, int Flags)
         if (ttyflags) TTYConfig(S->in_fd, 0, ttyflags);
     }
 
-		XtermSetDefaultColors(S, TerminalThemeGet("Terminal:Attribs"));
+    XtermSetDefaultColors(S, TerminalThemeGet("Terminal:Attribs"));
     TerminalBarsInit(S);
     if (Flags & TERM_WHEELMOUSE) STREAMWriteLine("\x1b[?1000h", S);
     else if (Flags & TERM_MOUSE) STREAMWriteLine("\x1b[?9h", S);

@@ -6,7 +6,7 @@ TERMCHOICE *TerminalChoiceCreate(STREAM *Term, const char *Config)
     TERMCHOICE *TC;
 
     TC=TerminalWidgetCreate(Term, "cursor_left=< cursor_right=>");
-		TerminalThemeApply(TC, "Choice");
+    TerminalThemeApply(TC, "Choice");
     TerminalWidgetParseConfig(TC, Config);
     return(TC);
 }

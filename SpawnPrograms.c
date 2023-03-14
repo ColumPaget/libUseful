@@ -431,24 +431,24 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
 
 int STREAMSpawnWaitExit(STREAM *S)
 {
-char *Tempstr=NULL;
-pid_t pid;
-int result, status, exited=-1;
+    char *Tempstr=NULL;
+    pid_t pid;
+    int result, status, exited=-1;
 
-STREAMCommit(S);
-pid=atoi(STREAMGetValue(S, "PeerPID"));
-STREAMSetTimeout(S, 10);
-Tempstr=SetStrLen(Tempstr, 4096);
-result=STREAMReadBytes(S, Tempstr, 4096);
-while (result != STREAM_CLOSED)
-{
-exited=waitpid(pid, &status, WNOHANG);
-if (exited == pid) break;
-result=STREAMReadBytes(S, Tempstr, 4096);
-}
+    STREAMCommit(S);
+    pid=atoi(STREAMGetValue(S, "PeerPID"));
+    STREAMSetTimeout(S, 10);
+    Tempstr=SetStrLen(Tempstr, 4096);
+    result=STREAMReadBytes(S, Tempstr, 4096);
+    while (result != STREAM_CLOSED)
+    {
+        exited=waitpid(pid, &status, WNOHANG);
+        if (exited == pid) break;
+        result=STREAMReadBytes(S, Tempstr, 4096);
+    }
 
-if (exited != pid) waitpid(pid, &status, 0);
+    if (exited != pid) waitpid(pid, &status, 0);
 
-Destroy(Tempstr);
-return(status);
+    Destroy(Tempstr);
+    return(status);
 }

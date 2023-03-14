@@ -5,8 +5,8 @@ ListNode *TermTheme=NULL;
 
 ListNode *TerminalThemeInit()
 {
-char *Name=NULL, *Value=NULL;
-const char *ptr;
+    char *Name=NULL, *Value=NULL;
+    const char *ptr;
 
     TermTheme=ListCreate();
 
@@ -16,30 +16,30 @@ const char *ptr;
     SetVar(TermTheme, "Choice:CursorLeft", "[");
     SetVar(TermTheme, "Choice:CursorRight", "]");
 
-		ptr=getenv("LIBUSEFUL_TERMINAL_THEME");
-		ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
-		while (ptr)
-		{
-    SetVar(TermTheme, Name, Value);
-		ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
-		}
+    ptr=getenv("LIBUSEFUL_TERMINAL_THEME");
+    ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    while (ptr)
+    {
+        SetVar(TermTheme, Name, Value);
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    }
 
-Destroy(Name);
-Destroy(Value);
+    Destroy(Name);
+    Destroy(Value);
 
-return(TermTheme);
+    return(TermTheme);
 }
 
 
 const char *TerminalThemeGet(const char *Name)
 {
-		if (! TermTheme) TerminalThemeInit();
+    if (! TermTheme) TerminalThemeInit();
     return(GetVar(TermTheme, Name));
 }
 
 void TerminalThemeSet(const char *Name, const char *Value)
 {
-		if (! TermTheme) TerminalThemeInit();
+    if (! TermTheme) TerminalThemeInit();
     SetVar(TermTheme, Name, Value);
 }
 
@@ -47,7 +47,7 @@ void TerminalThemeApply(TERMWIDGET *TW, const char *Type)
 {
     char *Tempstr=NULL;
 
-		if (! TermTheme) TerminalThemeInit();
+    if (! TermTheme) TerminalThemeInit();
     Tempstr=MCopyStr(Tempstr, Type, ":Attribs", NULL);
     TW->Attribs=CopyStr(TW->Attribs, TerminalThemeGet(Tempstr));
     Tempstr=MCopyStr(Tempstr, Type, ":CursorAttribs", NULL);

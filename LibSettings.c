@@ -23,8 +23,8 @@ void LibUsefulInitSettings()
     SetVar(LibUsefulSettings,"LibUseful:Version",__LIBUSEFUL_VERSION__);
     Tempstr=MCopyStr(Tempstr,__LIBUSEFUL_BUILD_DATE__," ",__LIBUSEFUL_BUILD_TIME__,NULL);
     SetVar(LibUsefulSettings,"LibUseful:BuildTime",Tempstr);
-		Tempstr=FormatStr(Tempstr, "%d", 4096 * 10000);
-		SetVar(LibUsefulSettings,"MaxDocumentSize", Tempstr);
+    Tempstr=FormatStr(Tempstr, "%d", 4096 * 10000);
+    SetVar(LibUsefulSettings,"MaxDocumentSize", Tempstr);
     DestroyString(Tempstr);
 }
 
@@ -89,9 +89,9 @@ int LibUsefulDebugActive()
 
 void LibUsefulAtExit()
 {
-    #ifdef HAVE_MUNLOCKALL
+#ifdef HAVE_MUNLOCKALL
     if (LibUsefulFlags & LU_MLOCKALL) munlockall();
-    #endif
+#endif
 
     if (LibUsefulFlags & LU_CONTAINER) FileSystemUnMount("/","lazy");
     ConnectionHopCloseAll();

@@ -640,7 +640,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             ptr=GetToken(S->Path,":",&Token,0);
             if (ptr)
             {
-		while (*ptr=='/') ptr++;
+                while (*ptr=='/') ptr++;
                 ptr=GetToken(ptr,":",&Token,0);
                 SSL_set_tlsext_host_name(ssl, Token);
             }

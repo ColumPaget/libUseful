@@ -12,11 +12,11 @@ static int OpenSSLFinishHash(HASH *Hash, char **Digest)
     *Digest=SetStrLen(*Digest, EVP_MAX_MD_SIZE);
     EVP_DigestFinal((EVP_MD_CTX *) Hash->Ctx, *Digest, &Len);
 
-    #ifdef HAVE_EVP_MD_CTX_FREE
+#ifdef HAVE_EVP_MD_CTX_FREE
     EVP_MD_CTX_free(Hash->Ctx);
-    #else
+#else
     EVP_MD_CTX_destroy(Hash->Ctx);
-    #endif
+#endif
 
     Hash->Ctx=NULL;
     return(Len);
@@ -38,11 +38,11 @@ static int OpenSSLInitHash(HASH *Hash, const char *Name, int Size)
     MD=EVP_get_digestbyname(p_Name);
     if (MD)
     {
-	#ifdef HAVE_EVP_MD_CTX_NEW
+#ifdef HAVE_EVP_MD_CTX_NEW
         Hash->Ctx=(EVP_MD_CTX *) EVP_MD_CTX_new();
-	#else
+#else
         Hash->Ctx=(EVP_MD_CTX *) EVP_MD_CTX_create();
-	#endif
+#endif
 
         EVP_DigestInit(Hash->Ctx, MD);
         Hash->Update=OpenSSLUpdateHash;

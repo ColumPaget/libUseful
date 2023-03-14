@@ -21,7 +21,7 @@ void StrLenCacheInit(int Size, int MinStrLen)
 TStrLenCacheEntry *StrLenCacheFind(const char *Str)
 {
     TStrLenCacheEntry *Entry;
-    
+
     for (Entry=StrLenCache; Entry < StrLenCache + StrLenCacheSize; Entry++)
     {
         //do not try to use builtin-prefetch here, as we are not interested
@@ -68,15 +68,15 @@ void StrLenCacheAdd(const char *Str, size_t len)
         if (StrLenCache[i].Str == NULL) emptyslot=i;
         else if (StrLenCache[i].Str == Str)
         {
-	    //if the string has become short, then free its entry in the cache
-	    if (len < StrLenCacheMinLen) StrLenCache[i].Str=NULL;
+            //if the string has become short, then free its entry in the cache
+            if (len < StrLenCacheMinLen) StrLenCache[i].Str=NULL;
             else StrLenCache[i].len=len;
             return;
         }
     }
 
 //don't pollute cache with short strings that don't take long to look up
-//strlen caching has been seen to give a benefit with very large strings, 
+//strlen caching has been seen to give a benefit with very large strings,
 //but modern processors with built-in strlen functions are proabably faster
 //for short strings. The magic number seems to be about 100 chars.
     if (len > StrLenCacheMinLen)
