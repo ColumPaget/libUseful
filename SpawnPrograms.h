@@ -70,6 +70,8 @@ procs=value      resource limit for max number of processes ON A PER USER BASIS.
 stderr2null      send spawned program's stderr to /dev/null
 stdout2null      send spawned program's stdout to /dev/null
 
+ptystderr        only for STREAMSpawnCommandAndPty. Send stderr from the spawned process to the pty.
+
 innull           redirect spawned program's stdin to /dev/null
 outnull          redirect spawned program's stdout and stderr to /dev/null
 errnull          redirect spawned program's stderr to /dev/null
@@ -115,6 +117,7 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config);
 STREAM *STREAMSpawnCommand(const char *Command, const char *Config);
 
 // This creates a child process that we can talk to using a STREAM. The child process execs 'Command'. CmdS is the stream to the processes stdin, and PtyS is the stream to the pseudo terminal that the process sees as it's controlling terminal.
+// In adition to the usual command it takes ptystderr, which sends the processes stderr to PtyS
 int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **CmdS, STREAM **PtyS);
 
 //wait for a process connected on 'S' to exit. This will consume any further output

@@ -736,12 +736,15 @@ int ProcessApplyConfig(const char *Config)
             Flags |= PROC_CTRL_TTY;
         }
         else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
+        else if (strcasecmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"outnull")==0)
         {
             fd_remap_path(1, "/dev/null", O_WRONLY);
             fd_remap_path(2, "/dev/null", O_WRONLY);
         }
-        else if (strcasecmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
+        else if (strcasecmp(Name,"stdin")==0)  fd_remap(0, atoi(Value));
+        else if (strcasecmp(Name,"stdout")==0)  fd_remap(1, atoi(Value));
+        else if (strcasecmp(Name,"stderr")==0)  fd_remap(2, atoi(Value));
         else if (strcasecmp(Name,"jail")==0) Flags |= PROC_JAIL;
         else if (strcasecmp(Name,"trust")==0) Flags |= SPAWN_TRUST_COMMAND;
         else if (strcasecmp(Name,"noshell")==0) Flags |= SPAWN_NOSHELL;

@@ -400,7 +400,8 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
 {
     int pty, tty;
     int result=FALSE;
-    char *Tempstr=NULL, *Args=NULL;
+    char *Tempstr=NULL, *Args=NULL, *Token=NULL;
+		const char *ptr;
 
     *PtyS=NULL;
     *CmdS=NULL;
@@ -411,7 +412,18 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
         if (StrValid(Config)) Tempstr=CopyStr(Tempstr, Config);
         else Tempstr=CopyStr(Tempstr, "rw");
 
-        Args=FormatStr(Args, "%s setsid ctty=%d nosig", Tempstr, tty);
+        Args=FormatStr(Args, "%s setsid ctty=%d nosig ", Tempstr, tty);
+				ptr=GetToken(Config, "\\S", &Token, 0);
+				while (ptr)
+				{
+				if (strcmp(Token, "ptystderr")==0)
+				{
+						Tempstr=FormatStr(Tempstr, "stderr=%d", tty);
+						Args=CatStr(Args, Tempstr);
+				}
+				ptr=GetToken(ptr, "\\S", &Token, 0);
+				}	
+
         Tempstr=MCopyStr(Tempstr, "cmd:", Command, NULL);
         *CmdS=STREAMOpen(Tempstr, Args);
         if (*CmdS)
@@ -423,6 +435,7 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
     }
 
     Destroy(Tempstr);
+    Destroy(Token);
     Destroy(Args);
 
     return(result);

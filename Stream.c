@@ -1283,10 +1283,10 @@ void STREAMClose(STREAM *S)
 //this function is used by STREAMReadCharsToBuffer. It checks for/ waits for input
 static int STREAMReadCharsToBuffer_WaitForBytes(STREAM *S)
 {
-int WaitForBytes=TRUE;
-int read_result, val;
-fd_set selectset;
-struct timeval tv;
+    int WaitForBytes=TRUE;
+    int read_result, val;
+    fd_set selectset;
+    struct timeval tv;
 
     //if using SSL and already has bytes queued, don't do a wait on select
     if ( (S->State & SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
@@ -1300,10 +1300,10 @@ struct timeval tv;
     {
         FD_ZERO(&selectset);
         FD_SET(S->in_fd, &selectset);
-	//convert S->Timeout from centisecs number to a tv struct
+        //convert S->Timeout from centisecs number to a tv struct
         MillisecsToTV(S->Timeout * 10, &tv);
 
-	//okay, wait for somethign to happen
+        //okay, wait for somethign to happen
         val=select(S->in_fd+1,&selectset,NULL,NULL,&tv);
 
         switch (val)
@@ -1326,13 +1326,13 @@ struct timeval tv;
 
     }
 
-return(read_result);
+    return(read_result);
 }
 
 static int STREAMReadCharsToBuffer_UDP(STREAM *S, char *Buffer, int Len)
 {
-int bytes_read;
-char *Peer=NULL;
+    int bytes_read;
+    char *Peer=NULL;
 
     bytes_read=UDPRecv(S->in_fd,  Buffer, Len, &Peer, NULL);
     //if select said there was stuff to read, but there wasn't, then the socket must be closed
@@ -1347,18 +1347,18 @@ char *Peer=NULL;
 
 
 static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
-        {
-int bytes_read;
+{
+    int bytes_read;
 
-            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
-            bytes_read=read(S->in_fd, Buffer, Len);
+    if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
+    bytes_read=read(S->in_fd, Buffer, Len);
     //if select said there was stuff to read, but there wasn't, then the socket must be closed
     //sockets can return '0' when closed, so we normalize this to -1 here
     if (bytes_read < 1) bytes_read=-1;
-            if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
+    if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
 
-return(bytes_read);
-        }
+    return(bytes_read);
+}
 
 
 int STREAMReadCharsToBuffer(STREAM *S)
@@ -1417,8 +1417,8 @@ int STREAMReadCharsToBuffer(STREAM *S)
         val=S->BuffSize - S->InEnd;
         tmpBuff=SetStrLen(tmpBuff,val);
 
-	//OpenSSL can return 0 bytes, even if select said there was stuff to be read from the 
-	//socket, due to keepalives etc
+        //OpenSSL can return 0 bytes, even if select said there was stuff to be read from the
+        //socket, due to keepalives etc
         if (S->State & SS_SSL) bytes_read=OpenSSLSTREAMReadBytes(S, tmpBuff, val);
         else if (S->Type==STREAM_TYPE_UDP) bytes_read=STREAMReadCharsToBuffer_UDP(S, tmpBuff, val);
         else bytes_read=STREAMReadCharsToBuffer_Default(S, tmpBuff, val);
@@ -1428,7 +1428,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
             S->BytesRead+=bytes_read;
             read_result=1;
         }
-	else read_result=STREAM_CLOSED;
+        else read_result=STREAM_CLOSED;
     }
 
 //messing with this block tends to break STREAMSendFile

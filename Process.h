@@ -80,12 +80,16 @@ ctrl_tty        set controlling tty of process to be it's standard-in. Signals a
                 via the console the program is running on. So if your overall program is running on /dev/tty1, switch it to believe it's
                 tty is really whatever is on stdin
 
-ctty=<fd>       set controlling tty of process to be 'fd' (where fd is a file descriptor number). Same as ctrl_tty above, but using an
-                arbitary file descriptor rather than stdin.
+ctty=<fd>       set controlling tty of process to be 'fd' (where fd is a file descriptor number). 
+                Same as ctrl_tty above, but using an arbitary file descriptor rather than stdin.
 
 innull          redirect process stdin to /dev/null
 outnull         redirect process stdout and stderr to /dev/null
 errnull         redirect process stderr to /dev/null
+
+stdin=<fd>      redirect process stdin to file descriptor <fd>
+stdout=<fd>     redirect process stdout to file descriptor <fd>
+stderr=<fd>     redirect process stderr to file descriptor <fd>
 
 sigdef          set all signal handlers to the default values (throw away any sighandlers set by parent process)
 sigdefault      set all signal handlers to the default values (throw away any sighandlers set by parent process)
