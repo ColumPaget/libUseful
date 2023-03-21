@@ -1,10 +1,11 @@
-LIBS=../libUseful-4.a -lssl -lcrypto -lz
+LIBS=../libUseful.a -lssl -lcrypto -lz
 
 all:
 	gcc -oJSON.exe JSON.c $(LIBS)
 	gcc -oCMON.exe CMON.c $(LIBS)
 	gcc -oYAML.exe YAML.c $(LIBS)
 	gcc -oHash.exe Hash.c $(LIBS)
+	gcc -oHMAC.exe HMAC.c $(LIBS)
 	gcc -oTerminal.exe Terminal.c $(LIBS)
 	gcc -oTermBar.exe TermBar.c $(LIBS)
 	gcc -oVars.exe Vars.c $(LIBS)
@@ -17,5 +18,5 @@ all:
 	gcc -oErrors.exe Errors.c $(LIBS)
 	gcc -ossh-tunnel.exe ssh-tunnel.c $(LIBS)
 	gcc -oConfig.exe Config.c $(LIBS)
-	gcc -oSSLClient.exe SSLClient.c $(LIBS)
 	gcc -oStrLen.exe StrLen.c $(LIBS)
+	gcc -oSSLClient.exe SSLClient.c $(LIBS)

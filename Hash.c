@@ -9,8 +9,6 @@
 #include "HashWhirlpool.h"
 #include "HashOpenSSL.h"
 
-#define HMAC_BLOCKSIZE 64
-
 
 static ListNode *HashTypes=NULL;
 
@@ -19,102 +17,6 @@ int HashEncodingFromStr(const char *Str)
 {
     return(EncodingParse(Str));
 }
-
-
-void HMACUpdate(HASH *HMAC, const char *Data, int Len)
-{
-    HASH *Hash;
-
-    Hash=(HASH *) HMAC->Ctx;
-    Hash->Update(Hash,Data,Len);
-}
-
-
-
-int HMACFinish(HASH *HMAC, char **HashStr)
-{
-    HASH *Hash;
-    int len, result;
-
-
-    Hash=(HASH *) HMAC->Ctx;
-
-//We've done with this now, blank it and reuse for the inner result
-    HMAC->Key1=CopyStr(HMAC->Key1,"");
-    len=Hash->Finish(Hash,&HMAC->Key1);
-
-    HMAC->Key2=SetStrLen(HMAC->Key2,HMAC_BLOCKSIZE+len);
-    memcpy(HMAC->Key2+HMAC_BLOCKSIZE,HMAC->Key1,len);
-
-//Hash->Type
-    result=HashBytes(HashStr,Hash->Type,HMAC->Key2,HMAC_BLOCKSIZE+len,0);
-
-    return(result);
-}
-
-
-void HMACPrepare(HASH *HMAC, const char *Data, int Len)
-{
-    int i;
-    char *Key=NULL, *Tempstr=NULL;
-
-//Whatever we've been given as a key, we have to turn it into a
-//key of 'HMAC_BLOCKSIZE', either by hashing it to make it shorter
-//or by padding with NULLS
-    Key=SetStrLen(Key,HMAC_BLOCKSIZE);
-    memset(Key,0,HMAC_BLOCKSIZE);
-
-    if (Len > HMAC_BLOCKSIZE)
-    {
-        HMAC->Key1Len=HashBytes(&Tempstr,HMAC->Type,HMAC->Key1,HMAC->Key1Len,0);
-        memcpy(Key,Tempstr,HMAC->Key1Len);
-    }
-    else
-    {
-        memcpy(Key,HMAC->Key1,HMAC->Key1Len);
-    }
-
-    HMAC->Key1=SetStrLen(HMAC->Key1,HMAC_BLOCKSIZE);
-    HMAC->Key2=SetStrLen(HMAC->Key2,HMAC_BLOCKSIZE);
-    HMAC->Key1Len=HMAC_BLOCKSIZE;
-    HMAC->Key2Len=HMAC_BLOCKSIZE;
-
-    for (i=0; i < HMAC_BLOCKSIZE; i++)
-    {
-//inner key
-        HMAC->Key1[i]=Key[i] ^ 0x36;
-//outer key
-        HMAC->Key2[i]=Key[i] ^ 0x5c;
-    }
-
-
-//first thing to be hashed is the inner key, then data is 'concatted' onto it
-    HMACUpdate(HMAC, HMAC->Key1, HMAC->Key1Len);
-    HMACUpdate(HMAC, Data, Len);
-    HMAC->Update=HMACUpdate;
-
-    DestroyString(Tempstr);
-    DestroyString(Key);
-}
-
-
-void HMACInit(HASH *Hash)
-{
-    Hash->Ctx=(void *) HashInit(Hash->Type+5);
-
-    Hash->Update=HMACPrepare;
-    Hash->Finish=HMACFinish;
-}
-
-
-void HMACSetKey(HASH *HMAC, const char *Key, int Len)
-{
-    HMAC->Key1=SetStrLen(HMAC->Key1,Len);
-    memcpy(HMAC->Key1,Key,Len);
-    HMAC->Key1Len=Len;
-}
-
-
 
 
 
@@ -137,9 +39,6 @@ void HashRegisterAll()
     HashRegisterWhirlpool();
     HashRegisterOpenSSL();
 }
-
-
-
 
 
 
