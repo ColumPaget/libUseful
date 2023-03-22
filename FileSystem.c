@@ -569,7 +569,7 @@ int FileSystemCopyDir(const char *Src, const char *Dest)
     const char *ptr;
     struct stat Stat;
     char *Tempstr=NULL, *Path=NULL;
-    int i, RetVal=FALSE;
+    int i, result, RetVal=FALSE;
 
     Tempstr=MCopyStr(Tempstr, Dest, "/", NULL);
     MakeDirPath(Tempstr, 0777);
@@ -591,8 +591,9 @@ int FileSystemCopyDir(const char *Src, const char *Dest)
                 if (S_ISLNK(Stat.st_mode))
                 {
                     Tempstr=SetStrLen(Tempstr, PATH_MAX);
-                    readlink(ptr, Tempstr, PATH_MAX);
-                    symlink(Path, Tempstr);
+                    result=readlink(ptr, Tempstr, PATH_MAX);
+		    StrTrunc(Tempstr, result);
+                    result=symlink(Path, Tempstr);
                 }
                 else if (S_ISDIR(Stat.st_mode))
                 {

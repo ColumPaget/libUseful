@@ -351,6 +351,7 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
     FILE *F;
 
     Tempstr=SetStrLen(Tempstr, 255);
+//TODO: why use fopen?
     F=fopen("/proc/net/arp","r");
     if (F)
     {

@@ -18,7 +18,7 @@ void HMACPrepare(HASH *HMAC, const char *Data, int Len);
 HASH *HMACInit(const char *Type);
 void HMACSetKey(HASH *HMAC, const char *Key, int Len);
 void HMACDestroy(void *p_HMAC);
-int HMACBytes(char **RetStr, const char *Type, const char *Key, int KeyLen, int Data, int DataLen, int Encoding);
+int HMACBytes(char **RetStr, const char *Type, const char *Key, int KeyLen, const char *Data, int DataLen, int Encoding);
 
 
 #ifdef __cplusplus

@@ -17,7 +17,7 @@ return(128);
 }
 
 
-void HMACUpdate(HASH *HMAC, const char *Data, int Len)
+void HMACUpdateBytes(HASH *HMAC, const char *Data, int Len)
 {
     HASH *Hash;
 
@@ -87,8 +87,8 @@ void HMACPrepare(HASH *HMAC, const char *Data, int Len)
 
 
 //first thing to be hashed is the inner key, then data is 'concatted' onto it
-    HMACUpdate(HMAC, HMAC->Key1, HMAC->Key1Len);
-    HMACUpdate(HMAC, Data, Len);
+    HMACUpdateBytes(HMAC, HMAC->Key1, HMAC->Key1Len);
+    HMACUpdateBytes(HMAC, Data, Len);
     HMAC->Update=HMACUpdate;
 
     DestroyString(Tempstr);
@@ -128,7 +128,7 @@ HashDestroy(HMAC);
 }
 
 
-int HMACBytes(char **RetStr, const char *Type, const char *Key, int KeyLen, int Data, int DataLen, int Encoding)
+int HMACBytes(char **RetStr, const char *Type, const char *Key, int KeyLen, const char *Data, int DataLen, int Encoding)
 {
 HASH *Hash;
 char *Tempstr=NULL;

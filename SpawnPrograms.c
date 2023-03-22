@@ -183,29 +183,33 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     //default these to stdin, stdout and stderr and then override those later
     int c1=0, c2=1, c3=2;
     int channel1[2], channel2[2], channel3[2], DevNull=-1;
+    int result;
     int Flags=0;
 
 
     Flags=SpawnParseConfig(Config);
     if (infd)
     {
-        pipe(channel1);
+        result=pipe(channel1);
         //this is a read channel, so pipe[0]
-        c1=channel1[0];
+        if (result==0) c1=channel1[0];
+	else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for stdin");
     }
 
     if (outfd)
     {
-        pipe(channel2);
+        result=pipe(channel2);
         //this is a write channel, so pipe[1]
-        c2=channel2[1];
+        if (result==0) c2=channel2[1];
+	else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for stdout");
     }
 
     if (errfd)
     {
-        pipe(channel3);
+        result=pipe(channel3);
         //this is a write channel, so pipe[1]
-        c3=channel3[1];
+        if (result==0) c3=channel3[1];
+	else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for stderr");
     }
     else if (Flags & SPAWN_COMBINE_STDERR) c3=c2;
 

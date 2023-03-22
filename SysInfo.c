@@ -41,6 +41,7 @@ const char *OSSysInfoString(int Info)
     struct passwd *pw;
     const char *ptr;
     static char *buf=NULL;
+    int result;
 
     uname(&UtsInfo);
 
@@ -60,13 +61,15 @@ const char *OSSysInfoString(int Info)
 
     case OSINFO_HOSTNAME:
         buf=SetStrLen(buf, HOST_NAME_MAX);
-        gethostname(buf, HOST_NAME_MAX);
+        result=gethostname(buf, HOST_NAME_MAX);
+	StrTrunc(buf, result);
         return(buf);
         break;
 
     case OSINFO_DOMAINNAME:
         buf=SetStrLen(buf, HOST_NAME_MAX);
-        getdomainname(buf, HOST_NAME_MAX);
+        result=getdomainname(buf, HOST_NAME_MAX);
+	StrTrunc(buf, result);
         return(buf);
         break;
 

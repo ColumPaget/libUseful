@@ -857,7 +857,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     {
         if (Flags & SF_TRUNC)
         {
-            ftruncate(fd,0);
+            if (ftruncate(fd,0) != 0) RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "cannot ftruncate %s", p_Path);
             STREAMSetValue(Stream, "FileSize", "0");
         }
         if (Flags & STREAM_APPEND) lseek(fd,0,SEEK_END);
@@ -1171,7 +1171,7 @@ void STREAMDestroy(void *p_S)
 
 void STREAMTruncate(STREAM *S, long size)
 {
-    ftruncate(S->out_fd, size);
+    if (ftruncate(S->out_fd, size) != 0) RaiseError(ERRFLAG_ERRNO, "STREAMTruncate", "cannot ftruncate %s", S->Path);
 }
 
 

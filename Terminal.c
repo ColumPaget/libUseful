@@ -746,12 +746,13 @@ void TerminalPutChar(int Char, STREAM *S)
 {
     char *Tempstr=NULL;
     char towrite;
+    int result;
 
     if (Char <= 0x7f)
     {
         towrite=Char;
         if (S) STREAMWriteChar(S, towrite);
-        else write(1, &towrite, 1);
+        else result=write(1, &towrite, 1);
     }
     else
     {
@@ -759,7 +760,7 @@ void TerminalPutChar(int Char, STREAM *S)
 
         //do not use StrLenFromCache here, as string will be short
         if (S) STREAMWriteLine(Tempstr, S);
-        else write(1,Tempstr,StrLen(Tempstr));
+        else result=write(1,Tempstr,StrLen(Tempstr));
     }
 
     Destroy(Tempstr);
@@ -771,13 +772,13 @@ void TerminalPutChar(int Char, STREAM *S)
 void TerminalPutStr(const char *Str, STREAM *S)
 {
     char *Tempstr=NULL;
-    int len;
+    int len, result;
 
     Tempstr=TerminalFormatStr(Tempstr, Str, S);
     //this could be a long-ish string, so we do use StrLenFromCache
     len=StrLenFromCache(Tempstr);
     if (S) STREAMWriteBytes(S, Tempstr, len);
-    else write(1,Tempstr,len);
+    else result=write(1,Tempstr,len);
 
     Destroy(Tempstr);
 }

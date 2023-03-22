@@ -216,7 +216,7 @@ int CreateLockFile(const char *FilePath, int Timeout)
 int WritePidFile(const char *ProgName)
 {
     char *Tempstr=NULL;
-    int fd;
+    int fd, len;
 
 
     if (*ProgName=='/') Tempstr=CopyStr(Tempstr, ProgName);
@@ -228,9 +228,10 @@ int WritePidFile(const char *ProgName)
         fchmod(fd,0644);
         if (flock(fd,LOCK_EX|LOCK_NB) ==0)
         {
-            ftruncate(fd,0);
+            if (ftruncate(fd,0) !=0) RaiseError(ERRFLAG_ERRNO, "WritePidFile", "Failed to truncate pid file %s.",Tempstr);
             Tempstr=FormatStr(Tempstr,"%d\n",getpid());
-            write(fd,Tempstr,StrLen(Tempstr));
+	    len=StrLen(Tempstr);
+            if (write(fd,Tempstr,len) != len) RaiseError(ERRFLAG_ERRNO, "WritePidFile", "Failed to write to pidfile.");
         }
         else
         {
@@ -410,7 +411,7 @@ void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
 
     mkdir(Tempstr,0755);
     if (Flags & PROC_ISOCUBE)	FileSystemMount("",Tempstr,"tmpfs","");
-    chdir(Tempstr);
+	if (chdir(Tempstr) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerFilesys", "failed to chdir to %s", Tempstr);
 
     //always make a tmp directory
     mkdir("tmp",0777);
@@ -432,7 +433,7 @@ void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
     ptr=GetToken(Links,",",&Value,GETTOKEN_QUOTES);
     while (ptr)
     {
-        link(Value,GetBasename(Value));
+        if (link(Value,GetBasename(Value)) !=0) 
         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
     }
 
@@ -442,7 +443,7 @@ void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
         tptr=Value;
         if (*tptr=='/') tptr++;
         MakeDirPath(tptr,0755);
-        link(Value, tptr);
+        if (link(Value, tptr) != 0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerFilesys", "Failed to link Value tptr.");
         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
     }
 
@@ -476,7 +477,7 @@ void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
 
 void ProcessContainerNamespace(const char *Namespace, const char *HostName, int Flags)
 {
-    int val;
+    int val, result;
 
 #ifdef CLONE_NEWNET
     if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWNET);
@@ -497,8 +498,9 @@ void ProcessContainerNamespace(const char *Namespace, const char *HostName, int 
         {
             unshare(CLONE_NEWUTS);
             val=StrLen(HostName);
-            if (val != 0) sethostname(HostName, val);
-            else sethostname("container", 9);
+            if (val != 0) result=sethostname(HostName, val);
+            else result=sethostname("container", 9);
+		if (result != 0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerNamespace", "Failed to sethostname for container.");
         }
 #endif
 
@@ -619,7 +621,10 @@ int ProcessContainer(const char *Config)
             mkdir("proc",0755);
             FileSystemMount("","proc","proc","");
 
-            if (StrValid(SetupScript)) system(SetupScript);
+            if (StrValid(SetupScript)) 
+	    {
+		if (system(SetupScript) < 1) RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to exec %s", SetupScript);
+	    }
 
 
 #ifdef HAVE_UNSHARE
@@ -645,7 +650,7 @@ int ProcessContainer(const char *Config)
 
             if (chroot(".") == -1)
             {
-                RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+                RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to chroot to curr directory");
                 result=FALSE;
             }
 
@@ -655,7 +660,10 @@ int ProcessContainer(const char *Config)
                 LibUsefulSetupAtExit();
                 LibUsefulFlags |= LU_CONTAINER;
 
-                if (StrValid(Dir)) chdir(Dir);
+                if (StrValid(Dir)) 
+		{
+		if (chdir(Dir) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to chdir to %s", Dir);
+		}
             }
         }
         //we no longer need the parent thread, as the child thread, now completely in the CLONE_NEWPID jail, is our new thread
@@ -834,7 +842,10 @@ int ProcessApplyConfig(const char *Config)
             else if (strcasecmp(Name,"Group")==0) gid=LookupGID(Value);
             else if (strcasecmp(Name,"UID")==0) uid=atoi(Value);
             else if (strcasecmp(Name,"GID")==0) gid=atoi(Value);
-            else if (strcasecmp(Name,"Dir")==0) chdir(Value);
+            else if (strcasecmp(Name,"Dir")==0) 
+	    {
+		if (chdir(Value) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chdir to %s", Value);
+	    }
 
             else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
             else if (strcasecmp(Name,"LockFile")==0)

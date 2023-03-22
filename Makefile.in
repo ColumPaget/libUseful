@@ -144,9 +144,11 @@ HashWhirlpool.o: HashWhirlpool.h HashWhirlpool.c
 HashOpenSSL.o: HashOpenSSL.h HashOpenSSL.c
 	$(CC) $(FLAGS) -c HashOpenSSL.c
 
-
 Hash.o: Hash.h Hash.c
 	$(CC) $(FLAGS) -c Hash.c
+
+HMAC.o: HMAC.h HMAC.c
+	$(CC) $(FLAGS) -c HMAC.c
 
 Ssh.o: Ssh.h Ssh.c
 	$(CC) $(FLAGS) -c Ssh.c
