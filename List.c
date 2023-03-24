@@ -41,9 +41,15 @@ ListNode *ListInit(int Flags)
     return(Node);
 }
 
-ListNode *MapCreate(int Buckets, int Flags)
+
+//A map is an array of lists (or 'chains')
+//it can have up to 65534 chains
+//the flag LIST_FLAG_MAP_HEAD is used to indicate the top level item
+//which holds the chains as an array in it's ->Item member.
+//the flag LIST_FLAG_CHAIN_HEAD is used to indicate the first item (head) of a chain
+ListNode *MapCreate(int NoOfChains, int Flags)
 {
-    ListNode *Node, *SubNode;
+    ListNode *Node, *Chains, *SubNode;
     int i;
 
 //clear map flags out
@@ -51,18 +57,22 @@ ListNode *MapCreate(int Buckets, int Flags)
 
     Node=ListCreate();
     Node->Flags |= LIST_FLAG_MAP_HEAD | Flags;
-    Node->ItemType=Buckets;
+
+    if (NoOfChains > 65534) NoOfChains=65534;
+    Node->ItemType=NoOfChains;
 
     //we allocate one more than we will use, so the last one acts as a terminator
-    Node->Item=calloc(Buckets+1, sizeof(ListNode));
-    SubNode=(ListNode *) Node->Item;
-    for (i=0; i < Buckets; i++)
+    Chains=(ListNode *) calloc(NoOfChains+1, sizeof(ListNode));
+    Node->Item=Chains;
+     
+    for (i=0; i < NoOfChains; i++)
     {
+	SubNode=Chains+i;
+	SubNode->ItemType=i;
         SubNode->Head=Node;
         SubNode->Prev=SubNode;
         SubNode->Flags |= LIST_FLAG_MAP_CHAIN | Flags;
         SubNode->Stats=(ListStats *) calloc(1,sizeof(ListStats));
-        SubNode++;
     }
 
     return(Node);
@@ -110,7 +120,8 @@ ListNode *MapGetNthChain(ListNode *Map, int n)
 {
     ListNode *Node;
 
-    if (Map->Flags & LIST_FLAG_MAP_HEAD)
+    while (Map && Map->Head && (! (Map->Flags & LIST_FLAG_MAP_HEAD))) Map=Map->Head;
+    if (Map && (Map->Flags & LIST_FLAG_MAP_HEAD))
     {
         Node=(ListNode *) Map->Item;
         return(Node + n);
@@ -568,19 +579,24 @@ ListNode *MapChainGetNext(ListNode *CurrItem)
 
 ListNode *MapGetNext(ListNode *CurrItem)
 {
-    ListNode *SubNode, *Head;
+    ListNode *SubNode, *ChainHead;
 
     if (! CurrItem) return(NULL);
     SubNode=MapChainGetNext(CurrItem);
     if (SubNode) return(SubNode);
 
-//'Head' here points to a BUCKET HEADER. These are marked with this flag, except the last one
-//so we know when we've reached the end
-    Head=ListGetHead(CurrItem);
-    while (Head && (Head->Flags & LIST_FLAG_MAP_CHAIN))
+    //if the CurrItem is a MAP_HEAD, the very top of a map, then ChainHead is the
+    //first chain in it's collection of chains, held in '->Item'
+    if (CurrItem->Flags & LIST_FLAG_MAP_HEAD) ChainHead=(ListNode *) CurrItem->Item;
+    //if the CurrItem is the head of a chain, then it's the chain head
+    else if (CurrItem->Flags & LIST_FLAG_MAP_CHAIN) ChainHead=CurrItem;
+    //otherwise get the chain head
+    else ChainHead=ListGetHead(CurrItem);
+
+    while (ChainHead && (ChainHead->Flags & LIST_FLAG_MAP_CHAIN))
     {
-        Head++;
-        if (Head->Next) return(Head->Next);
+	ChainHead=MapGetNthChain(ChainHead->Head, ChainHead->ItemType +1);
+        if (ChainHead->Next) return(ChainHead->Next);
     }
 
     return(NULL);
