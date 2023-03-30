@@ -3635,6 +3635,8 @@ done
 # Check whether --enable-sendfile was given.
 if test "${enable_sendfile+set}" = set; then :
   enableval=$enable_sendfile; cf_use_sendfile=$enableval
+else
+  cf_use_sendfile=auto
 fi
 
 
@@ -3682,10 +3684,12 @@ fi
 # Check whether --enable-ip6 was given.
 if test "${enable_ip6+set}" = set; then :
   enableval=$enable_ip6; cf_use_ip6=$enableval
+else
+  cf_use_ip6=yes
 fi
 
 
-if test "$cf_use_ip6" = "yes"
+if test "$cf_use_ip6" != "yes"
 then
 $as_echo "#define USE_INET6 1" >>confdefs.h
 
@@ -3695,6 +3699,8 @@ fi
 # Check whether --enable-xattr was given.
 if test "${enable_xattr+set}" = set; then :
   enableval=$enable_xattr; cf_use_xattr=$enableval
+else
+  cf_use_xattr=yes
 fi
 
 
@@ -3757,6 +3763,8 @@ fi
 # Check whether --enable-namespaces was given.
 if test "${enable_namespaces+set}" = set; then :
   enableval=$enable_namespaces; cf_use_namespaces=$enableval
+else
+  cf_use_namespaces=yes
 fi
 
 
@@ -3871,6 +3879,8 @@ fi
 # Check whether --enable-zlib was given.
 if test "${enable_zlib+set}" = set; then :
   enableval=$enable_zlib; cf_use_zlib=$enableval
+else
+  cf_use_zlib=yes
 fi
 
 
@@ -3928,6 +3938,8 @@ fi
 # Check whether --enable-ssl was given.
 if test "${enable_ssl+set}" = set; then :
   enableval=$enable_ssl; cf_use_ssl=$enableval
+else
+  cf_use_ssl=yes
 fi
 
 
@@ -4258,6 +4270,8 @@ cf_have_capabilities=no
 # Check whether --enable-capabilities was given.
 if test "${enable_capabilities+set}" = set; then :
   enableval=$enable_capabilities; cf_use_capabilities=$enableval
+else
+  cf_use_capabilities=yes
 fi
 
 

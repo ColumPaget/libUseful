@@ -29,7 +29,7 @@ fi
 AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy)
 
 
-AC_ARG_ENABLE(sendfile, [  --enable-sendfile       enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval )
+AC_ARG_ENABLE(sendfile, [  --enable-sendfile       enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval, cf_use_sendfile=auto )
 
 if test "$cf_use_sendfile" != "no"
 then
@@ -43,15 +43,15 @@ fi
 
 
 
-AC_ARG_ENABLE(ip6, [  --enable-ip6       enable IPv6 support], cf_use_ip6=$enableval )
+AC_ARG_ENABLE(ip6, [  --enable-ip6       enable IPv6 support], cf_use_ip6=$enableval, cf_use_ip6=yes )
 
-if test "$cf_use_ip6" = "yes"
+if test "$cf_use_ip6" != "yes"
 then
 AC_DEFINE([USE_INET6],1)
 fi
 
 
-AC_ARG_ENABLE(xattr, [  --enable-xattr       enable filesystem xattr support], cf_use_xattr=$enableval )
+AC_ARG_ENABLE(xattr, [  --enable-xattr       enable filesystem xattr support], cf_use_xattr=$enableval, cf_use_xattr=yes )
 
 if test "$cf_use_xattr" = "yes"
 then
@@ -64,7 +64,7 @@ fi
 fi
 
 
-AC_ARG_ENABLE(namespaces, [  --enable-namespaces       enable linux namespace support], cf_use_namespaces=$enableval )
+AC_ARG_ENABLE(namespaces, [  --enable-namespaces       enable linux namespace support], cf_use_namespaces=$enableval, cf_use_namespaces=yes )
 
 if test "$cf_use_namespaces" = "yes"
 then
@@ -84,7 +84,7 @@ then
 fi
 
 
-AC_ARG_ENABLE(zlib, [  --enable-zlib       use ZLib Compression], cf_use_zlib=$enableval)
+AC_ARG_ENABLE(zlib, [  --enable-zlib       use ZLib Compression], cf_use_zlib=$enableval, cf_use_zlib=yes)
 
 if test "$cf_use_zlib" = "yes" -o "$cf_use_ssl" = "yes"
 then
@@ -93,7 +93,7 @@ cf_have_libz=$ac_cv_lib_z_deflate
 fi
 
 
-AC_ARG_ENABLE(ssl, [  --enable-ssl       use Secure Sockets Layer], cf_use_ssl=$enableval )
+AC_ARG_ENABLE(ssl, [  --enable-ssl       use Secure Sockets Layer], cf_use_ssl=$enableval, cf_use_ssl=yes )
 
 if test "$cf_use_ssl" = "yes"
 then
@@ -174,7 +174,7 @@ esac
 
 
 cf_have_capabilities=no
-AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval )
+AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval, cf_use_capabilities=yes )
 
 if test "$cf_use_capabilities" = "yes"
 then
