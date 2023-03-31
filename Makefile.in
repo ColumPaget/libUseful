@@ -222,7 +222,7 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f *.o *.so *.a
+	-rm -f *.o *.so *.a *.orig
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 

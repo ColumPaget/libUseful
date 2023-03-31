@@ -64,11 +64,11 @@ ListNode *MapCreate(int NoOfChains, int Flags)
     //we allocate one more than we will use, so the last one acts as a terminator
     Chains=(ListNode *) calloc(NoOfChains+1, sizeof(ListNode));
     Node->Item=Chains;
-     
+
     for (i=0; i < NoOfChains; i++)
     {
-	SubNode=Chains+i;
-	SubNode->ItemType=i;
+        SubNode=Chains+i;
+        SubNode->ItemType=i;
         SubNode->Head=Node;
         SubNode->Prev=SubNode;
         SubNode->Flags |= LIST_FLAG_MAP_CHAIN | Flags;
@@ -595,7 +595,7 @@ ListNode *MapGetNext(ListNode *CurrItem)
 
     while (ChainHead && (ChainHead->Flags & LIST_FLAG_MAP_CHAIN))
     {
-	ChainHead=MapGetNthChain(ChainHead->Head, ChainHead->ItemType +1);
+        ChainHead=MapGetNthChain(ChainHead->Head, ChainHead->ItemType +1);
         if (ChainHead->Next) return(ChainHead->Next);
     }
 

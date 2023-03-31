@@ -95,7 +95,7 @@ char *CommaList(char *RetStr, const char *AddStr)
 //remap one fd to another, usually used to change stdin, stdout or stderr
 int fd_remap(int fd, int newfd)
 {
-int result;
+    int result;
 
     close(fd);
     result=dup(newfd);

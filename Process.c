@@ -230,7 +230,7 @@ int WritePidFile(const char *ProgName)
         {
             if (ftruncate(fd,0) !=0) RaiseError(ERRFLAG_ERRNO, "WritePidFile", "Failed to truncate pid file %s.",Tempstr);
             Tempstr=FormatStr(Tempstr,"%d\n",getpid());
-	    len=StrLen(Tempstr);
+            len=StrLen(Tempstr);
             if (write(fd,Tempstr,len) != len) RaiseError(ERRFLAG_ERRNO, "WritePidFile", "Failed to write to pidfile.");
         }
         else
@@ -411,7 +411,7 @@ void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
 
     mkdir(Tempstr,0755);
     if (Flags & PROC_ISOCUBE)	FileSystemMount("",Tempstr,"tmpfs","");
-	if (chdir(Tempstr) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerFilesys", "failed to chdir to %s", Tempstr);
+    if (chdir(Tempstr) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerFilesys", "failed to chdir to %s", Tempstr);
 
     //always make a tmp directory
     mkdir("tmp",0777);
@@ -433,8 +433,8 @@ void ProcessContainerFilesys(const char *Config, const char *Dir, int Flags)
     ptr=GetToken(Links,",",&Value,GETTOKEN_QUOTES);
     while (ptr)
     {
-        if (link(Value,GetBasename(Value)) !=0) 
-        ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
+        if (link(Value,GetBasename(Value)) !=0)
+            ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
     }
 
     ptr=GetToken(PLinks,",",&Value,GETTOKEN_QUOTES);
@@ -500,7 +500,7 @@ void ProcessContainerNamespace(const char *Namespace, const char *HostName, int 
             val=StrLen(HostName);
             if (val != 0) result=sethostname(HostName, val);
             else result=sethostname("container", 9);
-		if (result != 0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerNamespace", "Failed to sethostname for container.");
+            if (result != 0) RaiseError(ERRFLAG_ERRNO, "ProcessContainerNamespace", "Failed to sethostname for container.");
         }
 #endif
 
@@ -621,10 +621,10 @@ int ProcessContainer(const char *Config)
             mkdir("proc",0755);
             FileSystemMount("","proc","proc","");
 
-            if (StrValid(SetupScript)) 
-	    {
-		if (system(SetupScript) < 1) RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to exec %s", SetupScript);
-	    }
+            if (StrValid(SetupScript))
+            {
+                if (system(SetupScript) < 1) RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to exec %s", SetupScript);
+            }
 
 
 #ifdef HAVE_UNSHARE
@@ -660,10 +660,10 @@ int ProcessContainer(const char *Config)
                 LibUsefulSetupAtExit();
                 LibUsefulFlags |= LU_CONTAINER;
 
-                if (StrValid(Dir)) 
-		{
-		if (chdir(Dir) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to chdir to %s", Dir);
-		}
+                if (StrValid(Dir))
+                {
+                    if (chdir(Dir) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessContainer", "failed to chdir to %s", Dir);
+                }
             }
         }
         //we no longer need the parent thread, as the child thread, now completely in the CLONE_NEWPID jail, is our new thread
@@ -707,29 +707,31 @@ static int ProcessResistPtrace()
 }
 
 
-int ProcessApplyConfig(const char *Config)
+
+
+int ProcessApplyEarlyConfig(const char *Config)
 {
-    char *Chroot=NULL;
-    char *Name=NULL, *Value=NULL, *Capabilities=NULL;
-    const char *ptr=NULL;
-    int Flags=0, i;
-    long uid=0, gid=0;
-    int lockfd, ctty_fd=0;
+    char *Name=NULL, *Value=NULL;
+    const char *ptr;
+    int Flags=0;
 
     ptr=Config;
     while (isspace(*ptr)) ptr++;
-    ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
+    ptr=GetNameValuePair(ptr,"\\S", "=", &Name, &Value);
     while (ptr)
     {
-
         if (strcasecmp(Name,"nice")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"prio")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"priority")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"openlog")==0) openlog(Value, LOG_PID, LOG_USER);
         else if (strcasecmp(Name,"chroot")==0)
         {
-            Chroot=CopyStr(Chroot, Value);
-            if (! StrValid(Chroot)) Chroot=CopyStr(Chroot,".");
+            Flags |= PROC_CHROOT;
+            if ( StrValid(Value) && (chdir(Value) !=0 ) )
+            {
+                Flags |= PROC_SETUP_FAIL;;
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chroot to directory %s", Value);
+            }
         }
         else if (strcasecmp(Name,"sigdef")==0) Flags |= PROC_SIGDEF;
         else if (strcasecmp(Name,"sigdefault")==0) Flags |= PROC_SIGDEF;
@@ -738,11 +740,6 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"daemon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
-        else if (strcasecmp(Name,"ctty")==0)
-        {
-            ctty_fd=atoi(Value);
-            Flags |= PROC_CTRL_TTY;
-        }
         else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"outnull")==0)
@@ -764,8 +761,6 @@ int ProcessApplyConfig(const char *Config)
         else if (strcasecmp(Name,"-net")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"ns")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
-        else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
-        else if (strcasecmp(Name,"caps")==0) Capabilities=CopyStr(Capabilities, Value);
         else if (strcasecmp(Name,"mlock")==0)
         {
             LibUsefulFlags |= LU_MLOCKALL;
@@ -793,6 +788,121 @@ int ProcessApplyConfig(const char *Config)
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
 
+    Destroy(Name);
+    Destroy(Value);
+
+    return(Flags);
+}
+
+
+//Apply config changes that are relevant AFTER chroot/daemonize
+int ProcessApplyLateConfig(int Flags, const char *Config)
+{
+    char *Name=NULL, *Value=NULL, *Capabilities=NULL;
+    const char *ptr;
+    long uid=0, gid=0;
+    int lockfd, ctty_fd=0;
+
+//these are things that, if we've Chroot-ed, happen *within* the Chroot. But not within a Jail.
+    ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
+    while (ptr)
+    {
+        if (strcasecmp(Name,"User")==0) uid=LookupUID(Value);
+        else if (strcasecmp(Name,"Group")==0) gid=LookupGID(Value);
+        else if (strcasecmp(Name,"UID")==0) uid=atoi(Value);
+        else if (strcasecmp(Name,"GID")==0) gid=atoi(Value);
+        else if ( (strcasecmp(Name,"Dir")==0) || (strcasecmp(Name, "chdir")==0) )
+        {
+            if (chdir(Value) !=0)
+            {
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chdir to %s", Value);
+                Flags |= PROC_SETUP_FAIL;
+            }
+        }
+
+        else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
+        else if (strcasecmp(Name,"LockFile")==0)
+        {
+            lockfd=CreateLockFile(Value, 0);
+            if (lockfd==-1) _exit(1);
+        }
+        else if (strcasecmp(Name,"LockStdin")==0)
+        {
+            close(0);
+            lockfd=CreateLockFile(Value, 0);
+            if (lockfd==-1) _exit(1);
+        }
+        else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
+        else if (strcasecmp(Name,"ctty")==0)
+        {
+            ctty_fd=atoi(Value);
+            Flags |= PROC_CTRL_TTY;
+            ProcessSetControlTTY(ctty_fd);
+        }
+
+        ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
+    }
+
+    if (Flags & PROC_CONTAINER)
+    {
+        if (! ProcessContainer(Config)) Flags |= PROC_SETUP_FAIL;
+    }
+
+
+//Always do group first, otherwise we'll lose ability to switch user/group
+    if (gid > 0) SwitchGID(gid);
+    if (uid > 0) SwitchUID(uid);
+
+    if (LibUsefulFlags & LU_RESIST_PTRACE)
+    {
+        // do this again, and switching uid or gid can reset this
+        if (! ProcessResistPtrace())
+        {
+            RaiseError(0, "ProcessApplyConfig", "failed to activate ptrace resistance");
+            exit(1);
+        }
+    }
+
+//Must do this last! After parsing Config, and also after functions like
+//SwitchUser that will need access to /etc/passwd
+    if (Flags & PROC_JAIL)
+    {
+        if (chroot(".") == -1)
+        {
+            RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot to curr directory");
+            Flags |= PROC_SETUP_FAIL;
+        }
+    }
+
+    if (StrValid(Capabilities))
+    {
+        ProcessSetCapabilities(Capabilities);
+
+//does this belong inside ProcessSetCapabilties?
+#ifdef PR_SET_NO_NEW_PRIVS
+#include <sys/prctl.h>
+        prctl(PR_SET_NO_NEW_PRIVS, 0, 0, 0, 0);
+#endif
+
+    }
+
+    Destroy(Name);
+    Destroy(Value);
+    Destroy(Capabilities);
+}
+
+
+
+
+int ProcessApplyConfig(const char *Config)
+{
+    int Flags=0, i;
+
+//do all things that we can do 'early' (i.e. before chroot and demonize)
+    Flags=ProcessApplyEarlyConfig(Config);
+
+    if (Flags & PROC_SETUP_FAIL) return(Flags);
+
     if (LibUsefulFlags & LU_RESIST_PTRACE) ProcessResistPtrace();
 
 //set all signal handlers to default
@@ -800,6 +910,7 @@ int ProcessApplyConfig(const char *Config)
     {
         for (i =0; i < NSIG; i++) signal(i,SIG_DFL);
     }
+
 
 //if we're to run as a daemon service, then do so
 //which will mean a new group, new sid and closing our tty.
@@ -809,106 +920,23 @@ int ProcessApplyConfig(const char *Config)
     {
         if (Flags & PROC_SETSID) setsid();
         if (Flags & PROC_NEWPGROUP) setpgid(0, 0);
-        if (Flags & PROC_CTRL_TTY) ProcessSetControlTTY(ctty_fd);
     }
-
 
 
 // This allows us to chroot into a whole different unix directory tree, with its own
 // password file etc
-    if (StrValid(Chroot))
+    if (Flags & PROC_CHROOT)
     {
-        if (chdir(Chroot) != 0)
+        if (chroot(".") == -1)
         {
-            RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chdir to directory");
-            Flags |= PROC_SETUP_FAIL;
-        }
-        else if (chroot(".") == -1)
-        {
-            RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
+            RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot");
             Flags |= PROC_SETUP_FAIL;
         }
     }
 
 
-
-    if (! (Flags & PROC_SETUP_FAIL))
-    {
-//these are things that, if we've Chroot-ed, happen *within* the Chroot. But not within a Jail.
-        ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
-        while (ptr)
-        {
-            if (strcasecmp(Name,"User")==0) uid=LookupUID(Value);
-            else if (strcasecmp(Name,"Group")==0) gid=LookupGID(Value);
-            else if (strcasecmp(Name,"UID")==0) uid=atoi(Value);
-            else if (strcasecmp(Name,"GID")==0) gid=atoi(Value);
-            else if (strcasecmp(Name,"Dir")==0) 
-	    {
-		if (chdir(Value) !=0) RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chdir to %s", Value);
-	    }
-
-            else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
-            else if (strcasecmp(Name,"LockFile")==0)
-            {
-                lockfd=CreateLockFile(Value, 0);
-                if (lockfd==-1) _exit(1);
-            }
-            else if (strcasecmp(Name,"LockStdin")==0)
-            {
-                close(0);
-                lockfd=CreateLockFile(Value, 0);
-                if (lockfd==-1) _exit(1);
-            }
-            ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
-        }
-
-        if (Flags & PROC_CONTAINER)
-        {
-            if (! ProcessContainer(Config)) Flags |= PROC_SETUP_FAIL;
-        }
-
-
-//Always do group first, otherwise we'll lose ability to switch user/group
-        if (gid > 0) SwitchGID(gid);
-        if (uid > 0) SwitchUID(uid);
-
-        if (LibUsefulFlags & LU_RESIST_PTRACE)
-        {
-            // do this again, and switching uid or gid can reset this
-            if (! ProcessResistPtrace())
-            {
-                RaiseError(0, "resist_ptrace", "failed to activate ptrace resistance");
-                exit(1);
-            }
-        }
-
-//Must do this last! After parsing Config, and also after functions like
-//SwitchUser that will need access to /etc/passwd
-        if (Flags & PROC_JAIL)
-        {
-            if (chroot(".") == -1)
-            {
-                RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
-                Flags |= PROC_SETUP_FAIL;
-            }
-        }
-
-        if (StrValid(Capabilities))
-        {
-            ProcessSetCapabilities(Capabilities);
-
-#ifdef PR_SET_NO_NEW_PRIVS
-#include <sys/prctl.h>
-            prctl(PR_SET_NO_NEW_PRIVS, 0, 0, 0, 0);
-#endif
-
-        }
-    }
-
-    Destroy(Value);
-    Destroy(Name);
-    Destroy(Chroot);
-    Destroy(Capabilities);
+    //Apply config changes that are relevant AFTER chroot/daemonize
+    if (! (Flags & PROC_SETUP_FAIL)) Flags=ProcessApplyLateConfig(Flags, Config);
 
     return(Flags);
 }

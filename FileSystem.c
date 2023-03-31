@@ -592,7 +592,7 @@ int FileSystemCopyDir(const char *Src, const char *Dest)
                 {
                     Tempstr=SetStrLen(Tempstr, PATH_MAX);
                     result=readlink(ptr, Tempstr, PATH_MAX);
-		    StrTrunc(Tempstr, result);
+                    StrTrunc(Tempstr, result);
                     result=symlink(Path, Tempstr);
                 }
                 else if (S_ISDIR(Stat.st_mode))
