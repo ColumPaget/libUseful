@@ -157,6 +157,7 @@ typedef struct lnode PARSER;
 ListNode *ParserParseDocument(const char *DocType, const char *Doc);
 void ParserItemsDestroy(ListNode *Items);
 ListNode *ParserFindItem(ListNode *Items, const char *Name);
+ListNode *ParserSubItems(ListNode *Node);
 ListNode *ParserOpenItem(ListNode *Items, const char *Name);
 int ParserItemIsValue(ListNode *Node);
 const char *ParserGetValue(ListNode *Items, const char *Name);

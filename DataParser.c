@@ -915,6 +915,13 @@ ListNode *ParserFindItem(ListNode *Items, const char *Name)
     return(Node);
 }
 
+ListNode *ParserSubItems(ListNode *Node)
+{
+        if (Node->ItemType == ITEM_STRING) return(NULL);
+        if (Node->ItemType == ITEM_INTEGER) return(NULL);
+        if (Node->ItemType == ITEM_ROOT) return(Node);
+        return((ListNode *) Node->Item);
+}
 
 
 ListNode *ParserOpenItem(ListNode *Items, const char *Name)
@@ -922,14 +929,8 @@ ListNode *ParserOpenItem(ListNode *Items, const char *Name)
     ListNode *Node;
 
     Node=ParserFindItem(Items, Name);
-    if (Node)
-    {
-        if (Node->ItemType == ITEM_STRING) return(NULL);
-        if (Node->ItemType == ITEM_INTEGER) return(NULL);
-        if (Node->ItemType == ITEM_ROOT) return(Node);
-        return((ListNode *) Node->Item);
-    }
-    else return(NULL);
+    if (Node) return(ParserSubItems(Node));
+    return(NULL);
 }
 
 
@@ -939,6 +940,7 @@ int ParserItemIsValue(ListNode *Node)
     if (Node->ItemType == ITEM_INTEGER) return(TRUE);
     return(FALSE);
 }
+
 
 const char *ParserGetValue(ListNode *Items, const char *Name)
 {
