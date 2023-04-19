@@ -39,6 +39,9 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
 //Convert a date/time string 'Str' to number of seconds since epoch
 time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZone);
 
+//Convert a string describing a duration to seconds. String in the form "1d 5h 30m" where m=minutes h=hours d=days w=weeks y=year Y=year (year always 365 days)
+time_t ParseDuration(const char *Dur);
+
 //convert Time from timezone 'SrcZone' to 'DstZone'
 char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const char *DstZone);
 

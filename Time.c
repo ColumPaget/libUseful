@@ -112,6 +112,36 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
 }
 
 
+time_t ParseDuration(const char *Dur)
+{
+time_t Result=0, val;
+char *p_next;
+const char *ptr;
+
+ptr=Dur;
+while (ptr)
+{
+val=strtoul(ptr, &p_next, 10);
+switch (*p_next)
+{
+case 'm': val *= 60; break;
+case 'h': val *= 3600; break;
+case 'd': val *= DAYSECS; break;
+case 'w': val *= DAYSECS * 7; break;
+case 'y': val *= DAYSECS * 365; break;
+case 'Y': val *= DAYSECS * 365; break;
+}
+Result += val;
+if (*p_next =='\0') break;
+p_next++;
+while (isspace(*p_next)) p_next++;
+ptr=p_next;
+}
+
+return(Result);
+}
+
+
 long TimezoneOffset(const char *TimeZone)
 {
     long Secs=0;
