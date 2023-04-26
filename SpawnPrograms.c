@@ -26,6 +26,8 @@ int SpawnParseConfig(const char *Config)
         if (strcasecmp(Token,"+stderr")==0) Flags |= SPAWN_COMBINE_STDERR;
         else if (strcasecmp(Token,"stderr2null")==0) Flags |= SPAWN_STDERR_NULL;
         else if (strcasecmp(Token,"stdout2null")==0) Flags |= SPAWN_STDOUT_NULL;
+        else if (strcasecmp(Token,"errnull")==0) Flags |= SPAWN_STDERR_NULL;
+        else if (strcasecmp(Token,"outnull")==0) Flags |= SPAWN_STDOUT_NULL | SPAWN_STDERR_NULL;
 
         ptr=GetToken(ptr," |,",&Token,GETTOKEN_MULTI_SEP);
     }
@@ -233,6 +235,12 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
 
         if (outfd) close(channel2[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
+
+        if (Flags & SPAWN_STDERR_NULL)
+        {
+            close(*errfd);
+            errfd=NULL;
+        }
 
         if (errfd) close(channel3[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);

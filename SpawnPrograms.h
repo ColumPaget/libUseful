@@ -67,11 +67,9 @@ coredumps=value  resource limit for max size of coredump files
 procs=value      resource limit for max number of processes ON A PER USER BASIS.
 
 +stderr          combine spawned program's stderr and stdout on the pipe/STREAM used to talk to it
-stderr2null      send spawned program's stderr to /dev/null
-stdout2null      send spawned program's stdout to /dev/null
-
 ptystderr        only for STREAMSpawnCommandAndPty. Send stderr from the spawned process to the pty.
-
+stderr2null      redirect spawned program's stderr to /dev/null
+stdout2null      redirect spawned program's stdout to /dev/null
 innull           redirect spawned program's stdin to /dev/null
 outnull          redirect spawned program's stdout and stderr to /dev/null
 errnull          redirect spawned program's stderr to /dev/null
