@@ -523,6 +523,8 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
     char *Token=NULL, *PrevToken=NULL, *Name=NULL;
     int BreakOut=FALSE, InTag=FALSE;
 
+		PrevToken=CopyStr(PrevToken, "");
+		Name=CopyStr(Name, "");
 
     ptr=Doc;
     while (ptr && (! BreakOut))
