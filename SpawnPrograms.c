@@ -229,7 +229,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
 
         if (Flags & SPAWN_STDOUT_NULL)
         {
-            close(*outfd);
+            if (outfd) close(*outfd);
             outfd=NULL;
         }
 
@@ -238,7 +238,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
 
         if (Flags & SPAWN_STDERR_NULL)
         {
-            close(*errfd);
+            if (errfd) close(*errfd);
             errfd=NULL;
         }
 
