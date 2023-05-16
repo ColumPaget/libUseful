@@ -144,6 +144,10 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define ANSI_BACKSPACE 0x08
 
 
+// Specify if system supports utf8. This is global for all terminals. 'level' can be
+//   0 - not supported
+//   1 - unicode values below 0x8000 supported
+//   2 - unicode values below 0x10000 supported
 
 #define TerminalSetUTF8(level) (UnicodeSetUTF8(level))
 
@@ -175,12 +179,6 @@ int TerminalInit(STREAM *S, int Flags);
 
 // Initalize stream to be a terminal using 'Config' 
 void TerminalSetup(STREAM *S, const char *Config);
-
-// Specify if system supports utf8. This is global for all terminals. 'level' can be
-//   0 - not supported
-//   1 - unicode values below 0x8000 supported
-//   2 - unicode values below 0x10000 supported
-void TerminalSetUTF8(int level);
 
 
 //reset terminal values to what they were before 'TerminalInit'. You should call this before exit if you don't want a messed up console.
