@@ -1,4 +1,4 @@
-LIBS=../libUseful.a -lssl -lcrypto -lz
+LIBS=../libUseful.a -lssl -lcrypto -lz -lcap
 
 all:
 	gcc -oJSON.exe JSON.c $(LIBS)
@@ -20,3 +20,4 @@ all:
 	gcc -oConfig.exe Config.c $(LIBS)
 	gcc -oStrLen.exe StrLen.c $(LIBS)
 	gcc -oSSLClient.exe SSLClient.c $(LIBS)
+	gcc -oSysInfo.exe SysInfo.c $(LIBS)
