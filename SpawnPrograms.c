@@ -103,11 +103,11 @@ pid_t xfork(const char *Config)
         //we must handle creds store straight away, because it's memory is likely configured
         //with SMEM_NOFORK and thus the memory is invalid on fork
         CredsStoreOnFork();
-        if (StrValid(Config)) 
-	{
-	//if any of the process configs we asked for failed, then quit
-	if (ProcessApplyConfig(Config) & PROC_SETUP_FAIL) _exit(1);
-	}
+        if (StrValid(Config))
+        {
+            //if any of the process configs we asked for failed, then quit
+            if (ProcessApplyConfig(Config) & PROC_SETUP_FAIL) _exit(1);
+        }
     }
     return(pid);
 }

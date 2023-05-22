@@ -26,6 +26,8 @@ udp:192.168.2.1:53                       udp network connection
 tcp:192.168.2.1:25                       tcp network connection
 ssl:192.168.2.1:443                      tcp network connection with encryption
 tls:192.168.2.1:443                      tcp network connection with encryption
+ws:nos.lol/                              websocket
+wss:nos.lol/                             secure websocket
 unix:/tmp/socket                         unix socket
 unixdgram:/tmp/socket                    unix datagram socket
 http:user:password@www.google.com        http network connection
@@ -97,7 +99,7 @@ keepalive=<y/n>     turn on/off socket keepalives
 timeout=<centisecs> connect/read timeout for socket
 
 
-for 'http' and 'https' URLs the first argument is a character list (though only one character long) with the following values
+for 'http', 'https', 'ws' and 'wss' URLs the first argument is a character list (though only one character long) with the following values
 
 r    GET method (default if no method specified)
 w    POST method
@@ -119,6 +121,11 @@ hostauth
 
 Note, 'hostauth' is not a name/value pair, just a config flag that enables sending authentication without waiting for a 401 Response from the server. This means that we can't know the authentication realm for the server, and so internally use the hostname as the realm for looking up logon credentials. This is mostly useful for the github api.
 
+custom headers can be added for http/https/ws/wss by adding an argument 'header=value', for example, a header named 'apikey':
+
+S=STREAMOpen("https://myserver.com", "r apikey=4lkdafee323fxx");
+
+
 
 For 'cmd' type URLs the config options are those detailed in "SpawnPrograms.h"
 For 'tty' type URLs the config options are those detailed in "Pty.h" for "TTYConfigOpen"
@@ -129,7 +136,7 @@ For 'tty' type URLs the config options are those detailed in "Pty.h" for "TTYCon
 
 
 //the 'Type' variable in the STREAM object is set to one of thse values and is used internally for knowing how to handle a given stream
-typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_UNIX, STREAM_TYPE_UNIX_DGRAM, STREAM_TYPE_TCP, STREAM_TYPE_UDP, STREAM_TYPE_SSL, STREAM_TYPE_HTTP, STREAM_TYPE_CHUNKED_HTTP, STREAM_TYPE_MESSAGEBUS, STREAM_TYPE_UNIX_SERVER, STREAM_TYPE_TCP_SERVER, STREAM_TYPE_UNIX_ACCEPT, STREAM_TYPE_TCP_ACCEPT, STREAM_TYPE_TPROXY, STREAM_TYPE_UPROXY, STREAM_TYPE_SSH } ESTREAMType;
+typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_UNIX, STREAM_TYPE_UNIX_DGRAM, STREAM_TYPE_TCP, STREAM_TYPE_UDP, STREAM_TYPE_SSL, STREAM_TYPE_HTTP, STREAM_TYPE_CHUNKED_HTTP, STREAM_TYPE_MESSAGEBUS, STREAM_TYPE_UNIX_SERVER, STREAM_TYPE_TCP_SERVER, STREAM_TYPE_UNIX_ACCEPT, STREAM_TYPE_TCP_ACCEPT, STREAM_TYPE_TPROXY, STREAM_TYPE_UPROXY, STREAM_TYPE_SSH, STREAM_TYPE_WS, STREAM_TYPE_WSS } ESTREAMType;
 
 
 
@@ -182,6 +189,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_TLS_AUTO 32768  //nothing to see here, move along
 #define SF_ERROR 65536     //raise an error if open or connect fails
 #define SF_EXEC_INHERIT 131072  //allow file to be inherited across an exec (default is close-on-exec)
+#define SF_BINARY       262144  //'binary mode' for websocket etc
 #define SF_NOCACHE 524288       //don't cache file data in filesystem cache
 #define SF_SORTED  1048576      //file is sorted, this is a hint to 'STREAMFind'
 #define STREAM_IMMUTABLE  2097152   //file is immutable (if supported by fs)
@@ -200,6 +208,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SS_SSL  4096
 #define SS_AUTH 8192
 #define SS_COMPRESSED 16384 //compression enabled, specifies compression active on a stream
+#define SS_MSG_READ 32768
 
 //state values available for programmer use
 #define SS_USER1 268435456
@@ -475,6 +484,13 @@ void STREAMTruncate(STREAM *S, long size);
 //data to the stream. Currently the only use of this is with HTTP POST, to declare that all uploaded data has been written and that
 //the server should process it and send a reply
 int STREAMCommit(STREAM *S);
+
+
+//this is used internally. It is the function that finally pushes bytes onto the wire for a basic file-descriptor connection
+//you would never use this except if you were implementing a protocol stack within libUseful
+int STREAMWaitForBytes(STREAM *S);
+int STREAMPushBytes(STREAM *S, const char *Data, int DataLen);
+int STREAMPullBytes(STREAM *S, char *Data, int DataLen);
 
 #ifdef __cplusplus
 }

@@ -12,6 +12,7 @@
 #include "String.h"
 #include "Users.h"
 #include "UnitsOfMeasure.h"
+#include "WebSocket.h"
 #include <sys/file.h>
 #include "SecureMem.h"
 #include <sys/mman.h>
@@ -39,6 +40,7 @@ typedef struct
 #ifdef HAVE_POLL
 
 #include <poll.h>
+#include <math.h>
 
 static void *SelectAddFD(TSelectSet *Set, int type, int fd)
 {
@@ -54,7 +56,9 @@ static void *SelectAddFD(TSelectSet *Set, int type, int fd)
     if (type & SELECT_READ) items[Set->size-1].events |= POLLIN;
     if (type & SELECT_WRITE) items[Set->size-1].events |= POLLOUT;
 }
-#include <math.h>
+
+
+
 
 static int SelectWait(TSelectSet *Set, struct timeval *tv)
 {
@@ -464,11 +468,65 @@ int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
 
 
 
-static int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLen)
+//this is the function that finally pushes bytes onto the wire for a basic file-descriptor
+int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 {
+    int result;
     fd_set selectset;
-    int result=0, count=0, len;
     struct timeval tv;
+
+    //wait for fd to become writeable
+    if (S->Timeout > 0)
+    {
+        FD_ZERO(&selectset);
+        FD_SET(S->out_fd, &selectset);
+        MillisecsToTV(S->Timeout * 10, &tv);
+        result=select(S->out_fd+1,NULL,&selectset,NULL,&tv);
+        if (result < 1)
+        {
+            if ((result == 0) || (errno==EAGAIN)) return(STREAM_TIMEOUT);
+            else return(STREAM_CLOSED);
+        }
+    }
+
+    //if we lock on write, do the lock
+    if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_EX);
+
+    //if (S->BlockSize && (S->BlockSize < (DataLen-count))) result=S->BlockSize;
+
+    //do the actual write! Whoohoo!
+    result=write(S->out_fd, Data, DataLen);
+    if (result < 0)
+    {
+        if (errno==EINTR) result=0;
+        else if (errno==EAGAIN) result=STREAM_TIMEOUT;
+        else result=STREAM_CLOSED;
+    }
+
+    //if we lock on write, do the unlock
+    if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_UN);
+
+    //yes, we neglect to do a sync. The idea here is to work opportunisitically, flushing out those pages
+    //that have been written. We do a sync and another fadvise in STREAMClose
+#ifdef POSIX_FADV_DONTNEED
+    if (S->Flags & SF_NOCACHE) posix_fadvise(S->out_fd, 0,0,POSIX_FADV_DONTNEED);
+#endif
+
+    return(result);
+}
+
+
+int STREAMPushBytes(STREAM *S, const char *Data, int DataLen)
+{
+
+    if (S->State & SS_SSL) return(OpenSSLSTREAMWriteBytes(S, Data, DataLen));
+    return(STREAMBasicSendBytes(S, Data, DataLen));
+}
+
+
+static int STREAMInternalPushBytes(STREAM *S, const char *Data, int DataLen)
+{
+    int result=0, count=0, len;
     void *vptr;
 
     if (! S) return(STREAM_CLOSED);
@@ -498,43 +556,17 @@ static int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLe
 
     while (count < DataLen)
     {
-        if (S->State & SS_SSL) result=OpenSSLSTREAMWriteBytes(S, Data+count, DataLen-count);
-        else
+        switch (S->Type)
         {
-            if (S->Timeout > 0)
-            {
-                FD_ZERO(&selectset);
-                FD_SET(S->out_fd, &selectset);
-                MillisecsToTV(S->Timeout * 10, &tv);
-                result=select(S->out_fd+1,NULL,&selectset,NULL,&tv);
-                if (result < 1)
-                {
-                    if ((result == 0) || (errno==EAGAIN)) result=STREAM_TIMEOUT;
-                    else result=STREAM_CLOSED;
-                    break;
-                }
-            }
+        case STREAM_TYPE_WS:
+        case STREAM_TYPE_WSS:
+            result=WebSocketSendBytes(S, Data+count, DataLen-count);
+            break;
 
-            if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_EX);
-            result=DataLen-count;
-            //if (S->BlockSize && (S->BlockSize < (DataLen-count))) result=S->BlockSize;
-            result=write(S->out_fd, Data + count, result);
-            if (result < 0)
-            {
-                if (errno==EINTR) result=0;
-                else if (errno==EAGAIN) result=STREAM_TIMEOUT;
-                else result=STREAM_CLOSED;
-            }
-            if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_UN);
-
-            //yes, we neglect to do a sync. The idea here is to work opportunisitically, flushing out those pages
-            //that have been written. We do a sync and another fadvise in STREAMClose
-#ifdef POSIX_FADV_DONTNEED
-            if (S->Flags & SF_NOCACHE) posix_fadvise(S->out_fd, 0,0,POSIX_FADV_DONTNEED);
-#endif
-
+        default:
+            result=STREAMPushBytes(S, Data+count, DataLen-count);
+            break;
         }
-
         if (result < 0) break;
         count+=result;
         if (S->Flags & SF_NONBLOCK) break;
@@ -556,7 +588,7 @@ static int STREAMInternalFinalWriteBytes(STREAM *S, const char *Data, int DataLe
 int STREAMFlush(STREAM *S)
 {
     int val;
-    val=STREAMInternalFinalWriteBytes(S, S->OutputBuff, S->OutEnd);
+    val=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
     //if nothing left in stream (There shouldn't be) then wipe data because
     //there might have been passwords sent on the stream, and we don't want
     //that hanging about in memory
@@ -584,13 +616,15 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
     ListNode *Curr;
     char *InBuff=NULL, *OutputBuff=NULL;
     char *p_Input;
-    int state=STREAM_CLOSED, result;
+    int state=0, result;
     unsigned long olen=0, len=0;
 
 
     p_Input=Bytes;
     Curr=ListGetNext(S->ProcessingModules);
-    if (InLen > 0) len=InLen;
+
+    if (InLen==-1) state=STREAM_CLOSED;
+    else len=InLen;
 
     //this is used if InLen==-1 to trigger flush of modules. After first use it becomes the exit values of the
     //previous module
@@ -613,6 +647,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
                 //if InLen == -1 then we are requesting a flush
                 if (InLen==STREAM_CLOSED) result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, TRUE);
                 else result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, FALSE);
+
                 if (result != STREAM_CLOSED) state=0;
 
                 if (result > 0)
@@ -650,7 +685,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
 
     if (len==0)
     {
-        if (state==STREAM_CLOSED) return(state);
+        if (state==STREAM_CLOSED) return(STREAM_CLOSED);
         if (S->State & SS_DATA_ERROR) return(STREAM_DATA_ERROR);
     }
 
@@ -676,12 +711,17 @@ int STREAMLock(STREAM *S, int val)
 STREAM *STREAMCreate()
 {
     STREAM *S;
+    const char *ptr;
 
     S=(STREAM *) calloc(1,sizeof(STREAM));
     STREAMResizeBuffer(S,BUFSIZ);
     S->in_fd=-1;
     S->out_fd=-1;
     S->Timeout=3000;
+
+    ptr=LibUsefulGetValue("STREAM:Timeout");
+    if (StrValid(ptr)) STREAMSetTimeout(S, atoi(ptr));
+
     S->Flags |= FLUSH_ALWAYS;
 
     return(S);
@@ -843,8 +883,6 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     //CREATE THE STREAM OBJECT !!
     Stream=STREAMFromFD(fd);
 
-    ptr=LibUsefulGetValue("STREAM:Timeout");
-    if (StrValid(ptr)) STREAMSetTimeout(Stream, atoi(ptr));
 
     STREAMSetFlushType(Stream,FLUSH_FULL,0,0);
     Tempstr=FormatStr(Tempstr,"%d",myStat.st_size);
@@ -1070,6 +1108,14 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         }
         break;
 
+
+    case 'w':
+        if (strcasecmp(Proto,"wss")==0) S=WebSocketOpen(URL, Config);
+        else if (strcasecmp(Proto,"ws")==0) S=WebSocketOpen(URL, Config);
+        else S=STREAMFileOpen(URL, Flags);
+        break;
+
+
     default:
         if (CompareStr(URL,"-")==0) S=STREAMFromDualFD(dup(0),dup(1));
         else S=STREAMFileOpen(URL, Flags);
@@ -1087,8 +1133,6 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
             else if (Flags & SF_WRONLY) STREAMAddStandardDataProcessor(S, "compress", "gzip", "");
         }
 
-        STREAMSetTimeout(S, LibUsefulGetInteger("STREAM:Timeout"));
-
         switch (S->Type)
         {
         case STREAM_TYPE_TCP:
@@ -1096,6 +1140,8 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         case STREAM_TYPE_SSL:
         case STREAM_TYPE_HTTP:
         case STREAM_TYPE_CHUNKED_HTTP:
+        case STREAM_TYPE_WS:
+        case STREAM_TYPE_WSS:
             ptr=LibUsefulGetValue("Net:Timeout");
             if (StrValid(ptr)) STREAMSetTimeout(S, atoi(ptr));
             break;
@@ -1281,7 +1327,7 @@ void STREAMClose(STREAM *S)
 
 
 //this function is used by STREAMReadCharsToBuffer. It checks for/ waits for input
-static int STREAMReadCharsToBuffer_WaitForBytes(STREAM *S)
+int STREAMWaitForBytes(STREAM *S)
 {
     int WaitForBytes=TRUE;
     int read_result, val;
@@ -1360,6 +1406,11 @@ static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
     return(bytes_read);
 }
 
+int STREAMPullBytes(STREAM *S, char *Buffer, int Len)
+{
+    if (S->State & SS_SSL) return(OpenSSLSTREAMReadBytes(S, Buffer, Len));
+    return(STREAMReadCharsToBuffer_Default(S, Buffer, Len));
+}
 
 int STREAMReadCharsToBuffer(STREAM *S)
 {
@@ -1409,7 +1460,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
 //if no room in buffer, we can't read in more bytes
     if (S->InEnd >= S->BuffSize) return(1);
 
-    read_result=STREAMReadCharsToBuffer_WaitForBytes(S);
+    read_result=STREAMWaitForBytes(S);
 
     //Here we perform the actual read
     if (read_result==1)
@@ -1419,9 +1470,21 @@ int STREAMReadCharsToBuffer(STREAM *S)
 
         //OpenSSL can return 0 bytes, even if select said there was stuff to be read from the
         //socket, due to keepalives etc
-        if (S->State & SS_SSL) bytes_read=OpenSSLSTREAMReadBytes(S, tmpBuff, val);
-        else if (S->Type==STREAM_TYPE_UDP) bytes_read=STREAMReadCharsToBuffer_UDP(S, tmpBuff, val);
-        else bytes_read=STREAMReadCharsToBuffer_Default(S, tmpBuff, val);
+        switch (S->Type)
+        {
+        case STREAM_TYPE_WS:
+        case STREAM_TYPE_WSS:
+            bytes_read=WebSocketReadBytes(S, tmpBuff, val);
+            break;
+
+        case STREAM_TYPE_UDP:
+            bytes_read=STREAMReadCharsToBuffer_UDP(S, tmpBuff, val);
+            break;
+
+        default:
+            bytes_read=STREAMPullBytes(S, tmpBuff, val);
+            break;
+        }
 
         if (bytes_read >= 0)
         {
@@ -1672,8 +1735,8 @@ static int STREAMInternalQueueBytes(STREAM *S, const char *Bytes, int Len)
                 )
            )
         {
-            //Any decision about how much to write takes place in InternalFinalWrite
-            result=STREAMInternalFinalWriteBytes(S, S->OutputBuff, S->OutEnd);
+            //Any decision about how much to write takes place in InternalPush
+            result=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
             if (result < 1) break;
             S->StartPoint=0;
         }
@@ -1715,7 +1778,7 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 //thus the calling application always believes all data is written
 //Thus we only report errors if len==0;
     if (len > 0) result=STREAMInternalQueueBytes(S, i_data, len);
-    else if (S->OutEnd > S->StartPoint) result=STREAMInternalFinalWriteBytes(S, S->OutputBuff, S->OutEnd);
+    else if (S->OutEnd > S->StartPoint) result=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
 
     Destroy(TempBuff);
 
@@ -2336,7 +2399,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
             {
                 val=BUFSIZ;
                 if (val > Out->OutEnd) val=Out->OutEnd;
-                STREAMInternalFinalWriteBytes(Out, Out->OutputBuff, val);
+                STREAMInternalPushBytes(Out, Out->OutputBuff, val);
                 sleep(0);
                 val=Out->BuffSize - Out->OutEnd;
             }

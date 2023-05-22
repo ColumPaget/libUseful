@@ -523,8 +523,8 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
     char *Token=NULL, *PrevToken=NULL, *Name=NULL;
     int BreakOut=FALSE, InTag=FALSE;
 
-		PrevToken=CopyStr(PrevToken, "");
-		Name=CopyStr(Name, "");
+    PrevToken=CopyStr(PrevToken, "");
+    Name=CopyStr(Name, "");
 
     ptr=Doc;
     while (ptr && (! BreakOut))
@@ -919,10 +919,10 @@ ListNode *ParserFindItem(ListNode *Items, const char *Name)
 
 ListNode *ParserSubItems(ListNode *Node)
 {
-        if (Node->ItemType == ITEM_STRING) return(NULL);
-        if (Node->ItemType == ITEM_INTEGER) return(NULL);
-        if (Node->ItemType == ITEM_ROOT) return(Node);
-        return((ListNode *) Node->Item);
+    if (Node->ItemType == ITEM_STRING) return(NULL);
+    if (Node->ItemType == ITEM_INTEGER) return(NULL);
+    if (Node->ItemType == ITEM_ROOT) return(Node);
+    return((ListNode *) Node->Item);
 }
 
 

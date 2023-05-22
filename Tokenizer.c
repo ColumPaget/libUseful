@@ -443,7 +443,7 @@ const char *GetNameValuePair(const char *Input, const char *PairDelim, const cha
 
     *Name=CopyStr(*Name,"");
     *Value=CopyStr(*Value,"");
-    
+
     //this clips out a name/value pair, but we don't want to start
     //removing quotes, as if we have, say 'foo=1'='bar=2' we want to keep
     //the quotes in order that we can split it into 'foo=1' 'bar=2' not
@@ -451,11 +451,11 @@ const char *GetNameValuePair(const char *Input, const char *PairDelim, const cha
     ptr=GetToken(Input,PairDelim,&Token,GETTOKEN_HONOR_QUOTES);
     if (StrValid(Token))
     {
-	//here we are doing the final split of a key/value pair,
-	//so we can strip quotes
+        //here we are doing the final split of a key/value pair,
+        //so we can strip quotes
         ptr2=GetToken(Token,NameValueDelim,Name,GETTOKEN_QUOTES);
-	//rather than 'GetToken' value, we strip copy all remaining
-	//and strip quotes explicitly
+        //rather than 'GetToken' value, we strip copy all remaining
+        //and strip quotes explicitly
         *Value=CopyStr(*Value,ptr2);
         if (StrValid(*Value)) StripQuotes(*Value);
     }

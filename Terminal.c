@@ -78,16 +78,16 @@ int TerminalConsumeCharacter(const char **ptr)
 
     default:
         //handle unicode
-	//all unicode has the top 2 bits set in the first byte
-	//even if it has more than these set it will at least
-	//have the first two
-        if (**ptr & 192) 
+        //all unicode has the top 2 bits set in the first byte
+        //even if it has more than these set it will at least
+        //have the first two
+        if (**ptr & 192)
         {
-	    //if starts with 11110 then there will be 3 unicode bytes after
+            //if starts with 11110 then there will be 3 unicode bytes after
             if ((**ptr & 248)==240) ptr_incr(ptr, 3); //
-	    //if starts with 1110 then there will be 2 unicode bytes after
+            //if starts with 1110 then there will be 2 unicode bytes after
             else if ((**ptr & 240)==224) ptr_incr(ptr, 2); //
-	    //if starts with 110 then there will be 1 unicode bytes after
+            //if starts with 110 then there will be 1 unicode bytes after
             else if ((**ptr & 224)==192) ptr_incr(ptr, 1); //
             IsRealChar=TRUE;
         }

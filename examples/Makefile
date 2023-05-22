@@ -21,3 +21,4 @@ all:
 	gcc -oStrLen.exe StrLen.c $(LIBS)
 	gcc -oSSLClient.exe SSLClient.c $(LIBS)
 	gcc -oSysInfo.exe SysInfo.c $(LIBS)
+	gcc -oWebsocket.exe Websocket.c $(LIBS)
