@@ -650,6 +650,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
 
                 if (result != STREAM_CLOSED) state=0;
 
+
                 if (result > 0)
                 {
                     len=result;
@@ -1505,6 +1506,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
         //there's no bytes in tmpBuff in this situation
         bytes_read=STREAMReadThroughProcessors(S, NULL, -1);
         if (bytes_read > 0) read_result=bytes_read;
+	else read_result=STREAM_CLOSED;
     }
 
 
