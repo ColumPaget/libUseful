@@ -147,12 +147,14 @@ typedef enum {PARSER_JSON, PARSER_XML, PARSER_RSS, PARSER_YAML, PARSER_CONFIG, P
 //this typedef is simply to create a typename that makes code clearer, you can just use 'ListNode' if you prefer
 typedef struct lnode PARSER;
 
-#define ITEM_ROOT    0
-#define ITEM_STRING  1
-#define ITEM_ENTITY  2
-#define ITEM_ARRAY   3
-#define ITEM_INTEGER 4
-#define ITEM_ENTITY_LINE 102
+#define ITEM_ROOT    0          //dummy header at top level of the parse tree
+#define ITEM_STRING  1          //text string
+#define ITEM_ENTITY  2          //an object/set with members
+#define ITEM_ARRAY   3          //a list of things
+#define ITEM_INTEGER 4          //integer value (actually number rather than integer)
+#define ITEM_INTERNAL_LIST 100  //list of items that is internal to an entity or array
+#define ITEM_ENTITY_LINE   102  //an entity that should be expressed as a single line when output
+
 
 ListNode *ParserParseDocument(const char *DocType, const char *Doc);
 void ParserItemsDestroy(ListNode *Items);

@@ -55,7 +55,7 @@ ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name)
     char *Token=NULL;
 
     Item=ListCreate();
-    Item->ItemType=Type;
+    Item->ItemType=ITEM_INTERNAL_LIST;
     Item->Tag=CopyStr(Item->Tag,Name);
     if (StrValid(Name))
     {
