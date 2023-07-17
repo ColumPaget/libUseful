@@ -168,7 +168,7 @@ void SSHClose(STREAM *S)
     const char endchar=4;
     char *Tempstr=NULL;
 
-//    if (S->Flags & SF_WRONLY)
+    if (S->Flags & SF_WRONLY)
     {
 //send cntrl-d
         STREAMWriteBytes(S, &endchar, 1);
