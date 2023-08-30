@@ -859,6 +859,12 @@ ListNode *ParserParseDocument(const char *TypeStr, const char *Doc)
     ListNode *Items;
     int Type;
 
+    if (! StrValid(Doc))
+    {
+        RaiseError(0, "ParserParseDocument", "Empty Document Supplied");
+        return(NULL);
+    }
+
     Type=ParserIdentifyDocType(TypeStr);
     if (Type==-1)
     {

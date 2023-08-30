@@ -821,30 +821,30 @@ int OpenSSLSTREAMReadBytes(STREAM *S, char *Data, int len)
         bytes_read=SSL_read(SSL_OBJ, Data, len);
         //  saved_errno is used in all cases to capture errno before another function changes it
         //  saved_errno=errno;
-	//zero or less indicates some kind of error. Could be we are waiting for or bytes, or any number of
-	//real errors that count as disconnection
-	if (bytes_read < 1)
-	{
-		//turns out you get hangs here if you treat SSL_ERROR_WANT_READ as being 'wait for more bytes'
-		//I think that fact we've used SSL_Pending means that we should always get bytes read here
-		//and if we don't, the connection is effectively closed
-		bytes_read=-1;
+        //zero or less indicates some kind of error. Could be we are waiting for or bytes, or any number of
+        //real errors that count as disconnection
+        if (bytes_read < 1)
+        {
+            //turns out you get hangs here if you treat SSL_ERROR_WANT_READ as being 'wait for more bytes'
+            //I think that fact we've used SSL_Pending means that we should always get bytes read here
+            //and if we don't, the connection is effectively closed
+            bytes_read=-1;
 
-		/*
-		switch (SSL_get_error(SSL_OBJ, bytes_read))
-		{
-		//these all mean SSL is waiting for more data, and has nothing to offer us right now
-		case SSL_ERROR_WANT_READ: 
-			bytes_read=0;
-		 break;
+            /*
+            switch (SSL_get_error(SSL_OBJ, bytes_read))
+            {
+            //these all mean SSL is waiting for more data, and has nothing to offer us right now
+            case SSL_ERROR_WANT_READ:
+            	bytes_read=0;
+             break;
 
-		//for anything else consider the connection closed
-		default:
-			bytes_read=-1;
-		break;
-		}
-		*/
-	}
+            //for anything else consider the connection closed
+            default:
+            	bytes_read=-1;
+            break;
+            }
+            */
+        }
     }
 #endif
 

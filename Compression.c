@@ -126,8 +126,8 @@ int zlibProcessorRead(TProcessingModule *ProcMod, const char *InData, unsigned l
     }
 #endif
 
-if ((bytes_read==0) && Flush) return(STREAM_CLOSED);
-return(bytes_read);
+    if ((bytes_read==0) && Flush) return(STREAM_CLOSED);
+    return(bytes_read);
 }
 
 

@@ -330,6 +330,7 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
         case 's':
         case 'S':
             if (strcasecmp(Name,"stars")==0) *Flags |= TERM_SHOWSTARS;
+            if (strcasecmp(Name,"stars+1")==0) *Flags |= TERM_SHOWTEXTSTARS;
             if (strcasecmp(Name,"saveattribs")==0) *Flags |= TERM_SAVEATTRIBS;
             if (strcasecmp(Name,"save")==0) *Flags |= TERM_SAVEATTRIBS;
             break;
@@ -931,6 +932,7 @@ int TerminalTextConfig(const char *Config)
     if (strcasecmp(Config, "hidetext")==0) return(TERM_HIDETEXT);
     if (strcasecmp(Config, "stars")==0) return(TERM_SHOWSTARS);
     if (strcasecmp(Config, "stars+1")==0) return(TERM_SHOWTEXTSTARS);
+    if (strcasecmp(Config, "textstars")==0) return(TERM_SHOWTEXTSTARS);
     return(0);
 }
 

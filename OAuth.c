@@ -10,6 +10,54 @@
 static ListNode *OAuthTypes=NULL;
 static ListNode *OAuthKeyChain=NULL;
 
+
+void OAuthDestroy(void *p_OAuth)
+{
+    OAUTH *Ctx;
+    ListNode *Curr;
+
+    Ctx=(OAUTH *) p_OAuth;
+    Curr=ListFindNamedItem(OAuthKeyChain, Ctx->Name);
+    if (Curr) ListDeleteNode(Curr);
+
+    DestroyString(Ctx->Name);
+    DestroyString(Ctx->Stage1);
+    DestroyString(Ctx->Stage2);
+    DestroyString(Ctx->VerifyTemplate);
+    DestroyString(Ctx->AccessToken);
+    DestroyString(Ctx->RefreshToken);
+    DestroyString(Ctx->VerifyURL);
+    DestroyString(Ctx->VerifyCode);
+    DestroyString(Ctx->Creds);
+    DestroyString(Ctx->SavePath);
+    ListDestroy(Ctx->Vars, Destroy);
+    free(Ctx);
+}
+
+
+
+static OAUTH *OAuthKeyChainAdd(const char *Name, OAUTH *OA)
+{
+    ListNode *Node;
+    OAUTH *Ctx;
+
+    Ctx=OA;
+    if (! OAuthKeyChain) OAuthKeyChain=ListCreate();
+
+    Node=ListFindNamedItem(OAuthKeyChain, Name);
+    if (Node)
+    {
+        Ctx=Node->Item;
+        Ctx->AccessToken=CopyStr(Ctx->AccessToken, OA->AccessToken);
+        Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, OA->AccessToken);
+        CopyVars(Ctx->Vars, OA->Vars);
+    }
+    else ListAddNamedItem(OAuthKeyChain, Name, Ctx);
+
+    return(Ctx);
+}
+
+
 void AddOAuthType(const char *Name, const char *Stage1Args, const char *Stage2Args, const char *VerifyTemplate)
 {
     char *Tempstr=NULL;
@@ -21,37 +69,42 @@ void AddOAuthType(const char *Name, const char *Stage1Args, const char *Stage2Ar
     Destroy(Tempstr);
 }
 
-void SetupOAuthTypes()
+
+static void SetupOAuthTypes()
 {
+    AddOAuthType( "empty",  "", "", "");
     AddOAuthType( "implicit",  "response_type=token&client_id=$(client_id)&redirect_uri=$(redirect_uri)&scope=basic&state=$(session)", "", "");
+    AddOAuthType( "auth",  "", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(code)&grant_type=authorization_code&redirect_uri=$(redirect_uri)", "$(url)?response_type=code&client_id=$(client_id)&redirect_uri=$(redirect_uri)&scope=$(scope)&state=$(session)");
     AddOAuthType( "device",  "client_id=$(client_id)&scope=$(scope)", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(device_code)&grant_type=http://oauth.net/grant_type/device/1.0", "");
     AddOAuthType( "password",  "client_name=$(client_id)&scope=$(scope)&redirect_uris=$(redirect_uri)&grant_type=password", "client_id=$(client_id)&client_secret=$(client_secret)&grant_type=password&username=$(username)&password=$(password)", "");
     AddOAuthType( "getpocket.com",  "consumer_key=$(client_id)&scope=$(scope)&redirect_uri=$(redirect_uri)", "consumer_key=$(client_id)&code=$(code)", "https://getpocket.com/auth/authorize?request_token=$(code)&redirect_uri=$(redirect_uri)");
-    AddOAuthType( "auth",  "", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(code)&grant_type=authorization_code&redirect_uri=$(redirect_uri)", "$(url)?response_type=code&client_id=$(client_id)&redirect_uri=$(redirect_uri)&scope=$(scope)&state=$(session)");
     AddOAuthType( "pkce", "", "client_id=$(client_id)&client_secret=$(client_secret)&code=$(code)&grant_type=authorization_code&code_verifier=$(code_verifier)&redirect_uri=$(redirect_uri)", "$(url)?client_id=$(client_id)&response_type=code&code_challenge=$(code_challenge)&code_challenge_method=S256&redirect_uri=$(redirect_uri)&scope=$(scope)&token_access_type=$(token_access_type)");
 }
 
 
 //Only include Arguments in the URL if they have values. Some oauth implementations will balk at '&redirect_uri=&' but will happily accept
 //no redirect_uri at all.
-char *OAuthBuildURL(char *RetStr, const char *Template, ListNode *Vars)
+static char *OAuthBuildArgs(char *RetStr, const char *Template, ListNode *Vars)
 {
     char *Tempstr=NULL, *Name=NULL, *Value=NULL;
     const char *ptr;
 
-    Tempstr=SubstituteVarsInString(Tempstr, Template, Vars, 0);
-    if (strchr(Tempstr, '?'))
+    if (strchr(Template, '?'))
     {
-        ptr=GetToken(Tempstr, "?", &Value, 0);
-        RetStr=MCopyStr(RetStr, Value, "?", NULL);
+        ptr=GetToken(Template, "?", &Value, 0);
+        //when substituting vars in the proto://host:port part of the string
+        //do not do http quoting
+        RetStr=SubstituteVarsInString(RetStr, Value, Vars, 0);
+        RetStr=CatStr(RetStr, "?");
     }
     else
     {
         RetStr=CopyStr(RetStr,"");
-        ptr=Tempstr;
+        ptr=Template;
     }
 
-    ptr=GetNameValuePair(ptr, "&", "=", &Name, &Value);
+    Tempstr=SubstituteVarsInString(Tempstr, ptr, Vars, SUBS_HTTP_VARS);
+    ptr=GetNameValuePair(Tempstr, "&", "=", &Name, &Value);
     while (ptr)
     {
         if (StrValid(Name) && StrValid(Value)) RetStr=MCatStr(RetStr, Name, "=", Value, "&", NULL);
@@ -63,6 +116,12 @@ char *OAuthBuildURL(char *RetStr, const char *Template, ListNode *Vars)
     Destroy(Value);
 
     return(RetStr);
+}
+
+
+void OAuthSetRedirectURI(OAUTH *Ctx, const char *URI)
+{
+    SetVar(Ctx->Vars, "redirect_uri", URI);
 }
 
 
@@ -84,16 +143,15 @@ OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, con
     ptr=GetToken(ptr,",",&(Ctx->VerifyTemplate), 0);
     Ctx->Name=CopyStr(Ctx->Name, Name);
     Ctx->Vars=ListCreate();
-    SetVar(Ctx->Vars,"client_name",ClientID);
-    SetVar(Ctx->Vars,"client_id",ClientID);
-    SetVar(Ctx->Vars,"client_secret",ClientSecret);
-    Tempstr=HTTPQuote(Tempstr, Scopes);
-    SetVar(Ctx->Vars,"scope",Tempstr);
+    SetVar(Ctx->Vars,"client_name", ClientID);
+    SetVar(Ctx->Vars,"client_id", ClientID);
+    SetVar(Ctx->Vars,"client_secret", ClientSecret);
+    SetVar(Ctx->Vars,"scope", Scopes);
     SetVar(Ctx->Vars,"redirect_uri","urn:ietf:wg:oauth:2.0:oob");
     SetVar(Ctx->Vars,"connect_back_page","<html><body><h1>Code Accepted By Application</h1><body></html>");
+    SetVar(Ctx->Vars,"refresh_url", RefreshURL);
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
-    Ctx->RefreshURL=CopyStr(Ctx->RefreshURL, RefreshURL);
     Ctx->SavePath=MCopyStr(Ctx->SavePath, GetCurrUserHomeDir(), "/.oauth.creds",NULL);
 
     if (strcasecmp(Type, "getpocket.com")==0)
@@ -117,8 +175,6 @@ OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, con
         SetVar(Ctx->Vars,"code_challenge",Tempstr);
     }
 
-    if (! OAuthKeyChain) OAuthKeyChain=ListCreate();
-    ListAddNamedItem(OAuthKeyChain, Name, Ctx);
 
     DestroyString(Tempstr);
     DestroyString(Token);
@@ -128,68 +184,59 @@ OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, con
 
 
 
-void OAuthDestroy(void *p_OAuth)
-{
-    OAUTH *Ctx;
-    ListNode *Curr;
-
-    Ctx=(OAUTH *) p_OAuth;
-    Curr=ListFindNamedItem(OAuthKeyChain, Ctx->Name);
-    if (Curr) ListDeleteNode(Curr);
-
-    DestroyString(Ctx->Name);
-    DestroyString(Ctx->Stage1);
-    DestroyString(Ctx->Stage2);
-    DestroyString(Ctx->VerifyTemplate);
-    DestroyString(Ctx->AccessToken);
-    DestroyString(Ctx->RefreshToken);
-    DestroyString(Ctx->RefreshURL);
-    DestroyString(Ctx->VerifyURL);
-    DestroyString(Ctx->VerifyCode);
-    DestroyString(Ctx->Creds);
-    DestroyString(Ctx->SavePath);
-    ListDestroy(Ctx->Vars, Destroy);
-    free(Ctx);
-}
 
 
 
-
-
-int OAuthParseReply(OAUTH *Ctx, const char *ContentType, const char *Reply)
+static int OAuthParseReply(OAUTH *Ctx, const char *ContentType, const char *Reply)
 {
     ListNode *P=NULL, *Curr=NULL;
     const char *ptr;
+    int RetVal=FALSE;
 
     if (! StrValid(ContentType)) return(FALSE);
     if (! StrValid(Reply)) return(FALSE);
 
 
+    if (LibUsefulDebugActive()) fprintf(stderr, "OAuthParseReply: content-type=%s %s\n", ContentType, Reply);
     P=ParserParseDocument(ContentType, Reply);
-    Curr=ListGetNext(P);
-    while (Curr)
+    if (P)
     {
-        SetVar(Ctx->Vars, Curr->Tag, (char *) Curr->Item);
-        Curr=ListGetNext(Curr);
+        ptr=ParserGetValue(P, "state");
+        if (StrValid(ptr) && (strcmp(ptr, GetVar(Ctx->Vars, "session")) !=0) )
+        {
+            RaiseError(0, "OAuthParseReply", "State value [%s] does not match expected [%s]", ptr, GetVar(Ctx->Vars, "session"));
+        }
+        else
+        {
+            Curr=ListGetNext(P);
+            while (Curr)
+            {
+                if (LibUsefulDebugActive()) fprintf(stderr, "OAuthParseReply: SetVar: [%s] [%s]\n", Curr->Tag, Curr->Item);
+                SetVar(Ctx->Vars, Curr->Tag, (char *) Curr->Item);
+                Curr=ListGetNext(Curr);
+            }
+
+            ptr=ParserGetValue(P, "access_token");
+            if (StrValid(ptr)) Ctx->AccessToken=CopyStr(Ctx->AccessToken, ptr);
+
+            ptr=ParserGetValue(P, "refresh_token");
+            if (StrValid(ptr)) Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, ptr);
+
+            Ctx->VerifyCode=CopyStr(Ctx->VerifyCode, ParserGetValue(P, "user_code"));
+            Ctx->VerifyURL=CopyStr(Ctx->VerifyURL, ParserGetValue(P, "verification_url"));
+            RetVal=TRUE;
+        }
+
+        ParserItemsDestroy(P);
     }
+    else RaiseError(0, "OAuthParseReply", "Failed to parse '%s' document '%s'", ContentType, Reply);
 
-    ptr=ParserGetValue(P, "access_token");
-    if (StrValid(ptr)) Ctx->AccessToken=CopyStr(Ctx->AccessToken, ptr);
-
-    ptr=ParserGetValue(P, "refresh_token");
-    if (StrValid(ptr)) Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, ptr);
-
-    Ctx->VerifyCode=CopyStr(Ctx->VerifyCode, ParserGetValue(P, "user_code"));
-    Ctx->VerifyURL=CopyStr(Ctx->VerifyURL, ParserGetValue(P, "verification_url"));
-
-    ParserItemsDestroy(P);
-
-    return(TRUE);
+    return(RetVal);
 }
 
 
 
-int OAuthConnectBack(OAUTH *Ctx, int sock)
+static int OAuthAcceptRedirect(OAUTH *Ctx, int sock)
 {
     int result;
     char *Tempstr=NULL, *Token=NULL;
@@ -204,6 +251,7 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
 
         if (Tempstr)
         {
+            if (LibUsefulDebugActive()) fprintf(stderr, "OAUTH REDIRECT: %s", Tempstr);
             //GET (or possibly POST)
             ptr=GetToken(Tempstr,"\\S", &Token,0);
             //URL
@@ -221,8 +269,10 @@ int OAuthConnectBack(OAUTH *Ctx, int sock)
             {
                 StripTrailingWhitespace(Tempstr);
                 if (! StrValid(Tempstr)) break;
+                if (LibUsefulDebugActive()) fprintf(stderr, "OAUTH_REDIRECT: %s\n", Tempstr);
                 Tempstr=STREAMReadLine(Tempstr, S);
             }
+
         }
 
         Tempstr=MCopyStr(Tempstr, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n",GetVar(Ctx->Vars,"connect_back_page"),NULL);
@@ -250,7 +300,11 @@ int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
     if (Port > 0)
     {
         netfd=IPServerInit(SOCK_STREAM, "127.0.0.1", Port);
-        if (netfd==-1) return(FALSE);
+        if (netfd==-1)
+        {
+            RaiseError(0, "OAuthListen", "Failed to bind port: %d", Port);
+            return(FALSE);
+        }
     }
 
     FD_SET(netfd, &fds);
@@ -259,7 +313,7 @@ int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
     result=select(netfd+1, &fds, NULL, NULL, NULL);
     if (result > 0)
     {
-        if (FD_ISSET(netfd, &fds)) OAuthConnectBack(Ctx, netfd);
+        if (FD_ISSET(netfd, &fds)) OAuthAcceptRedirect(Ctx, netfd);
         else if (FD_ISSET(0, &fds))
         {
             S=STREAMFromFD(0);
@@ -269,7 +323,7 @@ int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
             else
             {
                 StripTrailingWhitespace(Tempstr);
-                Ctx->VerifyCode=HTTPQuote(Ctx->VerifyCode, Tempstr);
+                Ctx->VerifyCode=CopyStr(Ctx->VerifyCode, Tempstr);
                 SetVar(Ctx->Vars, "code", Ctx->VerifyCode);
             }
             STREAMDestroy(S);
@@ -289,13 +343,22 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
 {
     STREAM *S;
     char *Tempstr=NULL;
+    const char *ptr;
     int len, result=FALSE;
 
-    Tempstr=MCopyStr(Tempstr,URL,"?",PostArgs,NULL);
-    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: OAuthGrant: %s\n", Tempstr);
+    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: OAuthGrant: %s args: %s\n", URL, PostArgs);
     S=HTTPMethod("POST",URL,"application/x-www-form-urlencoded; charset=UTF-8",PostArgs,StrLen(PostArgs));
     if (S)
     {
+        ptr=STREAMGetValue(S, "HTTP:ResponseCode");
+        /*
+        	if (StrValid(ptr) && (*ptr != '2'))
+        	{
+        	STREAMClose(S);
+            	S=HTTPMethod("GET",URL,"application/x-www-form-urlencoded; charset=UTF-8",PostArgs,StrLen(PostArgs));
+        	}
+        */
+
         sleep(1);
         Tempstr=STREAMReadDocument(Tempstr, S);
 
@@ -303,6 +366,7 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
         result=OAuthParseReply(Ctx, STREAMGetValue(S, "HTTP:Content-Type"), Tempstr);
         STREAMClose(S);
     }
+    else RaiseError(0, "OAuthGrant", "Failed to connect: %s", URL);
 
     DestroyString(Tempstr);
 
@@ -312,9 +376,9 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
 
 
 
-int OAuthRefresh(OAUTH *Ctx, const char *URL)
+int OAuthRefresh(OAUTH *Ctx)
 {
-    char *Tempstr=NULL, *Args=NULL;
+    char *Tempstr=NULL, *URL=NULL, *Args=NULL;
     const char *ptr;
     int result;
 
@@ -332,32 +396,36 @@ int OAuthRefresh(OAUTH *Ctx, const char *URL)
     required
     */
 
-    ptr=GetVar(Ctx->Vars, "client_id");
+    ptr=GetVar(Ctx->Vars, "refresh_url");
     if (StrValid(ptr))
     {
-        Tempstr=HTTPQuote(Tempstr, ptr);
-        Args=MCopyStr(Args,"client_id=",Tempstr,NULL);
+        //some systems want client ID and client Secret to be sent as a login with 'basic' autentication
+        ptr=GetToken(ptr, ":", &Tempstr, 0);
+        while (*ptr=='/') ptr++;
+        URL=MCopyStr(URL, Tempstr, "://", GetVar(Ctx->Vars, "client_id"), ":", GetVar(Ctx->Vars, "client_secret"), "@", NULL);
+
+        ptr=GetToken(ptr, "?", &Tempstr, 0);
+        URL=CatStr(URL, Tempstr);
+
+        if (StrValid(ptr)) Args=SubstituteVarsInString(Args, ptr, Ctx->Vars, SUBS_HTTP_VARS);
+        else 
+	{
+	Tempstr=CopyStr(Tempstr, "grant_type=refresh_token&refresh_token=$(refresh_token)&client_id=$(client_id)&client_secret=$(client_secret)");
+	//if (StrValid(GetVar(Ctx->Vars, "code"))) Tempstr=CatStr(Tempstr, "&code=$(code)");
+	Args=SubstituteVarsInString(Args, Tempstr, Ctx->Vars, SUBS_HTTP_VARS);
+	}
+
+        result=OAuthGrant(Ctx, URL, Args);
+        if (StrValid(Ctx->AccessToken)) OAuthSave(Ctx, "");
+
+	//allow some time for new details to be saved at the other end
+	sleep(1);
     }
-
-    ptr=GetVar(Ctx->Vars, "client_secret");
-    if (StrValid(ptr))
-    {
-        Tempstr=HTTPQuote(Tempstr, ptr);
-        Args=MCatStr(Args,"&client_secret=",Tempstr,NULL);
-    }
-
-    if (StrValid(Ctx->RefreshToken))
-    {
-        Tempstr=HTTPQuote(Tempstr, Ctx->RefreshToken);
-        Args=MCatStr(Args,"&refresh_token=",Tempstr,NULL);
-    }
-
-    Args=MCatStr(Args,"&grant_type=refresh_token",NULL);
-
-    result=OAuthGrant(Ctx, URL, Args);
 
     DestroyString(Tempstr);
     DestroyString(Args);
+    DestroyString(URL);
+
     return(result);
 }
 
@@ -368,8 +436,7 @@ int OAuthFinalize(OAUTH *Ctx, const char *URL)
     char *Tempstr=NULL;
     int result;
 
-    //Tempstr=SubstituteVarsInString(Tempstr, Ctx->Stage2, Ctx->Vars,0);
-    Tempstr=OAuthBuildURL(Tempstr, Ctx->Stage2, Ctx->Vars);
+    Tempstr=OAuthBuildArgs(Tempstr, Ctx->Stage2, Ctx->Vars);
     result=OAuthGrant(Ctx, URL, Tempstr);
     if (StrValid(Ctx->AccessToken)) OAuthSave(Ctx, "");
 
@@ -407,21 +474,18 @@ int OAuthStage1(OAUTH *Ctx, const char *URL)
 
     Tempstr=GetRandomAlphabetStr(Tempstr, 10);
     SetVar(Ctx->Vars, "session",Tempstr);
-    SetVar(Ctx->Vars, "url",URL);
-    //Tempstr=SubstituteVarsInString(Tempstr, Ctx->Stage1, Ctx->Vars, 0);
-    Tempstr=OAuthBuildURL(Tempstr, Ctx->Stage1, Ctx->Vars);
+    SetVar(Ctx->Vars, "url", URL);
+    Tempstr=OAuthBuildArgs(Tempstr, Ctx->Stage1, Ctx->Vars);
 
+    if (LibUsefulDebugActive()) fprintf(stderr, "OAuthStage1: %s\n", Tempstr);
     if (StrValid(Tempstr))
     {
-        if (Ctx->Flags & OAUTH_IMPLICIT) result=OAuthImplicit(Ctx, URL, Tempstr);
+        if (Ctx->Flags & OAUTH_IMPLICIT) Ctx->VerifyURL=MCopyStr(Ctx->VerifyURL, URL, "?", Tempstr, NULL);
+        //result=OAuthImplicit(Ctx, URL, Tempstr);
         else result=OAuthGrant(Ctx, URL, Tempstr);
     }
 
-    if (StrValid(Ctx->VerifyTemplate))
-    {
-        Ctx->VerifyURL=SubstituteVarsInString(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars,0);
-        Ctx->VerifyURL=OAuthBuildURL(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars);
-    }
+    if (StrValid(Ctx->VerifyTemplate)) Ctx->VerifyURL=OAuthBuildArgs(Ctx->VerifyURL, Ctx->VerifyTemplate, Ctx->Vars);
 
     DestroyString(Tempstr);
     return(result);
@@ -430,14 +494,8 @@ int OAuthStage1(OAUTH *Ctx, const char *URL)
 
 void OAuthSetUserCreds(OAUTH *Ctx, const char *UserName, const char *Password)
 {
-    char *Tempstr=NULL;
-
-    Tempstr=HTTPQuote(Tempstr, UserName);
-    SetVar(Ctx->Vars, "username", Tempstr);
-    Tempstr=HTTPQuote(Tempstr, Password);
-    SetVar(Ctx->Vars, "password", Tempstr);
-
-    DestroyString(Tempstr);
+    SetVar(Ctx->Vars, "username", UserName);
+    SetVar(Ctx->Vars, "password", Password);
 }
 
 
@@ -529,7 +587,7 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
     Ctx->AccessToken=CopyStr(Ctx->AccessToken, "");
     Ctx->RefreshToken=CopyStr(Ctx->RefreshToken, "");
 
-    S=STREAMOpen(Path,"r");
+    S=STREAMOpen(Path, "r");
     if (S)
     {
         STREAMLock(S, LOCK_SH);
@@ -554,6 +612,8 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
     //the file
     if (MatchingLines > 5) OAuthCleanupCredsFile(Path);
 
+    Ctx=OAuthKeyChainAdd(Name, Ctx);
+
 
     DestroyString(Tempstr);
     DestroyString(Token);
@@ -568,7 +628,7 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
 int OAuthSave(OAUTH *Ctx, const char *Path)
 {
     STREAM *S;
-    const char *Fields[]= {"client_id","client_secret","access_token","refresh_token",NULL};
+    const char *Fields[]= {"client_id","client_secret","access_token","refresh_token","refresh_url","code",NULL};
     const char *ptr;
     char *Tempstr=NULL;
     int i;
@@ -594,6 +654,7 @@ int OAuthSave(OAUTH *Ctx, const char *Path)
         STREAMWriteLine(Tempstr, S);
         STREAMClose(S);
     }
+    else RaiseError(0, "OAuthSave", "Failed to open: %s", Path);
 
     DestroyString(Tempstr);
 
@@ -608,16 +669,17 @@ const char *OAuthLookup(const char *Name, int Refresh)
     OAUTH *OA;
 
     Curr=ListFindNamedItem(OAuthKeyChain, Name);
-    if (Curr)
+    if (Curr) OA=(OAUTH *) Curr->Item;
+    else
     {
-        OA=(OAUTH *) Curr->Item;
-        if (Refresh && StrValid(OA->RefreshToken))
-        {
-            OAuthRefresh(OA, OA->RefreshURL);
-            OAuthSave(OA, "");
-        }
-        if (StrValid(OA->AccessToken)) return(OA->AccessToken);
+        OA=OAuthCreate("empty", Name, "", "", "", "");
+        OA->SavePath=MCopyStr(OA->SavePath, GetCurrUserHomeDir(), "/.oauth.creds",NULL);
+        OAuthLoad(OA, Name, NULL);
     }
+
+    if (Refresh && StrValid(OA->RefreshToken)) OAuthRefresh(OA);
+
+    if (StrValid(OA->AccessToken)) return(OA->AccessToken);
 
     return("");
 }

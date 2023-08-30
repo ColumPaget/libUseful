@@ -150,23 +150,19 @@ extern "C" {
 // add template for a new/custom oauth type
 void AddOAuthType(const char *Name, const char *Stage1Args, const char *Stage2Args, const char *VerifyTemplate);
 
-
 OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, const char *ClientSecret, const char *Scopes, const char *RefreshURL);
 void OAuthDestroy(void *p_OAUTH);
-
-int OAuthParseReply(OAUTH *Ctx, const char *ContentType, const char *Reply);
 
 int OAuthRegister(OAUTH *Ctx, const char *URL);
 int OAuthSave(OAUTH *Ctx, const char *Path);
 int OAuthLoad(OAUTH *Ctx, const char *Name, const char *Path);
 
-int OAuthRefresh(OAUTH *Ctx, const char *URL);
+int OAuthRefresh(OAUTH *Ctx);
 
 int OAuthStage1(OAUTH *Ctx, const char *URL);
 int OAuthFinalize(OAUTH *Ctx, const char *URL);
 void OAuthSetUserCreds(OAUTH *Ctx, const char *UserName, const char *Password);
 
-int OAuthConnectBack(OAUTH *Ctx, int sock);
 int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags);
 const char *OAuthLookup(const char *Name, int Refresh);
 

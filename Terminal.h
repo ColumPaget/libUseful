@@ -174,14 +174,37 @@ char *TerminalStripControlSequences(char *RetStr, const char *Str);
 
 // initialize STREAM to be a terminal. This captures terminal width and height (rows and columns) and sets up the scrolling area.
 // Flags can include TERM_HIDECURSOR, to start with cursor hidden, TERM_RAWKEYS to disable 'canonical' mode and get raw keystrokes
-// and TERM_BOTTOMBAR to create a region at the bottom of the screen to hold an information or input bar
+// and TERMBAR_LOWER to create a region at the bottom of the screen to hold an information or input bar. Normally you will want
+// to use TERM_SAVE_ATTRIBS so that TerminalReset can reset a terminal to it's previously state (without TERM_SAVE_ATTRIBS any
+// changes TerminalInit makes to terminal settings will persist
+// TerminalSetup (below) does the same things and more, but with a nicer interface
 int TerminalInit(STREAM *S, int Flags);
 
-// Initalize stream to be a terminal using 'Config' 
+// Initalize stream to be a terminal using 'Config', which is a list of key-value pairs
+//values:
+//    rawkeys         -- 'rawkeys' (non-canonical) mode. return keystrokes instantly rather than waiting for enter
+//    mouse           -- enable xterm mouse support
+//    wheelmouse      -- enable xterm mousewheel events
+//    save            -- save terminal config/attributes so it can be returned to previous state by TerminalReset
+//    saveattribs     -- save terminal config/attributes so it can be returned to previous state by TerminalReset
+//    width=<cols>    -- FORCE terminal width to <cols> colums, overriding autodetect
+//    height=<rows>   -- FORCE terminal height to <rows> rows, overriding autodetect
+//    forecolor=color -- set terminal foreground color
+//    fgcolor=color   -- set terminal foreground color
+//    fcolor=color    -- set terminal foreground color
+//    backcolor=color -- set terminal background color
+//    bgcolor=color   -- set terminal background color
+//    bcolor=color    -- set terminal background color
+//    focus           -- enable xterm focus-in/focus-out events
+//    hidetext        -- when asking for passwords, hide text
+//    stars           -- when asking for passwords, star-out text
+//    textstars       -- when asking for passwords, star-out text, except most recent character
+// e.g.  TerminalSetup(Term, "rawkeys wheelmouse save focus forecolor=~w backcolor=~b");
 void TerminalSetup(STREAM *S, const char *Config);
 
 
 //reset terminal values to what they were before 'TerminalInit'. You should call this before exit if you don't want a messed up console.
+//for this to work you must have called TerminalInit with 'TERM_SAVE_ATTRIBS' or TerminalSetup with 'save' or 'saveattribs'
 void TerminalReset(STREAM *S);
 
 //clear screen
