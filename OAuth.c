@@ -408,18 +408,18 @@ int OAuthRefresh(OAUTH *Ctx)
         URL=CatStr(URL, Tempstr);
 
         if (StrValid(ptr)) Args=SubstituteVarsInString(Args, ptr, Ctx->Vars, SUBS_HTTP_VARS);
-        else 
-	{
-	Tempstr=CopyStr(Tempstr, "grant_type=refresh_token&refresh_token=$(refresh_token)&client_id=$(client_id)&client_secret=$(client_secret)");
-	//if (StrValid(GetVar(Ctx->Vars, "code"))) Tempstr=CatStr(Tempstr, "&code=$(code)");
-	Args=SubstituteVarsInString(Args, Tempstr, Ctx->Vars, SUBS_HTTP_VARS);
-	}
+        else
+        {
+            Tempstr=CopyStr(Tempstr, "grant_type=refresh_token&refresh_token=$(refresh_token)&client_id=$(client_id)&client_secret=$(client_secret)");
+            //if (StrValid(GetVar(Ctx->Vars, "code"))) Tempstr=CatStr(Tempstr, "&code=$(code)");
+            Args=SubstituteVarsInString(Args, Tempstr, Ctx->Vars, SUBS_HTTP_VARS);
+        }
 
         result=OAuthGrant(Ctx, URL, Args);
         if (StrValid(Ctx->AccessToken)) OAuthSave(Ctx, "");
 
-	//allow some time for new details to be saved at the other end
-	sleep(1);
+        //allow some time for new details to be saved at the other end
+        sleep(1);
     }
 
     DestroyString(Tempstr);

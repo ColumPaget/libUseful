@@ -1,7 +1,8 @@
 #include "Server.h"
-#include "UnixSocket.h"
 #include "URL.h"
 #include "IPAddress.h"
+#include "UnixSocket.h"
+#include "WebSocket.h"
 
 int IPServerNew(int iType, const char *Address, int Port, int Flags)
 {
@@ -86,6 +87,39 @@ int IPServerAccept(int ServerSock, char **Addr)
 }
 
 
+static int TCPServerNew(const char *Host, int Port, int Flags, TSockSettings *Settings)
+{
+int fd;
+
+            fd=IPServerNew(SOCK_STREAM, Host, Port, Flags);
+            if (Settings->QueueLen > 0)
+            {
+                listen(fd, Settings->QueueLen);
+#ifdef TCP_FASTOPEN
+                if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", Settings->QueueLen);
+#endif
+            }
+
+return(fd);
+}
+
+
+
+static void STREAMServerParseConfig(STREAM *S, const char *Config)
+{
+char *Name=NULL, *Value=NULL;
+const char *ptr;
+
+ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
+while (ptr)
+{
+if (strncasecmp(Name, "SSL:", 4)==0) STREAMSetValue(S, Name, Value);
+ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+}
+
+Destroy(Value);
+Destroy(Name);
+}
 
 
 STREAM *STREAMServerNew(const char *URL, const char *Config)
@@ -102,6 +136,36 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
 
     switch (*Proto)
     {
+		case 's':
+        if (strcmp(Proto,"ssl")==0)
+        {
+						fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_TCP_SERVER;
+						Flags |= SF_TLS;
+        }
+		break;
+
+    case 't':
+        if (strcmp(Proto,"tcp")==0)
+        {
+						fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_TCP_SERVER;
+        }
+        else if (strcmp(Proto,"tls")==0)
+        {
+						fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_TCP_SERVER;
+						Flags |= SF_TLS;
+        }
+        else if (strcmp(Proto,"tproxy")==0)
+        {
+#ifdef SOCK_TPROXY
+            fd=IPServerNew(SOCK_TPROXY, Host, Port, Flags);
+            Type=STREAM_TYPE_TPROXY;
+#endif
+        }
+        break;
+
     case 'u':
         if (strcmp(Proto,"udp")==0)
         {
@@ -122,34 +186,30 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         }
         break;
 
-    case 't':
-        if (strcmp(Proto,"tcp")==0)
+		case 'w':
+        if (strcmp(Proto, "ws")==0)
         {
-            fd=IPServerNew(SOCK_STREAM, Host, Port, Flags);
-            Type=STREAM_TYPE_TCP_SERVER;
-            if (Settings.QueueLen > 0)
-            {
-                listen(fd, Settings.QueueLen);
-#ifdef TCP_FASTOPEN
-                if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", Settings.QueueLen);
-#endif
-            }
+						fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_WS_SERVER;
         }
-        else if (strcmp(Proto,"tproxy")==0)
+        else if (strcmp(Proto, "wss")==0)
         {
-#ifdef SOCK_TPROXY
-            fd=IPServerNew(SOCK_TPROXY, Host, Port, Flags);
-            Type=STREAM_TYPE_TPROXY;
-#endif
+						fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_WS_SERVER;
+						Flags |= SF_TLS;
         }
-        break;
+		break;
     }
+
 
     S=STREAMFromSock(fd, Type, NULL, Host, Port);
     if (S)
     {
         S->Path=CopyStr(S->Path, URL);
         if (Flags & SOCK_TLS_AUTO) S->Flags |= SF_TLS_AUTO;
+				else if (Flags & SF_TLS) S->Flags |= SF_TLS;
+
+				if (S->Flags & (SF_TLS | SF_TLS_AUTO)) STREAMServerParseConfig(S, Config);
     }
 
     DestroyString(Proto);
@@ -187,6 +247,12 @@ STREAM *STREAMServerAccept(STREAM *Serv)
         type=STREAM_TYPE_TCP_ACCEPT;
         break;
 
+    case STREAM_TYPE_WS_SERVER:
+        fd=IPServerAccept(Serv->in_fd, &Tempstr);
+        GetSockDetails(fd, &DestIP, &DestPort, NULL, NULL);
+        type=STREAM_TYPE_WS_ACCEPT;
+        break;
+
     case STREAM_TYPE_TPROXY:
         fd=IPServerAccept(Serv->in_fd, &Tempstr);
         GetSockDestination(fd, &DestIP, &DestPort);
@@ -199,10 +265,24 @@ STREAM *STREAMServerAccept(STREAM *Serv)
     }
 
     S=STREAMFromSock(fd, type, Tempstr, DestIP, DestPort);
-    if (type==STREAM_TYPE_TCP_ACCEPT)
+    if (S)
     {
-        //if TLS autodetection enabled, perform it now
-        if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, 0);
+				CopyVars(S->Values, Serv->Values);
+        //things that we have to do post-accept for each type of socket
+        switch (type)
+        {
+        case STREAM_TYPE_TCP_ACCEPT:
+            //if TLS autodetection enabled, perform it now
+            if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, 0);
+            else if (Serv->Flags & SF_TLS) DoSSLServerNegotiation(S, 0);
+            break;
+
+        case STREAM_TYPE_WS_ACCEPT:
+            if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, 0);
+            else if (Serv->Flags & SF_TLS) DoSSLServerNegotiation(S, 0);
+            WebSocketAccept(S);
+            break;
+        }
     }
 
     DestroyString(Tempstr);

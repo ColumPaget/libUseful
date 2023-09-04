@@ -136,8 +136,10 @@ For 'tty' type URLs the config options are those detailed in "Pty.h" for "TTYCon
 
 
 //the 'Type' variable in the STREAM object is set to one of thse values and is used internally for knowing how to handle a given stream
-typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_UNIX, STREAM_TYPE_UNIX_DGRAM, STREAM_TYPE_TCP, STREAM_TYPE_UDP, STREAM_TYPE_SSL, STREAM_TYPE_HTTP, STREAM_TYPE_CHUNKED_HTTP, STREAM_TYPE_MESSAGEBUS, STREAM_TYPE_UNIX_SERVER, STREAM_TYPE_TCP_SERVER, STREAM_TYPE_UNIX_ACCEPT, STREAM_TYPE_TCP_ACCEPT, STREAM_TYPE_TPROXY, STREAM_TYPE_UPROXY, STREAM_TYPE_SSH, STREAM_TYPE_WS, STREAM_TYPE_WSS } ESTREAMType;
+typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_UNIX, STREAM_TYPE_UNIX_DGRAM, STREAM_TYPE_TCP, STREAM_TYPE_UDP, STREAM_TYPE_SSL, STREAM_TYPE_HTTP, STREAM_TYPE_CHUNKED_HTTP, STREAM_TYPE_MESSAGEBUS, STREAM_TYPE_UNIX_SERVER, STREAM_TYPE_TCP_SERVER, STREAM_TYPE_UNIX_ACCEPT, STREAM_TYPE_TCP_ACCEPT, STREAM_TYPE_TPROXY, STREAM_TYPE_UPROXY, STREAM_TYPE_SSH, STREAM_TYPE_WS, STREAM_TYPE_WSS, STREAM_TYPE_WS_SERVER, STREAM_TYPE_WS_ACCEPT, STREAM_TYPE_WS_SERVICE} ESTREAMType;
 
+
+#define STREAM_TYPE_TLS STREAM_TYPE_SSL
 
 
 #include <fcntl.h>
@@ -178,12 +180,13 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_WRONLY 32       //open stream write only
 #define SF_CREAT 64        //create stream if it doesn't exist
 #define SF_CREATE 64       //create stream if it doesn't exist
-#define STREAM_APPEND 128      //append to file
+#define STREAM_APPEND 128  //append to file
 #define SF_TRUNC 256       //truncate file to zero bytes on open
 #define SF_MMAP  512       //create a memory mapped file
 #define SF_WRLOCK 1024     //lock file on every write
 #define SF_RDLOCK 2048     //lock file on every read
-#define SF_FOLLOW 4096     //follow symbolic links
+#define SF_FOLLOW 4096     //ONLY FOR FILES: follow symbolic links
+#define SF_TLS    4096     //ONLY FOR SOCKETS: use SSL/TLS
 #define SF_SECURE 8192     //lock internal buffers into memory so they aren't written to swap or coredumps
 #define SF_NONBLOCK 16384  //nonblocking open (you must use select to check that the file is ready to use)
 #define SF_TLS_AUTO 32768  //nothing to see here, move along
