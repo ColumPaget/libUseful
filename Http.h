@@ -5,6 +5,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 /*
 
+These functions relate to CLIENT SIZE http, https
+
 For basic http usage (getting webpages) you don't need to use most of this stuff. You can just pass the URL to 'STREAMOpen' like so:
 
 STREAM *S;

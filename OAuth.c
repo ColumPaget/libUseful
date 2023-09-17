@@ -26,6 +26,7 @@ void OAuthDestroy(void *p_OAuth)
     DestroyString(Ctx->VerifyTemplate);
     DestroyString(Ctx->AccessToken);
     DestroyString(Ctx->RefreshToken);
+    DestroyString(Ctx->RefreshURL);
     DestroyString(Ctx->VerifyURL);
     DestroyString(Ctx->VerifyCode);
     DestroyString(Ctx->Creds);
@@ -376,7 +377,7 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
 
 
 
-int OAuthRefresh(OAUTH *Ctx)
+int OAuthRefresh(OAUTH *Ctx, const char *iURL)
 {
     char *Tempstr=NULL, *URL=NULL, *Args=NULL;
     const char *ptr;
@@ -396,7 +397,9 @@ int OAuthRefresh(OAUTH *Ctx)
     required
     */
 
-    ptr=GetVar(Ctx->Vars, "refresh_url");
+    if (iURL) ptr=iURL;
+    else ptr=GetVar(Ctx->Vars, "refresh_url");
+
     if (StrValid(ptr))
     {
         //some systems want client ID and client Secret to be sent as a login with 'basic' autentication
@@ -677,7 +680,7 @@ const char *OAuthLookup(const char *Name, int Refresh)
         OAuthLoad(OA, Name, NULL);
     }
 
-    if (Refresh && StrValid(OA->RefreshToken)) OAuthRefresh(OA);
+    if (Refresh && StrValid(OA->RefreshToken)) OAuthRefresh(OA, NULL);
 
     if (StrValid(OA->AccessToken)) return(OA->AccessToken);
 

@@ -90,14 +90,28 @@ char *strmrep(char *str, char *oldchars, char newchar)
 int CompareStr(const char *S1, const char *S2)
 {
     if (
-        ((!S1) || (*S1=='\0')) &&
-        ((!S2) || (*S2=='\0'))
+        (! StrValid(S1)) &&
+        (! StrValid(S2))
     ) return(0);
 
-    if ((!S1) || (*S1=='\0')) return(-1);
-    if ((!S2) || (*S2=='\0')) return(1);
+    if (! StrValid(S1)) return(-1);
+    if (! StrValid(S2)) return(1);
 
     return(strcmp(S1,S2));
+}
+
+
+int CompareStrNoCase(const char *S1, const char *S2)
+{
+    if (
+        (! StrValid(S1)) &&
+        (! StrValid(S2))
+    ) return(0);
+
+    if (! StrValid(S1)) return(-1);
+    if (! StrValid(S2)) return(1);
+
+    return(strcasecmp(S1,S2));
 }
 
 

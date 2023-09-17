@@ -287,7 +287,7 @@ void STREAMSetFlushType(STREAM *S, int Type, int StartPoint, int BlockSize)
 void STREAMReAllocBuffer(STREAM *S, int size, int Flags)
 {
     char *ibuf=NULL, *obuf=NULL;
-		int RW;
+    int RW;
 
     if (S->Flags & SF_MMAP) return;
 
@@ -300,12 +300,12 @@ void STREAMReAllocBuffer(STREAM *S, int size, int Flags)
     }
 
 
-		// extract the 'readonly' and 'writeonly' flags
+    // extract the 'readonly' and 'writeonly' flags
     RW=S->Flags & (SF_WRONLY | SF_RDONLY);
 
-		//for HTTP 'readonly' and 'writeonly' have a different meaning, they mean
-		//'get' and 'post'. HTTP is always bidirectional
-		if (S->Type == STREAM_TYPE_HTTP) RW=0;
+    //for HTTP 'readonly' and 'writeonly' have a different meaning, they mean
+    //'get' and 'post'. HTTP is always bidirectional
+    if (S->Type == STREAM_TYPE_HTTP) RW=0;
 
     if (S->Flags & SF_SECURE)
     {
@@ -1060,7 +1060,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
             //from the current directory
             if (*ptr=='/') ptr++;
             if (*ptr=='/') ptr++;
-        		S=STREAMFileOpenWithConfig(URL, Config);
+            S=STREAMFileOpenWithConfig(URL, Config);
         }
         else S=STREAMFileOpenWithConfig(URL, Config);
         break;

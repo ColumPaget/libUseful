@@ -35,6 +35,30 @@ static DH *CachedDH=NULL;
 
 //static, internal functions that only exist if we have lib SSL
 #ifdef HAVE_LIBSSL
+
+
+static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(STREAM *S, SSL_CTX *ctx, ListNode *List, char **VerifyPath, char **VerifyFile)
+{
+ListNode *Curr;
+
+		Curr=ListGetNext(List);
+    while (Curr)
+    {
+				if (StrValid(Curr->Tag))
+				{
+        if (strcasecmp(Curr->Tag,"SSL:CertFile")==0) SSL_CTX_use_certificate_chain_file(ctx,(char *) Curr->Item);
+        else if (strcasecmp(Curr->Tag,"SSL:KeyFile")==0) SSL_CTX_use_PrivateKey_file(ctx,(char *) Curr->Item,SSL_FILETYPE_PEM);
+        else if (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0) *VerifyPath=CopyStr(*VerifyPath,(char *) Curr->Item);
+        else if (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0) *VerifyFile=CopyStr(*VerifyFile,(char *) Curr->Item);
+        else if (strncasecmp(Curr->Tag,"SSL:VerifyDir",18)==0) *VerifyPath=CopyStr(*VerifyPath,(char *) Curr->Item);
+        else if (strncasecmp(Curr->Tag,"SSL:VerifyFile",19)==0) *VerifyFile=CopyStr(*VerifyFile,(char *) Curr->Item);
+				}
+
+        Curr=ListGetNext(Curr);
+    }
+}
+
+
 static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
 {
     ListNode *Curr;
@@ -46,59 +70,9 @@ static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
 //VerifyFile=CopyStr(VerifyFile,"/etc/ssl/certs/cacert.pem");
 
     Curr=ListGetNext(LibUsefulValuesGetHead());
-    while (Curr)
-    {
-        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:CertFile")==0))
-        {
-            SSL_CTX_use_certificate_chain_file(ctx,(char *) Curr->Item);
-        }
 
-        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:KeyFile")==0))
-        {
-            SSL_CTX_use_PrivateKey_file(ctx,(char *) Curr->Item,SSL_FILETYPE_PEM);
-        }
-
-        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0))
-        {
-            VerifyPath=CopyStr(VerifyPath,(char *) Curr->Item);
-        }
-
-        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0))
-        {
-            VerifyFile=CopyStr(VerifyFile,(char *) Curr->Item);
-        }
-
-        Curr=ListGetNext(Curr);
-    }
-
-
-    Curr=ListGetNext(S->Values);
-    while (Curr)
-    {
-        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:CertFile")==0))
-        {
-            SSL_CTX_use_certificate_chain_file(ctx,(char *) Curr->Item);
-        }
-
-        if ((StrValid(Curr->Tag)) && (strcasecmp(Curr->Tag,"SSL:KeyFile")==0))
-        {
-            SSL_CTX_use_PrivateKey_file(ctx,(char *) Curr->Item,SSL_FILETYPE_PEM);
-        }
-
-        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0))
-        {
-            VerifyPath=CopyStr(VerifyPath,(char *) Curr->Item);
-        }
-
-        if ((StrValid(Curr->Tag)) && (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0))
-        {
-            VerifyFile=CopyStr(VerifyFile,(char *) Curr->Item);
-        }
-
-
-        Curr=ListGetNext(Curr);
-    }
-
+STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(S, ctx, LibUsefulValuesGetHead(), &VerifyPath, &VerifyFile);
+STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(S, ctx, S->Values, &VerifyPath, &VerifyFile);
 
     SSL_CTX_load_verify_locations(ctx,VerifyFile,VerifyPath);
 
@@ -160,10 +134,31 @@ static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
 }
 
 
-static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
+char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
+{
+char *Name=NULL, *Value=NULL;
+const char *ptr;
+
+RetStr=CopyStr(RetStr, "");
+ptr=GetNameValuePair(CertDetails, "/", "=", &Name, &Value);
+while (ptr)
+{
+   if (StrValid(Name) && (strcmp(Name, "CN")==0)) RetStr=CopyStr(RetStr, Value);
+   ptr=GetNameValuePair(ptr, "/", "=", &Name, &Value);
+}
+
+Destroy(Name);
+Destroy(Value);
+
+return(RetStr);
+}
+
+
+
+int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 {
     int RetVal=FALSE;
-    char *Name=NULL, *Value=NULL;
+    char *Value=NULL;
     const char *ptr;
     int val;
     X509 *cert=NULL;
@@ -180,6 +175,8 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
         STREAMSetValue(S,"SSL:CertificateIssuer",X509_NAME_oneline( X509_get_issuer_name(cert),NULL, 0));
         ptr=X509_NAME_oneline( X509_get_subject_name(cert),NULL, 0);
         STREAMSetValue(S,"SSL:CertificateSubject", ptr);
+				Value=OpenSSLCertDetailsGetCommonName(Value, ptr);
+        if (StrValid(Value)) STREAMSetValue(S, "SSL:CertificateCommonName", Value);
 
         Value=OpenSSLConvertTime(Value, X509_get_notBefore(cert));
         STREAMSetValue(S,"SSL:CertificateNotBefore", Value);
@@ -188,20 +185,13 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
         Value=OpenSSLGetCertFingerprint(Value, cert);
         STREAMSetValue(S,"SSL:CertificateFingerprint", Value);
 
-        ptr=GetNameValuePair(ptr,"/","=",&Name,&Value);
-        while (ptr)
-        {
-            if (StrValid(Name) && (strcmp(Name,"CN")==0)) STREAMSetValue(S,"SSL:CertificateCommonName",Value);
-            ptr=GetNameValuePair(ptr,"/","=",&Name,&Value);
-        }
-
 #ifdef HAVE_X509_CHECK_HOST
         if (Flags & LU_SSL_VERIFY_HOSTNAME)
         {
             if (StrValid(S->Path))
             {
-                ParseURL(S->Path,NULL,&Name,NULL,NULL,NULL,NULL,NULL);
-                val=X509_check_host(cert, Name, StrLen(Name), 0, NULL);
+                ParseURL(S->Path,NULL,&Value,NULL,NULL,NULL,NULL,NULL);
+                val=X509_check_host(cert, Value, StrLen(Value), 0, NULL);
             }
             else val=0;
         }
@@ -326,7 +316,6 @@ static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
     else OpenSSLCertError(S,"peer provided no certificate");
 
 
-    DestroyString(Name);
     DestroyString(Value);
 
 

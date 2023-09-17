@@ -10,6 +10,9 @@
 #include "Errors.h"
 
 
+/* These functions relate to CLIENT SIDE http/https */
+
+
 #define HTTP_OKAY 0
 #define HTTP_NOCONNECT 1
 #define HTTP_NOTFOUND 2
@@ -291,7 +294,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
 
 char *HTTPQuote(char *RetBuff, const char *Str)
 {
-    return(HTTPQuoteChars(RetBuff, Str, " \t\r\n\"#%()[]{}?&!,+':;/"));
+    return(HTTPQuoteChars(RetBuff, Str, " \t\r\n\"#%()[]{}<>?&!,+':;/@"));
 }
 
 
@@ -473,51 +476,55 @@ HTTPInfoStruct *HTTPInfoFromURL(const char *Method, const char *URL)
 }
 
 
-void HTTPParseCookie(HTTPInfoStruct *Info, const char *Str)
+
+
+
+
+//Parse Cookies from Server. These are sent singly, and what comes after ';' is
+//extra settings for that apply to this single cookie
+static void HTTPParseServerCookie(const char *Str)
 {
-    const char *startptr, *endptr;
-    char *Tempstr=NULL;
-    ListNode *Curr;
-    int len;
+    char *Name=NULL, *Value=NULL;
+    ListNode *Node;
+    const char *ptr;
 
-    startptr=Str;
-    while (*startptr==' ') startptr++;
 
-    endptr=strchr(startptr,';');
-    if (endptr==NULL) endptr=startptr+strlen(Str);
-//	if (( *endptr==';') || (*endptr=='\r') ) endptr--;
+    if (! Cookies) Cookies=ListCreate(LIST_FLAG_TIMEOUT);
 
-    Tempstr=CopyStrLen(Tempstr,startptr,endptr-startptr);
+    ptr=GetNameValuePair(Str, ";", "=", &Name, &Value);
+    StripTrailingWhitespace(Name);
+    StripLeadingWhitespace(Name);
+    StripTrailingWhitespace(Value);
+    StripLeadingWhitespace(Value);
+    Node=SetVar(Cookies, Name, Value);
 
-    Curr=ListGetNext(Cookies);
-    endptr=strchr(Tempstr,'=');
-    len=endptr-Tempstr;
-    len--;
-
-    while (Curr !=NULL)
+    ptr=GetNameValuePair(ptr, ";", "=", &Name, &Value);
+    while (ptr)
     {
-        if (strncmp(Curr->Item,Tempstr,len)==0)
-        {
-            Curr->Item=CopyStr(Curr->Item,Tempstr);
-            DestroyString(Tempstr);
-            return;
-        }
-        Curr=ListGetNext(Curr);
+        StripTrailingWhitespace(Name);
+        StripLeadingWhitespace(Name);
+        StripTrailingWhitespace(Value);
+        StripLeadingWhitespace(Value);
+
+        if (strcasecmp(Name, "expires")==0) ListNodeSetTime(Node, DateStrToSecs("%a, %d %b %Y %H:%M:%S", Value, NULL));
+        if (strcasecmp(Name, "max-age")==0) ListNodeSetTime(Node, GetTime(TIME_CACHED) + atoi(Value));
+        ptr=GetNameValuePair(ptr, ";", "=", &Name, &Value);
     }
 
-    if (! Cookies) Cookies=ListCreate();
-    ListAddItem(Cookies,(void *)CopyStr(NULL,Tempstr));
+    DestroyString(Name);
+    DestroyString(Value);
 
-    DestroyString(Tempstr);
 }
 
 
 
-char *AppendCookies(char *InStr, ListNode *CookieList)
+char *HTTPClientAppendCookies(char *InStr, ListNode *CookieList)
 {
     ListNode *Curr;
     char *Tempstr=NULL;
+    time_t Expires, Now;
 
+    Now=GetTime(TIME_CACHED);
     Tempstr=InStr;
     Curr=ListGetNext(CookieList);
 
@@ -526,9 +533,13 @@ char *AppendCookies(char *InStr, ListNode *CookieList)
         Tempstr=CatStr(Tempstr,"Cookie: ");
         while ( Curr )
         {
-            Tempstr=CatStr(Tempstr,(char *)Curr->Item);
-            Curr=ListGetNext(Curr);
-            if (Curr) Tempstr=CatStr(Tempstr, "; ");
+            Expires=ListNodeGetTime(Curr);
+            if ((Expires == 0) || (Expires < Now))
+            {
+                Tempstr=MCatStr(Tempstr, Curr->Tag, "=", (char *) Curr->Item, NULL);
+                Curr=ListGetNext(Curr);
+                if (Curr) Tempstr=CatStr(Tempstr, "; ");
+            }
         }
         Tempstr=CatStr(Tempstr,"\r\n");
     }
@@ -697,7 +708,7 @@ static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
 
         case 'S':
         case 's':
-            if (strcasecmp(Token,"Set-Cookie")==0) HTTPParseCookie(Info,ptr);
+            if (strcasecmp(Token,"Set-Cookie")==0) HTTPParseServerCookie(ptr);
             else if (strcasecmp(Token,"Status")==0)
             {
                 //'Status' overrides the response
@@ -965,7 +976,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
 
     if (! (Info->Flags & HTTP_NOCOOKIES))
     {
-        SendStr=AppendCookies(SendStr,Cookies);
+        SendStr=HTTPClientAppendCookies(SendStr,Cookies);
     }
 
     SendStr=CatStr(SendStr,"\r\n");

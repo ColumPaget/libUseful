@@ -133,7 +133,7 @@ typedef struct
     char *VerifyTemplate;
     char *AccessToken;
     char *RefreshToken;
-    char *RefreshURL;
+    char *RefreshURL; //no longer used, kept for the time being for compatiblity with existing code. now use Var 'refresh_url'.
     char *VerifyURL;
     char *VerifyCode;
     char *Creds;
@@ -157,7 +157,7 @@ int OAuthRegister(OAUTH *Ctx, const char *URL);
 int OAuthSave(OAUTH *Ctx, const char *Path);
 int OAuthLoad(OAUTH *Ctx, const char *Name, const char *Path);
 
-int OAuthRefresh(OAUTH *Ctx);
+int OAuthRefresh(OAUTH *Ctx, const char *URL);
 
 int OAuthStage1(OAUTH *Ctx, const char *URL);
 int OAuthFinalize(OAUTH *Ctx, const char *URL);

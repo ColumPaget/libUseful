@@ -4,6 +4,8 @@
 #include "Entropy.h"
 #include "Http.h"
 #include "Hash.h"
+#include "StreamAuth.h"
+#include "HttpServer.h"
 
 //WebSockets. What an effin abortion. This is what a protocol looks like when designed by a committee of people who are either malicious, or very stupid
 //Data is sent as frames, so you can interleave 'ping' commands in the middle of a data stream. I'm sure that gets a lot of use.
@@ -36,14 +38,14 @@ static int WebSocketBasicHeader(char *Buffer, int op, int len, uint32_t mask)
     Buffer[0]=WS_FIN | op;
     Buffer[1]=len;
 
-		if (mask > 0) 
-		{
-		Buffer[1] |= WS_MASKED; 
-    memcpy(Buffer+2, &mask, 4);
-    return(6);
-		}
+    if (mask > 0)
+    {
+        Buffer[1] |= WS_MASKED;
+        memcpy(Buffer+2, &mask, 4);
+        return(6);
+    }
 
-		return(2);
+    return(2);
 }
 
 
@@ -57,14 +59,14 @@ static uint32_t WebSocketExtendedHeader(char *Buffer, int op, int len, uint32_t 
 
     nlen=htons(len);
     memcpy(Buffer+2, &nlen, 2);
-		if (mask > 0) 
-		{
-		Buffer[1] |= WS_MASKED; 
-    memcpy(Buffer+4, &mask, 4);
-    return(8);
-		}
+    if (mask > 0)
+    {
+        Buffer[1] |= WS_MASKED;
+        memcpy(Buffer+4, &mask, 4);
+        return(8);
+    }
 
-		return(4);
+    return(4);
 }
 
 
@@ -139,7 +141,7 @@ static int WebSocketReadFrameHeader(STREAM *S, uint32_t *mask)
 
     case WS_TEXT:
     case WS_BINARY:
-				if (bytes[1] & WS_MASKED) STREAMPullBytes(S, (char *) mask, 4);
+        if (bytes[1] & WS_MASKED) STREAMPullBytes(S, (char *) mask, 4);
         return(len);
         break;
 
@@ -161,11 +163,11 @@ static void WebSocketSendFrame(STREAM *S, const char *Data, int Len)
     int pos;
 
 
-		if ( (S->Type == STREAM_TYPE_WS) || (S->Type == STREAM_TYPE_WSS) )
-		{
-    mask=rand() & 0xFFFFFFFF;
-    if (mask==0) mask=12345;
-		}
+    if ( (S->Type == STREAM_TYPE_WS) || (S->Type == STREAM_TYPE_WSS) )
+    {
+        mask=rand() & 0xFFFFFFFF;
+        if (mask==0) mask=12345;
+    }
 
     Frame=SetStrLen(Frame, Len + 20);
     if (S->Flags & SF_BINARY) pos=WebSocketHeader(Frame, WS_BINARY, Len, mask);
@@ -189,7 +191,7 @@ int WebSocketReadBytes(STREAM *S, char *Data, int Len)
 {
     static int msg_len=0;
     int read_len, result=0;
-		uint32_t mask=0;
+    uint32_t mask=0;
 
     if (msg_len==0)
     {
@@ -216,11 +218,11 @@ int WebSocketReadBytes(STREAM *S, char *Data, int Len)
         else read_len=msg_len;
 
         result=STREAMPullBytes(S, Data, read_len);
-				if (mask > 0) WebSocketMaskData(Data, (const char *) &mask, result);
-        if (result > 0) 
-				{
-					msg_len -= result;
-				}
+        if (mask > 0) WebSocketMaskData(Data, (const char *) &mask, result);
+        if (result > 0)
+        {
+            msg_len -= result;
+        }
     }
 
     return(result);
@@ -260,11 +262,6 @@ STREAM *WebSocketOpen(const char *WebsocketURL, const char *Config)
     {
         S->Type=Type;
         WebSocketSendControl(WS_PING, S);
-    }
-    else
-    {
-        STREAMClose(S);
-        S=NULL;
     }
 
     Destroy(Key);
@@ -322,19 +319,22 @@ int WebSocketAccept(STREAM *S)
         //Args=MCopyStr(Args, Config, " Upgrade=websocket Connection=Upgrade Sec-Websocket-Key=", Key, " Sec-Websocket-Version=13", NULL);
         ptr=GetToken(Tempstr, ":", &Key, 0);
         while (isspace(*ptr)) ptr++;
-        if (strcasecmp(Key, "Sec-Websocket-Key") == 0) STREAMSetValue(S, "WEBSOCKET:KEY", ptr);
-        if (strcasecmp(Key, "Sec-Websocket-Protocol") == 0) STREAMSetValue(S, "WEBSOCKET:PROTOCOL", ptr);
-        if ((strcasecmp(Key, "Upgrade") == 0) && (strcasecmp(ptr, "websocket")==0)) IsWebsocketUpgrade=TRUE;
+        if (strcasecmp(Key, "Authentication") == 0) HTTPServerParseAuthorization(S->Values, ptr);
+        else if (strcasecmp(Key, "Cookie") == 0) HTTPServerParseClientCookies(S->Values, ptr);
+        else if (strcasecmp(Key, "Sec-Websocket-Key") == 0) STREAMSetValue(S, "WEBSOCKET:KEY", ptr);
+        else if (strcasecmp(Key, "Sec-Websocket-Protocol") == 0) STREAMSetValue(S, "WEBSOCKET:PROTOCOL", ptr);
+        else if ((strcasecmp(Key, "Upgrade") == 0) && (strcasecmp(ptr, "websocket")==0)) IsWebsocketUpgrade=TRUE;
         Tempstr=STREAMReadLine(Tempstr, S);
     }
 
-    if (IsWebsocketUpgrade)
+    if (! IsWebsocketUpgrade) WebsocketSendHeaders(S, 400, "Bad Request");
+    else if (! STREAMAuth(S)) WebsocketSendHeaders(S, 401, "Authentication Required");
+    else
     {
         WebsocketSendHeaders(S, 101, "Switching Protocols");
         S->State |= SS_CONNECTED;
-				S->Type = STREAM_TYPE_WS_SERVICE;
+        S->Type = STREAM_TYPE_WS_SERVICE;
     }
-    else WebsocketSendHeaders(S, 400, "Bad Request");
 
     Destroy(Tempstr);
     Destroy(Key);

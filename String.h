@@ -84,6 +84,9 @@ char *SetStrLen(char *Str, size_t Len);
 //strcmp that won't creash if str is null
 int CompareStr(const char *S1, const char *S2);
 
+//strcasecmp that won't creash if str is null
+int CompareStrNoCase(const char *S1, const char *S2);
+
 //copy Len bytes from Src to Dest, resizing Dest if needed and return Dest
 char *CopyStrLen(char *Dest, const char *Src, size_t Len);
 
