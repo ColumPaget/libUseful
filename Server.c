@@ -2,6 +2,7 @@
 #include "URL.h"
 #include "IPAddress.h"
 #include "UnixSocket.h"
+#include "HttpServer.h"
 #include "WebSocket.h"
 #include "StreamAuth.h"
 
@@ -139,6 +140,21 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
 
     switch (*Proto)
     {
+    case 'h':
+        if (strcmp(Proto,"http")==0)
+        {
+            fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_HTTP_SERVER;
+        }
+        else if (strcmp(Proto,"https")==0)
+        {
+            fd=TCPServerNew(Host, Port, Flags, &Settings);
+            Type=STREAM_TYPE_HTTP_SERVER;
+            Flags |= SF_TLS;
+        }
+        break;
+
+
     case 's':
         if (strcmp(Proto,"ssl")==0)
         {
@@ -250,6 +266,12 @@ STREAM *STREAMServerAccept(STREAM *Serv)
         type=STREAM_TYPE_TCP_ACCEPT;
         break;
 
+    case STREAM_TYPE_HTTP_SERVER:
+        fd=IPServerAccept(Serv->in_fd, &Tempstr);
+        GetSockDetails(fd, &DestIP, &DestPort, NULL, NULL);
+        type=STREAM_TYPE_HTTP_ACCEPT;
+        break;
+
     case STREAM_TYPE_WS_SERVER:
         fd=IPServerAccept(Serv->in_fd, &Tempstr);
         GetSockDetails(fd, &DestIP, &DestPort, NULL, NULL);
@@ -285,6 +307,14 @@ STREAM *STREAMServerAccept(STREAM *Serv)
                 STREAMClose(S);
                 S=NULL;
             }
+            break;
+
+        case STREAM_TYPE_HTTP_ACCEPT:
+            if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+            else if (Serv->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+
+            //HttpServer handles STREAMAuth internally
+            HTTPServerAccept(S);
             break;
 
         case STREAM_TYPE_WS_ACCEPT:

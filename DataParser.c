@@ -893,7 +893,7 @@ ListNode *ParserFindItem(ListNode *Items, const char *Name)
     char *Token=NULL;
     const char *ptr;
 
-
+    if (! Items) return(NULL);
     ptr=Name;
     if (*ptr=='/')
     {

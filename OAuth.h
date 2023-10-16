@@ -8,7 +8,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define LIBUSEFUL_OAUTH_H
 
 /*
-GOD, WHERE TO EVEN BEGIN?
+OH GOD, WHERE TO EVEN BEGIN?
 
 OAuth is not really a standard, most sites seem to implement it differently. These functions help with
 implementing OAuth 2.0 authentication. It's complicated. More than it should be.

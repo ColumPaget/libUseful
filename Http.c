@@ -537,9 +537,9 @@ char *HTTPClientAppendCookies(char *InStr, ListNode *CookieList)
             if ((Expires == 0) || (Expires < Now))
             {
                 Tempstr=MCatStr(Tempstr, Curr->Tag, "=", (char *) Curr->Item, NULL);
-                Curr=ListGetNext(Curr);
-                if (Curr) Tempstr=CatStr(Tempstr, "; ");
+            	if (Curr->Next) Tempstr=CatStr(Tempstr, "; ");
             }
+	    Curr=ListGetNext(Curr);
         }
         Tempstr=CatStr(Tempstr,"\r\n");
     }
@@ -1466,3 +1466,15 @@ int HTTPGetFlags()
 }
 
 
+
+int HTTPConnectOkay(STREAM *S)
+{
+const char *ptr;
+
+if (! S) return(FALSE);
+ptr=STREAMGetValue(S, "HTTP:ResponseCode");
+if (! ptr) return(FALSE);
+
+if (*ptr=='2') return(TRUE);
+return(FALSE);
+}

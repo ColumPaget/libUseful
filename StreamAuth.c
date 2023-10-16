@@ -2,9 +2,28 @@
 #include "OpenSSL.h"
 
 
+//did the client provide an SSL certificate as authentication?
+static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const char *CommonName)
+{
+char *Require=NULL;
+int AuthResult=FALSE;
+
+//does the certificate name/subject match out expectation?
+Require=OpenSSLCertDetailsGetCommonName(Require, STREAMGetValue(S, CommonName));
+if (CompareStr(CertName, Require)==0)
+{
+		//is certificate valid
+    if (CompareStr(STREAMGetValue(S, "SSL:CertificateVerify"), "OK")==0) AuthResult=TRUE;
+}
+
+Destroy(Require);
+return(AuthResult);
+}
+
+
 static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
 {
-    char *Key=NULL, *Value=NULL, *Require=NULL;
+    char *Key=NULL, *Value=NULL;
     const char *ptr;
     int AuthResult=FALSE;
 
@@ -18,26 +37,8 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
         else if (
 									(CompareStrNoCase(Key, "certificate")==0) ||
 									(CompareStrNoCase(Key, "cert")==0)
-								)
-        {
-						//does the certificate name/subject match out expectation?
-						Require=OpenSSLCertDetailsGetCommonName(Require, STREAMGetValue(S, "SSL:CertificateSubject"));
-						if (CompareStr(Value, Require)==0)
-						{
-						//is certificate valid
-            if (CompareStr(STREAMGetValue(S, "SSL:CertificateVerify"), "OK")==0) AuthResult=TRUE;
-						}
-        }
-        else if (CompareStrNoCase(Key, "issuer")==0)
-        {
-						//does the certificate name/subject match out expectation?
-						Require=OpenSSLCertDetailsGetCommonName(Require, STREAMGetValue(S, "SSL:CertificateIssuer"));
-						if (CompareStr(Value, Require)==0)
-						{
-						//is certificate valid
-            if (CompareStr(STREAMGetValue(S, "SSL:CertificateVerify"), "OK")==0) AuthResult=TRUE;
-						}
-        }
+								)  AuthResult=STREAMAuthProcessCertificate(S, Value, "SSL:CertificateSubject");
+        else if (CompareStrNoCase(Key, "issuer")==0) AuthResult=STREAMAuthProcessCertificate(S, Value, "SSL:CertificateIssuer");
         else if (strncasecmp(Key, "cookie:", 7)==0)
         {
             if (CompareStr(Value, STREAMGetValue(S, Key))==0) AuthResult=TRUE;
@@ -51,7 +52,6 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
 
     Destroy(Key);
     Destroy(Value);
-    Destroy(Require);
 
     return(AuthResult);
 }

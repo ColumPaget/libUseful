@@ -6,6 +6,7 @@
 #include "Hash.h"
 #include "Users.h"
 #include "Entropy.h"
+#include "URL.h"
 
 static ListNode *OAuthTypes=NULL;
 static ListNode *OAuthKeyChain=NULL;
@@ -236,23 +237,43 @@ static int OAuthParseReply(OAUTH *Ctx, const char *ContentType, const char *Repl
 }
 
 
-
-static int OAuthAcceptRedirect(OAUTH *Ctx, int sock)
+//Accept an oauth reply on stdin which would either be a 'verifycode' used in oob flow
+//or else an entire redirect url pasted from a browser
+static void OAuthHandleStdInRedirect(STREAM *S, OAUTH *Ctx)
 {
-    int result;
+char *Tempstr=NULL;
+
+         STREAMSetTimeout(S,0);
+         Tempstr=STREAMReadLine(Tempstr, S);
+         if ( (strncmp(Tempstr, "http:", 5)==0) || (strncmp(Tempstr, "https:", 6)==0) ) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
+         else
+         {
+                StripTrailingWhitespace(Tempstr);
+                Ctx->VerifyCode=CopyStr(Ctx->VerifyCode, Tempstr);
+                SetVar(Ctx->Vars, "code", Ctx->VerifyCode);
+         }
+
+Destroy(Tempstr);
+}
+
+
+//
+static int OAuthAcceptRedirect(STREAM *Serv, OAUTH *Ctx)
+{
     char *Tempstr=NULL, *Token=NULL;
     const char *ptr, *tptr;
+    int RetVal=FALSE;
     STREAM *S;
 
-    result=IPServerAccept(sock, NULL);
-    if (result > -1)
+		S=STREAMServerAccept(Serv);
+    if (S != NULL)
     {
-        S=STREAMFromFD(result);
         Tempstr=STREAMReadLine(Tempstr, S);
 
         if (Tempstr)
         {
             if (LibUsefulDebugActive()) fprintf(stderr, "OAUTH REDIRECT: %s", Tempstr);
+
             //GET (or possibly POST)
             ptr=GetToken(Tempstr,"\\S", &Token,0);
             //URL
@@ -273,7 +294,7 @@ static int OAuthAcceptRedirect(OAUTH *Ctx, int sock)
                 if (LibUsefulDebugActive()) fprintf(stderr, "OAUTH_REDIRECT: %s\n", Tempstr);
                 Tempstr=STREAMReadLine(Tempstr, S);
             }
-
+						RetVal=TRUE;
         }
 
         Tempstr=MCopyStr(Tempstr, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n\r\n",GetVar(Ctx->Vars,"connect_back_page"),NULL);
@@ -283,71 +304,125 @@ static int OAuthAcceptRedirect(OAUTH *Ctx, int sock)
 
     DestroyString(Tempstr);
     DestroyString(Token);
-    if (result > -1) return(TRUE);
-    return(FALSE);
+
+		return(RetVal);
 }
 
 
-int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
+
+static char *OAuthReformatRedirectURL(char *RetStr, const char *RedirectURL)
 {
-    int netfd, result;
-    STREAM *S;
-    char *Tempstr=NULL;
-    fd_set fds;
+char *Proto=NULL, *Host=NULL, *Port=NULL, *Path=NULL;
+
+RetStr=CopyStr(RetStr, "");
+ParseURL(RedirectURL, &Proto, &Host, &Port, &Path, NULL, NULL, NULL);
+
+if (strcasecmp(Host, "localhost")==0) Host=CopyStr(Host, "127.0.0.1");
+else if (strcasecmp(Host, "127.0.0.1")==0) Host=CopyStr(Host, "127.0.0.1");
+else Host=CopyStr(Host, "0.0.0.0");
+
+if (strcasecmp(Proto, "https")==0) Proto=CopyStr(Proto, "tls:");
+else if (strcasecmp(Proto, "http")==0) Proto=CopyStr(Proto, "tcp:");
+
+RetStr=MCopyStr(RetStr, Proto, ":", Host, ":", Port, NULL);
+
+Destroy(Proto);
+Destroy(Host);
+Destroy(Port);
+Destroy(Path);
+
+return(RetStr);
+}
 
 
-    FD_ZERO(&fds);
 
-    if (Port > 0)
-    {
-        netfd=IPServerInit(SOCK_STREAM, "127.0.0.1", Port);
-        if (netfd==-1)
-        {
-            RaiseError(0, "OAuthListen", "Failed to bind port: %d", Port);
+int OAuthAwaitRedirect(OAUTH *Ctx, const char *RedirectURL, const char *URL, int Flags)
+{
+    STREAM *S, *Serv=NULL, *StdIn=NULL;
+    char *RedirURL=NULL, *Tempstr=NULL;
+    ListNode *Connections=NULL;
+
+	 RedirURL=OAuthReformatRedirectURL(RedirURL, RedirectURL);
+	 if (StrValid(RedirURL))
+	 {
+   Tempstr=MCopyStr(Tempstr, "rw", NULL);
+   Serv=STREAMServerNew(RedirURL, Tempstr);
+   if (Serv==NULL)
+   {
+            RaiseError(0, "OAuthAwaitRedirect", "Failed to bind url: %s", RedirURL);
             return(FALSE);
-        }
-    }
+   }
+   }
 
-    FD_SET(netfd, &fds);
-    if (Flags & OAUTH_STDIN) FD_SET(0, &fds);
+	 Connections=ListCreate();
+   if (Serv) ListAddItem(Connections, Serv);
+   if (Flags & OAUTH_STDIN) 
+	 {
+		StdIn=STREAMFromDualFD(0,1);
+    if (StdIn) ListAddItem(Connections, StdIn);
+   }
 
-    result=select(netfd+1, &fds, NULL, NULL, NULL);
-    if (result > 0)
+		S=STREAMSelect(Connections, NULL);
+    if (S != NULL)
     {
-        if (FD_ISSET(netfd, &fds)) OAuthAcceptRedirect(Ctx, netfd);
-        else if (FD_ISSET(0, &fds))
-        {
-            S=STREAMFromFD(0);
-            STREAMSetTimeout(S,0);
-            Tempstr=STREAMReadLine(Tempstr, S);
-            if ( (strncmp(Tempstr, "http:", 5)==0) || (strncmp(Tempstr, "https:", 6)==0) ) OAuthParseReply(Ctx, "application/x-www-form-urlencoded", Tempstr);
-            else
-            {
-                StripTrailingWhitespace(Tempstr);
-                Ctx->VerifyCode=CopyStr(Ctx->VerifyCode, Tempstr);
-                SetVar(Ctx->Vars, "code", Ctx->VerifyCode);
-            }
-            STREAMDestroy(S);
-        }
-        OAuthFinalize(Ctx, URL);
+			if (S==Serv) OAuthAcceptRedirect(S, Ctx);
+			else OAuthHandleStdInRedirect(S, Ctx);
+
+      OAuthFinalize(Ctx, URL);
     }
+
+		//Close Serv, but just destroy StdIn, as we don't want to 
+		//actually close our stdin and stdout file descriptors
+		STREAMClose(Serv);
+		STREAMDestroy(StdIn);
+    ListDestroy(Connections, NULL);
 
     DestroyString(Tempstr);
-    close(netfd);
+    DestroyString(RedirURL);
 
     return(TRUE);
 }
 
 
+int OAuthListen(OAUTH *Ctx, int Port, const char *URL, int Flags)
+{
+int RetVal=FALSE;
+char *Tempstr=NULL;
+
+Tempstr=FormatStr(Tempstr, "tcp:127.0.0.1:%d", Port);
+RetVal=OAuthAwaitRedirect(Ctx, Tempstr, URL, Flags);
+
+Destroy(Tempstr);
+return(RetVal);
+}
+
+
+char *HTTPURLAddAuth(char *RetStr, const char *URL, const char *User, const char *Password)
+{
+const char *ptr;
+char *Tempstr=NULL;
+
+
+//some systems want client ID and client Secret to be sent as a login with 'basic' authentication
+ptr=GetToken(URL, ":", &Tempstr, 0);
+while (*ptr=='/') ptr++;
+RetStr=MCopyStr(RetStr, Tempstr, "://", User, ":", Password, "@", ptr, NULL);
+
+Destroy(Tempstr);
+return(RetStr);
+}
+
+
 //curl -X POST -d "client_id=CLIENT_ID_HERE&client_secret=CLIENT_SECRET_HERE&grant_type=password&username=YOUR_EMAIL&password=YOUR_PASSWORD" -Ss https://mastodon.social/oauth/token
-int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
+int OAuthGrant(OAUTH *Ctx, const char *iURL, const char *PostArgs)
 {
     STREAM *S;
-    char *Tempstr=NULL;
+    char *Tempstr=NULL, *URL=NULL;
     const char *ptr;
     int len, result=FALSE;
 
-    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: OAuthGrant: %s args: %s\n", URL, PostArgs);
+    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: OAuthGrant: %s args: %s\n", iURL, PostArgs);
+		URL=HTTPURLAddAuth(URL, iURL, GetVar(Ctx->Vars, "client_id"), GetVar(Ctx->Vars, "client_secret"));
     S=HTTPMethod("POST",URL,"application/x-www-form-urlencoded; charset=UTF-8",PostArgs,StrLen(PostArgs));
     if (S)
     {
@@ -370,6 +445,7 @@ int OAuthGrant(OAUTH *Ctx, const char *URL, const char *PostArgs)
     else RaiseError(0, "OAuthGrant", "Failed to connect: %s", URL);
 
     DestroyString(Tempstr);
+    DestroyString(URL);
 
     return(result);
 }
@@ -402,13 +478,8 @@ int OAuthRefresh(OAUTH *Ctx, const char *iURL)
 
     if (StrValid(ptr))
     {
-        //some systems want client ID and client Secret to be sent as a login with 'basic' autentication
-        ptr=GetToken(ptr, ":", &Tempstr, 0);
-        while (*ptr=='/') ptr++;
-        URL=MCopyStr(URL, Tempstr, "://", GetVar(Ctx->Vars, "client_id"), ":", GetVar(Ctx->Vars, "client_secret"), "@", NULL);
-
         ptr=GetToken(ptr, "?", &Tempstr, 0);
-        URL=CatStr(URL, Tempstr);
+        URL=CopyStr(URL, Tempstr);
 
         if (StrValid(ptr)) Args=SubstituteVarsInString(Args, ptr, Ctx->Vars, SUBS_HTTP_VARS);
         else

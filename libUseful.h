@@ -66,5 +66,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "SysInfo.h"
 #include "Users.h"
 #include "UnitsOfMeasure.h"
+#include "HttpServer.h"
+#include "WebSocket.h"
 
 #endif

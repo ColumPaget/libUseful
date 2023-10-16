@@ -2454,12 +2454,12 @@ unsigned long STREAMCopy(STREAM *Src, const char *DestPath)
 
 int STREAMCommit(STREAM *S)
 {
-    void *Item;
+    HTTPInfoStruct *Item;
 
-    Item=STREAMGetItem(S, "HTTP:InfoStruct");
-    if (Item)
+    if (! (S->Flags & SF_RDONLY) )
     {
-        if (HTTPTransact((HTTPInfoStruct *) Item) != NULL) return(TRUE);
+    Item=(HTTPInfoStruct *) STREAMGetItem(S, "HTTP:InfoStruct");
+    if ( Item && (HTTPTransact(Item) !=NULL) ) return(TRUE);
     }
 
     //for streams where we are talking to someting on pipes

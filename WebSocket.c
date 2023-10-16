@@ -274,21 +274,17 @@ STREAM *WebSocketOpen(const char *WebsocketURL, const char *Config)
 }
 
 
-static void WebsocketSendHeaders(STREAM *S, int ResponseCode, const char *ResponseText)
+static void WebsocketUpgradeProtocol(STREAM *S)
 {
     char *Tempstr=NULL, *Headers=NULL, *Hash=NULL;
 
-    Headers=FormatStr(Headers, "HTTP/1.1 %03d %s\r\n", ResponseCode, ResponseText);
-    if (ResponseCode == 101)
-    {
-        Headers=CatStr(Headers, "Upgrade: Websocket\r\nConnection: Upgrade\r\n");
-        Tempstr=MCopyStr(Tempstr, STREAMGetValue(S, "WEBSOCKET:KEY"), WEBSOCKET_ACCEPT_MAGIC, NULL);
-        HashBytes(&Hash, "sha1", Tempstr, StrLen(Tempstr), ENCODE_BASE64);
-        Headers=MCatStr(Headers, "Sec-Websocket-Accept: ", Hash, "\r\n", NULL);
-    }
-    Headers=CatStr(Headers, "\r\n");
-    STREAMWriteLine(Headers, S);
-    STREAMFlush(S);
+    Headers=CopyStr(Headers, "Upgrade=Websocket Connection=Upgrade");
+    Tempstr=MCopyStr(Tempstr, STREAMGetValue(S, "WEBSOCKET:KEY"), WEBSOCKET_ACCEPT_MAGIC, NULL);
+    HashBytes(&Hash, "sha1", Tempstr, StrLen(Tempstr), ENCODE_BASE64);
+    Headers=MCatStr(Headers, "Sec-Websocket-Accept=", Hash, " ", NULL);
+    HTTPServerSendHeaders(S, 101, "Switching Protocols", Headers);
+    S->State |= SS_CONNECTED;
+    S->Type = STREAM_TYPE_WS_SERVICE;
 
     Destroy(Headers);
     Destroy(Tempstr);
@@ -299,46 +295,20 @@ static void WebsocketSendHeaders(STREAM *S, int ResponseCode, const char *Respon
 
 int WebSocketAccept(STREAM *S)
 {
-    char *Tempstr=NULL, *Key=NULL, *Value=NULL;
     const char *ptr;
-    int IsWebsocketUpgrade=FALSE;
 
-    Tempstr=STREAMReadLine(Tempstr, S);
-    ptr=GetToken(Tempstr, "\\S", &Value, 0);
-    STREAMSetValue(S, "HTTP:Method", Value);
-    ptr=GetToken(Tempstr, "\\S", &Value, 0);
-    STREAMSetValue(S, "HTTP:URL", Value);
+    HTTPServerAccept(S);
 
+    ptr=STREAMGetValue(S, "HTTP:Upgrade");
 
-    Tempstr=STREAMReadLine(Tempstr, S);
-    while (Tempstr)
+    if (! StrValid(ptr)) HTTPServerSendHeaders(S, 400, "Bad Request", NULL);
+    else if (strcasecmp(ptr, "websocket") != 0) HTTPServerSendHeaders(S, 400, "Bad Request", NULL);
+    else if (! STREAMAuth(S)) HTTPServerSendHeaders(S, 401, "Authentication Required", NULL);
+    else 
     {
-        StripTrailingWhitespace(Tempstr);
-        if (! StrValid(Tempstr)) break;
-
-        //Args=MCopyStr(Args, Config, " Upgrade=websocket Connection=Upgrade Sec-Websocket-Key=", Key, " Sec-Websocket-Version=13", NULL);
-        ptr=GetToken(Tempstr, ":", &Key, 0);
-        while (isspace(*ptr)) ptr++;
-        if (strcasecmp(Key, "Authentication") == 0) HTTPServerParseAuthorization(S->Values, ptr);
-        else if (strcasecmp(Key, "Cookie") == 0) HTTPServerParseClientCookies(S->Values, ptr);
-        else if (strcasecmp(Key, "Sec-Websocket-Key") == 0) STREAMSetValue(S, "WEBSOCKET:KEY", ptr);
-        else if (strcasecmp(Key, "Sec-Websocket-Protocol") == 0) STREAMSetValue(S, "WEBSOCKET:PROTOCOL", ptr);
-        else if ((strcasecmp(Key, "Upgrade") == 0) && (strcasecmp(ptr, "websocket")==0)) IsWebsocketUpgrade=TRUE;
-        Tempstr=STREAMReadLine(Tempstr, S);
+	WebsocketUpgradeProtocol(S);
+	return(TRUE);
     }
-
-    if (! IsWebsocketUpgrade) WebsocketSendHeaders(S, 400, "Bad Request");
-    else if (! STREAMAuth(S)) WebsocketSendHeaders(S, 401, "Authentication Required");
-    else
-    {
-        WebsocketSendHeaders(S, 101, "Switching Protocols");
-        S->State |= SS_CONNECTED;
-        S->Type = STREAM_TYPE_WS_SERVICE;
-    }
-
-    Destroy(Tempstr);
-    Destroy(Key);
-    Destroy(Value);
-
-    return(IsWebsocketUpgrade);
+    
+    return(FALSE);
 }

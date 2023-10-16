@@ -224,6 +224,8 @@ char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, const char
 
 void HTTPInfoSetAuth(HTTPInfoStruct *Auth, const char *Logon, const char *Password, int Type);
 
+int HTTPConnectOkay(STREAM *S);
+
 #ifdef __cplusplus
 }
 #endif
