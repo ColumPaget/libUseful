@@ -1,6 +1,7 @@
 #include "Http.h"
 #include "DataProcessing.h"
 #include "ConnectionChain.h"
+#include "ContentType.h"
 #include "Hash.h"
 #include "URL.h"
 #include "OAuth.h"
@@ -537,9 +538,9 @@ char *HTTPClientAppendCookies(char *InStr, ListNode *CookieList)
             if ((Expires == 0) || (Expires < Now))
             {
                 Tempstr=MCatStr(Tempstr, Curr->Tag, "=", (char *) Curr->Item, NULL);
-            	if (Curr->Next) Tempstr=CatStr(Tempstr, "; ");
+                if (Curr->Next) Tempstr=CatStr(Tempstr, "; ");
             }
-	    Curr=ListGetNext(Curr);
+            Curr=ListGetNext(Curr);
         }
         Tempstr=CatStr(Tempstr,"\r\n");
     }
@@ -1469,12 +1470,12 @@ int HTTPGetFlags()
 
 int HTTPConnectOkay(STREAM *S)
 {
-const char *ptr;
+    const char *ptr;
 
-if (! S) return(FALSE);
-ptr=STREAMGetValue(S, "HTTP:ResponseCode");
-if (! ptr) return(FALSE);
+    if (! S) return(FALSE);
+    ptr=STREAMGetValue(S, "HTTP:ResponseCode");
+    if (! ptr) return(FALSE);
 
-if (*ptr=='2') return(TRUE);
-return(FALSE);
+    if (*ptr=='2') return(TRUE);
+    return(FALSE);
 }

@@ -5,19 +5,19 @@
 //did the client provide an SSL certificate as authentication?
 static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const char *CommonName)
 {
-char *Require=NULL;
-int AuthResult=FALSE;
+    char *Require=NULL;
+    int AuthResult=FALSE;
 
 //does the certificate name/subject match out expectation?
-Require=OpenSSLCertDetailsGetCommonName(Require, STREAMGetValue(S, CommonName));
-if (CompareStr(CertName, Require)==0)
-{
-		//is certificate valid
-    if (CompareStr(STREAMGetValue(S, "SSL:CertificateVerify"), "OK")==0) AuthResult=TRUE;
-}
+    Require=OpenSSLCertDetailsGetCommonName(Require, STREAMGetValue(S, CommonName));
+    if (CompareStr(CertName, Require)==0)
+    {
+        //is certificate valid
+        if (CompareStr(STREAMGetValue(S, "SSL:CertificateVerify"), "OK")==0) AuthResult=TRUE;
+    }
 
-Destroy(Require);
-return(AuthResult);
+    Destroy(Require);
+    return(AuthResult);
 }
 
 
@@ -35,9 +35,9 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
             if (CompareStr(Value, STREAMGetValue(S, "Auth:Basic"))==0) AuthResult=TRUE;
         }
         else if (
-									(CompareStrNoCase(Key, "certificate")==0) ||
-									(CompareStrNoCase(Key, "cert")==0)
-								)  AuthResult=STREAMAuthProcessCertificate(S, Value, "SSL:CertificateSubject");
+            (CompareStrNoCase(Key, "certificate")==0) ||
+            (CompareStrNoCase(Key, "cert")==0)
+        )  AuthResult=STREAMAuthProcessCertificate(S, Value, "SSL:CertificateSubject");
         else if (CompareStrNoCase(Key, "issuer")==0) AuthResult=STREAMAuthProcessCertificate(S, Value, "SSL:CertificateIssuer");
         else if (strncasecmp(Key, "cookie:", 7)==0)
         {
@@ -60,12 +60,12 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
 
 int STREAMAuth(STREAM *S)
 {
-const char *ptr;
+    const char *ptr;
 
-ptr=STREAMGetValue(S, "Authentication");
-if (! StrValid(ptr)) return(TRUE);
+    ptr=STREAMGetValue(S, "Authentication");
+    if (! StrValid(ptr)) return(TRUE);
 
-return(STREAMAuthProcess(S, ptr));
+    return(STREAMAuthProcess(S, ptr));
 
-return(FALSE);
+    return(FALSE);
 }

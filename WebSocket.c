@@ -304,11 +304,11 @@ int WebSocketAccept(STREAM *S)
     if (! StrValid(ptr)) HTTPServerSendHeaders(S, 400, "Bad Request", NULL);
     else if (strcasecmp(ptr, "websocket") != 0) HTTPServerSendHeaders(S, 400, "Bad Request", NULL);
     else if (! STREAMAuth(S)) HTTPServerSendHeaders(S, 401, "Authentication Required", NULL);
-    else 
+    else
     {
-	WebsocketUpgradeProtocol(S);
-	return(TRUE);
+        WebsocketUpgradeProtocol(S);
+        return(TRUE);
     }
-    
+
     return(FALSE);
 }

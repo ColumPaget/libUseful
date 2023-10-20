@@ -100,7 +100,7 @@ void HTTPServerParseClientHeaders(STREAM *S)
 
 void HTTPServerAccept(STREAM *S)
 {
-HTTPServerParseClientHeaders(S);
+    HTTPServerParseClientHeaders(S);
 }
 
 
@@ -165,8 +165,8 @@ int HTTPServerSendFile(STREAM *S, const char *Path, const char *iContentType, co
     if (stat(Path, &FStat) != 0) HTTPServerSendHeaders(S, 404, "NOT FOUND", NULL);
     else
     {
-	if (StrValid(iContentType)) ContentType=CopyStr(ContentType, iContentType);
-	else ContentType=CopyStr(ContentType, ContentTypeForFile(Path));
+        if (StrValid(iContentType)) ContentType=CopyStr(ContentType, iContentType);
+        else ContentType=CopyStr(ContentType, ContentTypeForFile(Path));
 
         F=STREAMOpen(Path, "r");
         if (! F) HTTPServerSendHeaders(S, 401, "FORBIDDEN", NULL);
@@ -174,9 +174,9 @@ int HTTPServerSendFile(STREAM *S, const char *Path, const char *iContentType, co
         {
             Tempstr=FormatStr(Tempstr, "Content-Length=%d ", FStat.st_size);
             if (StrValid(ContentType)) Tempstr=MCatStr(Tempstr, "Content-Type=", ContentType, " ", NULL);
-	    Tempstr=CatStr(Tempstr, Headers);
+            Tempstr=CatStr(Tempstr, Headers);
             HTTPServerSendHeaders(S, 200, "OKAY", Tempstr);
-	    STREAMSendFile(F, S, 0, SENDFILE_LOOP);
+            STREAMSendFile(F, S, 0, SENDFILE_LOOP);
             STREAMClose(F);
         }
     }

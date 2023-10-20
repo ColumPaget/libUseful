@@ -2458,8 +2458,8 @@ int STREAMCommit(STREAM *S)
 
     if (! (S->Flags & SF_RDONLY) )
     {
-    Item=(HTTPInfoStruct *) STREAMGetItem(S, "HTTP:InfoStruct");
-    if ( Item && (HTTPTransact(Item) !=NULL) ) return(TRUE);
+        Item=(HTTPInfoStruct *) STREAMGetItem(S, "HTTP:InfoStruct");
+        if ( Item && (HTTPTransact(Item) !=NULL) ) return(TRUE);
     }
 
     //for streams where we are talking to someting on pipes
