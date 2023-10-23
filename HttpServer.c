@@ -1,7 +1,7 @@
 #include "HttpServer.h"
 #include "Tokenizer.h"
 #include "String.h"
-
+#include "ContentType.h"
 
 static void HTTPServerSetValue(STREAM *S, const char *Name, const char *Value)
 {

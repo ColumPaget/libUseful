@@ -428,7 +428,6 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
 
     if (StrValid(Proto) && (CompareStr(Proto,"https")==0)) Info->Flags |= HTTP_SSL;
 
-
     ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     while (ptr)
     {
@@ -448,6 +447,11 @@ void HTTPInfoSetURL(HTTPInfoStruct *Info, const char *Method, const char *iURL)
         else if (strcasecmp(Token, "password")==0) Pass=CopyStr(Pass, Value);
         else if (strcasecmp(Token, "keepalive")==0) Info->Flags |= HTTP_KEEPALIVE;
         else if (strcasecmp(Token, "timeout")==0) Info->Timeout=atoi(Value);
+        else if (strcasecmp(Token, "authtype")==0) 
+				{
+            if (strcasecmp(Value, "digest")==0) Info->AuthFlags |= HTTP_AUTH_DIGEST;
+				}
+        else if (strcasecmp(Token, "digest-auth")==0) Info->AuthFlags |= HTTP_AUTH_DIGEST;
         else SetVar(Info->CustomSendHeaders, Token, Value);
         ptr=GetNameValuePair(ptr,"\\S","=",&Token, &Value);
     }
