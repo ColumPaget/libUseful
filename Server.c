@@ -118,6 +118,7 @@ static void STREAMServerParseConfig(STREAM *S, const char *Config)
         if (strncasecmp(Name, "SSL:", 4)==0) STREAMSetValue(S, Name, Value);
         else if (strcasecmp(Name, "Authentication")==0) STREAMSetValue(S, Name, Value);
         else if (strcasecmp(Name, "Auth")==0) STREAMSetValue(S, "Authentication", Value);
+
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
 
@@ -227,8 +228,7 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         S->Path=CopyStr(S->Path, URL);
         if (Flags & SOCK_TLS_AUTO) S->Flags |= SF_TLS_AUTO;
         else if (Flags & SF_TLS) S->Flags |= SF_TLS;
-
-        if (S->Flags & (SF_TLS | SF_TLS_AUTO)) STREAMServerParseConfig(S, Config);
+    		STREAMServerParseConfig(S, Config);
     }
 
     DestroyString(Proto);
@@ -293,6 +293,7 @@ STREAM *STREAMServerAccept(STREAM *Serv)
     if (S)
     {
         CopyVars(S->Values, Serv->Values);
+
         //things that we have to do post-accept for each type of socket
         switch (type)
         {

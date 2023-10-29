@@ -22,3 +22,5 @@ all:
 	gcc -oSSLClient.exe SSLClient.c $(LIBS)
 	gcc -oSysInfo.exe SysInfo.c $(LIBS)
 	gcc -oWebsocket.exe Websocket.c $(LIBS)
+	gcc -oHttpServer.exe HttpServer.c $(LIBS)
+	gcc -oPasswordFile.exe PasswordFile.c $(LIBS)

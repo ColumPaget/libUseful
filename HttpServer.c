@@ -49,7 +49,10 @@ void HTTPServerParseAuthorization(ListNode *Vars, const char *Str)
     char *Token=NULL;
     const char *ptr;
 
-    ptr=GetToken(Str, "\\S", &Token, 0);
+		ptr=Str;
+		while (isspace(*ptr)) ptr++;
+    ptr=GetToken(ptr, "\\S", &Token, 0);
+
     if (strcasecmp(Token, "basic")==0)
     {
         ptr=GetToken(ptr, "\\S", &Token, 0);

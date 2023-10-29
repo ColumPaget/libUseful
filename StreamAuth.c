@@ -1,6 +1,7 @@
 #include "StreamAuth.h"
 #include "OpenSSL.h"
-
+#include "PasswordFile.h"
+#include "HttpUtil.h"
 
 //did the client provide an SSL certificate as authentication?
 static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const char *CommonName)
@@ -21,6 +22,29 @@ static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const c
 }
 
 
+
+
+static int STREAMBasicAuthPasswordFile(const char *Path, STREAM *S)
+{
+char *User=NULL, *Password=NULL;
+const char *ptr;
+int AuthResult=FALSE;
+
+ptr=STREAMGetValue(S, "Auth:Basic");
+printf("AB: [%s]\n", ptr);
+if (! StrValid(ptr)) return(FALSE);
+
+HTTPDecodeBasicAuth(ptr, &User, &Password);
+AuthResult=PasswordFileCheck(Path, User, Password);
+
+Destroy(User);
+Destroy(Password);
+
+return(AuthResult);
+}
+
+
+
 static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
 {
     char *Key=NULL, *Value=NULL;
@@ -30,6 +54,7 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
     ptr=GetNameValuePair(AuthTypes, ",", ":",&Key, &Value);
     while (ptr)
     {
+printf("AUTH: %s\n", Key);
         if (CompareStrNoCase(Key, "basic")==0)
         {
             if (CompareStr(Value, STREAMGetValue(S, "Auth:Basic"))==0) AuthResult=TRUE;
@@ -47,6 +72,8 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
         {
             if (CompareStr(Value, GetRemoteIP(S->in_fd))==0) AuthResult=TRUE;
         }
+        else if (CompareStrNoCase(Key, "password-file")==0) AuthResult=STREAMBasicAuthPasswordFile(Value, S);
+
         ptr=GetNameValuePair(ptr, ",", "=",&Key, &Value);
     }
 

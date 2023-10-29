@@ -68,5 +68,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "UnitsOfMeasure.h"
 #include "HttpServer.h"
 #include "WebSocket.h"
+#include "PasswordFile.h"
 
 #endif

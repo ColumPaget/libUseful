@@ -78,7 +78,7 @@ Note, 'hostauth' is not a name/value pair, just a config flag that enables sendi
 #include "includes.h"
 #include "defines.h"
 #include "Stream.h"
-
+#include "HttpUtil.h"
 
 //These values can be set either by 'HTTPSetFlags' for all connections or in the 'Flags' member
 //of an HTTPInfoStruct for a particular conection
