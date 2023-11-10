@@ -285,6 +285,7 @@ unsigned long FileCopyWithProgress(const char *SrcPath, const char *DestPath, DA
 {
     STREAM *Src;
     unsigned long result;
+    struct stat FStat;
 
     Src=STREAMOpen(SrcPath,"r");
     if (! Src) return(0);
@@ -292,6 +293,8 @@ unsigned long FileCopyWithProgress(const char *SrcPath, const char *DestPath, DA
     if (Callback) STREAMAddProgressCallback(Src,Callback);
     result=STREAMCopy(Src, DestPath);
     STREAMClose(Src);
+    if (stat(SrcPath, &FStat)==0) chmod(DestPath, FStat.st_mode);
+
     return(result);
 }
 
