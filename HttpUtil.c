@@ -4,14 +4,14 @@
 
 void HTTPDecodeBasicAuth(const char *Auth, char **UserName, char **Password)
 {
-char *Tempstr=NULL;
-const char *ptr;
+    char *Tempstr=NULL;
+    const char *ptr;
 
-Tempstr=DecodeToText(Tempstr, Auth, ENCODE_BASE64);
-ptr=GetToken(Tempstr, ":", UserName, 0);
-ptr=GetToken(ptr, ":", Password, 0);
+    Tempstr=DecodeToText(Tempstr, Auth, ENCODE_BASE64);
+    ptr=GetToken(Tempstr, ":", UserName, 0);
+    ptr=GetToken(ptr, ":", Password, 0);
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 }
 
 

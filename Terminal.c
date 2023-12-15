@@ -322,6 +322,10 @@ void TerminalInternalConfig(const char *Config, int *ForeColor, int *BackColor, 
             if (strcasecmp(Name,"mouse")==0) *Flags=TERM_MOUSE;
             break;
 
+	case 'n':
+            if (strcasecmp(Name,"nocolor")==0) *Flags=TERM_NOCOLOR;
+	    break;
+
         case 'r':
         case 'R':
             if (strcasecmp(Name, "rawkeys") ==0) *Flags |= TERM_RAWKEYS;
@@ -652,7 +656,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
                 Fg=0;
                 Bg=0;
                 ptr=TerminalParseColor(ptr, &Fg, &Bg);
-                *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, Fg, Bg);
+                if (! (Term->Flags & TERM_STREAM_NOCOLOR)) *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, Fg, Bg);
                 break;
 
             case 'e':
@@ -1059,7 +1063,9 @@ int TerminalInit(STREAM *S, int Flags)
     STREAMSetValue(S, "Terminal:top", "0");
 
 
+    if (Flags & TERM_NOCOLOR) S->Flags |= TERM_STREAM_NOCOLOR;
     if (Flags & TERM_HIDECURSOR) TerminalCursorHide(S);
+
     if (isatty(S->in_fd))
     {
         if (Flags & TERM_SAVEATTRIBS) ttyflags=TTYFLAG_SAVE;

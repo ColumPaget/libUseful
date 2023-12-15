@@ -2,6 +2,7 @@
 #include "Tokenizer.h"
 #include "String.h"
 #include "ContentType.h"
+#include "StreamAuth.h"
 
 static void HTTPServerSetValue(STREAM *S, const char *Name, const char *Value)
 {
@@ -49,8 +50,8 @@ void HTTPServerParseAuthorization(ListNode *Vars, const char *Str)
     char *Token=NULL;
     const char *ptr;
 
-		ptr=Str;
-		while (isspace(*ptr)) ptr++;
+    ptr=Str;
+    while (isspace(*ptr)) ptr++;
     ptr=GetToken(ptr, "\\S", &Token, 0);
 
     if (strcasecmp(Token, "basic")==0)
@@ -103,7 +104,7 @@ void HTTPServerParseClientHeaders(STREAM *S)
 
 void HTTPServerAccept(STREAM *S)
 {
-    HTTPServerParseClientHeaders(S);
+HTTPServerParseClientHeaders(S);
 }
 
 

@@ -6,27 +6,27 @@
 
 char *PasswordFileGenerateEntry(char *RetStr, const char *User, const char *PassType, const char *Password)
 {
-char *Salt=NULL, *Hash=NULL, *Tempstr=NULL;
+    char *Salt=NULL, *Hash=NULL, *Tempstr=NULL;
 
-				if (StrEnd(PassType) || (strcasecmp(PassType, "plain")==0) ) 
-				{	
-					Salt=CopyStr(Salt, "");
-					Hash=CopyStr(Hash, Password);
-				}
-				else 
-				{
-					Salt=GetRandomAlphabetStr(Salt, 20);
-					Tempstr=MCatStr(Tempstr, Salt, Password, NULL);
-					HashBytes(&Hash, PassType, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
-				}
+    if (StrEnd(PassType) || (strcasecmp(PassType, "plain")==0) )
+    {
+        Salt=CopyStr(Salt, "");
+        Hash=CopyStr(Hash, Password);
+    }
+    else
+    {
+        Salt=GetRandomAlphabetStr(Salt, 20);
+        Tempstr=MCatStr(Tempstr, Salt, Password, NULL);
+        HashBytes(&Hash, PassType, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
+    }
 
-RetStr=MCopyStr(RetStr, User, ":", PassType, ":", Salt, ":", Hash, "\n", NULL);
+    RetStr=MCopyStr(RetStr, User, ":", PassType, ":", Salt, ":", Hash, "\n", NULL);
 
-Destroy(Tempstr);
-Destroy(Hash);
-Destroy(Salt);
+    Destroy(Tempstr);
+    Destroy(Hash);
+    Destroy(Salt);
 
-return(RetStr);
+    return(RetStr);
 }
 
 
@@ -34,42 +34,42 @@ int PasswordFileAdd(const char *Path, const char *PassType, const char *User, co
 {
     STREAM *Old, *New;
     char *Tempstr=NULL, *Token=NULL, *Salt=NULL;
-		int RetVal=FALSE;
+    int RetVal=FALSE;
 
-   	Old=STREAMOpen(Path, "r");
+    Old=STREAMOpen(Path, "r");
 
     Tempstr=MCopyStr(Tempstr, Path, "+", NULL);
     New=STREAMOpen(Tempstr, "w");
     if (New)
     {
-			if (Old)
-			{
-        Tempstr=STREAMReadLine(Tempstr, Old);
-        while (Tempstr)
+        if (Old)
         {
-            GetToken(Tempstr, ":", &Token, 0);
-            if (strcmp(User, Token) !=0) STREAMWriteLine(Tempstr, New);
             Tempstr=STREAMReadLine(Tempstr, Old);
+            while (Tempstr)
+            {
+                GetToken(Tempstr, ":", &Token, 0);
+                if (strcmp(User, Token) !=0) STREAMWriteLine(Tempstr, New);
+                Tempstr=STREAMReadLine(Tempstr, Old);
+            }
+            STREAMClose(Old);
         }
-    		STREAMClose(Old);
-			}
 
 
-				Tempstr=PasswordFileGenerateEntry(Tempstr, User, PassType, Password);
+        Tempstr=PasswordFileGenerateEntry(Tempstr, User, PassType, Password);
         STREAMWriteLine(Tempstr, New);
 
-				rename(New->Path, Path);
-    		STREAMClose(New);
+        rename(New->Path, Path);
+        STREAMClose(New);
 
-				RetVal=TRUE;
+        RetVal=TRUE;
     }
 
 
-		Destroy(Tempstr);
-		Destroy(Token);
-		Destroy(Salt);
+    Destroy(Tempstr);
+    Destroy(Token);
+    Destroy(Salt);
 
-		return(RetVal);
+    return(RetVal);
 }
 
 
@@ -77,20 +77,20 @@ int PasswordFileAppend(const char *Path, const char *PassType, const char *User,
 {
     STREAM *F;
     char *Tempstr=NULL, *Token=NULL;
-		int RetVal=FALSE;
+    int RetVal=FALSE;
 
     F=STREAMOpen(Path, "a");
     if (! F) return(FALSE);
 
-		STREAMSeek(F, 0, SEEK_END);
-		Tempstr=PasswordFileGenerateEntry(Tempstr, User, PassType, Password);
+    STREAMSeek(F, 0, SEEK_END);
+    Tempstr=PasswordFileGenerateEntry(Tempstr, User, PassType, Password);
     STREAMWriteLine(Tempstr, F);
     STREAMClose(F);
 
-		Destroy(Tempstr);
-		Destroy(Token);
+    Destroy(Tempstr);
+    Destroy(Token);
 
-		return(RetVal);
+    return(RetVal);
 }
 
 
@@ -110,11 +110,11 @@ static int PasswordFileMatchItem(const char *Data, const char *User, const char 
         ptr=GetToken(ptr, ":", &Salt, 0);
 
         if ( (! StrValid(Token)) || (strcmp(Token, "plain")==0) ) Compare=CopyStr(Compare, Password);
-        else 
-				{
-					Tempstr=MCopyStr(Tempstr, Salt, Password, NULL);
-					HashBytes(&Compare, Token, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
-				}
+        else
+        {
+            Tempstr=MCopyStr(Tempstr, Salt, Password, NULL);
+            HashBytes(&Compare, Token, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
+        }
 
         if (strcmp(Compare, ptr) == 0) result=TRUE;
     }

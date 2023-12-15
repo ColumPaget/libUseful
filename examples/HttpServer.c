@@ -6,7 +6,8 @@ STREAM *Serv, *S;
 ListNode *Connections;
 char *Doc=NULL;
 
-Serv=STREAMServerNew("http://127.0.0.1:4040", "rw auth='password-file:/tmp/test.pw'");
+//Serv=STREAMServerNew("http://127.0.0.1:4040", "rw auth='password-file:/tmp/test.pw'");
+Serv=STREAMServerNew("http://127.0.0.1:4040", "rw auth='ip:192.168.2.1,127.0.0.1'");
 Connections=ListCreate();
 ListAddItem(Connections, Serv);
 

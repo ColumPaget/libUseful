@@ -31,6 +31,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "StringList.h"
 #include "Expect.h"
 #include "List.h"
+#include "Array.h"
 #include "Stream.h"
 #include "Inet.h"
 #include "base64.h"

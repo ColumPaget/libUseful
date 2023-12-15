@@ -912,7 +912,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
         if (Flags & STREAM_APPEND) lseek(fd,0,SEEK_END);
     }
 
-    STREAMSetFlags(Stream, Stream->Flags, 0);
+    STREAMSetFlags(Stream, Flags, 0);
 
     Destroy(Tempstr);
     Destroy(NewPath);
@@ -937,6 +937,7 @@ static int STREAMParseConfig(const char *Config)
         {
             //any space indicates end of open flags
             if (isspace(*ptr)) break;
+
             switch (*ptr)
             {
             case 'c':
@@ -2316,6 +2317,23 @@ int STREAMFind(STREAM *S, const char *Item, const char *Delimiter, char **RetStr
 }
 
 
+static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
+{
+if (! (Flags & SENDFILE_KERNEL)) return(FALSE);
+switch (In->Type)
+{
+case STREAM_TYPE_FILE:
+case STREAM_TYPE_PIPE:
+break;
+
+default: return(FALSE); break;
+}
+
+if  (ListSize(In->ProcessingModules) > 0) return(FALSE);
+if  (ListSize(Out->ProcessingModules) > 0) return(FALSE);
+
+return(TRUE);
+}
 
 
 unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Flags)
@@ -2341,13 +2359,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
 //if we are not using ssl and not using processor modules, we can use
 //kernel-level copy!
 
-    if (
-        (Flags & SENDFILE_KERNEL) &&
-        (! (In->State & SS_SSL)) &&
-        (! (Out->State & SS_SSL)) &&
-        (ListSize(In->ProcessingModules)==0) &&
-        (ListSize(Out->ProcessingModules)==0)
-    )
+    if (UseKernelSendFile(In, Out, Flags))
     {
         UseSendFile=TRUE;
         STREAMFlush(Out);

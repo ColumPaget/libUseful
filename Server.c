@@ -116,8 +116,8 @@ static void STREAMServerParseConfig(STREAM *S, const char *Config)
     while (ptr)
     {
         if (strncasecmp(Name, "SSL:", 4)==0) STREAMSetValue(S, Name, Value);
-        else if (strcasecmp(Name, "Authentication")==0) STREAMSetValue(S, Name, Value);
-        else if (strcasecmp(Name, "Auth")==0) STREAMSetValue(S, "Authentication", Value);
+        else if (strcasecmp(Name, "Authentication")==0) STREAMSetValue(S, "Authenticator", Value);
+        else if (strcasecmp(Name, "Auth")==0) STREAMSetValue(S, "Authenticator", Value);
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
@@ -228,7 +228,7 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         S->Path=CopyStr(S->Path, URL);
         if (Flags & SOCK_TLS_AUTO) S->Flags |= SF_TLS_AUTO;
         else if (Flags & SF_TLS) S->Flags |= SF_TLS;
-    		STREAMServerParseConfig(S, Config);
+        STREAMServerParseConfig(S, Config);
     }
 
     DestroyString(Proto);

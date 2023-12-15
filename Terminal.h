@@ -121,6 +121,7 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TERM_HIDETEXT  1   //hide text (default is show it)
 #define TERM_SHOWSTARS 2   //show stars instead of text (for passwords)
 #define TERM_SHOWTEXTSTARS 4 //show stars+last character typed
+#define TERM_NOCOLOR       8
 #define TERM_HIDECURSOR 32   //hide the cursor
 #define TERM_RAWKEYS 64      //switch a terminal into 'raw' mode rather than canonical (usually you want this)
 #define TERMBAR_UPPER 128
@@ -133,15 +134,21 @@ typedef enum {ANSI_NONE, ANSI_BLACK, ANSI_RED, ANSI_GREEN, ANSI_YELLOW, ANSI_BLU
 #define TERM_ALIGN_RIGHT  8192
 #define TERM_FOCUS_EVENTS 16384  //send window focusin/focusout events (these appear as keystrokes XTERM_FOCUS_IN and XTERM_FOCUS_OUT)
 
+
 //These flags can be passed in the Flags argument of ANSICode
-#define ANSI_HIDE			65536
-#define ANSI_BOLD			131072
-#define ANSI_FAINT		262144
-#define ANSI_UNDER		524288
-#define ANSI_BLINK		1048576
+#define ANSI_HIDE  65536
+#define ANSI_BOLD  131072
+#define ANSI_FAINT 262144
+#define ANSI_UNDER 524288
+#define ANSI_BLINK 1048576
 #define ANSI_INVERSE  2097152
 #define ANSI_NORM "\x1b[0m"
 #define ANSI_BACKSPACE 0x08
+
+
+//These are flags that can be set against a Terminal STREAM
+//They use STREAM flags that are meaningless for terminals
+#define TERM_STREAM_NOCOLOR SF_BINARY
 
 
 // Specify if system supports utf8. This is global for all terminals. 'level' can be
