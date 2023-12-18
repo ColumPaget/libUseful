@@ -813,7 +813,6 @@ int OpenSSLSTREAMReadBytes(STREAM *S, char *Data, int len)
         //zero or less indicates some kind of error. Could be we are waiting for or bytes, or any number of
         //real errors that count as disconnection
 
-fprintf(stderr, "SSL: %d\n", bytes_read);
         if (bytes_read < 1)
         {
             //turns out you get hangs here if you treat SSL_ERROR_WANT_READ as being 'wait for more bytes'
