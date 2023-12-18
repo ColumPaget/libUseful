@@ -656,7 +656,8 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
                 Fg=0;
                 Bg=0;
                 ptr=TerminalParseColor(ptr, &Fg, &Bg);
-                if (! (Term->Flags & TERM_STREAM_NOCOLOR)) *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, Fg, Bg);
+		//if we have a Term object, then TERM_STREAM_NOCOLOR must not be set
+                if ((! Term) || (! (Term->Flags & TERM_STREAM_NOCOLOR))) *RetStr=TerminalCommandStr(*RetStr, TERM_COLOR, Fg, Bg);
                 break;
 
             case 'e':
