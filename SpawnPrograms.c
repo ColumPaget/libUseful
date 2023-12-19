@@ -192,6 +192,10 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     int result;
     int Flags=0;
 
+    //if these flags are set, we are going to create a process without stderr or stdout
+    ///so we aren't going to return any fds, and we won't create any pipes for stderr or stdout
+    if (Flags & SPAWN_STDOUT_NULL) outfd=NULL;
+    if (Flags & SPAWN_STDERR_NULL) errfd=NULL;
 
     Flags=SpawnParseConfig(Config);
     if (infd)
@@ -227,21 +231,12 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
         if (infd) close(channel1[1]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
 
-        if (Flags & SPAWN_STDOUT_NULL)
-        {
-            if (outfd) close(*outfd);
-            outfd=NULL;
-        }
-
+	//if we want the process to have no stdout
+        if (Flags & SPAWN_STDOUT_NULL) close(1);
         if (outfd) close(channel2[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
 
-        if (Flags & SPAWN_STDERR_NULL)
-        {
-            if (errfd) close(*errfd);
-            errfd=NULL;
-        }
-
+        if (Flags & SPAWN_STDERR_NULL) close(2);
         if (errfd) close(channel3[0]);
         else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
 
@@ -267,6 +262,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
             close(channel2[1]);
             *outfd=channel2[0];
         }
+
         if (errfd)
         {
             close(channel3[1]);
