@@ -755,8 +755,8 @@ STREAM *STREAMFromDualFD(int in_fd, int out_fd)
 {
     STREAM *Stream;
 
-    if (in_fd==-1) return(NULL);
-    if (out_fd==-1) return(NULL);
+    if ((in_fd==-1) && (out_fd==-1)) return(NULL);
+    //if (out_fd==-1) return(NULL);
 
     Stream=STREAMCreate();
     Stream->in_fd=in_fd;

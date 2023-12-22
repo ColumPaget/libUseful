@@ -181,6 +181,30 @@ pid_t SpawnWithIO(const char *CommandLine, const char *Config, int StdIn, int St
 }
 
 
+//This creates an STDIO pipe, unless 'ToNull' is true
+static int PipeSpawnCreateStdOutPipe(const char *Type, int channel[2], int ToNull)
+{
+int fd=-1, result;
+
+channel[0]=-1;
+channel[1]=-1;
+
+//if we ask for this to be set to null, then we map leave fd set to -1
+//which maps to /dev/null in xforkio
+if (! ToNull) 
+{
+	result=pipe(channel);
+  if (result==0) 
+	{
+	  if (strcmp(Type, "stdin")==0) fd=channel[0];
+		else fd=channel[1];
+	}
+  else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for %s", Type);
+}
+
+return(fd);
+}
+
 
 /* This creates a child process that we can talk to using a couple of pipes*/
 pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void *Data, const char *Config)
@@ -188,57 +212,24 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     pid_t pid;
     //default these to stdin, stdout and stderr and then override those later
     int c1=0, c2=1, c3=2;
-    int channel1[2], channel2[2], channel3[2], DevNull=-1;
+    int channel1[2], channel2[2], channel3[2];
     int result;
     int Flags=0;
 
-    //if these flags are set, we are going to create a process without stderr or stdout
-    ///so we aren't going to return any fds, and we won't create any pipes for stderr or stdout
-    if (Flags & SPAWN_STDOUT_NULL) outfd=NULL;
-    if (Flags & SPAWN_STDERR_NULL) errfd=NULL;
-
     Flags=SpawnParseConfig(Config);
-    if (infd)
-    {
-        result=pipe(channel1);
-        //this is a read channel, so pipe[0]
-        if (result==0) c1=channel1[0];
-        else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for stdin");
-    }
+    if (infd) c1=PipeSpawnCreateStdOutPipe("stdin", channel1, 0);
+    if (outfd) c2=PipeSpawnCreateStdOutPipe("stdout", channel2, Flags & SPAWN_STDOUT_NULL);
 
-    if (outfd)
-    {
-        result=pipe(channel2);
-        //this is a write channel, so pipe[1]
-        if (result==0) c2=channel2[1];
-        else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for stdout");
-    }
-
-    if (errfd)
-    {
-        result=pipe(channel3);
-        //this is a write channel, so pipe[1]
-        if (result==0) c3=channel3[1];
-        else RaiseError(ERRFLAG_ERRNO, "PipeSpawnFunction", "Failed to create pipe for stderr");
-    }
+    if (errfd) c3=PipeSpawnCreateStdOutPipe("stderr", channel3, Flags & SPAWN_STDERR_NULL);
     else if (Flags & SPAWN_COMBINE_STDERR) c3=c2;
-
 
     pid=xforkio(c1, c2, c3);
     if (pid==0)
     {
-        /* we are the child */
+        /* we are the child, so we close the appropriate sites of the pipe for our connection */
         if (infd) close(channel1[1]);
-        else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
-
-	//if we want the process to have no stdout
-        if (Flags & SPAWN_STDOUT_NULL) close(1);
         if (outfd) close(channel2[0]);
-        else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
-
-        if (Flags & SPAWN_STDERR_NULL) close(2);
         if (errfd) close(channel3[0]);
-        else if (DevNull==-1) DevNull=open("/dev/null",O_RDWR);
 
         //if Func is NULL we effectively do a fork, rather than calling a function we just
         //continue exectution from where we were
@@ -256,11 +247,13 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
         {
             close(channel1[0]);
             *infd=channel1[1];
+						if (*infd == -1) *infd=open("/dev/null", O_RDWR);
         }
         if (outfd)
         {
             close(channel2[1]);
             *outfd=channel2[0];
+						if (*outfd == -1) *outfd=open("/dev/null", O_RDWR);
         }
 
         if (errfd)
