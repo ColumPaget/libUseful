@@ -8,7 +8,7 @@
 #include "Errors.h"
 #include "FileSystem.h"
 #include <sys/ioctl.h>
-#include <wait.h>
+#include <sys/wait.h>
 
 #define SPAWN_COMBINE_STDERR 1
 #define SPAWN_STDOUT_NULL 2
