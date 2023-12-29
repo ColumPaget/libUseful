@@ -3689,7 +3689,7 @@ else
 fi
 
 
-if test "$cf_use_ip6" != "yes"
+if test "$cf_use_ip6" = "yes"
 then
 $as_echo "#define USE_INET6 1" >>confdefs.h
 

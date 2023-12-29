@@ -29,7 +29,7 @@ static const char *ParseHostDetailsExtractAuth(const char *Data, char **User, ch
 const char *ParseHostDetails(const char *Data, char **Host,char **Port,char **User, char **Password)
 {
     char *Token=NULL;
-    const char *ptr, *tptr;
+    const char *ptr;
 
     if (Port) *Port=CopyStr(*Port, "");
     if (Host) *Host=CopyStr(*Host, "");
@@ -43,8 +43,7 @@ const char *ParseHostDetails(const char *Data, char **Host,char **Port,char **Us
 //hence we have to enclose them in square braces, which we must handle here
     if (*ptr == '[')
     {
-        tptr=ptr+1;
-        ptr=GetToken(ptr+1, "]", &Token, 0);
+        ptr=GetToken(ptr, "]", &Token, GETTOKEN_APPEND_SEP);
         if (Host) *Host=CopyStr(*Host, Token);
         if (*ptr == ':') ptr++;
     }

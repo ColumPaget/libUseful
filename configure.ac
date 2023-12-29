@@ -45,7 +45,7 @@ fi
 
 AC_ARG_ENABLE(ip6, [  --enable-ip6       enable IPv6 support], cf_use_ip6=$enableval, cf_use_ip6=yes )
 
-if test "$cf_use_ip6" != "yes"
+if test "$cf_use_ip6" = "yes"
 then
 AC_DEFINE([USE_INET6],1)
 fi

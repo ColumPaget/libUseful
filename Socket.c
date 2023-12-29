@@ -761,10 +761,17 @@ int IPReconnect(int sock, const char *Host, int Port, int Flags)
 }
 
 
-int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char *Host, int Port, TSockSettings *Settings)
+int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char *InHost, int Port, TSockSettings *Settings)
 {
     const char *p_LocalHost=LocalHost;
+		char *Host=NULL;
     int sock, result;
+
+
+		//we have preserved 'host' with '[ addr ]' wrapper for IP6 until now
+		if (*InHost=='[') Host=CopyStrLen(Host, InHost+1, StrLen(InHost)-2);
+		else Host=CopyStr(Host, InHost);
+
 
     if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
     if ((strcasecmp(Proto,"udp")==0) || (strcasecmp(Proto,"bcast")==0))
@@ -774,6 +781,7 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
     }
     else sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
 
+
     if (Settings->TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings->TTL), sizeof(int));
     if (Settings->ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings->ToS), sizeof(int));
 
@@ -782,6 +790,9 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
 #endif
 
     result=IPReconnect(sock, Host, Port, Settings->Flags);
+
+		Destroy(Host);
+		
     if (result==-1)
     {
         close(sock);
@@ -991,6 +1002,7 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
     else
     {
         ParseURL(URL, &Proto, &Host, &Token, NULL, NULL, &Path, NULL);
+
         if (StrValid(Token)) Port=strtoul(Token, 0, 10);
 
         STREAMSetFlushType(S,FLUSH_LINE,0,0);
