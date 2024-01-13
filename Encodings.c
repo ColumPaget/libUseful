@@ -1,5 +1,6 @@
 #include "Encodings.h"
 #include "base64.h"
+#include "base32.h"
 #include "Http.h"
 
 
@@ -18,11 +19,17 @@ int EncodingParse(const char *Str)
             else if (strcasecmp(Str,"10")==0) Encode=ENCODE_DECIMAL;
             break;
 
-        case '6':
-        case '8':
-            if (strcasecmp(Str,"64")==0) Encode=ENCODE_BASE64;
-            else if (strcasecmp(Str,"8")==0) Encode=ENCODE_OCTAL;
+        case '3':
+            if (strcasecmp(Str,"32")==0) Encode=ENCODE_BASE32;
             break;
+
+        case '6':
+            if (strcasecmp(Str,"64")==0) Encode=ENCODE_BASE64;
+            break;
+
+        case '8':
+            if (strcasecmp(Str,"8")==0) Encode=ENCODE_OCTAL;
+						break;
 
         case 'a':
         case 'A':
@@ -35,11 +42,15 @@ int EncodingParse(const char *Str)
         case 'B':
             if (strcasecmp(Str,"base64")==0) Encode=ENCODE_BASE64;
             else if (strcasecmp(Str,"b64")==0) Encode=ENCODE_BASE64;
+            else if (strcasecmp(Str,"base32")==0) Encode=ENCODE_BASE32;
+            else if (strcasecmp(Str,"b32")==0) Encode=ENCODE_BASE32;
             break;
 
         case 'c':
         case 'C':
             if (CompareStr(Str,"crypt")==0) Encode=ENCODE_CRYPT;
+            else if (strcasecmp(Str,"c32")==0) Encode=ENCODE_CBASE32;
+            else if (strcasecmp(Str,"cbase32")==0) Encode=ENCODE_CBASE32;
             break;
 
         case 'd':
@@ -53,6 +64,8 @@ int EncodingParse(const char *Str)
             if (strcasecmp(Str,"hex")==0) Encode=ENCODE_HEX;
             else if (strcasecmp(Str,"hexupper")==0) Encode=ENCODE_HEXUPPER;
             else if (strcasecmp(Str,"http")==0) Encode=ENCODE_QUOTED_HTTP;
+            else if (strcasecmp(Str,"h32")==0) Encode=ENCODE_HBASE32;
+            else if (strcasecmp(Str,"hbase32")==0) Encode=ENCODE_HBASE32;
             break;
 
         case 'o':
@@ -93,6 +106,12 @@ int EncodingParse(const char *Str)
             else if (strcasecmp(Str,"uuenc")==0) Encode=ENCODE_UUENC;
             break;
 
+				case 'w':
+				case 'W':
+            if (strcasecmp(Str,"wbase32")==0) Encode=ENCODE_WBASE32;
+            else if (strcasecmp(Str,"w32")==0) Encode=ENCODE_WBASE32;
+						break;
+
         case 'x':
         case 'X':
             if (strcasecmp(Str,"xx")==0) Encode=ENCODE_XXENC;
@@ -103,6 +122,8 @@ int EncodingParse(const char *Str)
         case 'z':
         case 'Z':
             if (strcasecmp(Str,"z85")==0) Encode=ENCODE_Z85;
+            else if (strcasecmp(Str,"z32")==0) Encode=ENCODE_ZBASE32;
+            else if (strcasecmp(Str,"zbase32")==0) Encode=ENCODE_ZBASE32;
             break;
         }
     }
@@ -169,6 +190,26 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
     RetStr=CopyStr(Buffer,"");
     switch (Encoding)
     {
+		case ENCODE_BASE32:
+				RetStr=base32encode(RetStr, Bytes, len, BASE32_RFC4648_CHARS, '=');
+		break;
+
+		case ENCODE_CBASE32:
+				RetStr=base32encode(RetStr, Bytes, len, BASE32_CROCKFORD_CHARS, '\0');
+		break;
+
+		case ENCODE_HBASE32:
+				RetStr=base32encode(RetStr, Bytes, len, BASE32_HEX_CHARS, '=');
+		break;
+
+		case ENCODE_ZBASE32:
+				RetStr=base32encode(RetStr, Bytes, len, BASE32_ZBASE32_CHARS, '\0');
+		break;
+
+		case ENCODE_WBASE32:
+				RetStr=base32encode(RetStr, Bytes, len, BASE32_WORDSAFE_CHARS, '=');
+		break;
+
     case ENCODE_BASE64:
         RetStr=SetStrLen(RetStr,len * 4);
         to64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len);
@@ -305,6 +346,26 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
         *Return=HTTPUnQuote(*Return, Text);
         len=StrLen(*Return);
         break;
+
+		case ENCODE_BASE32:
+				base32decode(*Return, Text, BASE32_RFC4648_CHARS);	
+				break;
+
+		case ENCODE_CBASE32:
+				base32decode(*Return, Text, BASE32_CROCKFORD_CHARS);	
+				break;
+
+		case ENCODE_HBASE32:
+				base32decode(*Return, Text, BASE32_HEX_CHARS);	
+				break;
+
+		case ENCODE_WBASE32:
+				base32decode(*Return, Text, BASE32_WORDSAFE_CHARS);	
+				break;
+
+		case ENCODE_ZBASE32:
+				base32decode(*Return, Text, BASE32_ZBASE32_CHARS);	
+				break;
 
     case ENCODE_BASE64:
         len=Radix64tobits(*Return,Text,BASE64_CHARS,'=');

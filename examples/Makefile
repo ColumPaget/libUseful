@@ -1,4 +1,4 @@
-LIBS=../libUseful.a -lssl -lcrypto -lz -lcap
+LIBS=../libUseful.a -lssl -lcrypto -lz #-lcap
 
 all:
 	gcc -oJSON.exe JSON.c $(LIBS)
@@ -24,3 +24,4 @@ all:
 	gcc -oWebsocket.exe Websocket.c $(LIBS)
 	gcc -oHttpServer.exe HttpServer.c $(LIBS)
 	gcc -oPasswordFile.exe PasswordFile.c $(LIBS)
+	gcc -obase32.exe base32.c $(LIBS)

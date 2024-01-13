@@ -64,7 +64,14 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 #define ENCODE_DECIMAL 10
 #define ENCODE_HEX  16
 #define ENCODE_HEXUPPER 17
-#define ENCODE_BASE64 64
+#define ENCODE_BASE32  32  //rfc4648 base 32
+#define ENCODE_CBASE32 33  //crockford base32
+#define ENCODE_HBASE32 34  //'extended hex' base32
+#define ENCODE_BASE32_HEX 34
+#define ENCODE_WBASE32 35  //'word safe' base32
+#define ENCODE_BASE32_WORDSAFE 35
+#define ENCODE_ZBASE32 36
+#define ENCODE_BASE64  64
 #define ENCODE_IBASE64 65
 #define ENCODE_PBASE64 66
 #define ENCODE_XXENC 67
@@ -87,6 +94,11 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 #define ASCII85_CHARS "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstu"
 #define Z85_CHARS "01234567899abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#."
 
+#define BASE32_CROCKFORD_CHARS "0123456789abcdefghjkmnpqrstvwxyz"
+#define BASE32_RFC4648_CHARS "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+#define BASE32_HEX_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUV"
+#define BASE32_WORDSAFE_CHARS "23456789CFGHJMPQRVWXcfghjmpqrvwx"
+#define BASE32_ZBASE32_CHARS "ybndrfg8ejkmcpqxot1uwisza345h769"
 
 
 #ifdef __cplusplus
@@ -100,6 +112,8 @@ extern "C" {
 //"dec"  Decimal Encoding
 //"16"   HexaDecimal Encoding
 //"hex"  HexaDecimal Encoding
+//"32"   base32 Encoding
+//"b32"  base32 Encoding
 //"64"   base64 Encoding
 //"b64"  base64 Encoding
 //"r64"  rfc4648 compliant alternative base64 Encoding

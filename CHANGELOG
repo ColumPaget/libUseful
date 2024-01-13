@@ -1,0 +1,12 @@
+v5.5 (2024-01-13)
+  * Base32 encoding schemes added
+  * binary-coded-decimal functions added in GeneralFunctions.c
+  * fixes for gzip encode/decode in streams
+  * fixes for issues with IP6
+  * use 'sys/wait.h' instead of 'wait.h'
+  * fixes/improvements for 'PipeSpawn'
+  * copy file permissions when FileCopy
+  * handle SUPER key in terminal functions
+  * lots of work on Ouath and experimental websocket and http servers
+
+
