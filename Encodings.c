@@ -348,23 +348,23 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
         break;
 
 		case ENCODE_BASE32:
-				base32decode(*Return, Text, BASE32_RFC4648_CHARS);	
+				len=base32decode(*Return, Text, BASE32_RFC4648_CHARS);	
 				break;
 
 		case ENCODE_CBASE32:
-				base32decode(*Return, Text, BASE32_CROCKFORD_CHARS);	
+				len=base32decode(*Return, Text, BASE32_CROCKFORD_CHARS);	
 				break;
 
 		case ENCODE_HBASE32:
-				base32decode(*Return, Text, BASE32_HEX_CHARS);	
+				len=base32decode(*Return, Text, BASE32_HEX_CHARS);	
 				break;
 
 		case ENCODE_WBASE32:
-				base32decode(*Return, Text, BASE32_WORDSAFE_CHARS);	
+				len=base32decode(*Return, Text, BASE32_WORDSAFE_CHARS);	
 				break;
 
 		case ENCODE_ZBASE32:
-				base32decode(*Return, Text, BASE32_ZBASE32_CHARS);	
+				len=base32decode(*Return, Text, BASE32_ZBASE32_CHARS);	
 				break;
 
     case ENCODE_BASE64:

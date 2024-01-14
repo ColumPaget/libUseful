@@ -23,7 +23,7 @@ for (ptr=In; *ptr != '\0'; ptr++)
 //find the position in the base32 characterset. That position is the 'value' of the character
 found=strchr(Encoder, *ptr); 
 if (found) val=(found - Encoder);
-else val=0;
+else break;;
 
 //the highest value a base 32 character can express is 16 (0x10)
 bit=16;
@@ -55,11 +55,16 @@ p_Out=Out;
 for (ptr=Tempstr; ptr < Tempstr+StrLen(Tempstr); ptr+=8)
 {
   val=parse_bcd_byte(ptr);
-  memcpy(p_Out, &val, sizeof(uint32_t));
-  p_Out ++;
+	*p_Out=val & 0xFF;
+  p_Out++;
 }
 
+val=p_Out - Out;
+if (val > 0) val=val-1;
+
 Destroy(Tempstr);
+
+return(val);
 }
 
 

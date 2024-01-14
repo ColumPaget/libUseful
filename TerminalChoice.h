@@ -1,3 +1,8 @@
+/*
+Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
 /* This implements a simple one-line menu that looks like:
  *
  *    proceed Y/n? <yes> no

@@ -118,7 +118,7 @@ int HashFinish(HASH *Hash, int Encoding, char **Return)
     ptr=GetToken(Hash->Type, ",", &Token, 0);
     while (StrValid(ptr))
     {
-        //process each has type in the hash chain
+        //process each hash type in the hash chain
         ptr=GetToken(ptr, ",", &Token, 0);
         len=HashBytes(&Hashed, Token, Bytes, len, 0);
         Bytes=SetStrLen(Bytes, len);
