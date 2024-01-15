@@ -42,7 +42,7 @@ typedef struct
 #include <poll.h>
 #include <math.h>
 
-static void *SelectAddFD(TSelectSet *Set, int type, int fd)
+static void SelectAddFD(TSelectSet *Set, int type, int fd)
 {
     struct pollfd *items;
 

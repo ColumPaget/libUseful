@@ -1,5 +1,4 @@
-#AC_INIT(libUseful,colums.projects@googlemail.com,,http://sites.google.com/site/columscode) 
-AC_INIT(defines.h)
+AC_INIT(libUseful,,colums.projects@googlemail.com,,http://sites.google.com/site/columscode) 
 
 AC_PROG_CC
 AC_LANG_C
@@ -174,7 +173,7 @@ esac
 
 
 cf_have_capabilities=no
-AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval, cf_use_capabilities=yes )
+AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval, cf_use_capabilities=no )
 
 if test "$cf_use_capabilities" = "yes"
 then

@@ -1,5 +1,10 @@
+v5.7 (2024-01-15)
+  * Fix base32 misunderstanding
+  * Tidyups suggested by andreasstieger@github.com, including flags not returned by ProcessApplyLateConfig.
+  * libcapabilites support now defaults to 'no' 
+
 v5.6 (2024-01-14)
-	* TOTP function added
+  * TOTP function added
   * base32 decode functions now return length
 
 v5.5 (2024-01-13)
