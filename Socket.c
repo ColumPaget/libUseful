@@ -346,7 +346,7 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
 int GetHostARP(const char *IP, char **Device, char **MAC)
 {
     char *Tempstr=NULL, *Token=NULL;
-    int result=FALSE;
+    int result=FALSE, len;
     const char *ptr;
     FILE *F;
 
@@ -358,7 +358,9 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
         *Device=CopyStr(*Device,"remote");
         *MAC=CopyStr(*MAC,"remote");
         //Read Title Line
-        fgets(Tempstr,255,F);
+        len=fgets(Tempstr,255,F);
+	Tempstr[len]='\0';
+	
 
         while (fgets(Tempstr,255,F))
         {

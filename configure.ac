@@ -1,9 +1,11 @@
-AC_INIT(libUseful,,colums.projects@googlemail.com,,http://sites.google.com/site/columscode) 
+AC_INIT
 
 AC_PROG_CC
-AC_LANG_C
+AC_LANG([C])
 AC_PROG_MAKE_SET
-AC_HEADER_STDC
+AC_CHECK_INCLUDES_DEFAULT
+AC_PROG_EGREP
+
 AC_SYS_LARGEFILE
 
 cf_have_libssl=no
@@ -189,7 +191,8 @@ fi
 
 
 dnl read Makefile.in and write Makefile 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 
 echo
 echo

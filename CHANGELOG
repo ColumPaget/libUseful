@@ -1,3 +1,7 @@
+v5.8 (2024-01-15)
+  * Fix build error when building without openssl
+  * Give in to autoconf insisting upgrade to modern format
+
 v5.7 (2024-01-15)
   * Fix base32 misunderstanding
   * Tidyups suggested by andreasstieger@github.com, including flags not returned by ProcessApplyLateConfig.

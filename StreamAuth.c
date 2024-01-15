@@ -18,6 +18,7 @@ static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const c
     char *Require=NULL;
     int AuthResult=FALSE;
 
+#ifdef HAVE_LIBSSL
 //does the certificate name/subject match out expectation?
     Require=OpenSSLCertDetailsGetCommonName(Require, STREAMGetValue(S, CommonName));
     if (CompareStr(CertName, Require)==0)
@@ -25,6 +26,7 @@ static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const c
         //is certificate valid
         if (CompareStr(STREAMGetValue(S, "SSL:CertificateVerify"), "OK")==0) AuthResult=TRUE;
     }
+#endif
 
     Destroy(Require);
     return(AuthResult);
