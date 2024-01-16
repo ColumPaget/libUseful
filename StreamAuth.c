@@ -6,12 +6,6 @@
 #include "StringList.h"
 
 
-static int STREAMAuthValueFile(const char *Path, const char *Value)
-{
-
-
-}
-
 //did the client provide an SSL certificate as authentication?
 static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const char *CommonName)
 {
