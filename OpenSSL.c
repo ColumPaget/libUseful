@@ -81,7 +81,11 @@ static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
 
 }
 
-static int OpenSSLVerifyCallback(int PreverifyStatus, X509_STORE_CTX *X509)
+
+
+//do not configure this function as static, it is useful for autoconf checks to discover if libUseful
+//has been compiled with SSL included
+int OpenSSLVerifyCallback(int PreverifyStatus, X509_STORE_CTX *X509)
 {
 //This does nothing. verification is done in 'OpenSSLVerifyCertificate' instead
     return(1);
@@ -134,7 +138,7 @@ static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
 }
 
 
-char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
+static char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
 {
     char *Name=NULL, *Value=NULL;
     const char *ptr;
@@ -155,7 +159,7 @@ char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
 
 
 
-int OpenSSLVerifyCertificate(STREAM *S, int Flags)
+static int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 {
     int RetVal=FALSE;
     char *Value=NULL;
