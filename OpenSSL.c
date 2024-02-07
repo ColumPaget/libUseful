@@ -273,10 +273,11 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
     char *Value=NULL;
     const char *ptr;
     int val;
+
+		#ifdef HAVE_LIBSSL
     X509 *cert=NULL;
     SSL *ssl;
 
-		#ifdef HAVE_SSL
     ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
     if (! ptr) return(FALSE);
 
@@ -445,13 +446,13 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 // tls1.3 - allow TLSv.13 and up
 // default. Currently equivalent to tls but may change in future
 
+#ifdef HAVE_LIBSSL
 int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
 {
     const char *ptr;
     int level=LEVEL_SSL3, val;
 
 
-		#ifdef HAVE_SSL
     //set Permitted ciphers
     ptr=STREAMGetValue(S, "SSL:PermittedCiphers");
     if (! StrValid(ptr)) ptr=LibUsefulGetValue("SSL:PermittedCiphers");
@@ -521,10 +522,10 @@ int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
 
 
     SSL_set_options(ssl, Options);
-		#endif
 
     return(Options);
 }
+#endif
 
 
 

@@ -358,9 +358,7 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
         *Device=CopyStr(*Device,"remote");
         *MAC=CopyStr(*MAC,"remote");
         //Read Title Line
-        len=fgets(Tempstr,255,F);
-	Tempstr[len]='\0';
-	
+        fgets(Tempstr,255,F);
 
         while (fgets(Tempstr,255,F))
         {

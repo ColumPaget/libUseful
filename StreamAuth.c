@@ -9,7 +9,7 @@
 static int STREAMAuthValueFile(const char *Path, const char *Value)
 {
 
-
+return(FALSE);
 }
 
 //did the client provide an SSL certificate as authentication?
