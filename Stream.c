@@ -800,6 +800,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 
     if (Flags & STREAM_APPEND) Mode |=O_APPEND;
     if (Flags & SF_CREATE) Mode |=O_CREAT;
+    if (Flags & SF_EXCL) Mode |=O_EXCL;
 
     if (CompareStr(Path,"-")==0)
     {
@@ -989,6 +990,12 @@ static int STREAMParseConfig(const char *Config)
                 break;
             case 't':
                 Flags |= SF_TMPNAME;
+                break;
+            case 'x':
+		//for local files this is 'exclusive open' with O_EXCL. 
+		//for ssh connections this is the 'execute' flag that indicates
+		//a command is to be run
+                Flags |= SF_EXCL; 
                 break;
             case 'z':
                 Flags |= SF_COMPRESSED;

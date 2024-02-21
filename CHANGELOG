@@ -1,3 +1,13 @@
+v5.10 (2024-02-21)
+  * Added 'x' (O_EXCL) option to file streams
+  * Added ''GetUserHomeDir' function
+  * Install now creates symlinks from libUseful-<major> to libUseful-<major>-<minor> rather than making two directories as suggested by andreasstieger@github.com
+  * Added soname to library when building under gcc, again as suggested by andreasstieger@github.com
+
+v5.9 (2024-02-07)
+  * Fix more build errors when building without openssl
+  * added options for compiling with -Wall, -Werror, FORTIFY_SOURCE and -fstack-protector to ./configure 
+
 v5.8 (2024-01-15)
   * Fix build error when building without openssl
   * Give in to autoconf insisting upgrade to modern format

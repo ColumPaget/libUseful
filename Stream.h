@@ -74,11 +74,12 @@ L     lock/unlock file on each write
 i     allow this file to be inherited across an exec (default is close-on-exec)
 t     make a unique temporary file name. the file path must be a mktemp style template, with the last six characters being 'XXXXXX'
 S     file contents are sorted
-x     treat file path as a command to execute (currently on in ssh: streams) 
+x     exclusive open using O_EXCL. Only create/open file if it doesn't exist.
 z     compress/uncompress with gzip
 
 
-for tcp/unix/udp network connections the 'config argument' is normally 'rw' followed by name-value pairs with the following values
+for tcp/unix/udp network connections the 'config argument' defaults to 'rw' if blank. 
+Otherwise it is made up of the following options
 
 r  - 'read' mode (a non-op as all sockets are readable)
 w  - 'write' mode (a non-op as all sockets are writeable)
@@ -90,13 +91,32 @@ F  - TCP Fastopen
 R  - Don't route (equivalent to applying SOCKOPT_DONTROUTE)
 N  - TCP no-delay (disable Nagle algo)
 
-Name-value pairs are:
+This argument can be followed by name-value pairs such as:
 
 ttl=<seconds>       set ttl of socket
 tos=<value>         set tos of socket
 mark=<value>        set SOCKOPT_MARK if supported
 keepalive=<y/n>     turn on/off socket keepalives
 timeout=<centisecs> connect/read timeout for socket
+
+
+
+For SSH streams config argument is a string of characters each of which represents an option 
+that modifies stream behavior, as with 'fopen'. By default SSH streams are treated as a 
+stream to a file, much like http, but if the 'x' flag is used, the file name is instead
+treated as a command to be run, with the contents of the stream being the output from and
+input to that command.
+
+c     create file
+r     read only
+w     write only
+a     append 
++     make read-only, append or write-only be read-write
+E     raise an error if this file fails to open
+i     allow this file to be inherited across an exec (default is close-on-exec)
+S     file contents are sorted
+x     treat file path as a command to execute (currently on in ssh: streams) 
+z     compress/uncompress with gzip
 
 
 for 'http', 'https', 'ws' and 'wss' URLs the first argument is a character list (though only one character long) with the following values
@@ -108,16 +128,16 @@ D    DELETE method
 P    PATCH method
 H    HEAD  method
 
-after this initial argument come name-value pairs with the following values
 
+method=<method>  //override method (GET/POST etc) with any default value
 oauth=<oauth config to use>
-content-type=<content type>
-content-length=<content length>
+content-type=<content type>         //content type of sent data (for PUT/POST)
+content-length=<content length>     //content length of sent data (for PUT/POST)
 user=<username>
 useragent=<user agent>
 user-agent=<user agent>
-timeout=<centisecs>
-hostauth
+timeout=<centisecs>    //socket timeout in centisecs, this applies both to connection timeout and read timeout. If a different value is desired for read, set it with 'STREAMSetTimeout'
+hostauth   //send auth details without waiting for 401 from server
 
 Note, 'hostauth' is not a name/value pair, just a config flag that enables sending authentication without waiting for a 401 Response from the server. This means that we can't know the authentication realm for the server, and so internally use the hostname as the realm for looking up logon credentials. This is mostly useful for the github api.
 
@@ -189,9 +209,10 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_TLS    4096     //ONLY FOR SOCKETS: use SSL/TLS
 #define SF_SECURE 8192     //lock internal buffers into memory so they aren't written to swap or coredumps
 #define SF_NONBLOCK 16384  //nonblocking open (you must use select to check that the file is ready to use)
+#define SF_EXCL     32768  //ONLY FOR FILES: exclusive create with O_EXCL, file must not pre-exist
 #define SF_TLS_AUTO 32768  //nothing to see here, move along
 #define SF_ERROR 65536     //raise an error if open or connect fails
-#define SF_EXEC_INHERIT 131072  //allow file to be inherited across an exec (default is close-on-exec)
+#define SF_EXEC_INHERIT 131072  //allow stream to be inherited across an exec (default is close-on-exec)
 #define SF_BINARY       262144  //'binary mode' for websocket etc
 #define SF_NOCACHE 524288       //don't cache file data in filesystem cache
 #define SF_SORTED  1048576      //file is sorted, this is a hint to 'STREAMFind'

@@ -1,6 +1,9 @@
 CC = @CC@
-VERSION = 5.9
-CFLAGS = @CFLAGS@ @SIMD_CFLAGS@
+VERSION = 5.10
+MAJOR=5
+LIBFILE=libUseful.so.$(VERSION)
+SONAME=libUseful.so.$(MAJOR)
+CFLAGS = @CFLAGS@ @SIMD_CFLAGS@ @SONAME_FLAGS@
 LDFLAGS=@LDFLAGS@
 LIBS = @LIBS@
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC @DEFS@ -DVERSION=\"$(VERSION)\"
@@ -9,11 +12,12 @@ OBJ=StrLenCache.o String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSock
 
 
 all: $(OBJ)
-	$(CC) $(FLAGS) -shared -o libUseful-$(VERSION).so $(OBJ) $(LIBS) $(LDFLAGS)
+	$(CC) $(FLAGS) -shared -o $(LIBFILE) $(OBJ) $(LIBS) $(LDFLAGS)
+	-ln -s $(LIBFILE) libUseful-$(VERSION).so &>/dev/null
+	-ln -s $(LIBFILE) libUseful-$(MAJOR).so &>/dev/null
+	-ln -s $(LIBFILE) libUseful.so &>/dev/null
 	ar rcs libUseful-$(VERSION).a $(OBJ)
-	-ln -s libUseful-$(VERSION).so libUseful-5.so &>/dev/null
-	-ln -s libUseful-$(VERSION).a libUseful-5.a &>/dev/null
-	-ln -s libUseful-$(VERSION).so libUseful.so &>/dev/null
+	-ln -s libUseful-$(VERSION).a libUseful-$(MAJOR).a &>/dev/null
 	-ln -s libUseful-$(VERSION).a libUseful.a &>/dev/null
 
 
@@ -248,17 +252,16 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f *.o *.so *.a *.orig
+	-rm -f *.o *.so *.so.* *.a *.orig
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 
 install: libUseful.so
 	-mkdir -p $(DESTDIR)$(prefix)/lib 
-	cp -P *.so *.a $(DESTDIR)$(prefix)/lib  
+	cp -P *.so *.so.* *.a $(DESTDIR)$(prefix)/lib  
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
-	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-5
-	cp *.h $(DESTDIR)$(prefix)/include/libUseful-5
+	-ln -s -r -f $(DESTDIR)$(prefix)/include/libUseful-$(VERSION) $(DESTDIR)$(prefix)/include/libUseful-5
 	-mkdir -p $(DESTDIR)$(prefix)/etc
 	cp *.conf $(DESTDIR)$(prefix)/etc
 
