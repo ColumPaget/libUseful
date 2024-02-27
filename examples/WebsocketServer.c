@@ -2,7 +2,7 @@
 
 main()
 {
-STREAM *Serv, *S;
+    STREAM *Serv, *S;
 
 
 }

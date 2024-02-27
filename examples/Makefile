@@ -17,6 +17,7 @@ all:
 	gcc -oTTYTest.exe TTYTest.c $(LIBS)
 	gcc -oErrors.exe Errors.c $(LIBS)
 	gcc -ossh-tunnel.exe ssh-tunnel.c $(LIBS)
+	gcc -ossh-time.exe ssh-time.c $(LIBS)
 	gcc -oConfig.exe Config.c $(LIBS)
 	gcc -oStrLen.exe StrLen.c $(LIBS)
 	gcc -oSSLClient.exe SSLClient.c $(LIBS)
@@ -25,3 +26,6 @@ all:
 	gcc -oHttpServer.exe HttpServer.c $(LIBS)
 	gcc -oPasswordFile.exe PasswordFile.c $(LIBS)
 	gcc -obase32.exe base32.c $(LIBS)
+
+clean:
+	rm *.exe

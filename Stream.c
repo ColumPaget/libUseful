@@ -1962,6 +1962,12 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
     const unsigned char *p_Term;
     int IsClosed=FALSE;
 
+    if (! S)
+    {
+        RaiseError(0, "STREAMReadToterminator", "NULL stream object passed to function");
+	Destroy(Buffer);
+	return(NULL);
+    }
 
     RetStr=CopyStr(Buffer,"");
     while (1)
