@@ -1,6 +1,7 @@
 v5.12 (2024-04-06)
   * Added TerminalProgress progress bars
   * Fix ~W escape sequence for setting white background
+	* Fixes to TerminalTheme
 
 v5.11 (2024-02-27)
   * Don't follow symbolic links in FileSystemRmDir
