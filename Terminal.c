@@ -524,7 +524,7 @@ const char *TerminalParseColor(const char *Str, int *Fg, int *Bg)
         *Fg=ANSI_WHITE + offset;
         break;
     case 'W':
-        *Fg=ANSI_WHITE + offset;
+        *Bg=ANSI_WHITE + offset;
         break;
     case 'y':
         *Fg=ANSI_YELLOW + offset;
