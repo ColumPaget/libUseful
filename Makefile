@@ -1,5 +1,5 @@
 CC = gcc
-VERSION = 5.12
+VERSION = 5.13
 MAJOR=5
 LIBFILE=libUseful.so.$(VERSION)
 SONAME=libUseful.so.$(MAJOR)
@@ -16,6 +16,7 @@ all: $(OBJ)
 	$(CC) $(FLAGS) -shared -o $(LIBFILE) $(OBJ) $(LIBS) $(LDFLAGS)
 	-ln -s -r -f $(LIBFILE) libUseful-$(VERSION).so
 	-ln -s -r -f $(LIBFILE) libUseful-$(MAJOR).so
+	-ln -s -r -f $(LIBFILE) $(SONAME)
 	-ln -s -r -f $(LIBFILE) libUseful.so
 	ar rcs libUseful-$(VERSION).a $(OBJ)
 	-ln -s -r -f libUseful-$(VERSION).a libUseful-$(MAJOR).a
