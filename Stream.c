@@ -1094,6 +1094,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     case 't':
     case 's':
     case 'u':
+    case 'b': //b for 'bcast'
         if ( (CompareStr(URL,"-")==0) || (strcasecmp(URL,"stdio:")==0) ) S=STREAMFromDualFD(dup(0), dup(1));
         else if (strcasecmp(URL,"stdin:")==0) S=STREAMFromFD(dup(0));
         else if (strcasecmp(URL,"stdout:")==0) S=STREAMFromFD(dup(1));

@@ -22,10 +22,11 @@ The first argument can be any of the following types:
 file:///tmp/myfile.txt                   file, web-browser style. Note 3 '/' symbols. 
 mmap:/tmp/myfile.txt                     memory mapped file
 tty:/dev/ttyS0:38400                     open a serial device, in this case at 38400 baud
-udp:192.168.2.1:53                       udp network connection
+udp:192.168.2.1:53                       udp socket (Use STREAMSendDgram, from Socket.h to send packets)
 tcp:192.168.2.1:25                       tcp network connection
 ssl:192.168.2.1:443                      tcp network connection with encryption
 tls:192.168.2.1:443                      tcp network connection with encryption
+bcast:255.255.255.255:5353               udp broadcast socket (Use STREAMSendDgram, from Socket.h to send packets)
 ws:nos.lol/                              websocket
 wss:nos.lol/                             secure websocket
 unix:/tmp/socket                         unix socket
