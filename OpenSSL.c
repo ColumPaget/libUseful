@@ -274,7 +274,7 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
     const char *ptr;
     int val;
 
-		#ifdef HAVE_LIBSSL
+#ifdef HAVE_LIBSSL
     X509 *cert=NULL;
     SSL *ssl;
 
@@ -429,7 +429,7 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
     }
     else OpenSSLCertError(S,"peer provided no certificate");
 
-		#endif
+#endif
 
     DestroyString(Value);
 
@@ -832,21 +832,21 @@ int OpenSSLSTREAMReadBytes(STREAM *S, char *Data, int len)
             //and if we don't, the connection is effectively closed
             bytes_read=-1;
 
-	/*
-            val=SSL_get_error(SSL_OBJ, bytes_read);
-            switch (val)
-            {
-            //these all mean SSL is waiting for more data, and has nothing to offer us right now
-            case SSL_ERROR_WANT_READ:
-            	bytes_read=0;
-             break;
+            /*
+                    val=SSL_get_error(SSL_OBJ, bytes_read);
+                    switch (val)
+                    {
+                    //these all mean SSL is waiting for more data, and has nothing to offer us right now
+                    case SSL_ERROR_WANT_READ:
+                    	bytes_read=0;
+                     break;
 
-            //for anything else consider the connection closed
-            default:
-            	bytes_read=-1;
-            break;
-            }
-	 */
+                    //for anything else consider the connection closed
+                    default:
+                    	bytes_read=-1;
+                    break;
+                    }
+             */
         }
     }
 #endif

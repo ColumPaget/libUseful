@@ -32,7 +32,7 @@ void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config)
     ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
     while (ptr)
     {
-				strrep(Name, '-', '_');				
+        strrep(Name, '-', '_');
         switch (*Name)
         {
         case 'x':
@@ -62,10 +62,10 @@ void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config)
             if (strcasecmp(Name, "left_contain")==0) SetVar(TW->Options, "LeftContainer", Value);
             break;
 
-				case 'h':
+        case 'h':
             if (strcasecmp(Name, "height")==0) TW->high=atoi(Value);
-						break;
-  
+            break;
+
         case 'o':
             if (strcasecmp(Name, "options")==0) TerminalWidgetSetOptions(TW, Value);
             break;
@@ -90,9 +90,9 @@ void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config)
             else if (strcasecmp(Name, "select_right")==0) TW->CursorRight=CopyStr(TW->CursorRight, Value);
             break;
 
-				case 'w':
+        case 'w':
             if (strcasecmp(Name, "width")==0) TW->wid=atoi(Value);
-						break;
+            break;
         }
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);

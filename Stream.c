@@ -992,10 +992,10 @@ static int STREAMParseConfig(const char *Config)
                 Flags |= SF_TMPNAME;
                 break;
             case 'x':
-		//for local files this is 'exclusive open' with O_EXCL. 
-		//for ssh connections this is the 'execute' flag that indicates
-		//a command is to be run
-                Flags |= SF_EXCL; 
+                //for local files this is 'exclusive open' with O_EXCL.
+                //for ssh connections this is the 'execute' flag that indicates
+                //a command is to be run
+                Flags |= SF_EXCL;
                 break;
             case 'z':
                 Flags |= SF_COMPRESSED;
@@ -1966,8 +1966,8 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
     if (! S)
     {
         RaiseError(0, "STREAMReadToterminator", "NULL stream object passed to function");
-	Destroy(Buffer);
-	return(NULL);
+        Destroy(Buffer);
+        return(NULL);
     }
 
     RetStr=CopyStr(Buffer,"");
@@ -2333,20 +2333,22 @@ int STREAMFind(STREAM *S, const char *Item, const char *Delimiter, char **RetStr
 
 static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
 {
-if (! (Flags & SENDFILE_KERNEL)) return(FALSE);
-switch (In->Type)
-{
-case STREAM_TYPE_FILE:
-case STREAM_TYPE_PIPE:
-break;
+    if (! (Flags & SENDFILE_KERNEL)) return(FALSE);
+    switch (In->Type)
+    {
+    case STREAM_TYPE_FILE:
+    case STREAM_TYPE_PIPE:
+        break;
 
-default: return(FALSE); break;
-}
+    default:
+        return(FALSE);
+        break;
+    }
 
-if  (ListSize(In->ProcessingModules) > 0) return(FALSE);
-if  (ListSize(Out->ProcessingModules) > 0) return(FALSE);
+    if  (ListSize(In->ProcessingModules) > 0) return(FALSE);
+    if  (ListSize(Out->ProcessingModules) > 0) return(FALSE);
 
-return(TRUE);
+    return(TRUE);
 }
 
 

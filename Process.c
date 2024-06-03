@@ -890,7 +890,7 @@ int ProcessApplyLateConfig(int Flags, const char *Config)
     Destroy(Value);
     Destroy(Capabilities);
 
-return(Flags);
+    return(Flags);
 }
 
 

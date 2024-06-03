@@ -46,16 +46,16 @@ void TerminalThemeSet(const char *Name, const char *Value)
 static char *TerminalThemeLoadValue(char *RetStr, const char *Theme, const char *Attrib)
 {
     char *Tempstr=NULL;
-		const char *ptr;
+    const char *ptr;
 
     if (! TermTheme) TerminalThemeInit();
 
     Tempstr=MCopyStr(Tempstr, Theme, ":", Attrib, NULL);
-		ptr=TerminalThemeGet(Tempstr);
-		if (StrValid(ptr)) RetStr=CopyStr(RetStr, ptr);
- 
+    ptr=TerminalThemeGet(Tempstr);
+    if (StrValid(ptr)) RetStr=CopyStr(RetStr, ptr);
+
     Destroy(Tempstr);
-		return(RetStr);
+    return(RetStr);
 }
 
 void TerminalThemeApply(TERMWIDGET *TW, const char *Type)

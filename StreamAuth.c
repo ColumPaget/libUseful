@@ -9,7 +9,7 @@
 static int STREAMAuthValueFile(const char *Path, const char *Value)
 {
 
-return(FALSE);
+    return(FALSE);
 }
 
 //did the client provide an SSL certificate as authentication?
@@ -72,7 +72,7 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
         printf("AUTH: %s\n", Key);
         if (CompareStrNoCase(Key, "basic")==0)
         {
-	    Tempstr=EncodeBytes(Tempstr, Value, StrLen(Value), ENCODE_BASE64);
+            Tempstr=EncodeBytes(Tempstr, Value, StrLen(Value), ENCODE_BASE64);
             if (CompareStr(Tempstr, STREAMGetValue(S, "Auth:Basic"))==0) AuthResult=TRUE;
         }
         else if (
