@@ -78,8 +78,10 @@ void HashRegister(const char *Name, int Len, HASH_INIT_FUNC Init);
 //for backwards compatiblity provide this function. It just calls'EncodingParse'
 int HashEncodingFromStr(const char *Str);
 
-//produce a comma separated list of available hash types
+//produce a comma separated list of available hash types. This can include hash-names from external sources like openssl.
 char *HashAvailableTypes(char *RetStr);
+
+
 HASH *HashInit(const char *Type);
 int HashFinish(HASH *Hash, int Encoding, char **Return);
 void HMACSetKey(HASH *HMAC, const char *Key, int Len);

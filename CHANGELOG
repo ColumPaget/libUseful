@@ -1,3 +1,9 @@
+v5.15 (2024-06-20)
+  * add/fix support for calling hmac functions via the Hash interface
+  * use of openssl hashing functions no longer experimental
+  * support sha384 hash
+  * Added 'UnpackURL' function
+
 v5.14 (2024-06-03)
   * add ini file support to DataParser
   * fix/add 'bcast' socket type
@@ -8,7 +14,7 @@ v5.13 (2024-04-17)
 v5.12 (2024-04-06)
   * Added TerminalProgress progress bars
   * Fix ~W escape sequence for setting white background
-	* Fixes to TerminalTheme
+  * Fixes to TerminalTheme
 
 v5.11 (2024-02-27)
   * Don't follow symbolic links in FileSystemRmDir
