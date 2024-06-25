@@ -807,7 +807,7 @@ static const char *ParserINIItems(int ParserType, const char *Doc, ListNode *Par
     while (ptr && (! BreakOut))
     {
         //while (isspace(*ptr)) ptr++;
-				p_prev=ptr;
+        p_prev=ptr;
         ptr=GetToken(ptr, INI_TOKENS, &Token, GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
 
         switch (*Token)
@@ -819,12 +819,12 @@ static const char *ParserINIItems(int ParserType, const char *Doc, ListNode *Par
             break;
 
         case '[':
-						if (IndentLevel > 0)
-						{
-							Destroy(PrevToken);
-							Destroy(Token);
-							return(p_prev);
-						}
+            if (IndentLevel > 0)
+            {
+                Destroy(PrevToken);
+                Destroy(Token);
+                return(p_prev);
+            }
 
             if (! StrValid(PrevToken))
             {

@@ -83,24 +83,24 @@ HASH *HashInit(const char *Type)
 
     if (! HashTypes) HashRegisterAll();
 
-    GetToken(Type, ",", &InitialType, 0); 
+    GetToken(Type, ",", &InitialType, 0);
     if (strncmp(InitialType, "hmac-", 5) == 0) Hash=HMACInit(InitialType+5);
     else
     {
-    Node=ListFindNamedItem(HashTypes, InitialType);
-    if (Node)
-    {
-        InitFunc=(HASH_INIT_FUNC) Node->Item;
-        Hash=(HASH *) calloc(1,sizeof(HASH));
-        Hash->Type=CopyStr(Hash->Type,Type);
-        if (! InitFunc(Hash, Node->Tag, Node->ItemType))
+        Node=ListFindNamedItem(HashTypes, InitialType);
+        if (Node)
         {
-            HashDestroy(Hash);
-            Hash=NULL;
-            RaiseError(0, "HashInit", "Failed to setup Hash Type: '%s'", InitialType);
+            InitFunc=(HASH_INIT_FUNC) Node->Item;
+            Hash=(HASH *) calloc(1,sizeof(HASH));
+            Hash->Type=CopyStr(Hash->Type,Type);
+            if (! InitFunc(Hash, Node->Tag, Node->ItemType))
+            {
+                HashDestroy(Hash);
+                Hash=NULL;
+                RaiseError(0, "HashInit", "Failed to setup Hash Type: '%s'", InitialType);
+            }
         }
-    }
-    else RaiseError(0, "HashInit", "Unsupported Hash Type: '%s'", InitialType);
+        else RaiseError(0, "HashInit", "Unsupported Hash Type: '%s'", InitialType);
     }
 
     Destroy(InitialType);
