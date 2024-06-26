@@ -1,3 +1,7 @@
+v5.16 (2024-06-26)
+  * handle http digest authentication
+  * add 'AppendVar' function
+
 v5.15 (2024-06-20)
   * add/fix support for calling hmac functions via the Hash interface
   * use of openssl hashing functions no longer experimental

@@ -44,6 +44,9 @@ ListNode *SetTypedVar(ListNode *Vars, const char *Name, const char *Data, int Ty
 //set a variable
 ListNode *SetVar(ListNode *Vars, const char *Name, const char *Data);
 
+//append to a variable
+void AppendVar(ListNode *Vars, const char *VarName, const char *Value);
+
 //get a variable by name and type
 const char *GetTypedVar(ListNode *Vars, const char *Name, int Type);
 
