@@ -791,6 +791,21 @@ void TerminalPutStr(const char *Str, STREAM *S)
 }
 
 
+
+void TerminalPrint(STREAM *S, const char *FmtStr, ...)
+{
+    char *Tempstr=NULL;
+    va_list args;
+
+    va_start(args,FmtStr);
+    Tempstr=VFormatStr(Tempstr, FmtStr, args);
+    va_end(args);
+		TerminalPutStr(Tempstr, S);
+
+		Destroy(Tempstr);
+}
+
+
 void XtermSetTerminalSize(STREAM *Term, int wide, int high)
 {
     char *Tempstr=NULL;

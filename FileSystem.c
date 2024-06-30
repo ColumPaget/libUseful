@@ -183,7 +183,8 @@ int FindFilesInPath(const char *File, const char *Path, ListNode *Files)
 
 char *FindFileInPath(char *InBuff, const char *File, const char *Path)
 {
-    char *Tempstr=NULL, *CurrPath=NULL, *RetStr=NULL;
+    char *Tempstr=NULL, *CurrPath=NULL, *RetStr=NULL, *Link=NULL;
+		struct stat Stat;
     const char *ptr;
 
     RetStr=CopyStr(InBuff,"");
@@ -199,17 +200,28 @@ char *FindFileInPath(char *InBuff, const char *File, const char *Path)
     {
         CurrPath=SlashTerminateDirectoryPath(CurrPath);
         Tempstr=MCopyStr(Tempstr,CurrPath,File,NULL);
-        if (access(Tempstr,F_OK)==0)
+        if (stat(Tempstr, &Stat)==0)
         {
+						//if we find an symlink, then remember it, but don't return it, 
+						//in the hope that we will find a better match
+						if (S_ISLNK(Stat.st_mode)) Link=CopyStr(Link, Tempstr);
+						else
+						{
             RetStr=CopyStr(RetStr,Tempstr);
             break;
+						}
         }
 
         ptr=GetToken(ptr,":",&CurrPath,0);
     }
 
+		//if we didn't find an actual file, but found a link with the name
+		//then return that link
+		if (! StrValid(RetStr)) RetStr=CopyStr(RetStr, Link);
+
     DestroyString(Tempstr);
     DestroyString(CurrPath);
+    DestroyString(Link);
 
     return(RetStr);
 }

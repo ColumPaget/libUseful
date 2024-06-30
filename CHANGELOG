@@ -1,3 +1,7 @@
+v5.17 (2024-06-30)
+  * FindFileInPath now returns a real file, rather than symlink, unless a symlink is all it can find.
+  * Added TerminalPrint function.
+
 v5.16 (2024-06-26)
   * handle http digest authentication
   * add 'AppendVar' function
