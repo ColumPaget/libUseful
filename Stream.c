@@ -62,7 +62,7 @@ static void SelectAddFD(TSelectSet *Set, int type, int fd)
 
 static int SelectWait(TSelectSet *Set, struct timeval *tv)
 {
-    long long timeout, next;
+    long long timeout;
     uint64_t start, diff;
     int result;
 
@@ -286,7 +286,7 @@ void STREAMSetFlushType(STREAM *S, int Type, int StartPoint, int BlockSize)
 /* the file pointer to that position */
 void STREAMReAllocBuffer(STREAM *S, int size, int Flags)
 {
-    char *ibuf=NULL, *obuf=NULL;
+    unsigned char *ibuf=NULL, *obuf=NULL;
     int RW;
 
     if (S->Flags & SF_MMAP) return;
@@ -314,8 +314,8 @@ void STREAMReAllocBuffer(STREAM *S, int size, int Flags)
     }
     else
     {
-        if (! (RW & SF_WRONLY)) S->InputBuff =(char *) realloc(S->InputBuff,size);
-        if (! (RW & SF_RDONLY)) S->OutputBuff=(char *) realloc(S->OutputBuff,size);
+        if (! (RW & SF_WRONLY)) S->InputBuff =(unsigned char *) realloc(S->InputBuff,size);
+        if (! (RW & SF_RDONLY)) S->OutputBuff=(unsigned char *) realloc(S->OutputBuff,size);
     }
 
     if (ibuf)
@@ -535,8 +535,7 @@ int STREAMPushBytes(STREAM *S, const char *Data, int DataLen)
 
 static int STREAMInternalPushBytes(STREAM *S, const char *Data, int DataLen)
 {
-    int result=0, count=0, len;
-    void *vptr;
+    int result=0, count=0;
 
     if (! S) return(STREAM_CLOSED);
     if (S->out_fd==-1) return(STREAM_CLOSED);
@@ -768,12 +767,12 @@ STREAM *STREAMFromDualFD(int in_fd, int out_fd)
 
 int STREAMOpenMMap(STREAM *S, int offset, int len, int Flags)
 {
-    char *ptr;
+    unsigned char *ptr;
     int MProt=PROT_READ;
 
     if (S->InputBuff) free(S->InputBuff);
     if (Flags & (SF_WRONLY | SF_RDWR)) MProt |= PROT_WRITE;
-    ptr=(char *) mmap(0, len, MProt, MAP_SHARED, S->in_fd, offset);
+    ptr=(unsigned char *) mmap(0, len, MProt, MAP_SHARED, S->in_fd, offset);
     if (ptr==MAP_FAILED) return(FALSE);
     S->InEnd=len;
     S->InStart=0;
@@ -791,7 +790,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     STREAM *Stream;
     struct stat myStat;
     char *Tempstr=NULL, *NewPath=NULL;
-    const char *p_Path, *ptr;
+    const char *p_Path;
 
     p_Path=Path;
     if (Flags & SF_WRONLY) Mode=O_WRONLY;
@@ -1427,7 +1426,7 @@ int STREAMPullBytes(STREAM *S, char *Buffer, int Len)
 int STREAMReadCharsToBuffer(STREAM *S)
 {
     int val=0, read_result=0;
-    long bytes_read;
+    long bytes_read=0;
     char *tmpBuff=NULL;
 
     if (! S) return(0);
@@ -2137,7 +2136,7 @@ int STREAMReadToString(STREAM *S, char **RetStr, int *len, const char *Term)
 char *STREAMReadDocument(char *RetStr, STREAM *S)
 {
     char *Tempstr=NULL;
-    int result, size, bytes_read=0, max;
+    int result=0, size, bytes_read=0, max;
 
     max=LibUsefulGetInteger("MaxDocumentSize");
     if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) ) size=S->Size;
@@ -2152,6 +2151,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     }
     StrTrunc(RetStr,bytes_read);
 
+		//if result > 0 then we didn't break out on reading a 'STREAM_CLOSED' or other close condition, we broke out because we had hit the size limit
     if ((bytes_read==size) && (result > 0))
     {
         if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));

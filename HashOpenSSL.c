@@ -18,13 +18,13 @@ static void OpenSSLFreeHashCTX(HASH *Hash)
 
 static int OpenSSLFinishHash(HASH *Hash, char **Digest)
 {
-    int Len;
+    unsigned int Len;
 
     *Digest=SetStrLen(*Digest, EVP_MAX_MD_SIZE);
-    EVP_DigestFinal((EVP_MD_CTX *) Hash->Ctx, *Digest, &Len);
+    EVP_DigestFinal((EVP_MD_CTX *) Hash->Ctx, (unsigned char *) *Digest,  &Len);
     OpenSSLFreeHashCTX(Hash);
 
-    return(Len);
+    return((int) Len);
 }
 
 

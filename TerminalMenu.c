@@ -122,7 +122,7 @@ void TerminalMenuDraw(TERMMENU *Menu)
 {
     ListNode *Curr;
     char *Output=NULL;
-    int y, yend, count;
+    int y, yend;
     //single line mode is a special case
     //that doesn't use 'cursor move' to build
     //a menu at a specific screen position,
@@ -287,7 +287,6 @@ ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, i
 {
     TERMMENU *Menu;
     ListNode *Node;
-    int key;
 
     Menu=TerminalMenuCreate(Term, x, y, wid, high);
     Menu->Options = Options;

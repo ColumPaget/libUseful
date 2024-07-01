@@ -40,9 +40,9 @@ int zlibProcessorWrite(TProcessingModule *ProcMod, const char *InData, unsigned 
 
 
     ZData->z_out.avail_in=InLen;
-    ZData->z_out.next_in=(char *) InData;
+    ZData->z_out.next_in=(Bytef *) InData;
     ZData->z_out.avail_out=*OutLen;
-    ZData->z_out.next_out=*OutData;
+    ZData->z_out.next_out=(Bytef *) *OutData;
 
     while ((ZData->z_out.avail_in > 0) || Flush)
     {
@@ -88,9 +88,9 @@ int zlibProcessorRead(TProcessingModule *ProcMod, const char *InData, unsigned l
 
 
     ZData->z_in.avail_in=InLen;
-    ZData->z_in.next_in=(char *) InData;
+    ZData->z_in.next_in=(Bytef *) InData;
     ZData->z_in.avail_out=*OutLen;
-    ZData->z_in.next_out=*OutData;
+    ZData->z_in.next_out=(Bytef *) *OutData;
 
     while ((ZData->z_in.avail_in > 0) || Flush)
     {
@@ -119,7 +119,7 @@ int zlibProcessorRead(TProcessingModule *ProcMod, const char *InData, unsigned l
         {
             (*OutLen)+=BUFSIZ;
             *OutData=(char *) realloc(*OutData,*OutLen);
-            ZData->z_in.next_out=(*OutData) + bytes_read;
+            ZData->z_in.next_out=(Bytef *) (*OutData) + bytes_read;
             ZData->z_in.avail_out=(*OutLen) - bytes_read;
         }
 

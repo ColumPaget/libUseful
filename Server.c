@@ -10,7 +10,7 @@ int IPServerNew(int iType, const char *Address, int Port, int Flags)
 {
     int sock, val, Type;
     int BindFlags=0;
-    const char *p_Addr=NULL, *ptr;
+    const char *p_Addr=NULL;
 
 //if IP6 not compiled in then throw error if one is passed
 #ifndef USE_INET6
@@ -130,7 +130,7 @@ static void STREAMServerParseConfig(STREAM *S, const char *Config)
 STREAM *STREAMServerNew(const char *URL, const char *Config)
 {
     char *Proto=NULL, *Host=NULL, *Token=NULL;
-    int fd=-1, Port=0, Type, Flags=0;
+    int fd=-1, Port=0, Type=-1, Flags=0;
     TSockSettings Settings;
     STREAM *S=NULL;
 
@@ -222,6 +222,9 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
     }
 
 
+		if (Type == -1) RaiseError(0, "STREAMServerNew","Unable to parse protocol: '%s'", Proto);
+		else
+		{
     S=STREAMFromSock(fd, Type, NULL, Host, Port);
     if (S)
     {
@@ -230,6 +233,7 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         else if (Flags & SF_TLS) S->Flags |= SF_TLS;
         STREAMServerParseConfig(S, Config);
     }
+		}
 
     DestroyString(Proto);
     DestroyString(Host);
@@ -249,7 +253,7 @@ STREAM *STREAMServerAccept(STREAM *Serv)
 {
     char *Tempstr=NULL, *DestIP=NULL;
     STREAM *S=NULL;
-    int fd=-1, type=0, DestPort=0, result;
+    int fd=-1, type=0, DestPort=0;
 
     if (! Serv) return(NULL);
 

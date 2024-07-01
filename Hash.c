@@ -23,8 +23,6 @@ int HashEncodingFromStr(const char *Str)
 
 void HashRegister(const char *Name, int Len, HASH_INIT_FUNC Init)
 {
-    ListNode *Node;
-
     if (! HashTypes) HashTypes=ListCreate();
     if (! ListFindNamedItem(HashTypes, Name)) ListAddTypedItem(HashTypes, Len, Name, Init);
 }
@@ -170,7 +168,7 @@ int PBK2DF2(char **Return, char *Type, char *Bytes, int Len, char *Salt, int Sal
 {
     char *Tempstr=NULL, *Hash=NULL;
     uint32_t RoundsBE;
-    int i, len, hlen;
+    int i, len, hlen=0;
 
 //Network byte order is big endian
     RoundsBE=htonl(Rounds);

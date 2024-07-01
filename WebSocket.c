@@ -237,9 +237,8 @@ int WebSocketReadBytes(STREAM *S, char *Data, int Len)
 STREAM *WebSocketOpen(const char *WebsocketURL, const char *Config)
 {
     STREAM *S;
-    const char *p_Proto;
     char *URL=NULL, *Args=NULL, *Key=NULL, *Tempstr=NULL;
-    int Port, Type;
+    int Type;
 
 
     if (strncmp(WebsocketURL, "wss:", 4)==0)

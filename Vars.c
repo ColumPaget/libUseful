@@ -147,7 +147,7 @@ static char *SubstituteAppendVar(char *RetStr, const char *Var, int Flags)
 static char *SubstituteParseVar(char *OutStr, const char **Line, ListNode *LocalVars, int Flags)
 {
     char *VarName=NULL, *Tempstr=NULL;
-    const char *ptr, *vptr;
+    const char *ptr;
 
     ptr=*Line;
 

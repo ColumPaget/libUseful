@@ -432,8 +432,8 @@ int libCryptoProcessorInit(TProcessingModule *ProcMod, const char *Args)
         EVP_CIPHER_CTX_init(Data->dec_ctx);
         Data->BlockSize=EVP_CIPHER_block_size(Data->Cipher);
 
-        EVP_EncryptInit_ex(Data->enc_ctx,Data->Cipher,NULL,Data->Key,Data->InputVector);
-        EVP_DecryptInit_ex(Data->dec_ctx,Data->Cipher,NULL,Data->Key,Data->InputVector);
+        EVP_EncryptInit_ex(Data->enc_ctx, Data->Cipher, NULL, (unsigned char *) Data->Key, (unsigned char *) Data->InputVector);
+        EVP_DecryptInit_ex(Data->dec_ctx, Data->Cipher, NULL, (unsigned char *) Data->Key, (unsigned char *) Data->InputVector);
 
         if (ProcMod->Flags & DPM_NOPAD_DATA) EVP_CIPHER_CTX_set_padding(Data->enc_ctx,FALSE);
 

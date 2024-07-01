@@ -43,7 +43,7 @@ int SpawnParseConfig(const char *Config)
 //This is the function we call in the child process for 'SpawnCommand'
 int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
 {
-    int result;
+    int result=-1;
     char *Token=NULL, *FinalCommand=NULL, *ExecPath=NULL;
     char **argv;
     const char *ptr;
@@ -76,7 +76,7 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
             argv[i]=CopyStr(argv[i],Token);
         }
 
-        execv(ExecPath, argv);
+        result=execv(ExecPath, argv);
     }
     else result=execl("/bin/sh","/bin/sh","-c",(char *) Command,NULL);
 
@@ -116,7 +116,6 @@ pid_t xfork(const char *Config)
 pid_t xforkio(int StdIn, int StdOut, int StdErr)
 {
     pid_t pid;
-    int fd;
 
     pid=xfork("");
     if (pid==0)
@@ -213,7 +212,6 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     //default these to stdin, stdout and stderr and then override those later
     int c1=0, c2=1, c3=2;
     int channel1[2], channel2[2], channel3[2];
-    int result;
     int Flags=0;
 
     Flags=SpawnParseConfig(Config);
@@ -281,7 +279,7 @@ pid_t PipeSpawn(int *infd,int  *outfd,int  *errfd, const char *Command, const ch
 pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flags, const char *Config)
 {
     pid_t pid=-1, ConfigFlags=0;
-    int tty, pty, i;
+    int tty, pty;
 
     if (PseudoTTYGrab(&pty, &tty, Flags))
     {

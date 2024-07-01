@@ -157,7 +157,6 @@ time_t ParseDuration(const char *Dur)
 long TimezoneOffset(const char *TimeZone)
 {
     long Secs=0;
-    char *Tempstr=NULL;
     char *SavedTimeZone=NULL;
 
     SavedTimeZone=CopyStr(SavedTimeZone, getenv("TZ"));

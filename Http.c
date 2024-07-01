@@ -651,7 +651,6 @@ static char *HTTPHeadersAppendAuth(char *RetStr, const char *AuthHeader, HTTPInf
 void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
 {
     char *SendStr=NULL, *Tempstr=NULL;
-    const char *ptr;
     ListNode *Curr;
 
     STREAMClearDataProcessors(S);
@@ -932,8 +931,7 @@ int HTTPProcessResponse(HTTPInfoStruct *HTTPInfo)
 STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
 {
     char *Proto=NULL, *Host=NULL, *URL=NULL, *Tempstr=NULL;
-    const char *ptr;
-    int Port=0, Flags=0;
+    int Port=0;
     STREAM *S;
 
     //proto in here will not be http/https but tcp/ssl/tls
@@ -1203,7 +1201,6 @@ STREAM *HTTPWithConfig(const char *URL, const char *Config)
     char *Token=NULL;
     const char *ptr, *cptr, *p_Method="GET";
     STREAM *S;
-    int Flags=0;
 
 
     ptr=GetToken(Config,"\\S",&Token, 0);

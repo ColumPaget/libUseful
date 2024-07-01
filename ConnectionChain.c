@@ -311,7 +311,6 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
     char *Tempstr=NULL;
     char *Token=NULL, *Host=NULL, *User=NULL, *Pass=NULL;
     uint8_t *ptr;
-    uint32_t IP;
     const char *tptr;
     int result, RetVal=FALSE, val;
     uint8_t HostType=HT_IP4;
@@ -368,7 +367,7 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
 //Socks 5 has a 'reserved' byte after the connection type
         *ptr=0;
         ptr++;
-        ptr=ConnectHopSocks5WriteAddress(ptr, HostType, Token);
+        ptr=(uint8_t *) ConnectHopSocks5WriteAddress( (char *) ptr, HostType, Token);
     }
 
 

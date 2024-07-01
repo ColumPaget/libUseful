@@ -1154,7 +1154,6 @@ char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
 char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
 {
     char *Token=NULL;
-    const char *ptr;
 
     if (Indent > 0) RetStr=PadStr(RetStr, ' ', Indent);
     switch (Item->ItemType)

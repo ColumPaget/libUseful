@@ -15,7 +15,7 @@ TERMPROGRESS *TerminalProgressCreate(STREAM *Term, const char *Config)
 void TerminalProgressDraw(TERMPROGRESS *TP, float Fract, const char *Info)
 {
     char *Tempstr=NULL, *Bar=NULL, *Remain=NULL;
-    int i, len;
+    int len;
 
     if (TP->Flags & TERMMENU_POSITIONED) TerminalCommand(TERM_CURSOR_MOVE, TP->x, TP->y, TP->Term);
     else Tempstr=CopyStr(Tempstr, "\r");

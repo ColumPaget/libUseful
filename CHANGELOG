@@ -1,3 +1,7 @@
+v5.18 (2024-07-01)
+  * FindFileInPath now returns a real file, rather than symlink, unless a symlink is all it can find (not it really does).
+  * Clean up some errors revealed by -Wall
+
 v5.17 (2024-06-30)
   * FindFileInPath now returns a real file, rather than symlink, unless a symlink is all it can find.
   * Added TerminalPrint function.

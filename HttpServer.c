@@ -23,7 +23,6 @@ void HTTPServerParseClientCookies(ListNode *Vars, const char *Str)
 {
     const char *ptr;
     char *Name=NULL, *Value=NULL, *Tempstr=NULL;
-    ListNode *Item;
 
     ptr=GetNameValuePair(Str, ";", "=", &Name, &Value);
     while (ptr)

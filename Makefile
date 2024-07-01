@@ -1,9 +1,9 @@
 CC = gcc
-VERSION = 5.17
+VERSION = 5.18
 MAJOR=5
 LIBFILE=libUseful.so.$(VERSION)
 SONAME=libUseful.so.$(MAJOR)
-CFLAGS = -g -O2  -Wl,-soname,${SONAME}
+CFLAGS = -g -O2 -Wall  -Wl,-soname,${SONAME}
 LDFLAGS=
 LIBS = -lz -lssl -lcrypto -lc -lc -lc -lc 
 prefix=/usr/local

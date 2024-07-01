@@ -93,7 +93,6 @@ TLogFile *LogFileGetEntry(const char *FileName)
 {
     TLogFile *LogFile=NULL;
     ListNode *Node;
-    STREAM *S=NULL;
 
     if (! StrValid(FileName)) return(NULL);
     if (! LogFiles) LogFiles=ListCreate();
@@ -257,7 +256,6 @@ int LogFileFindSetValues(const char *FileName, int Flags, int MaxSize, int MaxRo
 int LogFileInternalWrite(TLogFile *LF, STREAM *S, int Flags, const char *Str)
 {
     char *Tempstr=NULL, *LogStr=NULL;
-    struct tm *TimeStruct;
     int result=FALSE;
     time_t Now;
 
@@ -414,7 +412,7 @@ int LogToFile(const char *FileName, const char *fmt, ...)
 {
     char *Tempstr=NULL;
     va_list args;
-    int result=FALSE, val;
+    int result=FALSE;
     TLogFile *LogFile;
 
     LogFile=LogFileGetEntry(FileName);

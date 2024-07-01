@@ -16,7 +16,7 @@ char *TOTP(char *RetStr, const char *HashType, const char *EncodedSecret, int Se
     len=DecodeBytes(&Secret, EncodedSecret, SecretEncoding);
     totp=(uint64_t) htonll((uint64_t) (time(NULL) / Interval));
 
-    len=HMACBytes(&Tempstr, HashType, Secret, len, (unsigned char *) &totp, sizeof(uint64_t), ENCODE_NONE);
+    len=HMACBytes(&Tempstr, HashType, Secret, len, (char *) &totp, sizeof(uint64_t), ENCODE_NONE);
 
     ptr=Tempstr + len -1;
     pos=*ptr & 0xf;

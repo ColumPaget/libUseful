@@ -399,7 +399,6 @@ const char *TerminalAlignText(const char *Text, char **RetStr, int Flags, STREAM
 
 char *TerminalCommandStr(char *RetStr, int Cmd, int Arg1, int Arg2)
 {
-    int i;
     char *Tempstr=NULL;
 
     switch (Cmd)
@@ -575,7 +574,7 @@ char *TerminalFillToEndOfLine(char *RetStr, int fill_char, STREAM *Term)
 
 const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
 {
-    const char *ptr, *end;
+    const char *ptr;
     char *Tempstr=NULL;
     long val;
     int Fg, Bg;
@@ -753,7 +752,7 @@ void TerminalPutChar(int Char, STREAM *S)
 {
     char *Tempstr=NULL;
     char towrite;
-    int result;
+		int result;
 
     if (Char <= 0x7f)
     {
@@ -769,6 +768,7 @@ void TerminalPutChar(int Char, STREAM *S)
         if (S) STREAMWriteLine(Tempstr, S);
         else result=write(1,Tempstr,StrLen(Tempstr));
     }
+
 
     Destroy(Tempstr);
 }

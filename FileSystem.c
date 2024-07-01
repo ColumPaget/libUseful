@@ -200,11 +200,14 @@ char *FindFileInPath(char *InBuff, const char *File, const char *Path)
     {
         CurrPath=SlashTerminateDirectoryPath(CurrPath);
         Tempstr=MCopyStr(Tempstr,CurrPath,File,NULL);
-        if (stat(Tempstr, &Stat)==0)
+        if (lstat(Tempstr, &Stat)==0)
         {
 						//if we find an symlink, then remember it, but don't return it, 
 						//in the hope that we will find a better match
-						if (S_ISLNK(Stat.st_mode)) Link=CopyStr(Link, Tempstr);
+						if (S_ISLNK(Stat.st_mode)) 
+						{
+							if (! StrValid(Link)) Link=CopyStr(Link, Tempstr);
+						}
 						else
 						{
             RetStr=CopyStr(RetStr,Tempstr);
