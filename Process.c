@@ -20,6 +20,10 @@
 //needed for 'flock' used by CreatePidFile and CreateLockFile
 #include <sys/file.h>
 
+#ifdef HAVE_PRCTL
+#include <linux/prctl.h>  /* Definition of PR_* constants */
+#include <sys/prctl.h>
+#endif
 
 /*This is code to change the command-line of a program as visible in ps */
 
@@ -53,6 +57,7 @@ int ProcessSetCapabilities(const char *CapNames)
     char *Token=NULL;
     const char *ptr;
     cap_t caps;
+    uid_t uid;
 
     caps=cap_get_proc();
     cap_clear(caps);
@@ -96,11 +101,16 @@ int ProcessSetCapabilities(const char *CapNames)
 
     cap_set_proc(caps);
 
+    uid=getuid();
 #ifdef HAVE_SETRESUID
-    setresuid(99,99,99);
+    setresuid( uid, uid, uid);
 #else
-    setreuid(99,99);
+    setreuid( uid, uid);
 #endif
+
+    // once our capabilites are set, we can't be adding any
+    // further privilidges
+    ProcessNoNewPrivs();
 
     Destroy(Token);
 
@@ -697,15 +707,58 @@ void ProcessSetRLimit(int Type, const char *Value)
 
 static int ProcessResistPtrace()
 {
-#ifdef PR_SET_DUMPABLE
-#include <sys/prctl.h>
+
+#ifdef HAVE_PRCTL
+//Turn OFF Dumpable flag. This prevents producing coredumps, but has the side-effect of preventing ptrace attach.
+//We normally control coredumps via resources (RLIMIT_CORE) rather than this
+ #ifdef PR_SET_DUMPABLE
+ #include <sys/prctl.h>
     prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
     if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0) return(TRUE);
+    RaiseError(ERRFLAG_ERRNO, "ProcessResistPtrace", "Failed to setup ptrace resistance");
+ #else
+    RaiseError(0, "ProcessResistPtrace", "This platform doesn't seem to support the 'resist ptrace' (PR_SET_DUMPABLE) option");
+ #endif
+    RaiseError(0, "ProcessResistPtrace", "This platform doesn't seem to support the 'resist ptrace' (PR_SET_DUMPABLE) option (no prctl)");
 #endif
 
     return(FALSE);
 }
 
+
+static int ProcessNoNewPrivs()
+{
+#ifdef HAVE_PRCTL
+ #ifdef PR_SET_NO_NEW_PRIVS
+ #include <sys/prctl.h>
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0) return(TRUE);
+    RaiseError(ERRFLAG_ERRNO, "ProcessNoNewPrivs", "Failed to set 'no new privs'");
+ #else
+    RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option");
+ #endif
+#else
+    RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option (no prctl)");
+#endif
+
+    return(FALSE);
+}
+
+
+
+static int ProcessMemLockAdd()
+        {
+        int result=FALSE;
+            LibUsefulFlags |= LU_MLOCKALL;
+#ifdef HAVE_MLOCKALL
+            if (mlockall(MCL_CURRENT | MCL_FUTURE)) result=TRUE;
+    	    else RaiseError(ERRFLAG_ERRNO, "ProcessMemLockAdd", "Failed to set 'mlockall'");
+#else
+    RaiseError(0, "ProcessMemLockAdd", "This platform doesn't seem to support 'mlockall'");
+#endif
+            LibUsefulSetupAtExit();
+
+	return(result);
+        }
 
 
 
@@ -724,15 +777,6 @@ int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"prio")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"priority")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"openlog")==0) openlog(Value, LOG_PID, LOG_USER);
-        else if (strcasecmp(Name,"chroot")==0)
-        {
-            Flags |= PROC_CHROOT;
-            if ( StrValid(Value) && (chdir(Value) !=0 ) )
-            {
-                Flags |= PROC_SETUP_FAIL;;
-                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chroot to directory %s", Value);
-            }
-        }
         else if (strcasecmp(Name,"sigdef")==0) Flags |= PROC_SIGDEF;
         else if (strcasecmp(Name,"sigdefault")==0) Flags |= PROC_SIGDEF;
         else if (strcasecmp(Name,"setsid")==0) Flags |= PROC_SETSID;
@@ -740,6 +784,10 @@ int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"daemon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
+        else if (strcasecmp(Name,"ctrl_tty")==0) Flags |= PROC_CTRL_TTY;
+        else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"outnull")==0)
@@ -761,22 +809,8 @@ int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"-net")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"ns")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
-        else if (strcasecmp(Name,"mlock")==0)
-        {
-            LibUsefulFlags |= LU_MLOCKALL;
-#ifdef HAVE_MLOCKALL
-            mlockall(MCL_CURRENT | MCL_FUTURE);
-#endif
-            LibUsefulSetupAtExit();
-        }
-        else if (strcasecmp(Name,"memlock")==0)
-        {
-            LibUsefulFlags |= LU_MLOCKALL;
-#ifdef HAVE_MLOCKALL
-            mlockall(MCL_CURRENT | MCL_FUTURE);
-#endif
-            LibUsefulSetupAtExit();
-        }
+        else if (strcasecmp(Name,"mlock")==0) ProcessMemLockAdd();
+        else if (strcasecmp(Name,"memlock")==0) ProcessMemLockAdd();
         else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);
         else if (strcasecmp(Name,"mlockmax")==0) ProcessSetRLimit(RLIMIT_MEMLOCK, Value);
         else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);
@@ -784,6 +818,17 @@ int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
         else if ( (strcasecmp(Name,"procs")==0) || (strcasecmp(Name,"nproc")==0) ) ProcessSetRLimit(RLIMIT_NPROC, Value);
         else if (strcasecmp(Name, "resist_ptrace")==0) LibUsefulFlags |= LU_RESIST_PTRACE;
+        else if (strcasecmp(Name,"chroot")==0)
+        {
+            if ( StrValid(Value) && (chdir(Value) !=0 ) )
+            {
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chdir to directory %s for chrooting", Value);
+                Flags |= PROC_SETUP_FAIL;
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "too dangerous to continue, exiting...", Value);
+                exit(1);
+            }
+            else Flags |= PROC_CHROOT;
+        }
 
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
@@ -816,10 +861,12 @@ int ProcessApplyLateConfig(int Flags, const char *Config)
             if (chdir(Value) !=0)
             {
                 RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chdir to %s", Value);
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "too dangerous to continue, (possibly in wrong directory) exiting...", Value);
+                exit(1);
+
                 Flags |= PROC_SETUP_FAIL;
             }
         }
-
         else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
         else if (strcasecmp(Name,"LockFile")==0)
         {
@@ -855,12 +902,8 @@ int ProcessApplyLateConfig(int Flags, const char *Config)
 
     if (LibUsefulFlags & LU_RESIST_PTRACE)
     {
-        // do this again, and switching uid or gid can reset this
-        if (! ProcessResistPtrace())
-        {
-            RaiseError(0, "ProcessApplyConfig", "failed to activate ptrace resistance");
-            exit(1);
-        }
+        // do this again, as switching uid or gid can reset this
+        if (! ProcessResistPtrace()) Flags |= PROC_SETUP_FAIL;
     }
 
 //Must do this last! After parsing Config, and also after functions like
@@ -874,16 +917,13 @@ int ProcessApplyLateConfig(int Flags, const char *Config)
         }
     }
 
-    if (StrValid(Capabilities))
+    if (StrValid(Capabilities)) ProcessSetCapabilities(Capabilities);
+    //if we set any capabilites, we will already have set 'NO_NEW_PRIVS'
+    //so only consider the PROC_NO_NEW_PRIVS flag if we didn't use
+    //capabilities
+    else if (Flags & PROC_NO_NEW_PRIVS) 
     {
-        ProcessSetCapabilities(Capabilities);
-
-//does this belong inside ProcessSetCapabilties?
-#ifdef PR_SET_NO_NEW_PRIVS
-#include <sys/prctl.h>
-        prctl(PR_SET_NO_NEW_PRIVS, 0, 0, 0, 0);
-#endif
-
+     if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
     }
 
     Destroy(Name);
@@ -931,7 +971,7 @@ int ProcessApplyConfig(const char *Config)
     {
         if (chroot(".") == -1)
         {
-            RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot");
+            RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot");
             Flags |= PROC_SETUP_FAIL;
         }
     }

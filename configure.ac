@@ -77,7 +77,7 @@ AC_DEFINE([HAVE_GET_CURR_DIR])
 fi
 
 
-AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy)
+AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
 
 
 AC_ARG_ENABLE(sendfile, [  --enable-sendfile           enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval, cf_use_sendfile=auto )

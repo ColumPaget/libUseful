@@ -2151,7 +2151,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     }
     StrTrunc(RetStr,bytes_read);
 
-		//if result > 0 then we didn't break out on reading a 'STREAM_CLOSED' or other close condition, we broke out because we had hit the size limit
+    //if result > 0 then we didn't break out on reading a 'STREAM_CLOSED' or other close condition, we broke out because we had hit the size limit
     if ((bytes_read==size) && (result > 0))
     {
         if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));

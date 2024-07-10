@@ -365,8 +365,8 @@ static int HTTPHandleWWWAuthenticate(const char *Line, int *Type, char **Config)
         else if (strcasecmp(Name,"opaque")==0) Opaque=CopyStr(Opaque,Value);
     }
 
-		//put all the digest parts into a single string that we can parse out later
-		//THIS IS NOT CONSTRUCTING OUR REPLY TO THE DIGEST AUTH REQUEST, it is just storing data for later use
+    //put all the digest parts into a single string that we can parse out later
+    //THIS IS NOT CONSTRUCTING OUR REPLY TO THE DIGEST AUTH REQUEST, it is just storing data for later use
     if (*Type & HTTP_AUTH_DIGEST) *Config=MCopyStr(*Config, Realm,":", Nonce, ":", QOP, ":", Opaque, ":", NULL);
     else *Config=MCopyStr(*Config,Realm,":",NULL);
 
@@ -524,18 +524,18 @@ static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
 static char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, const char *Password, const char *Doc, const char *AuthInfo)
 {
     char *Tempstr=NULL, *HA1=NULL, *HA2=NULL, *Digest=NULL;
-		char *Realm=NULL, *Nonce=NULL, *QOP=NULL, *Opaque=NULL, *ClientNonce=NULL;
-		const char *ptr;
+    char *Realm=NULL, *Nonce=NULL, *QOP=NULL, *Opaque=NULL, *ClientNonce=NULL;
+    const char *ptr;
     int len1, len2;
-		static unsigned long AuthCounter=0;
+    static unsigned long AuthCounter=0;
 
 
     //if (*Type & HTTP_AUTH_DIGEST) *Config=MCopyStr(*Config, Realm,":", Nonce, ":", QOP, ":", Opaque, ":", NULL);
 
-		ptr=GetToken(AuthInfo, ":", &Realm, GETTOKEN_QUOTES);
-		ptr=GetToken(ptr, ":", &Nonce, GETTOKEN_QUOTES);
-		ptr=GetToken(ptr, ":", &QOP, GETTOKEN_QUOTES);
-		ptr=GetToken(ptr, ":", &Opaque, GETTOKEN_QUOTES);
+    ptr=GetToken(AuthInfo, ":", &Realm, GETTOKEN_QUOTES);
+    ptr=GetToken(ptr, ":", &Nonce, GETTOKEN_QUOTES);
+    ptr=GetToken(ptr, ":", &QOP, GETTOKEN_QUOTES);
+    ptr=GetToken(ptr, ":", &Opaque, GETTOKEN_QUOTES);
 
     Tempstr=FormatStr(Tempstr,"%s:%s:%s",Logon,Realm,Password);
     len1=HashBytes(&HA1,"md5",Tempstr,StrLen(Tempstr),ENCODE_HEX);
@@ -543,21 +543,21 @@ static char *HTTPDigest(char *RetStr, const char *Method, const char *Logon, con
     Tempstr=FormatStr(Tempstr,"%s:%s",Method,Doc);
     len2=HashBytes(&HA2,"md5",Tempstr,StrLen(Tempstr),ENCODE_HEX);
 
-		
-		if (strcmp(QOP, "auth")==0)
-		{
-		AuthCounter++;
-		ClientNonce=GetRandomAlphabetStr(ClientNonce, 16);
-    Tempstr=FormatStr(Tempstr,"%s:%s:%08d:%s:auth:%s",HA1,Nonce,AuthCounter,ClientNonce,HA2);
-    len2=HashBytes(&Digest,"md5",Tempstr,StrLen(Tempstr),ENCODE_HEX);
-    RetStr=FormatStr(RetStr,"username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", qop=\"auth\", nc=\"%08d\", cnonce=\"%s\", response=\"%s\"",Logon,Realm,Nonce,Doc,AuthCounter,ClientNonce,Digest);
-		}
-    else 
-		{
-			Tempstr=MCopyStr(Tempstr,HA1,":",Nonce,":",HA2,NULL);
-    	len2=HashBytes(&Digest,"md5",Tempstr,StrLen(Tempstr),ENCODE_HEX);
-    	RetStr=MCopyStr(RetStr, "username=\"",Logon,"\", realm=\"",Realm,"\", nonce=\"",Nonce,"\", response=\"",Digest,"\", ","uri=\"",Doc,"\", algorithm=\"MD5\"", NULL);
-		}
+
+    if (strcmp(QOP, "auth")==0)
+    {
+        AuthCounter++;
+        ClientNonce=GetRandomAlphabetStr(ClientNonce, 16);
+        Tempstr=FormatStr(Tempstr,"%s:%s:%08d:%s:auth:%s",HA1,Nonce,AuthCounter,ClientNonce,HA2);
+        len2=HashBytes(&Digest,"md5",Tempstr,StrLen(Tempstr),ENCODE_HEX);
+        RetStr=FormatStr(RetStr,"username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", qop=\"auth\", nc=\"%08d\", cnonce=\"%s\", response=\"%s\"",Logon,Realm,Nonce,Doc,AuthCounter,ClientNonce,Digest);
+    }
+    else
+    {
+        Tempstr=MCopyStr(Tempstr,HA1,":",Nonce,":",HA2,NULL);
+        len2=HashBytes(&Digest,"md5",Tempstr,StrLen(Tempstr),ENCODE_HEX);
+        RetStr=MCopyStr(RetStr, "username=\"",Logon,"\", realm=\"",Realm,"\", nonce=\"",Nonce,"\", response=\"",Digest,"\", ","uri=\"",Doc,"\", algorithm=\"MD5\"", NULL);
+    }
 
 
 

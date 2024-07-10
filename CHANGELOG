@@ -1,3 +1,10 @@
+v5.19 (2024-07-09)
+  * Added 'nosu', 'noprivs' options to 'ProcessApplyConfig' that prevent a process escalating priviledges via su/sudo/setuid
+  * check for prctl properly using './configure'
+  * Eliminate use of 'fopen' in 'GetHostARP'
+  * General cleanup of 'ProcessApplyConfig'
+  * If chdir or chroot fail in 'ProcessApplyConfig' print "too dangerous to continue" and exit
+
 v5.18 (2024-07-01)
   * FindFileInPath now returns a real file, rather than symlink, unless a symlink is all it can find (not it really does).
   * Clean up some errors revealed by -Wall

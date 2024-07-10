@@ -314,20 +314,20 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
     else fd=socket(sa->sa_family, Type, 0);
 
 
-		if (fd > -1)
-		{
-    //REUSEADDR and REUSEPORT must be set BEFORE bind
-    result=1;
+    if (fd > -1)
+    {
+        //REUSEADDR and REUSEPORT must be set BEFORE bind
+        result=1;
 #ifdef SO_REUSEADDR
-    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &result, sizeof(result));
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &result, sizeof(result));
 #endif
 
 #ifdef SO_REUSEPORT
-    if (Flags & BIND_REUSEPORT) setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &result, sizeof(result));
+        if (Flags & BIND_REUSEPORT) setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &result, sizeof(result));
 #endif
 
-    result=bind(fd, sa, salen);
-		}
+        result=bind(fd, sa, salen);
+    }
 
     free(sa);
 
@@ -352,19 +352,19 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
     char *Tempstr=NULL, *Token=NULL;
     int result=FALSE;
     const char *ptr;
-    FILE *F;
+    STREAM *S;
 
     Tempstr=SetStrLen(Tempstr, 255);
-//TODO: why use fopen?
-    F=fopen("/proc/net/arp","r");
-    if (F)
+    S=STREAMOpen("/proc/net/arp","r");
+    if (S)
     {
         *Device=CopyStr(*Device,"remote");
         *MAC=CopyStr(*MAC,"remote");
         //Read Title Line
-        fgets(Tempstr,255,F);
+        Tempstr=STREAMReadLine(Tempstr, S);
 
-        while (fgets(Tempstr,255,F))
+        Tempstr=STREAMReadLine(Tempstr, S);
+        while (Tempstr)
         {
             StripTrailingWhitespace(Tempstr);
             ptr=GetToken(Tempstr," ",&Token,0);
@@ -388,8 +388,9 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
 
                 result=TRUE;
             }
+            Tempstr=STREAMReadLine(Tempstr, S);
         }
-        fclose(F);
+        STREAMClose(S);
     }
 
     DestroyString(Tempstr);

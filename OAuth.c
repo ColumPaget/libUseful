@@ -557,12 +557,12 @@ int OAuthStage1(OAUTH *Ctx, const char *URL)
     if (LibUsefulDebugActive()) fprintf(stderr, "OAuthStage1: %s\n", Tempstr);
     if (StrValid(Tempstr))
     {
-        if (Ctx->Flags & OAUTH_IMPLICIT) 
-				{
-					Ctx->VerifyURL=MCopyStr(Ctx->VerifyURL, URL, "?", Tempstr, NULL);
-        //result=OAuthImplicit(Ctx, URL, Tempstr);
-					result=TRUE;
-				}
+        if (Ctx->Flags & OAUTH_IMPLICIT)
+        {
+            Ctx->VerifyURL=MCopyStr(Ctx->VerifyURL, URL, "?", Tempstr, NULL);
+            //result=OAuthImplicit(Ctx, URL, Tempstr);
+            result=TRUE;
+        }
         else result=OAuthGrant(Ctx, URL, Tempstr);
     }
 
@@ -652,7 +652,7 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
     STREAM *S;
     char *Tempstr=NULL, *Token=NULL, *Name=NULL, *Path=NULL;
     int result=FALSE;
-		const char *ptr;
+    const char *ptr;
     int MatchingLines=0;
 
     //if we are explictly passed an entry name then use that,

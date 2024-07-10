@@ -22,7 +22,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define PROC_CONTAINER 512  
 #define PROC_CONTAINER_NET  1024
 #define PROC_ISOCUBE  2048
-#define PROC_NEWPGROUP  4096  //create new process group for this process
+#define PROC_NEWPGROUP  4096      //create new process group for this process
+#define PROC_NO_NEW_PRIVS 8192    //do not allow privilege escalation via setuid or other such methods
 
 //these must be compatible with PROC_ defines
 #define SPAWN_NOSHELL 8192
@@ -71,11 +72,14 @@ Values that can be passed in the 'Config' string of this function are:
 
 user=<name>     run process as user 'name'
 group=<name>    run process as group 'name'
+uid=<uid>       run process as user number 'uid'
+gid=<gid>       run process as group number 'gid'
 dir=<path>      run process in directory 'path'
 
 setsid          start a new session for the process
 newpgroup       start a new process group for the process (pgid will be the same as the processes pid)
 
+ctrltty
 ctrl_tty        set controlling tty of process to be it's standard-in. Signals and tty output will then happen on that channel, rather than
                 via the console the program is running on. So if your overall program is running on /dev/tty1, switch it to believe it's
                 tty is really whatever is on stdin
@@ -94,6 +98,9 @@ stderr=<fd>     redirect process stderr to file descriptor <fd>
 sigdef          set all signal handlers to the default values (throw away any sighandlers set by parent process)
 sigdefault      set all signal handlers to the default values (throw away any sighandlers set by parent process)
 
+demon
+daemon          'daemonize' the current process (fork it into the background, close stdin/stdout/stderr, etc)
+
 chroot=<path>   chroot process into <path>. This option happens before switching users, so that user info lookup, lockfile, pidfile,
                 and chdir to directory specified with 'dir=<path>'  all happen within the chroot. Thus this is used when chrooting
                 into a full unix filesystem
@@ -101,18 +108,31 @@ chroot=<path>   chroot process into <path>. This option happens before switching
 jail            jail the process. This does a chroot AFTER looking up the user id, creating lockfile, etc ,etc. This can be used to
                 jail a process into an empty or private directory
 
+namespace=<path>
 ns=<path>       linux namespace to join. <path> is either a path to a namespace file, or a path to a directory (e.g. /proc/<pid>/ns )
                 that contains namespace descriptor files
 
-nice=value      'nice' value of new process
-prio=value       scheduling priority of new process (equivalent to 0 - nice value)
-priority=value   scheduling priority of new process (equivalent to 0 - nice value)
-mem=value        resource limit for memory (data segment)
-fsize=value      resource limit for filesize
-files=value      resource limit for open files
-coredumps=value  resource limit for max size of coredump files
-procs=value      resource limit for max number of processes ON A PER USER BASIS.
+nosu            set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
+nopriv          set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
+noprivs         set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
+nice=<value>      'nice' value of new process
+prio=<value>       scheduling priority of new process (equivalent to 0 - nice value)
+priority=<value>   scheduling priority of new process (equivalent to 0 - nice value)
+mem=<value>        resource limit for memory (data segment)
+mlockmax=<value>   resource limit for locked memory
+fsize=<value>      resource limit for filesize
+files=<value>      resource limit for open files
+coredumps=<value>  resource limit for max size of coredump files
+procs=<value>      resource limit for max number of processes ON A PER USER BASIS.
+nproc=<value>      resource limit for max number of processes ON A PER USER BASIS.
+resist_ptrace    set prctrl(PR_NONE_DUMPABLE) to prevent ptracing of the process. This also prevents coredumps totally.
+openlog=<name>   set 'ident' of future syslog messages to 'name'. Also adds 'LOG_PID' and sets facility to 'LOG_USER' (see "man openlog" for more details).
+mlock            lock all current and future pages in memory so they don't swap out
+memlock          lock all current and future pages in memory so they don't swap out
+pidfile=<path>   create pidfile for this process at 'path'
+lockfile=<path>  create lockfile at 'path'
 */
+
 
 int ProcessApplyConfig(const char *Config);
 

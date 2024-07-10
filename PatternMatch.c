@@ -159,7 +159,7 @@ static int pmatch_quot(const char **P_PtrPtr, const char **S_PtrPtr, int *Flags)
 {
     int result=MATCH_FAIL, OldFlags;
     char P_Char, S_Char;
-		const char *OldPos;
+    const char *OldPos;
 
     P_Char=**P_PtrPtr;
     S_Char=**S_PtrPtr;

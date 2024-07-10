@@ -4038,6 +4038,12 @@ then :
   printf "%s\n" "#define HAVE_GETENTROPY 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "prctl" "ac_cv_func_prctl"
+if test "x$ac_cv_func_prctl" = xyes
+then :
+  printf "%s\n" "#define HAVE_PRCTL 1" >>confdefs.h
+
+fi
 
 
 

@@ -752,7 +752,7 @@ void TerminalPutChar(int Char, STREAM *S)
 {
     char *Tempstr=NULL;
     char towrite;
-		int result;
+    int result;
 
     if (Char <= 0x7f)
     {
@@ -800,9 +800,9 @@ void TerminalPrint(STREAM *S, const char *FmtStr, ...)
     va_start(args,FmtStr);
     Tempstr=VFormatStr(Tempstr, FmtStr, args);
     va_end(args);
-		TerminalPutStr(Tempstr, S);
+    TerminalPutStr(Tempstr, S);
 
-		Destroy(Tempstr);
+    Destroy(Tempstr);
 }
 
 

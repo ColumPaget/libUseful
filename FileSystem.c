@@ -184,7 +184,7 @@ int FindFilesInPath(const char *File, const char *Path, ListNode *Files)
 char *FindFileInPath(char *InBuff, const char *File, const char *Path)
 {
     char *Tempstr=NULL, *CurrPath=NULL, *RetStr=NULL, *Link=NULL;
-		struct stat Stat;
+    struct stat Stat;
     const char *ptr;
 
     RetStr=CopyStr(InBuff,"");
@@ -202,25 +202,25 @@ char *FindFileInPath(char *InBuff, const char *File, const char *Path)
         Tempstr=MCopyStr(Tempstr,CurrPath,File,NULL);
         if (lstat(Tempstr, &Stat)==0)
         {
-						//if we find an symlink, then remember it, but don't return it, 
-						//in the hope that we will find a better match
-						if (S_ISLNK(Stat.st_mode)) 
-						{
-							if (! StrValid(Link)) Link=CopyStr(Link, Tempstr);
-						}
-						else
-						{
-            RetStr=CopyStr(RetStr,Tempstr);
-            break;
-						}
+            //if we find an symlink, then remember it, but don't return it,
+            //in the hope that we will find a better match
+            if (S_ISLNK(Stat.st_mode))
+            {
+                if (! StrValid(Link)) Link=CopyStr(Link, Tempstr);
+            }
+            else
+            {
+                RetStr=CopyStr(RetStr,Tempstr);
+                break;
+            }
         }
 
         ptr=GetToken(ptr,":",&CurrPath,0);
     }
 
-		//if we didn't find an actual file, but found a link with the name
-		//then return that link
-		if (! StrValid(RetStr)) RetStr=CopyStr(RetStr, Link);
+    //if we didn't find an actual file, but found a link with the name
+    //then return that link
+    if (! StrValid(RetStr)) RetStr=CopyStr(RetStr, Link);
 
     DestroyString(Tempstr);
     DestroyString(CurrPath);

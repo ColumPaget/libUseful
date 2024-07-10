@@ -222,18 +222,18 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
     }
 
 
-		if (Type == -1) RaiseError(0, "STREAMServerNew","Unable to parse protocol: '%s'", Proto);
-		else
-		{
-    S=STREAMFromSock(fd, Type, NULL, Host, Port);
-    if (S)
+    if (Type == -1) RaiseError(0, "STREAMServerNew","Unable to parse protocol: '%s'", Proto);
+    else
     {
-        S->Path=CopyStr(S->Path, URL);
-        if (Flags & SOCK_TLS_AUTO) S->Flags |= SF_TLS_AUTO;
-        else if (Flags & SF_TLS) S->Flags |= SF_TLS;
-        STREAMServerParseConfig(S, Config);
+        S=STREAMFromSock(fd, Type, NULL, Host, Port);
+        if (S)
+        {
+            S->Path=CopyStr(S->Path, URL);
+            if (Flags & SOCK_TLS_AUTO) S->Flags |= SF_TLS_AUTO;
+            else if (Flags & SF_TLS) S->Flags |= SF_TLS;
+            STREAMServerParseConfig(S, Config);
+        }
     }
-		}
 
     DestroyString(Proto);
     DestroyString(Host);
