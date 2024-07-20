@@ -133,6 +133,23 @@ int TerminalStrLen(const char *Str)
 }
 
 
+char *TerminalPadStr(char *Str, int PadChar, int PadTo)
+{
+    int term_len, len, diff, max;
+
+    term_len=TerminalStrLen(Str);
+    len=StrLen(Str);
+    diff=PadTo-term_len;
+    max=len+diff;
+    while (len < max)
+    {
+        Str=AddCharToBuffer(Str, len, PadChar);
+        len++;
+    }
+
+    return(Str);
+}
+
 
 char *TerminalStrTrunc(char *Str, int MaxLen)
 {
@@ -246,6 +263,7 @@ int ANSIParseColor(const char *Str)
 void TerminalGeometry(STREAM *S, int *wid, int *len)
 {
     struct winsize w;
+    char *Tempstr=NULL;
     const char *ptr;
     int val=0;
 
@@ -268,6 +286,14 @@ void TerminalGeometry(STREAM *S, int *wid, int *len)
 
     *wid=w.ws_col;
     *len=w.ws_row;
+
+
+    Tempstr=FormatStr(Tempstr,"%d", *wid);
+    STREAMSetValue(S, "Terminal:cols", Tempstr);
+    Tempstr=FormatStr(Tempstr,"%d", *len);
+    STREAMSetValue(S, "Terminal:rows", Tempstr);
+
+    Destroy(Tempstr);
 }
 
 
@@ -1072,10 +1098,6 @@ int TerminalInit(STREAM *S, int Flags)
     int ttyflags=0;
 
     TerminalGeometry(S, &cols, &rows);
-    Tempstr=FormatStr(Tempstr,"%d",cols);
-    STREAMSetValue(S, "Terminal:cols", Tempstr);
-    Tempstr=FormatStr(Tempstr,"%d",rows);
-    STREAMSetValue(S, "Terminal:rows", Tempstr);
     STREAMSetValue(S, "Terminal:top", "0");
 
 
@@ -1089,7 +1111,7 @@ int TerminalInit(STREAM *S, int Flags)
         if (ttyflags) TTYConfig(S->in_fd, 0, ttyflags);
     }
 
-    XtermSetDefaultColors(S, TerminalThemeGet("Terminal:Attribs"));
+    XtermSetDefaultColors(S, TerminalThemeGet("Terminal", "Attribs"));
     TerminalBarsInit(S);
     if (Flags & TERM_WHEELMOUSE) STREAMWriteLine("\x1b[?1000h", S);
     else if (Flags & TERM_MOUSE) STREAMWriteLine("\x1b[?9h", S);

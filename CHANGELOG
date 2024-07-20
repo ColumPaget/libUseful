@@ -1,3 +1,17 @@
+v5.21
+  * replaced 'exit if can't chroot/chdir' with 'strict' option to ProcessApplyConfig
+  * Added ERRFLAG_ABORT to error handling functions, aborts the process after reporting the error
+  * Added ERRFLAG_SYSLOG to error handling functions, forces syslog even if library-wide syslog flag isn't set
+  * MakeShellSafeStr now quotes/blanks out '$' in addition to other dangerous characters
+  * MakeShellSafeStr can now report unsafe characters via syslog if the SHELLSAFE_REPORT flag is passed
+  * MakeShellSafeStr can now abort program if the SHELLSAFE_ABORT flag is passed and unsafe chars are found
+  * FileMoveToDir will now copy the file if a simple rename fails
+  * Negative values for width and height on TerminalMenu and TerminalProgress set width as 'terminal width minus that value'
+
+
+v5.20 (2024-07-11)
+  * Added  TOTPAtTime and TOTPPrevCurrNext
+
 v5.19 (2024-07-09)
   * Added 'nosu', 'noprivs' options to 'ProcessApplyConfig' that prevent a process escalating priviledges via su/sudo/setuid
   * check for prctl properly using './configure'
@@ -6,7 +20,7 @@ v5.19 (2024-07-09)
   * If chdir or chroot fail in 'ProcessApplyConfig' print "too dangerous to continue" and exit
 
 v5.18 (2024-07-01)
-  * FindFileInPath now returns a real file, rather than symlink, unless a symlink is all it can find (not it really does).
+  * FindFileInPath now returns a real file, rather than symlink, unless a symlink is all it can find (now it really does).
   * Clean up some errors revealed by -Wall
 
 v5.17 (2024-06-30)

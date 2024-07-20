@@ -9,11 +9,12 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include <stdint.h>
 #include "List.h"
 
-#define ERRFLAG_ERRNO 1
-#define ERRFLAG_DEBUG 2
-#define ERRFLAG_CLEAR 4
-#define ERRFLAG_NOTTY 8
-
+#define ERRFLAG_ERRNO   1
+#define ERRFLAG_DEBUG   2
+#define ERRFLAG_CLEAR   4
+#define ERRFLAG_NOTTY   8
+#define ERRFLAG_SYSLOG 16
+#define ERRFLAG_ABORT  32
 
 /*
 The libUseful error system builds a list of errors as the occur. This way, if multiple errors happen within

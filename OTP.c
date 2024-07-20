@@ -37,20 +37,20 @@ int TOTPAtTime(char **RetStr, const char *HashType, const char *EncodedSecret, i
 
 int TOTPPrevCurrNext(char **Prev, char **Curr, char **Next, const char *HashType, const char *EncodedSecret, int SecretEncoding, int Digits, int Interval)
 {
-time_t When;
-When=time(NULL);
+    time_t When;
+    When=time(NULL);
 
-TOTPAtTime(Prev, HashType, EncodedSecret, SecretEncoding, When - (Interval / 2 + 1), Digits, Interval);
-TOTPAtTime(Curr, HashType, EncodedSecret, SecretEncoding, When, Digits, Interval);
-TOTPAtTime(Next, HashType, EncodedSecret, SecretEncoding, When + (Interval / 2 + 1), Digits, Interval);
-return(When % Interval);
+    TOTPAtTime(Prev, HashType, EncodedSecret, SecretEncoding, When - (Interval / 2 + 1), Digits, Interval);
+    TOTPAtTime(Curr, HashType, EncodedSecret, SecretEncoding, When, Digits, Interval);
+    TOTPAtTime(Next, HashType, EncodedSecret, SecretEncoding, When + (Interval / 2 + 1), Digits, Interval);
+    return(When % Interval);
 }
 
 
 char *TOTP(char *RetStr, const char *HashType, const char *EncodedSecret, int SecretEncoding, int Digits, int Interval)
 {
-TOTPAtTime(&RetStr, HashType, EncodedSecret, SecretEncoding, time(NULL), Digits, Interval);
-return(RetStr);
+    TOTPAtTime(&RetStr, HashType, EncodedSecret, SecretEncoding, time(NULL), Digits, Interval);
+    return(RetStr);
 }
 
 

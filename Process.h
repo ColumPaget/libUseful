@@ -30,7 +30,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define SPAWN_TRUST_COMMAND 16384
 #define SPAWN_ARG0 32768
 
-#define PROC_SETUP_FAIL 65536
+#define PROC_SETUP_FAIL   65536
+#define PROC_SETUP_STRICT 131072
 
 
 #ifdef __cplusplus
@@ -80,9 +81,7 @@ setsid          start a new session for the process
 newpgroup       start a new process group for the process (pgid will be the same as the processes pid)
 
 ctrltty
-ctrl_tty        set controlling tty of process to be it's standard-in. Signals and tty output will then happen on that channel, rather than
-                via the console the program is running on. So if your overall program is running on /dev/tty1, switch it to believe it's
-                tty is really whatever is on stdin
+ctrl_tty        set controlling tty of process to be it's standard-in. Signals and tty output will then happen on that channel, rather than via the console the program is running on. So if your overall program is running on /dev/tty1, switch it to believe it's tty is really whatever is on stdin
 
 ctty=<fd>       set controlling tty of process to be 'fd' (where fd is a file descriptor number). 
                 Same as ctrl_tty above, but using an arbitary file descriptor rather than stdin.
@@ -101,12 +100,11 @@ sigdefault      set all signal handlers to the default values (throw away any si
 demon
 daemon          'daemonize' the current process (fork it into the background, close stdin/stdout/stderr, etc)
 
-chroot=<path>   chroot process into <path>. This option happens before switching users, so that user info lookup, lockfile, pidfile,
-                and chdir to directory specified with 'dir=<path>'  all happen within the chroot. Thus this is used when chrooting
-                into a full unix filesystem
+chroot=<path>   chroot process into <path>. This option happens before switching users, so that user info lookup, lockfile, pidfile, and chdir to directory specified with 'dir=<path>'  all happen within the chroot. Thus this is used when chrooting into a full unix filesystem
 
-jail            jail the process. This does a chroot AFTER looking up the user id, creating lockfile, etc ,etc. This can be used to
-                jail a process into an empty or private directory
+jail            jail the process. This does a chroot AFTER looking up the user id, creating lockfile, etc ,etc. This can be used to jail a process into an empty or private directory
+
+strict          abort process if chdir, chroot or jail fails
 
 namespace=<path>
 ns=<path>       linux namespace to join. <path> is either a path to a namespace file, or a path to a directory (e.g. /proc/<pid>/ns )

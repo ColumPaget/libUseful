@@ -133,17 +133,30 @@ int FileChangeExtension(const char *FilePath, const char *NewExt)
 int FileMoveToDir(const char *FilePath, const char *Dir)
 {
     char *Tempstr=NULL;
-    int result;
+    struct stat Stat;
+    int result, size;
+		int RetVal=FALSE;
 
     Tempstr=MCopyStr(Tempstr, Dir, "/", GetBasename(FilePath), NULL);
     MakeDirPath(Tempstr, 0700);
-    result=rename(FilePath,Tempstr);
-    if (result !=0) RaiseError(ERRFLAG_ERRNO, "FileMoveToDir", "cannot rename '%s' to '%s'",FilePath, Tempstr);
+    if (rename(FilePath,Tempstr) != 0)
+    {
+        RaiseError(ERRFLAG_DEBUG | ERRFLAG_ERRNO, "FileMoveToDir", "cannot rename '%s' to '%s'",FilePath, Tempstr);
+        stat(FilePath, &Stat);
+        size=FileCopy(FilePath, Tempstr);
+        if (size==Stat.st_size)
+        {
+            unlink(FilePath);
+            RetVal=TRUE;
+        }
+        else RaiseError(ERRFLAG_ERRNO, "FileMoveToDir", "cannot rename nor copy '%s' to '%s'",FilePath, Tempstr);
+    }
+    else RetVal=TRUE;
+
 
     DestroyString(Tempstr);
 
-    if (result==0) return(TRUE);
-    else return(FALSE);
+    return(RetVal);
 }
 
 

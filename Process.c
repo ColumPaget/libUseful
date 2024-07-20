@@ -567,8 +567,9 @@ int ProcessContainer(const char *Config)
     {
         if (strcasecmp(Name,"hostname")==0) HostName=CopyStr(HostName, Value);
         else if (strcasecmp(Name,"dir")==0) Dir=CopyStr(Dir, Value);
-        else if (strcasecmp(Name,"+net")==0) Flags |= PROC_CONTAINER_NET;
-        else if (strcasecmp(Name,"-net")==0) Flags &= ~PROC_CONTAINER_NET;
+        else if (strcasecmp(Name,"nonet")==0) Flags |= PROC_CONTAINER_NET;
+        else if (strcasecmp(Name,"-net")==0) Flags |= PROC_CONTAINER_NET;
+        else if (strcasecmp(Name,"+net")==0) Flags &= ~PROC_CONTAINER_NET;
         else if (strcasecmp(Name,"jailsetup")==0) SetupScript=CopyStr(SetupScript, Value);
         else if (
             (strcasecmp(Name,"ns")==0) ||
@@ -583,7 +584,7 @@ int ProcessContainer(const char *Config)
             if (StrValid(Value)) ChRoot=CopyStr(ChRoot, Value);
             Flags |= PROC_CONTAINER;
         }
-        else if (strcasecmp(Name,"container+net")==0)
+        else if (strcasecmp(Name,"container-net")==0)
         {
             if (StrValid(Value)) ChRoot=CopyStr(ChRoot, Value);
             Flags |= PROC_CONTAINER | PROC_CONTAINER_NET;
@@ -711,14 +712,14 @@ static int ProcessResistPtrace()
 #ifdef HAVE_PRCTL
 //Turn OFF Dumpable flag. This prevents producing coredumps, but has the side-effect of preventing ptrace attach.
 //We normally control coredumps via resources (RLIMIT_CORE) rather than this
- #ifdef PR_SET_DUMPABLE
- #include <sys/prctl.h>
+#ifdef PR_SET_DUMPABLE
+#include <sys/prctl.h>
     prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
     if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0) return(TRUE);
     RaiseError(ERRFLAG_ERRNO, "ProcessResistPtrace", "Failed to setup ptrace resistance");
- #else
+#else
     RaiseError(0, "ProcessResistPtrace", "This platform doesn't seem to support the 'resist ptrace' (PR_SET_DUMPABLE) option");
- #endif
+#endif
     RaiseError(0, "ProcessResistPtrace", "This platform doesn't seem to support the 'resist ptrace' (PR_SET_DUMPABLE) option (no prctl)");
 #endif
 
@@ -729,13 +730,13 @@ static int ProcessResistPtrace()
 static int ProcessNoNewPrivs()
 {
 #ifdef HAVE_PRCTL
- #ifdef PR_SET_NO_NEW_PRIVS
- #include <sys/prctl.h>
+#ifdef PR_SET_NO_NEW_PRIVS
+#include <sys/prctl.h>
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0) return(TRUE);
     RaiseError(ERRFLAG_ERRNO, "ProcessNoNewPrivs", "Failed to set 'no new privs'");
- #else
+#else
     RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option");
- #endif
+#endif
 #else
     RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option (no prctl)");
 #endif
@@ -746,23 +747,23 @@ static int ProcessNoNewPrivs()
 
 
 static int ProcessMemLockAdd()
-        {
-        int result=FALSE;
-            LibUsefulFlags |= LU_MLOCKALL;
+{
+    int result=FALSE;
+    LibUsefulFlags |= LU_MLOCKALL;
 #ifdef HAVE_MLOCKALL
-            if (mlockall(MCL_CURRENT | MCL_FUTURE)) result=TRUE;
-    	    else RaiseError(ERRFLAG_ERRNO, "ProcessMemLockAdd", "Failed to set 'mlockall'");
+    if (mlockall(MCL_CURRENT | MCL_FUTURE)) result=TRUE;
+    else RaiseError(ERRFLAG_ERRNO, "ProcessMemLockAdd", "Failed to set 'mlockall'");
 #else
     RaiseError(0, "ProcessMemLockAdd", "This platform doesn't seem to support 'mlockall'");
 #endif
-            LibUsefulSetupAtExit();
+    LibUsefulSetupAtExit();
 
-	return(result);
-        }
+    return(result);
+}
 
 
 
-int ProcessApplyEarlyConfig(const char *Config)
+static int ProcessApplyEarlyConfig(const char *Config)
 {
     char *Name=NULL, *Value=NULL;
     const char *ptr;
@@ -788,6 +789,7 @@ int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"strict")==0) Flags |= PROC_SETUP_STRICT;
         else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"outnull")==0)
@@ -824,8 +826,6 @@ int ProcessApplyEarlyConfig(const char *Config)
             {
                 RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chdir to directory %s for chrooting", Value);
                 Flags |= PROC_SETUP_FAIL;
-                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "too dangerous to continue, exiting...", Value);
-                exit(1);
             }
             else Flags |= PROC_CHROOT;
         }
@@ -841,7 +841,7 @@ int ProcessApplyEarlyConfig(const char *Config)
 
 
 //Apply config changes that are relevant AFTER chroot/daemonize
-int ProcessApplyLateConfig(int Flags, const char *Config)
+static int ProcessApplyLateConfig(int Flags, const char *Config)
 {
     char *Name=NULL, *Value=NULL, *Capabilities=NULL;
     const char *ptr;
@@ -921,9 +921,9 @@ int ProcessApplyLateConfig(int Flags, const char *Config)
     //if we set any capabilites, we will already have set 'NO_NEW_PRIVS'
     //so only consider the PROC_NO_NEW_PRIVS flag if we didn't use
     //capabilities
-    else if (Flags & PROC_NO_NEW_PRIVS) 
+    else if (Flags & PROC_NO_NEW_PRIVS)
     {
-     if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
+        if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
     }
 
     Destroy(Name);
@@ -943,7 +943,11 @@ int ProcessApplyConfig(const char *Config)
 //do all things that we can do 'early' (i.e. before chroot and demonize)
     Flags=ProcessApplyEarlyConfig(Config);
 
-    if (Flags & PROC_SETUP_FAIL) return(Flags);
+    if (Flags & PROC_SETUP_FAIL)
+    {
+        if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "Early setup failed. Strict mode requested. Aborting.");
+        return(Flags);
+    }
 
     if (LibUsefulFlags & LU_RESIST_PTRACE) ProcessResistPtrace();
 
@@ -973,12 +977,15 @@ int ProcessApplyConfig(const char *Config)
         {
             RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot");
             Flags |= PROC_SETUP_FAIL;
+            if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "chroot failed. Strict mode requested. Aborting.");
         }
     }
 
 
     //Apply config changes that are relevant AFTER chroot/daemonize
     if (! (Flags & PROC_SETUP_FAIL)) Flags=ProcessApplyLateConfig(Flags, Config);
+    if ( (Flags & PROC_SETUP_FAIL) && (Flags & PROC_SETUP_STRICT) ) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "Late setup failed. Strict mode requested. Aborting.");
+
 
     return(Flags);
 }
