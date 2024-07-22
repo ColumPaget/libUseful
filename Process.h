@@ -23,7 +23,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define PROC_CONTAINER_NET  1024
 #define PROC_ISOCUBE  2048
 #define PROC_NEWPGROUP  4096      //create new process group for this process
-#define PROC_NO_NEW_PRIVS 8192    //do not allow privilege escalation via setuid or other such methods
 
 //these must be compatible with PROC_ defines
 #define SPAWN_NOSHELL 8192
@@ -32,6 +31,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 #define PROC_SETUP_FAIL   65536
 #define PROC_SETUP_STRICT 131072
+#define PROC_NO_NEW_PRIVS 262144    //do not allow privilege escalation via setuid or other such methods
 
 
 #ifdef __cplusplus

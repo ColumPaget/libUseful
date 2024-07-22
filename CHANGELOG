@@ -1,3 +1,6 @@
+v5.22
+  * fix clash of flags between PROC_NO_NEW_PRIV and PROC_NOSHELL
+
 v5.21
   * replaced 'exit if can't chroot/chdir' with 'strict' option to ProcessApplyConfig
   * Added ERRFLAG_ABORT to error handling functions, aborts the process after reporting the error
