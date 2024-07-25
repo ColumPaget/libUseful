@@ -3,8 +3,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 * SPDX-License-Identifier: GPL-3.0
 */
 
-#ifndef LIB_USEFUL_LIST
-#define LIB_USEFUL_LIST
+#ifndef LIBUSEFUL_LIST
+#define LIBUSEFUL_LIST
 
 /*
 

@@ -73,5 +73,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "HttpServer.h"
 #include "WebSocket.h"
 #include "PasswordFile.h"
+#include "CGI.h"
 
 #endif

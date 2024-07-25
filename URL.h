@@ -3,8 +3,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 * SPDX-License-Identifier: GPL-3.0
 */
 
-#ifndef LIBUSEFUL_URL
-#define LIBUSEFUL_URL
+#ifndef LIBUSEFUL_URL_H
+#define LIBUSEFUL_URL_H
 
 #include "includes.h"
 

@@ -3,8 +3,8 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 * SPDX-License-Identifier: GPL-3.0
 */
 
-#ifndef LIBUSEFUL_SSH
-#define LIBUSEFUL_SSH
+#ifndef LIBUSEFUL_SSH_H
+#define LIBUSEFUL_SSH_H
 
 #include "Stream.h"
 

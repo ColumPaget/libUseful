@@ -2136,11 +2136,18 @@ int STREAMReadToString(STREAM *S, char **RetStr, int *len, const char *Term)
 char *STREAMReadDocument(char *RetStr, STREAM *S)
 {
     char *Tempstr=NULL;
+    const char *ptr;
     int result=0, size, bytes_read=0, max;
 
-    max=LibUsefulGetInteger("MaxDocumentSize");
+
+    //for documents where we know the size, e.g. HTTP documents where we've had 'Content-Length'
+    //there will be a size booked against the stream 'S'
     if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) ) size=S->Size;
-    else size=max;
+
+    //we can set a program-wide max document size
+    max=LibUsefulGetInteger("MaxDocumentSize");
+    if (max > 0) size=max;
+
 
     while (bytes_read < size)
     {
