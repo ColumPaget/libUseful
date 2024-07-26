@@ -66,6 +66,13 @@ void ProcessSetTitle(const char *FmtStr, ...);
 // set 'fd' to be a processes controling tty
 void ProcessSetControlTTY(int fd);
 
+//set process to not be traceable with ptrace/strace, and also unable to make coredumps
+int ProcessResistPtrace();
+
+//set 'no new privs' to process cannot switch user/priviledges by any means (no su, sudo or setuid)
+int ProcessNoNewPrivs();
+
+
 /*
 ProcessApplyConfig()  changes aspects of a running process. This function is not normally used in C programming, and is instead either called from the Spawn or fork functions in SpawnCommands.c or is used when binding libUseful functionality to scripting languages that have limited types, and where structures cannot easily be used to pass data.
 

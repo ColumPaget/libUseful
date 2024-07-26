@@ -288,8 +288,8 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
         {
             close(pty);
 
-            ProcessSetControlTTY(tty);
             setsid();
+            ProcessSetControlTTY(tty);
 
             ///now that we've dupped it, we don't need to keep it open
             //as it will be open on stdin/stdout

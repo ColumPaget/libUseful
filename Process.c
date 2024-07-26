@@ -706,7 +706,7 @@ void ProcessSetRLimit(int Type, const char *Value)
 }
 
 
-static int ProcessResistPtrace()
+int ProcessResistPtrace()
 {
 
 #ifdef HAVE_PRCTL
@@ -714,8 +714,12 @@ static int ProcessResistPtrace()
 //We normally control coredumps via resources (RLIMIT_CORE) rather than this
 #ifdef PR_SET_DUMPABLE
 #include <sys/prctl.h>
+
+//set, then check we have the set. This covers situations where the sat failed, but we've already
+//set the value previously somehow
     prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
     if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0) return(TRUE);
+
     RaiseError(ERRFLAG_ERRNO, "ProcessResistPtrace", "Failed to setup ptrace resistance");
 #else
     RaiseError(0, "ProcessResistPtrace", "This platform doesn't seem to support the 'resist ptrace' (PR_SET_DUMPABLE) option");
@@ -727,12 +731,17 @@ static int ProcessResistPtrace()
 }
 
 
-static int ProcessNoNewPrivs()
+int ProcessNoNewPrivs()
 {
 #ifdef HAVE_PRCTL
 #ifdef PR_SET_NO_NEW_PRIVS
 #include <sys/prctl.h>
-    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == 0) return(TRUE);
+
+//set, then check that the set worked. This correctly handles situations where we ask to set more than once
+//as the second attempt may 'fail', but we already have the desired result
+    prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+    if (prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) == 1) return(TRUE);
+
     RaiseError(ERRFLAG_ERRNO, "ProcessNoNewPrivs", "Failed to set 'no new privs'");
 #else
     RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option");
@@ -831,6 +840,11 @@ static int ProcessApplyEarlyConfig(const char *Config)
         }
 
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
+    }
+
+    if (LibUsefulFlags & LU_RESIST_PTRACE) 
+    {
+	if (! ProcessResistPtrace()) Flags |= PROC_SETUP_FAIL;
     }
 
     Destroy(Name);
@@ -949,7 +963,6 @@ int ProcessApplyConfig(const char *Config)
         return(Flags);
     }
 
-    if (LibUsefulFlags & LU_RESIST_PTRACE) ProcessResistPtrace();
 
 //set all signal handlers to default
     if (Flags & PROC_SIGDEF)
