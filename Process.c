@@ -775,6 +775,7 @@ static int ProcessMemLockAdd()
 
 
 
+//do all things that we can do 'early' (i.e. before chroot and demonize)
 static int ProcessApplyEarlyConfig(const char *Config)
 {
     char *Name=NULL, *Value=NULL;

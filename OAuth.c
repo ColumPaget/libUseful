@@ -652,7 +652,6 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
     STREAM *S;
     char *Tempstr=NULL, *Token=NULL, *Name=NULL, *Path=NULL;
     int result=FALSE;
-    const char *ptr;
     int MatchingLines=0;
 
     //if we are explictly passed an entry name then use that,
@@ -676,7 +675,7 @@ int OAuthLoad(OAUTH *Ctx, const char *ReqName, const char *iPath)
         while (Tempstr)
         {
             StripTrailingWhitespace(Tempstr);
-            ptr=GetToken(Tempstr, "\\S", &Token, GETTOKEN_QUOTES);
+            GetToken(Tempstr, "\\S", &Token, GETTOKEN_QUOTES);
             if (strcmp(Token, Name)==0)
             {
                 OAuthParse(Ctx, Tempstr);
