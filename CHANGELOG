@@ -1,3 +1,10 @@
+v5.23 (2024-07-26)
+  *  Improve attribution of base64 and hashing functions
+  * fix -net/nonet (flag meaning was inverted)
+  * ProcessNoNewPrivs now handles 'already set' and is no longer static. 
+  * Call setsid before setting controlling tty in PtySpawnFunction
+  * added CGIReadDocument
+
 v5.22
   * fix clash of flags between PROC_NO_NEW_PRIV and PROC_NOSHELL
 
