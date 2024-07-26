@@ -489,9 +489,11 @@ void ProcessContainerNamespace(const char *Namespace, const char *HostName, int 
 {
     int val, result;
 
+#ifdef HAVE_UNSHARE
+
 #ifdef CLONE_NEWNET
     if (StrValid(Namespace)) JoinNamespace(Namespace, CLONE_NEWNET);
-    else if (! (Flags & PROC_CONTAINER_NET)) unshare(CLONE_NEWNET);
+    else if (Flags & PROC_CONTAINER_NET) unshare(CLONE_NEWNET);
 #endif
 
     if (Flags & PROC_CONTAINER)
@@ -524,6 +526,8 @@ void ProcessContainerNamespace(const char *Namespace, const char *HostName, int 
         else unshare(CLONE_NEWNS);
 #endif
     }
+
+#endif
 }
 
 
@@ -638,9 +642,7 @@ int ProcessContainer(const char *Config)
             }
 
 
-#ifdef HAVE_UNSHARE
             ProcessContainerNamespace(Namespace, HostName, Flags);
-#endif
 
             ProcessContainerSetEnvs(Envs);
             //if we are given a namespace we assume there is already an init for it
@@ -680,6 +682,7 @@ int ProcessContainer(const char *Config)
         //we no longer need the parent thread, as the child thread, now completely in the CLONE_NEWPID jail, is our new thread
         else _exit(0);
     }
+    else ProcessContainerNamespace(Namespace, HostName, Flags);
 
     Destroy(Tempstr);
     Destroy(SetupScript);
@@ -818,6 +821,7 @@ static int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"container+net")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"isocube")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"-net")==0) Flags |= PROC_CONTAINER;
+        else if (strcasecmp(Name,"nonet")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"ns")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER;
         else if (strcasecmp(Name,"mlock")==0) ProcessMemLockAdd();
