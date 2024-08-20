@@ -169,12 +169,21 @@ STREAM *LogFileInternalDoRotate(TLogFile *LogFile)
     int i;
 
     if (! LogFile) return(NULL);
-    if (! LogFile->S) return(NULL);
+
+    //we can rotate even if logfile is closed
+    //if (! LogFile->S) return(NULL);
+
+    //don't attempt to rotate things that aren't files
     if (CompareStr(LogFile->Path,"SYSLOG")==0) return(LogFile->S);
     if (CompareStr(LogFile->Path,"STDOUT")==0) return(LogFile->S);
     if (CompareStr(LogFile->Path,"STDERR")==0) return(LogFile->S);
+
+    //don't attempt to rotate if we are a child process forked off, 
+    //otherwise we can get into chaos with processes not knowing which
+    //version of the file they should be logging to
     if (getpid() != ParentPID) return(LogFile->S);
 
+    //if we have a max size specified, then consider rotating
     if (LogFile->MaxSize > 0)
     {
         if (LogFile->S) fstat(LogFile->S->out_fd,&FStat);
@@ -193,16 +202,17 @@ STREAM *LogFileInternalDoRotate(TLogFile *LogFile)
 
             if (LogFile->S)
             {
-                //turn off append only sw we can do reanmae
+                //turn off append only sw we can do rename
                 if (LogFile->Flags & LOGFILE_HARDEN) STREAMSetFlags(LogFile->S, 0, STREAM_APPENDONLY);
             }
             if (PrevPath) rename(LogFile->Path,PrevPath);
             if (LogFile->S)
             {
-                //turn off append only sw we can do reanmae
+                //turn off append only sw we can do rename
                 if (LogFile->Flags & LOGFILE_HARDEN) STREAMSetFlags(LogFile->S, STREAM_IMMUTABLE, 0);
             }
 
+	    //close and reopen to get a fresh, empty logfile
             if (LogFile->S) STREAMClose(LogFile->S);
             LogFile->S=LogFileOpen(LogFile->Path, LogFile->Flags);
         }
@@ -211,6 +221,7 @@ STREAM *LogFileInternalDoRotate(TLogFile *LogFile)
     DestroyString(PrevPath);
     DestroyString(Tempstr);
     DestroyString(Path);
+
     return(LogFile->S);
 }
 

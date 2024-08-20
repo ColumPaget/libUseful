@@ -13,26 +13,30 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 //Various functions related to a process
 
-#define PROC_DAEMON 8       //make process a daemon
-#define PROC_SETSID 16      //create a new session for this process
-#define PROC_CTRL_TTY 32    
-#define PROC_CHROOT 64      //chroot this process
-#define PROC_JAIL 128
-#define PROC_SIGDEF 256     //set default signal mask for this process
-#define PROC_CONTAINER 512  
-#define PROC_CONTAINER_NET  1024
-#define PROC_ISOCUBE  2048
-#define PROC_NEWPGROUP  4096      //create new process group for this process
+#define PROC_DAEMON            8     // make process a daemon
+#define PROC_SETSID           16     // create a new session for this process
+#define PROC_CTRL_TTY         32     // set stdin to be a controlling tty
+#define PROC_CHROOT           64     // chroot this process before switching user etc. Used to chroot into a full unix system.
+#define PROC_NEWPGROUP       128     // create new process group for this process
+#define PROC_SIGDEF          256     // set default signal mask for this process
+#define PROC_CONTAINER_FS    512  
+#define PROC_CONTAINER_NET  1024     // unshare network namespace for this process
+#define PROC_CONTAINER_PID  2048     // unshare pids namespace
 
 //these must be compatible with PROC_ defines
-#define SPAWN_NOSHELL 8192
-#define SPAWN_TRUST_COMMAND 16384
-#define SPAWN_ARG0 32768
+#define SPAWN_NOSHELL        8192    // run the command directly using exec, not from a shell using system
+#define SPAWN_TRUST_COMMAND 16384    // don't strip unsafe chars from command
+#define SPAWN_ARG0          32768    // deduce arg[0] from the command name
 
-#define PROC_SETUP_FAIL   65536
-#define PROC_SETUP_STRICT 131072
-#define PROC_NO_NEW_PRIVS 262144    //do not allow privilege escalation via setuid or other such methods
+#define PROC_SETUP_FAIL     65536    // internal flag if anyting goes wrong, can trigger PROC_SETUP_STRICT
+#define PROC_SETUP_STRICT  131072    // if anything goes wrong in ProcessApplyConfig, then abort program
+#define PROC_NO_NEW_PRIVS  262144    // do not allow privilege escalation via setuid or other such methods
 
+#define PROC_JAIL          524288    // chroot after everything setup. This jails a process in a directory, not the same as PROC_CHROOT
+#define PROC_ISOCUBE      1048576    // chroot into a tmpfs filesystem. Any files process writes will be lost when it exits
+
+
+#define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID)
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +49,7 @@ void LU_DefaultSignalHandler(int sig);
 // Beware, this will change its pid. Returns the new pid or '0' on failure
 pid_t demonize();
 
-//singply try to close all file descriptors from 3 to 1024, leaving stdin, stdout and stderr alone
+//try to close all file descriptors from 3 to 1024, leaving stdin, stdout and stderr alone
 void CloseOpenFiles();
 
 //write a file containing the current pid. The file can either be an absolute path to a file anywhere

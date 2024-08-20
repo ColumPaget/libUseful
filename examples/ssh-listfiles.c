@@ -13,8 +13,8 @@ main(int argc, const char *argv[])
         exit(1);
     }
 
-    Tempstr=MCopyStr(Tempstr, "ssh:", argv[1], "/date '+%Y-%m-%dT%H:%M:%S'", NULL);
-    S=STREAMOpen(Tempstr, "x");
+    Tempstr=MCopyStr(Tempstr, "ssh:", argv[1], "/*", NULL);
+    S=STREAMOpen(Tempstr, "l");
     if (S)
     {
         Tempstr=STREAMReadLine(Tempstr, S);

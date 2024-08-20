@@ -208,19 +208,20 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_RDLOCK 2048     //lock file on every read
 #define SF_FOLLOW 4096     //ONLY FOR FILES: follow symbolic links
 #define SF_TLS    4096     //ONLY FOR SOCKETS: use SSL/TLS
-#define SF_SECURE 8192     //lock internal buffers into memory so they aren't written to swap or coredumps
-#define SF_NONBLOCK 16384  //nonblocking open (you must use select to check that the file is ready to use)
-#define SF_EXCL     32768  //ONLY FOR FILES: exclusive create with O_EXCL, file must not pre-exist
-#define SF_TLS_AUTO 32768  //nothing to see here, move along
-#define SF_ERROR 65536     //raise an error if open or connect fails
-#define SF_EXEC_INHERIT 131072  //allow stream to be inherited across an exec (default is close-on-exec)
-#define SF_BINARY       262144  //'binary mode' for websocket etc
-#define SF_NOCACHE 524288       //don't cache file data in filesystem cache
-#define SF_SORTED  1048576      //file is sorted, this is a hint to 'STREAMFind'
-#define STREAM_IMMUTABLE  2097152   //file is immutable (if supported by fs)
+#define SF_SECURE             8192  //lock internal buffers into memory so they aren't written to swap or coredumps
+#define SF_NONBLOCK          16384  //nonblocking open (you must use select to check that the file is ready to use)
+#define SF_EXCL              32768  //ONLY FOR FILES: exclusive create with O_EXCL, file must not pre-exist
+#define SF_TLS_AUTO          32768  //nothing to see here, move along
+#define SF_ERROR             65536  //raise an error if open or connect fails
+#define SF_EXEC_INHERIT     131072  //allow stream to be inherited across an exec (default is close-on-exec)
+#define SF_BINARY           262144  //'binary mode' for websocket etc
+#define SF_NOCACHE          524288  //don't cache file data in filesystem cache
+#define SF_LIST             524288  //only for SSH streams: list files
+#define SF_SORTED          1048576  //file is sorted, this is a hint to 'STREAMFind'
+#define STREAM_IMMUTABLE   2097152  //file is immutable (if supported by fs)
 #define STREAM_APPENDONLY  4194304  //file is append-only (if supported by fs)
-#define SF_COMPRESSED  8388608  //enable compression, this requests compression
-#define SF_TMPNAME  16777216    //file path is a template to create a temporary file name (must end in 'XXXXXX')
+#define SF_COMPRESSED      8388608  //enable compression, this requests compression
+#define SF_TMPNAME        16777216  //file path is a template to create a temporary file name (must end in 'XXXXXX')
 
 
 //Stream state values, set in S->State

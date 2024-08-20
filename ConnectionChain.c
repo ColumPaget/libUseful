@@ -489,7 +489,7 @@ static STREAM *ConnectHopSSHSpawnHelper(const char *ProxyURL, const char *Fmt, c
         LocalPort=(rand() % (0xFFFF - 9000)) +9000;
         if (strncmp(Fmt,"stdin:",6)==0) Tempstr=FormatStr(Tempstr, Fmt, RemoteHost, RemotePort);
         else Tempstr=FormatStr(Tempstr, Fmt, LocalPort, RemoteHost, RemotePort);
-        tmpS=SSHConnect(SshHost, SshPort, SshUser, SshPassword, Tempstr, 0);
+        tmpS=SSHConnect(SshHost, SshPort, SshUser, SshPassword, Tempstr, "");
         if (tmpS)
         {
             Tempstr=FormatStr(Tempstr, "%d", LocalPort);

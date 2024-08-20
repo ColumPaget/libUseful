@@ -7,6 +7,7 @@
 #include "String.h"
 #include "Errors.h"
 #include "FileSystem.h"
+#include "Container.h"
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
@@ -106,6 +107,7 @@ pid_t xfork(const char *Config)
         if (StrValid(Config))
         {
             //if any of the process configs we asked for failed, then quit
+fprintf(stderr, "XFPAC: %d\n", getpid());
             if (ProcessApplyConfig(Config) & PROC_SETUP_FAIL) _exit(1);
         }
     }
@@ -231,6 +233,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
 
         //if Func is NULL we effectively do a fork, rather than calling a function we just
         //continue exectution from where we were
+
         Flags=ProcessApplyConfig(Config);
         if (Func)
         {
@@ -283,10 +286,13 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
 
     if (PseudoTTYGrab(&pty, &tty, Flags))
     {
+        //ContainerApplyConfig(Config);
         pid=xforkio(tty, tty, tty);
         if (pid==0)
         {
             close(pty);
+
+            ConfigFlags=ProcessApplyConfig(Config);
 
             setsid();
             ProcessSetControlTTY(tty);
@@ -295,7 +301,6 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flag
             //as it will be open on stdin/stdout
             close(tty);
 
-            ConfigFlags=ProcessApplyConfig(Config);
 
             //if Func is NULL we effectively do a fork, rather than calling a function we just
             //continue exectution from where we were
@@ -411,6 +416,7 @@ int STREAMSpawnCommandAndPty(const char *Command, const char *Config, STREAM **C
 
     if (PseudoTTYGrab(&pty, &tty, TTYFLAG_PTY))
     {
+        //ContainerApplyConfig(Config);
         //handle situation where Config might be null
         if (StrValid(Config)) Tempstr=CopyStr(Tempstr, Config);
         else Tempstr=CopyStr(Tempstr, "rw");

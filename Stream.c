@@ -1097,7 +1097,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         if ( (CompareStr(URL,"-")==0) || (strcasecmp(URL,"stdio:")==0) ) S=STREAMFromDualFD(dup(0), dup(1));
         else if (strcasecmp(URL,"stdin:")==0) S=STREAMFromFD(dup(0));
         else if (strcasecmp(URL,"stdout:")==0) S=STREAMFromFD(dup(1));
-        else if (strcasecmp(Proto,"ssh")==0) S=SSHOpen(Host, Port, User, Pass, Path, STREAMParseConfig(Config));
+        else if (strcasecmp(Proto,"ssh")==0) S=SSHOpen(Host, Port, User, Pass, Path, Config);
         else if (strcasecmp(Proto,"tty")==0)
         {
             S=STREAMFromFD(TTYConfigOpen(URL+4, Config));
@@ -2156,7 +2156,15 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
         if (result >= 0) bytes_read+=result;
         else break;
     }
-    StrTrunc(RetStr,bytes_read);
+
+    //don't trust StrTrunc here, as we might have read
+    //binary data that can include '\0' characters
+    //StrTrunc(RetStr,bytes_read);
+
+    //instead of StrTrunc do this.
+    RetStr[bytes_read]='\0';
+    StrLenCacheAdd(RetStr, bytes_read);
+
 
     //if result > 0 then we didn't break out on reading a 'STREAM_CLOSED' or other close condition, we broke out because we had hit the size limit
     if ((bytes_read==size) && (result > 0))

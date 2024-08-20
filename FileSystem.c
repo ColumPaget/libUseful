@@ -135,7 +135,7 @@ int FileMoveToDir(const char *FilePath, const char *Dir)
     char *Tempstr=NULL;
     struct stat Stat;
     int result, size;
-		int RetVal=FALSE;
+    int RetVal=FALSE;
 
     Tempstr=MCopyStr(Tempstr, Dir, "/", GetBasename(FilePath), NULL);
     MakeDirPath(Tempstr, 0700);
