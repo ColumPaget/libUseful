@@ -12,16 +12,12 @@
 #include "String.h"
 #include "Users.h"
 #include "UnitsOfMeasure.h"
+#include "FileSystem.h"
 #include "WebSocket.h"
 #include <sys/file.h>
 #include "SecureMem.h"
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-
-#ifdef linux
-#include <linux/fs.h>
-#endif
-
 
 
 
@@ -241,27 +237,12 @@ void STREAMSetFlags(STREAM *S, int Set, int UnSet)
     fcntl(S->in_fd, F_SETFD, val);
     fcntl(S->out_fd, F_SETFD, val);
 
+#ifdef USE_FSFLAGS
     //immutable and append only flags are a special case as
     //they are not io flags, but permanent file flags so we
     //only touch those if explicitly set in Set or UnSet
-    if ((Set | UnSet) & (STREAM_IMMUTABLE | STREAM_APPENDONLY))
-    {
-#ifdef FS_IOC_SETFLAGS
-        ioctl(S->out_fd, FS_IOC_GETFLAGS, &val);
-
-#ifdef FS_IMMUTABLE_FL
-        if (Set & STREAM_IMMUTABLE) val |= FS_IMMUTABLE_FL;
-        else if (UnSet & STREAM_IMMUTABLE) val &= ~FS_IMMUTABLE_FL;
+    if ((Set | UnSet) & (STREAM_IMMUTABLE | STREAM_APPENDONLY)) FileSystemSetSTREAMFlags(S->out_fd, Set, UnSet);
 #endif
-
-#ifdef FS_APPEND_FL
-        if (Set & STREAM_APPENDONLY) val |= FS_APPEND_FL;
-        else if (UnSet & STREAM_APPENDONLY) val |= FS_APPEND_FL;
-#endif
-
-        ioctl(S->out_fd, FS_IOC_SETFLAGS, &val);
-#endif
-    }
 }
 
 
@@ -597,7 +578,9 @@ static int STREAMInternalPushBytes(STREAM *S, const char *Data, int DataLen)
 int STREAMFlush(STREAM *S)
 {
     int val;
+
     val=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
+
     //if nothing left in stream (There shouldn't be) then wipe data because
     //there might have been passwords sent on the stream, and we don't want
     //that hanging about in memory
@@ -954,6 +937,9 @@ static int STREAMParseConfig(const char *Config)
             case 'a':
                 Flags |= STREAM_APPEND | SF_CREATE;
                 break;
+            case 'e':
+                Flags |= SF_ENCRYPT;
+                break;
             case 'E':
                 Flags |= SF_ERROR;
                 break;
@@ -1035,6 +1021,32 @@ static const char *STREAMExtractMasterURL(const char *URL)
 
 
 #define STREAMFileOpenWithConfig(url, config) STREAMFileOpen((url), STREAMParseConfig(config))
+
+
+
+//Add Processor Modules. if any of these fail, then close the stream and return NULL
+//so that we don't for instance, write to a file without encryption when that was asked for
+static STREAM *STREAMSetupDataProcessorModules(STREAM *S, const char *Config)
+{
+//if no processors are needed, then we consider things 'good'
+    int SetupGood=TRUE;
+
+    if (S->Flags & SF_COMPRESSED)
+    {
+        if (S->Flags & SF_RDONLY) if (! STREAMAddStandardDataProcessor(S, "decompress", "gzip", "")) SetupGood=FALSE;
+            else if (S->Flags & SF_WRONLY) if (! STREAMAddStandardDataProcessor(S, "compress", "gzip", "")) SetupGood=FALSE;
+    }
+
+    if (S->Flags & SF_ENCRYPT) if (! STREAMAddStandardDataProcessor(S, "crypto", "", Config)) SetupGood=FALSE;
+
+    if (! SetupGood)
+    {
+        STREAMClose(S);
+        S=NULL;
+    }
+
+    return(S);
+}
 
 
 //URL can be a file path or a number of different network/file URL types
@@ -1133,14 +1145,15 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         break;
     }
 
+
+    if (S) S=STREAMSetupDataProcessorModules(S, Config);
+
+
+
     if (S)
     {
         if (S->Flags & SF_SECURE) STREAMResizeBuffer(S, S->BuffSize);
-        if (S->Flags & SF_COMPRESSED)
-        {
-            if (S->Flags & SF_RDONLY) STREAMAddStandardDataProcessor(S, "decompress", "gzip", "");
-            else if (S->Flags & SF_WRONLY) STREAMAddStandardDataProcessor(S, "compress", "gzip", "");
-        }
+
 
         switch (S->Type)
         {
@@ -1277,6 +1290,7 @@ void STREAMShutdown(STREAM *S)
 
     //-1 means 'FLUSH'
     STREAMReadThroughProcessors(S, NULL, -1);
+    STREAMWriteBytes(S, NULL, 0); //means flush any processors
     STREAMFlush(S);
 
     switch (S->Type)
@@ -1783,7 +1797,11 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 
     if (ListSize(S->ProcessingModules))
     {
-        STREAMInternalPushProcessingModules(S, i_data, len, &TempBuff, &len);
+        if (len < 4096) len=4096;
+
+        TempBuff=SetStrLen(TempBuff, len * 2);
+        len=0;
+        STREAMInternalPushProcessingModules(S, i_data, DataLen, &TempBuff, &len);
         i_data=TempBuff;
     }
 

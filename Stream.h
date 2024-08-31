@@ -77,6 +77,21 @@ t     make a unique temporary file name. the file path must be a mktemp style te
 S     file contents are sorted
 x     exclusive open using O_EXCL. Only create/open file if it doesn't exist.
 z     compress/uncompress with gzip
+e     encrypt using openssl compatible file format
+
+
+
+for encrypted files with the 'e' option, a password must be supplied using the 'encrypt' argument. The key and inputvector are calculated from this password.
+e.g.
+
+S=STREAMOpen("myfile.enc", "we encrypt=T0PSekrit");
+
+The default cipher used is aes-256-cbc, however the cipher can be overridden like so:
+
+
+S=STREAMOpen("myfile.enc", "we encrypt=T0PSekrit encrypt_cipher=blowfish");
+
+Encryption only supports either read only or write only files, not read-write.
 
 
 for tcp/unix/udp network connections the 'config argument' defaults to 'rw' if blank. 
@@ -222,6 +237,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define STREAM_APPENDONLY  4194304  //file is append-only (if supported by fs)
 #define SF_COMPRESSED      8388608  //enable compression, this requests compression
 #define SF_TMPNAME        16777216  //file path is a template to create a temporary file name (must end in 'XXXXXX')
+#define SF_ENCRYPT        33554432  //file path is a template to create a temporary file name (must end in 'XXXXXX')
 
 
 //Stream state values, set in S->State

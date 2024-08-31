@@ -134,7 +134,7 @@ void HTTPAddChunkedProcessor(STREAM *S)
     Mod->Read=HTTPChunkedRead;
     Mod->Close=HTTPChunkedClose;
 
-    Mod->Init(Mod, "");
-    STREAMAddDataProcessor(S,Mod,"");
+    Mod->Init(Mod, "", NULL, NULL);
+    STREAMAddDataProcessor(S, Mod);
 }
 

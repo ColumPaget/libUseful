@@ -1005,7 +1005,7 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 
         switch (inchar)
         {
-	//seems like control-c sends this
+        //seems like control-c sends this
         case STREAM_NODATA:
         case ESCAPE:
             Destroy(RetStr);

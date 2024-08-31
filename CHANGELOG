@@ -1,5 +1,10 @@
+v5.25 (2024-08-31)
+  * Symmetric Encryption now supported for STREAMs
+  * Handle situation where logfile is rotated under an app that has it open
+  * Stop trying to rotate hardened logfiles. rotate is incompatible with append-only files
+
 v5.24 (2024-08-20)
-  * Move namespace/container code to Containers.c and make general improvments
+  * Move namespace/container code to Containers.c and make general improvements
   * Exit out of TerminalReadText if escape or ctrl-c entered
   * Added 'l' option (list files on remote server) to SSH streams
   * CHANGED ARGUMENTS TO SSHConnect AND SSHOpen

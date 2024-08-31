@@ -107,7 +107,6 @@ pid_t xfork(const char *Config)
         if (StrValid(Config))
         {
             //if any of the process configs we asked for failed, then quit
-fprintf(stderr, "XFPAC: %d\n", getpid());
             if (ProcessApplyConfig(Config) & PROC_SETUP_FAIL) _exit(1);
         }
     }

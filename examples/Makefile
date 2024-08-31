@@ -32,6 +32,9 @@ all:
 	gcc -ononewprivs.exe nonewprivs.c $(LIBS)
 	gcc -ochroot.exe chroot.c $(LIBS)
 	gcc -omovetest.exe movetest.c $(LIBS)
+	gcc -oencrypt.exe encrypt.c $(LIBS)
+	gcc -odecrypt.exe decrypt.c $(LIBS)
+	gcc -opbkdf2.exe pbkdf2.c $(LIBS)
 
 clean:
 	rm -f *.exe

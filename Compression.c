@@ -155,7 +155,7 @@ int zlibProcessorClose(TProcessingModule *ProcMod)
 #define COMP_ZLIB 0
 #define COMP_GZIP 1
 
-int zlibProcessorInit(TProcessingModule *ProcMod, const char *Args)
+int zlibProcessorInit(TProcessingModule *ProcMod, const char *Args, unsigned char **Header, int *HeadLen)
 {
     int result=FALSE;
 
@@ -219,7 +219,7 @@ int CompressBytes(char **Out, const char *Alg, const char *In, unsigned long Len
     int result;
 
     Tempstr=FormatStr(Tempstr,"CompressionLevel=%d",Level);
-    Mod=StandardDataProcessorCreate("compress",Alg,Tempstr);
+    Mod=StandardDataProcessorCreate("compress",Alg,Tempstr, NULL, NULL);
     if (! Mod) return(-1);
 
     val=Len *2;
@@ -239,7 +239,7 @@ int DeCompressBytes(char **Out, const char *Alg, const char *In, unsigned long L
     int result;
     unsigned long val;
 
-    Mod=StandardDataProcessorCreate("decompress",Alg,"");
+    Mod=StandardDataProcessorCreate("decompress",Alg,"",NULL, NULL);
     if (! Mod) return(-1);
 
     val=Len *2;

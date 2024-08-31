@@ -50,15 +50,15 @@ static int SSHParseConfig(const char *Config, char **BindAddress, char **ConfigF
     ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     while (ptr)
     {
-	//we could add options here like 'bind address' 
-        //or specify encryption/key algorithms, but 
+        //we could add options here like 'bind address'
+        //or specify encryption/key algorithms, but
         //unfortunately that will mean rethinking SSHConnect
         //as it has no way of passing such arguments at current
 
 
-	if ( (strcasecmp(Name, "bind")==0)  && BindAddress) *BindAddress=CopyStr(*BindAddress, Value);
-	if ( (strcasecmp(Name, "config")==0)  && ConfigFile) *ConfigFile=CopyStr(*ConfigFile, Value);
-    ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+        if ( (strcasecmp(Name, "bind")==0)  && BindAddress) *BindAddress=CopyStr(*BindAddress, Value);
+        if ( (strcasecmp(Name, "config")==0)  && ConfigFile) *ConfigFile=CopyStr(*ConfigFile, Value);
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
 
     Destroy(Name);
@@ -217,7 +217,7 @@ STREAM *SSHOpen(const char *Host, int Port, const char *User, const char *Pass, 
     }
     else ptr="";
 
-    //if SF_RDONLY is set, then we treat this as a 'file get', 
+    //if SF_RDONLY is set, then we treat this as a 'file get',
     // we cannot do both read and write to a file over ssh
     if (Flags & SF_RDONLY)
     {

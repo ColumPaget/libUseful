@@ -82,7 +82,7 @@ HASH *HashInit(const char *Type)
     if (! HashTypes) HashRegisterAll();
 
     GetToken(Type, ",", &InitialType, 0);
-    if (strncmp(InitialType, "hmac-", 5) == 0) Hash=HMACInit(InitialType+5);
+    if (strncasecmp(InitialType, "hmac-", 5) == 0) Hash=HMACInit(InitialType+5);
     else
     {
         Node=ListFindNamedItem(HashTypes, InitialType);
@@ -164,27 +164,35 @@ int HashBytes2(const char *Type, int Encoding, const char *text, int len, char *
     return(HashBytes(RetStr, Type, text, len, Encoding));
 }
 
-int PBK2DF2(char **Return, char *Type, char *Bytes, int Len, char *Salt, int SaltLen, uint32_t Rounds, int Encoding)
+
+int PBK2DF2(char **Return, const char *Type, const char *Bytes, int Len, const char *Salt, int SaltLen, uint32_t Rounds, int Encoding)
 {
     char *Tempstr=NULL, *Hash=NULL;
     uint32_t RoundsBE;
-    int i, len, hlen=0;
+    int i, len, hlen=0, dlen=0;
 
 //Network byte order is big endian
     RoundsBE=htonl(Rounds);
 
     Tempstr=SetStrLen(Tempstr, Len + SaltLen + 20);
-    memcpy(Tempstr, Bytes, Len);
-    memcpy(Tempstr+Len, Salt, SaltLen);
-    memcpy(Tempstr+Len+SaltLen, &RoundsBE, sizeof(uint32_t));
-    len=Len+SaltLen+sizeof(uint32_t);
+
+    dlen=Len;
+    //for hmac- pbk2df the 'Bytes' are the key, and thus the data hashed is just the salt plus the rounds counter
+    if (strncasecmp(Type, "hmac-", 5) !=0) dlen=0;
+
+    memcpy(Tempstr, Bytes, dlen);
+    memcpy(Tempstr + dlen, Salt, SaltLen);
+    memcpy(Tempstr + dlen + SaltLen, &RoundsBE, sizeof(uint32_t));
+    len=dlen + SaltLen + sizeof(uint32_t);
 
     for (i=0; i <Rounds; i++)
     {
-        hlen=HashBytes(&Hash, Type, Tempstr, len, 0);
+        if (strncasecmp(Type, "hmac-", 5)==0) hlen=HMACBytes(&Hash, Type, Bytes, Len, Tempstr, len, 0);
+        else hlen=HashBytes(&Hash, Type, Tempstr, len, 0);
+
         Tempstr=SetStrLen(Tempstr, Len + hlen + 20);
         memcpy(Tempstr, Bytes, Len);
-        memcpy(Tempstr+Len, Hash, hlen);
+        memcpy(Tempstr + Len, Hash, hlen);
         len=Len + hlen;
     }
 

@@ -111,6 +111,19 @@ AC_DEFINE([HAVE_XATTR])
 fi
 fi
 
+AC_ARG_ENABLE(fsflags, [  --enable-fsflags              enable support for immutable and append-only files (and use of these in logs) ], cf_use_fsflags=$enableval, cf_use_fsflags=no )
+
+if test "$cf_use_fsflags" = "yes"
+then
+AC_CHECK_HEADER(linux/fs.h,cf_have_fsflags=yes,,)
+fi
+
+if test "$cf_have_fsflags" = "yes"
+then
+AC_DEFINE([USE_FSFLAGS])
+fi
+
+
 
 AC_ARG_ENABLE(namespaces, [  --enable-namespaces         enable linux namespace support], cf_use_namespaces=$enableval, cf_use_namespaces=yes )
 if test "$cf_use_namespaces" = "yes"
@@ -175,7 +188,7 @@ if test "$cf_have_libssl" = "yes"
 then
 cf_use_zlib=yes
 
-AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free EVP_bf_cbc EVP_rc2_cbc EVP_rc4 EVP_rc5_32_12_16_cbc EVP_des_cbc EVP_desx_cbc EVP_cast5_cbc EVP_idea_cbc EVP_aes_128_cbc EVP_aes_256_cbc X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version)
+AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch )
 
 
 AC_CHECK_DECLS(OpenSSL_add_all_algorithms,AC_DEFINE([HAVE_OPENSSL_ADD_ALL_ALGORITHMS]),[],[[#include <openssl/ssl.h>]])
@@ -293,6 +306,13 @@ then
 echo "zlib support enabled"
 else
 echo "zlib NOT enabled"
+fi
+
+if test "$cf_have_fsflags" = "yes"
+then
+echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs enabled"
+else
+echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs NOT enabled"
 fi
 
 if test "$cf_have_unshare" = "yes" -o "$cf_have_setns" = "yes"

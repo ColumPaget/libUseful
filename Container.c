@@ -3,8 +3,8 @@
 #include <glob.h>
 
 #ifdef HAVE_UNSHARE
-       #define _GNU_SOURCE
-       #include <sched.h>
+#define _GNU_SOURCE
+#include <sched.h>
 #endif
 
 static void InitSigHandler(int sig)
@@ -229,19 +229,19 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, int 
 
 static void ContainerSetHostname(const char *Namespace, const char *HostName)
 {
-int val, result;
+    int val, result;
 
 #ifdef HAVE_UNSHARE
 #ifdef CLONE_NEWUTS
-        if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWUTS);
-        else
-        {
-            unshare(CLONE_NEWUTS);
-            val=StrLen(HostName);
-            if (val != 0) result=sethostname(HostName, val);
-            else result=sethostname("container", 9);
-            if (result != 0) RaiseError(ERRFLAG_ERRNO, "ContainerNamespace", "Failed to sethostname for container.");
-        }
+    if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWUTS);
+    else
+    {
+        unshare(CLONE_NEWUTS);
+        val=StrLen(HostName);
+        if (val != 0) result=sethostname(HostName, val);
+        else result=sethostname("container", 9);
+        if (result != 0) RaiseError(ERRFLAG_ERRNO, "ContainerNamespace", "Failed to sethostname for container.");
+    }
 #endif
 #else
     RaiseError(0, "namespaces", "containers/unshare unavailable");
@@ -286,7 +286,7 @@ static pid_t ContainerLaunchInit(int Flags, const char *Dir)
     child=fork();
     if (child == 0)
     {
-				setsid();
+        setsid();
         child=fork();
         if (child !=0)
         {
@@ -428,7 +428,7 @@ int ContainerApplyConfig(const char *Config)
 
 
         if (Flags & PROC_CONTAINER_PID) ContainerUnsharePID(Flags, Namespace, Dir);
-				if (StrValid(HostName)) ContainerSetHostname(Namespace, HostName);
+        if (StrValid(HostName)) ContainerSetHostname(Namespace, HostName);
 
         //ContainerNamespace(Namespace, HostName, Flags);
 

@@ -42,7 +42,6 @@ static int STREAMBasicAuthPasswordFile(const char *Path, STREAM *S)
     int AuthResult=FALSE;
 
     ptr=STREAMGetValue(S, "Auth:Basic");
-    printf("AB: [%s]\n", ptr);
     if (! StrValid(ptr)) return(FALSE);
 
     HTTPDecodeBasicAuth(ptr, &User, &Password);
@@ -69,7 +68,6 @@ static int STREAMAuthProcess(STREAM *S, const char *AuthTypes)
     ptr=GetNameValuePair(AuthTypes, ";", ":",&Key, &Value);
     while (ptr)
     {
-        printf("AUTH: %s\n", Key);
         if (CompareStrNoCase(Key, "basic")==0)
         {
             Tempstr=EncodeBytes(Tempstr, Value, StrLen(Value), ENCODE_BASE64);
