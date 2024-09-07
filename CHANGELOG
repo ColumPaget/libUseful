@@ -1,3 +1,8 @@
+v5.26 (2024-09-07)
+  * Fix incorrect addition of 'progress' and 'remain' to options of non-progress-bar terminal widgets.
+  * Make sure all DataProcessorInit functions fit the new function prototype.
+  * TerminalChooser now honors the 'width' setting, and intelligently fits itself into that
+
 v5.25 (2024-08-31)
   * Symmetric Encryption now supported for STREAMs
   * Handle situation where logfile is rotated under an app that has it open

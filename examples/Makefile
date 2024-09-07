@@ -9,6 +9,7 @@ all:
 	gcc -oTerminal.exe Terminal.c $(LIBS)
 	gcc -oTermBar.exe TermBar.c $(LIBS)
 	gcc -oTermMenu.exe TermMenu.c $(LIBS)
+	gcc -oTermChoice.exe TermChoice.c $(LIBS)
 	gcc -oTermProgress.exe TermProgress.c $(LIBS)
 	gcc -oVars.exe Vars.c $(LIBS)
 	gcc -oParseRSS.exe ParseRSS.c $(LIBS)

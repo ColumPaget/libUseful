@@ -213,7 +213,7 @@ static EVP_CIPHER *libCryptoGetCipher(const char *CipherList)
 
 
 
-int libCryptoProcessorInit(TProcessingModule *ProcMod, const char *Args, char **Header, int *HeadLen)
+int libCryptoProcessorInit(TProcessingModule *ProcMod, const char *Args, unsigned char **Header, int *HeadLen)
 {
     int result=FALSE;
 

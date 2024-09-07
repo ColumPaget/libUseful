@@ -345,7 +345,8 @@ int DataProcessorAvailable(const char *Class, const char *Name)
 int STREAMAddStandardDataProcessor(STREAM *S, const char *Class, const char *Name, const char *iArgs)
 {
     TProcessingModule *Mod=NULL;
-    char *Header=NULL, *Args=NULL, *Tempstr=NULL;
+    char *Args=NULL, *Tempstr=NULL;
+		unsigned char *Header=NULL; 
     int HeadLen=0, RetVal=FALSE, ReadOffset=0;
 
     Args=CopyStr(Args, iArgs);
