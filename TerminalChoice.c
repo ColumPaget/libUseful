@@ -26,47 +26,47 @@ void TerminalChoiceDraw(TERMCHOICE *Chooser)
         if (Chooser->Options->Side==Curr)
         {
             Tempstr=MCatStr(Tempstr, Chooser->CursorAttribs, Chooser->CursorLeft, Curr->Tag, Chooser->CursorRight, "~0", NULL);
-						choice_pos=StrLen(Tempstr);
+            choice_pos=StrLen(Tempstr);
         }
         else Tempstr=MCatStr(Tempstr, LPad, Curr->Tag, RPad, NULL);
 
         Curr=ListGetNext(Curr);
     }
 
-		//choice pos is the position of the end of the selected option/choice
-		//if this is outside of the 'window' of the chooser, we'll have to use
-		//memmove to move the option into the 'window' of the chooser
-		choice_pos += StrLen(Chooser->Text);
-		if (Chooser->wid > 0) 
-		{
-			if (choice_pos > Chooser->wid) 
-			{
-				len=StrLen(Tempstr);
-				pos=choice_pos - Chooser->wid;
-				len -= pos;
-				memmove(Tempstr, Tempstr + pos, len+1);
-			}
+    //choice pos is the position of the end of the selected option/choice
+    //if this is outside of the 'window' of the chooser, we'll have to use
+    //memmove to move the option into the 'window' of the chooser
+    choice_pos += StrLen(Chooser->Text);
+    if (Chooser->wid > 0)
+    {
+        if (choice_pos > Chooser->wid)
+        {
+            len=StrLen(Tempstr);
+            pos=choice_pos - Chooser->wid;
+            len -= pos;
+            memmove(Tempstr, Tempstr + pos, len+1);
+        }
 
-		}
+    }
 
 
-		//from here on we use LPad for the 'final' string that's printed out
+    //from here on we use LPad for the 'final' string that's printed out
 
-		//either move to position or use '\r' to go to start of the line
-	  LPad=CopyStr(LPad, "");
+    //either move to position or use '\r' to go to start of the line
+    LPad=CopyStr(LPad, "");
     if (Chooser->Flags & TERMMENU_POSITIONED) TerminalCommand(TERM_CURSOR_MOVE, Chooser->x, Chooser->y, Chooser->Term);
     else LPad=CopyStr(LPad, "\r");
 
-		//Add the prompt
+    //Add the prompt
     if (StrValid(Chooser->Text)) LPad=CatStr(LPad, Chooser->Text);
-		LPad=CatStr(LPad, Tempstr);
+    LPad=CatStr(LPad, Tempstr);
 
-		if (Chooser->wid > 0) 
-		{
-			len=TerminalStrLen(LPad);
-			LPad=PadStr(LPad, ' ', Chooser->wid);
-			StrTrunc(LPad, Chooser->wid);
-		}
+    if (Chooser->wid > 0)
+    {
+        len=TerminalStrLen(LPad);
+        LPad=PadStr(LPad, ' ', Chooser->wid);
+        StrTrunc(LPad, Chooser->wid);
+    }
 
     TerminalPutStr(LPad, Chooser->Term);
     STREAMFlush(Chooser->Term);

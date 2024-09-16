@@ -80,9 +80,9 @@ void TerminalThemeApply(TERMWIDGET *TW, const char *Type)
     TW->CursorLeft=TerminalThemeLoadValue(TW->CursorLeft, Type, "CursorLeft");
     TW->CursorRight=TerminalThemeLoadValue(TW->CursorRight, Type, "CursorRight");
 
-		if (strcasecmp(Type, "progress")==0)
-		{
-    SetVar(TW->Options, "progress", TerminalThemeGet(Type, "progress"));
-    SetVar(TW->Options, "remain", TerminalThemeGet(Type, "remain"));
-		}
+    if (strcasecmp(Type, "progress")==0)
+    {
+        SetVar(TW->Options, "progress", TerminalThemeGet(Type, "progress"));
+        SetVar(TW->Options, "remain", TerminalThemeGet(Type, "remain"));
+    }
 }

@@ -26,7 +26,7 @@ typedef struct
     int BlockSize;
     int KeyStretchIter;
     char *CipherName;
-    const EVP_CIPHER *Cipher;
+    EVP_CIPHER *Cipher;
     EVP_CIPHER_CTX *enc_ctx;
     EVP_CIPHER_CTX *dec_ctx;
 } libCryptoProcessorData;
@@ -43,7 +43,7 @@ void libCryptoDataDestroy(libCryptoProcessorData *Data)
 
 //if we have the EVP_CIPHER_FETCH function, then the cipher object
 //will have been allocated, and needs to be freed. But if we don't have
-//this function, then maybe the we dont' have EVP_CIPHER_free either, and
+//this function, then maybe the we don't have EVP_CIPHER_free either, and
 //we certainly don't want to free the cipher object returned by getbyname,
 //because it will be shared object
 #ifdef HAVE_EVP_CIPHER_FETCH
@@ -62,9 +62,9 @@ static int OpenSSLGenIVKey(EVP_CIPHER *Cipher, const char *Pass, int PassLen, co
     char *PKOutput=NULL;
     int OutLen;
 
-		*KeyLen=0;
-		*IVLen=0;
-		if (PassLen==0) return(FALSE);
+    *KeyLen=0;
+    *IVLen=0;
+    if (PassLen==0) return(FALSE);
 
     *KeyLen = EVP_CIPHER_key_length(Cipher);
     *IVLen = EVP_CIPHER_iv_length(Cipher);
@@ -80,7 +80,7 @@ static int OpenSSLGenIVKey(EVP_CIPHER *Cipher, const char *Pass, int PassLen, co
 
     Destroy(PKOutput);
 
-		return(TRUE);
+    return(TRUE);
 }
 
 

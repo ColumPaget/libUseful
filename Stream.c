@@ -767,15 +767,104 @@ int STREAMOpenMMap(STREAM *S, int offset, int len, int Flags)
 }
 
 
+
+static int STREAMAutoRecoverRequired(int Flags)
+{
+    if (
+        (Flags & SF_AUTORECOVER) &&
+        (Flags & SF_WRONLY) &&
+        (! (Flags & (STREAM_APPEND | SF_RDONLY) ) )
+    ) return(TRUE);
+
+    return(FALSE);
+}
+
+
+void STREAMFileAutoRecover(const char *Path, int Flags)
+{
+char *BackupPath=NULL;
+struct stat FStat;
+int result;
+
+BackupPath=MCopyStr(BackupPath, Path, ".autorecover", NULL);
+result=stat(BackupPath, &FStat);
+if (result==0)
+{
+    //never use an autorecover that is zero bytes in size
+    if (FStat.st_size == 0) 
+    {
+	result=unlink(BackupPath);
+        if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "zero-length autorecovery found, but cannot remove it %s", BackupPath);
+    }
+    // if we are writing to the file, and we are not appending to it, then we are going to blank the file down anyways, so no need to autorecover
+    else if (! (Flags & (SF_RDONLY|STREAM_APPEND)) )
+    {
+	result=unlink(BackupPath);
+        if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery found, not needed, but cannot remove it %s", BackupPath);
+    }
+    else
+    {
+    RaiseError(ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery from %s", BackupPath);
+    //first take a backup for the current 'live' file
+    BackupPath=MCopyStr(BackupPath, Path, ".", GetDateStr("%Y-%m-%dT%H%M%S", NULL), ".error", NULL);
+    result=rename(Path, BackupPath);
+    if (result != 0) RaiseError(ERRFLAG_ERRNO | ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery cannot archive current file to %s", BackupPath);
+    
+    BackupPath=MCopyStr(BackupPath, Path, ".autorecover", NULL);
+    result=rename(BackupPath, Path);
+    if (result != 0) RaiseError(ERRFLAG_ERRNO | ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery cannot import %s", BackupPath);
+    }
+}
+
+Destroy(BackupPath);
+}
+
+
+// do a bunch of preparation before opening the file
+// firstly convert paths starting in ~/ to point to the user's home directory
+// secondly handle taking/making a backup if that is requested
+// This function always makes a copy of path, because even if no substitutions are
+// required functions like mkostemp want to be able to change the file path
+// and need a writeable copy to do that
+static char *STREAMFileOpenPrepare(char *NewPath, const char *Path, int Flags)
+{
+    char *BackupPath=NULL;
+    int result;
+
+    //if path starts with a tilde, then it's the user's home directory
+    if (strncmp(Path, "~/", 2) ==0)
+    {
+        //Path+1 so we get the / to make sure there is one after HomeDir
+        NewPath=MCopyStr(NewPath, GetCurrUserHomeDir(), Path+1, NULL);
+    }
+    else NewPath=CopyStr(NewPath, Path);
+
+    if (Flags & SF_AUTORECOVER)
+    {
+        //only take a backup if we are in write/truncate mode, not append or r/w
+        if ( STREAMAutoRecoverRequired(Flags) )
+        {
+            BackupPath=MCopyStr(BackupPath, NewPath, ".autorecover", NULL);
+            result=rename(NewPath, BackupPath);
+            if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "failed to take backup of %s to %s", NewPath, BackupPath);
+        }
+        //if stream opened for read or append, then autorecover
+        else STREAMFileAutoRecover(NewPath, Flags);
+    }
+
+    Destroy(BackupPath);
+
+    return(NewPath);
+}
+
+
 STREAM *STREAMFileOpen(const char *Path, int Flags)
 {
     int fd, Mode=0;
     STREAM *Stream;
     struct stat myStat;
     char *Tempstr=NULL, *NewPath=NULL;
-    const char *p_Path;
 
-    p_Path=Path;
     if (Flags & SF_WRONLY) Mode=O_WRONLY;
     else if (Flags & SF_RDONLY) Mode=O_RDONLY;
     else Mode=O_RDWR;
@@ -784,41 +873,34 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     if (Flags & SF_CREATE) Mode |=O_CREAT;
     if (Flags & SF_EXCL) Mode |=O_EXCL;
 
-    if (CompareStr(Path,"-")==0)
+    //we take a copy of Path, because we may need to substitute ~/ for the user's home directory
+    //or because functions like mkostemp want to modify the string they are passed
+    NewPath=STREAMFileOpenPrepare(NewPath, Path, Flags);
+
+    // '-' means stdin or stdout, depending on context
+    if (CompareStr(NewPath,"-")==0)
     {
         if (Mode==O_RDONLY) fd=0;
         else fd=1;
     }
+    // create a file with a tempoary name, the pattern 'XXXXXX' will be replaced with a unique
+    // random string to create a unique filename
     else if (Flags & SF_TMPNAME)
     {
-        //Must make a copy because mkostemp internally alters path
-        NewPath=CopyStr(NewPath, Path);
 #ifdef HAVE_MKOSTEMP
         fd=mkostemp(NewPath, Mode);
 #else
         fd=mkstemp(NewPath);
 #endif
-        p_Path=NewPath;
     }
-    //if path starts with a tilde, then it's the user's home directory
-    else if (strncmp(Path, "~/", 2) ==0)
-    {
-        //Path+1 so we get the / to make sure there is one after HomeDir
-        NewPath=MCopyStr(NewPath, GetCurrUserHomeDir(), Path+1, NULL);
-        fd=open(NewPath, Mode, 0600);
-        p_Path=NewPath;
-    }
-    else
-    {
-        fd=open(Path, Mode, 0600);
-        p_Path=Path;
-    }
+    // otherwise just open the file as normal!
+    else fd=open(NewPath, Mode, 0600);
 
 
     if (fd==-1)
     {
-        if (Flags & SF_ERROR) RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "failed to open %s", p_Path);
-        else RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "failed to open %s", p_Path);
+        if (Flags & SF_ERROR) RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "failed to open %s", NewPath);
+        else RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "failed to open %s", NewPath);
         Destroy(NewPath);
         return(NULL);
     }
@@ -827,7 +909,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     {
         if (flock(fd,LOCK_EX | LOCK_NB)==-1)
         {
-            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "file lock requested but failed %s", p_Path);
+            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "file lock requested but failed %s", NewPath);
             close(fd);
             Destroy(NewPath);
             return(NULL);
@@ -838,7 +920,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     {
         if (flock(fd,LOCK_SH | LOCK_NB)==-1)
         {
-            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "file lock requested but failed %s", p_Path);
+            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "file lock requested but failed %s", NewPath);
             close(fd);
             Destroy(NewPath);
             return(NULL);
@@ -853,9 +935,9 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 
     if ((Mode != O_RDONLY) && (! (Flags & SF_FOLLOW)))
     {
-        if (lstat(p_Path, &myStat) !=0)
+        if (lstat(NewPath, &myStat) !=0)
         {
-            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "cannot stat %s", p_Path);
+            RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "cannot stat %s", NewPath);
             close(fd);
             Destroy(NewPath);
             return(NULL);
@@ -863,7 +945,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 
         if (S_ISLNK(myStat.st_mode))
         {
-            RaiseError(0, "STREAMFileOpen", "%s is a symlink, but not not in 'symlink okay' mode", p_Path);
+            RaiseError(0, "STREAMFileOpen", "%s is a symlink, but not not in 'symlink okay' mode", NewPath);
             close(fd);
             Destroy(NewPath);
             return(NULL);
@@ -871,7 +953,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     }
     else
     {
-        stat(p_Path, &myStat);
+        stat(NewPath, &myStat);
     }
 
     //CREATE THE STREAM OBJECT !!
@@ -882,17 +964,17 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     Tempstr=FormatStr(Tempstr,"%d",myStat.st_size);
     STREAMSetValue(Stream, "FileSize", Tempstr);
     Stream->Size=myStat.st_size;
-    Stream->Path=CopyStr(Stream->Path, p_Path);
+    Stream->Path=CopyStr(Stream->Path, NewPath);
 
     if ( (Flags & (SF_RDONLY | SF_MMAP)) == (SF_RDONLY | SF_MMAP) ) STREAMOpenMMap(Stream, 0, myStat.st_size, Flags);
     else
     {
         if (Flags & SF_TRUNC)
         {
-            if (ftruncate(fd,0) != 0) RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "cannot ftruncate %s", p_Path);
+            if (ftruncate(fd,0) != 0) RaiseError(ERRFLAG_ERRNO, "STREAMFileOpen", "cannot ftruncate %s", NewPath);
             STREAMSetValue(Stream, "FileSize", "0");
         }
-        if (Flags & STREAM_APPEND) lseek(fd,0,SEEK_END);
+        if (Flags & STREAM_APPEND) lseek(fd, 0, SEEK_END);
     }
 
     STREAMSetFlags(Stream, Flags, 0);
@@ -969,6 +1051,9 @@ static int STREAMParseConfig(const char *Config)
                 break;
             case 'F':
                 Flags |= SF_FOLLOW;
+                break;
+            case 'R':
+                Flags |= SF_AUTORECOVER;
                 break;
             case 'S':
                 Flags |= SF_SORTED;
@@ -1250,13 +1335,24 @@ void STREAMTruncate(STREAM *S, long size)
 //doesn't require caching (maybe becasue it's a logfile rather than data)
 void STREAMCloseFile(STREAM *S)
 {
+char *Tempstr=NULL;
+
     if (
-        (StrEnd(S->Path)) ||
+        (StrValid(S->Path)) &&
         (CompareStr(S->Path,"-") !=0) //don't do this for stdin/stdout
     )
     {
+
         if (S->out_fd != -1)
         {
+	    //as we have closed the file sucessfully, we no longer need backup
+            if (STREAMAutoRecoverRequired(S->Flags))
+            {
+                Tempstr=MCopyStr(Tempstr, S->Path, ".autorecover", NULL);
+                unlink(Tempstr);
+            }
+
+
             //if we don't need this file cached for future use, tell the os so when we close it
 #ifdef POSIX_FADV_DONTNEED
             if (S->Flags & SF_NOCACHE)
@@ -1277,6 +1373,8 @@ void STREAMCloseFile(STREAM *S)
 
         }
     }
+
+Destroy(Tempstr);
 }
 
 

@@ -784,7 +784,7 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
     }
     else sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
 
-
+//set some options that are values rather than flags, SockSetOptions (called within IPReconnect) only handles flags
     if (Settings->TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings->TTL), sizeof(int));
     if (Settings->ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings->ToS), sizeof(int));
 
@@ -792,6 +792,9 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
     if (Settings->Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings->Mark), sizeof(int));
 #endif
 
+    //if a timeout is specified at connection time, then we apply it to the connection step
+    //if it's added later with STREAMAddTimeout, then it will only apply to read
+    if (Settings->Timeout > 0) Settings->Flags |= CONNECT_NONBLOCK;
     result=IPReconnect(sock, Host, Port, Settings->Flags);
 
     Destroy(Host);
@@ -973,6 +976,7 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         }
 
         if (STREAMWaitConnect(S)) result=STREAMDoPostConnect(S, S->Flags);
+        else result=FALSE;
     }
 
     Destroy(Name);

@@ -539,11 +539,11 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
             break;
 
 
-				//we must be careful with PrevToken here. If the tag starts with '/', then it's a close tag, and PrevToken will contain all
-				//the data enclosed by the tag. But anything else is a starting tag, and in that case we don't want to carry PrevToken forwards
-				//as it will result in crap (most probably whitespace and linefeed in indented RSS XML) stuck on the front of the data.
+        //we must be careful with PrevToken here. If the tag starts with '/', then it's a close tag, and PrevToken will contain all
+        //the data enclosed by the tag. But anything else is a starting tag, and in that case we don't want to carry PrevToken forwards
+        //as it will result in crap (most probably whitespace and linefeed in indented RSS XML) stuck on the front of the data.
         //Thus we have to clear out PrevToken in each of our matches, except the '/' match
-				//unfortunately we can't just clear PrevToken out ad the end of a tag, because of the <![CDATA[ tag, where we will want to keep it
+        //unfortunately we can't just clear PrevToken out ad the end of a tag, because of the <![CDATA[ tag, where we will want to keep it
         case '<':
             InTag=TRUE;
             while (isspace(*ptr)) ptr++;
@@ -563,10 +563,10 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
                     StripQuotes(Token);
                     ParserAddValue(Parent, Name, PrevToken);
                 }
-							  PrevToken=CopyStr(PrevToken, ""); //we've used PrevToken, so clear it out
+                PrevToken=CopyStr(PrevToken, ""); //we've used PrevToken, so clear it out
                 break;
 
-						//this is another case where we don't want to clear prev token out at the start of this
+            //this is another case where we don't want to clear prev token out at the start of this
             case '!':
                 if (strncmp(ptr,"[CDATA[",7)==0)
                 {
@@ -579,12 +579,12 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
                 PrevToken=CopyStr(PrevToken, "");
                 break;
 
-						case 'e':
-						case 'E':
+            case 'e':
+            case 'E':
                 PrevToken=CopyStr(PrevToken,"");
                 /*someone's always got to be different. 'enclosure' breaks the structure of RSS */
                 if (strcasecmp(Token,"enclosure")==0) ptr=ParserRSSEnclosure(Parent, ptr);
-						break;
+                break;
 
             case 'i':
             case 'I':

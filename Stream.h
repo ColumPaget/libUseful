@@ -78,7 +78,7 @@ S     file contents are sorted
 x     exclusive open using O_EXCL. Only create/open file if it doesn't exist.
 z     compress/uncompress with gzip
 e     encrypt using openssl compatible file format
-
+R     autorecovery. Take a backup when the file is opened for write, and if the file isn't closed properly, then revert to that backup when next it's opened.
 
 
 for encrypted files with the 'e' option, a password must be supplied using the 'encrypt' argument. The key and inputvector are calculated from this password.
@@ -92,6 +92,11 @@ The default cipher used is aes-256-cbc, however the cipher can be overridden lik
 S=STREAMOpen("myfile.enc", "we encrypt=T0PSekrit encrypt_cipher=blowfish");
 
 Encryption only supports either read only or write only files, not read-write.
+
+
+
+Autorecovery using the 'R' option will take a backup whenever the file is opened write-only, but not for read-write or append. This backup should be deleted when the file is closed. If the file is opened for read or append, and the backup exists, then the file will be moved to <path>.<date>.error and the backup will be imported in it's place.
+
 
 
 for tcp/unix/udp network connections the 'config argument' defaults to 'rw' if blank. 
@@ -229,7 +234,8 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_TLS_AUTO          32768  //nothing to see here, move along
 #define SF_ERROR             65536  //raise an error if open or connect fails
 #define SF_EXEC_INHERIT     131072  //allow stream to be inherited across an exec (default is close-on-exec)
-#define SF_BINARY           262144  //'binary mode' for websocket etc
+#define SF_AUTORECOVER      262144  //ONLY FOR FILES: take autorecovery backup on writing a file, and apply it on read
+#define SF_BINARY           262144  //ONLY FOR SOCKETS: 'binary mode' for, websockets etc
 #define SF_NOCACHE          524288  //don't cache file data in filesystem cache
 #define SF_LIST             524288  //only for SSH streams: list files
 #define SF_SORTED          1048576  //file is sorted, this is a hint to 'STREAMFind'
