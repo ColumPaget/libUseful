@@ -65,7 +65,7 @@ int ConnectHopHTTPSProxy(STREAM *S, const char *Proxy, const char *Destination)
 
     ParseConnectDetails(Proxy, &Token, &Host, &Token, &User, &Pass, NULL);
     Port=atoi(Token);
-    if (! (S->State & SS_INITIAL_CONNECT_DONE))
+    if (! (S->State & LU_SS_INITIAL_CONNECT_DONE))
     {
         if (Port==0) Port=443;
         S->in_fd=TCPConnect(Host, Port, "");
@@ -316,7 +316,7 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
     uint8_t HostType=HT_IP4;
 
     ParseConnectDetails(ProxyURL, NULL, &Host, &Token, &User, &Pass, NULL);
-    if (! (S->State & SS_INITIAL_CONNECT_DONE))
+    if (! (S->State & LU_SS_INITIAL_CONNECT_DONE))
     {
         val=atoi(Token);
         S->in_fd=TCPConnect(Host, val, "");
@@ -651,7 +651,7 @@ int STREAMProcessConnectHops(STREAM *S, const char *HopList)
             break;
         }
 
-        S->State=SS_INITIAL_CONNECT_DONE;
+        S->State=LU_SS_INITIAL_CONNECT_DONE;
         count++;
         HopURL=CopyStr(HopURL, NextHop);
     }

@@ -666,7 +666,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
 
             result=SSL_do_handshake(ssl);
 
-            S->State |= SS_SSL;
+            S->State |= LU_SS_SSL;
 
             OpenSSLQueryCipher(S);
             OpenSSLVerifyCertificate(S, LU_SSL_VERIFY_HOSTNAME);
@@ -740,7 +740,7 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                         break;
 
                     case TRUE:
-                        S->State |= SS_SSL;
+                        S->State |= LU_SS_SSL;
                         if (Flags & LU_SSL_VERIFY_PEER) OpenSSLVerifyCertificate(S, 0);
                         OpenSSLQueryCipher(S);
                         break;
@@ -793,7 +793,7 @@ int OpenSSLSTREAMCheckForBytes(STREAM *S)
 
 //if there are bytes available in the internal OpenSSL buffers, when we don't have to
 //wait on a select, we can just go straight through to SSL_read
-    if (S->State & SS_SSL)
+    if (S->State & LU_SS_SSL)
     {
         //ssl pending checks if there's bytes in the SSL buffer, it's not a select
         byte_count=SSL_pending(SSL_OBJ);
@@ -812,7 +812,7 @@ int OpenSSLSTREAMReadBytes(STREAM *S, char *Data, int len)
 
 
     SSL_OBJ=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
-    if (S->State & SS_SSL)
+    if (S->State & LU_SS_SSL)
     {
         bytes_read=SSL_read(SSL_OBJ, Data, len);
         //  saved_errno is used in all cases to capture errno before another function changes it
@@ -890,7 +890,7 @@ void OpenSSLClose(STREAM *S)
     }
 #endif
 
-    S->State &= ~SS_SSL;
+    S->State &= ~LU_SS_SSL;
 }
 
 

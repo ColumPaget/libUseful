@@ -1,3 +1,13 @@
+v5.28 (2024-10-21)
+  * added seccomp support, and process security levels
+  * change SS_ stream state values to LU_SS_ to prevent clashes with linux defines like SS_CONNECTING
+  * fixes for rbase64 encoding. added name 'rbase64' and decoding this encoding now works
+
+v5.27 (2024-10-16)
+  * honor timeout for connect, not just for read  
+  * added 'autorecover' feature to file STREAMS
+  * fix issues with parsing RSS feeds (some tags could have whitespace or other text prepended to them)
+
 v5.26 (2024-09-07)
   * Fix incorrect addition of 'progress' and 'remain' to options of non-progress-bar terminal widgets.
   * Make sure all DataProcessorInit functions fit the new function prototype.

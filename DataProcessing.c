@@ -380,7 +380,7 @@ int STREAMAddStandardDataProcessor(STREAM *S, const char *Class, const char *Nam
             STREAMFlush(S);
         }
         STREAMAddDataProcessor(S, Mod);
-        if (Mod->Flags & DPM_COMPRESS) S->State |= SS_COMPRESSED;
+        if (Mod->Flags & DPM_COMPRESS) S->State |= LU_SS_COMPRESSED;
         RetVal=TRUE;
     }
 

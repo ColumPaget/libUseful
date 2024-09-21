@@ -68,7 +68,6 @@ CFLAGS="$CFLAGS -fstack-protector-strong"
 fi
 
 
-
 AC_CHECK_LIB(c,get_current_dir_name,,)
 cf_have_get_current_dir_name=$ac_cv_lib_c_get_current_dir_name
 if test "$cf_have_get_current_dir_name" = "yes"
@@ -251,6 +250,25 @@ AC_DEFINE([USE_CAPABILITIES])
 fi
 
 
+
+AC_ARG_ENABLE(seccomp, [  --enable-seccomp           enable seccomp to limit process syscalls], cf_use_seccomp=$enableval, cf_use_seccomp=no)
+
+if test "$cf_use_seccomp" = "yes"
+then
+AC_CHECK_HEADER([linux/seccomp.h],,cf_use_seccomp=no,)
+AC_CHECK_HEADER([linux/filter.h],,cf_use_seccomp=no,)
+AC_CHECK_HEADER([linux/bpf.h],,cf_use_seccomp=no,)
+AC_CHECK_LIB(c,prctl,,cf_use_seccomp=no)
+if test "$cf_use_seccomp" = "yes"
+then
+AC_DEFINE([USE_SECCOMP])
+fi
+
+fi
+
+
+
+
 dnl read Makefile.in and write Makefile 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
@@ -327,5 +345,12 @@ then
 echo "linux capabilities support enabled"
 else
 echo "linux capabilities support NOT enabled"
+fi
+
+if test "$cf_use_seccomp" = "yes"
+then
+echo "linux seccomp support enabled"
+else
+echo "linux seccomp support NOT enabled"
 fi
 

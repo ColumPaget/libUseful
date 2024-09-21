@@ -247,22 +247,22 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 
 
 //Stream state values, set in S->State
-#define SS_CONNECTING 1
-#define SS_INITIAL_CONNECT_DONE 4
-#define SS_CONNECTED 8
-#define SS_DATA_ERROR 16
-#define SS_WRITE_ERROR 32
-#define SS_EMBARGOED 64
-#define SS_SSL  4096
-#define SS_AUTH 8192
-#define SS_COMPRESSED 16384 //compression enabled, specifies compression active on a stream
-#define SS_MSG_READ 32768
+#define LU_SS_CONNECTING 1
+#define LU_SS_INITIAL_CONNECT_DONE 4
+#define LU_SS_CONNECTED 8
+#define LU_SS_DATA_ERROR 16
+#define LU_SS_WRITE_ERROR 32
+#define LU_SS_EMBARGOED 64
+#define LU_SS_SSL  4096
+#define LU_SS_AUTH 8192
+#define LU_SS_COMPRESSED 16384 //compression enabled, specifies compression active on a stream
+#define LU_SS_MSG_READ 32768
 
 //state values available for programmer use
-#define SS_USER1 268435456
-#define SS_USER2 536870912
-#define SS_USER3 1073741824
-#define SS_USER4 2147483648
+#define LU_SS_USER1 268435456
+#define LU_SS_USER2 536870912
+#define LU_SS_USER3 1073741824
+#define LU_SS_USER4 2147483648
 
 
 

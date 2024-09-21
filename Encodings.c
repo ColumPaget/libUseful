@@ -89,14 +89,15 @@ int EncodingParse(const char *Str)
         case 'q':
         case 'Q':
             if (CompareStr(Str,"quoted-printable")==0) Encode=ENCODE_QUOTED_MIME;
-            if (CompareStr(Str,"quoted-http")==0) Encode=ENCODE_QUOTED_HTTP;
+            else if (CompareStr(Str,"quoted-http")==0) Encode=ENCODE_QUOTED_HTTP;
             break;
 
 
         case 'r':
         case 'R':
             if (CompareStr(Str,"r64")==0) Encode=ENCODE_RBASE64;
-            if (CompareStr(Str,"rfc4648")==0) Encode=ENCODE_RBASE64;
+            else if (CompareStr(Str,"rbase64")==0) Encode=ENCODE_RBASE64;
+            else if (CompareStr(Str,"rfc4648")==0) Encode=ENCODE_RBASE64;
             break;
 
         case 'u':
@@ -377,6 +378,10 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
 
     case ENCODE_PBASE64:
         len=Radix64tobits(*Return,Text,PBASE64_CHARS,'\0');
+        break;
+
+    case ENCODE_RBASE64:
+        len=Radix64tobits(*Return,Text,RBASE64_CHARS,'\0');
         break;
 
     case ENCODE_CRYPT:

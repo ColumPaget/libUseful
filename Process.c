@@ -17,6 +17,7 @@
 #include "FileSystem.h"
 #include "UnitsOfMeasure.h"
 #include "Users.h"
+#include "Seccomp.h"
 
 //needed for 'flock' used by CreatePidFile and CreateLockFile
 #include <sys/file.h>
@@ -361,6 +362,59 @@ static int ProcessMemLockAdd()
 }
 
 
+static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
+{
+char *Token=NULL;
+const char *ptr;
+int Flags=0, val;
+const char *Levels[]={"minimal", "basic", "user", "untrusted", "constrained", NULL};
+typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED} TSecLevel;
+
+ptr=GetToken(Config, " ", &Token, 0);
+while (ptr)
+{
+	val=MatchTokenFromList(Token, Levels, 0);
+
+	switch (val)
+	{
+		case LU_SEC_CONSTRAINED:
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net;group:exec;mprotect;ioctl;group:ptrace ");
+		//break; //fall through to LU_SEC_UNTRUSTED
+
+		case LU_SEC_UNTRUSTED:
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:keyring;group:ns ");
+		//break; //fall through to LU_SEC_USER
+
+		case LU_SEC_USER:
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:sysadmin;bpf ");
+		//break; //fall through to LU_SEC_BASIC
+	
+		case LU_SEC_BASIC:
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill= ");
+		//break; //fall through to LU_SEC_MINIMAL
+
+		case LU_SEC_MINIMAL:
+		//sadly, things like wine use ptrace, so we'd rather deny it than kill them.
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:ptrace syscall_kill=acct;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load,get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages;nfsservctl ");
+
+		Flags |= PROC_NO_NEW_PRIVS;
+		break;
+
+		default:
+	  if (strncmp(Token, "syscall_allow=", 14)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
+	  else if (strncmp(Token, "syscall_kill=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
+		break;
+  }
+ptr=GetToken(ptr, " ", &Token, 0);
+}
+
+Destroy(Token);
+
+return(Flags);
+}
+
+
+
 
 //do all things that we can do 'early' (i.e. before chroot and demonize)
 static int ProcessApplyEarlyConfig(const char *Config)
@@ -386,9 +440,6 @@ static int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"demon")==0) Flags |= PROC_DAEMON;
         else if (strcasecmp(Name,"ctrltty")==0) Flags |= PROC_CTRL_TTY;
         else if (strcasecmp(Name,"ctrl_tty")==0) Flags |= PROC_CTRL_TTY;
-        else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
-        else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
-        else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"strict")==0) Flags |= PROC_SETUP_STRICT;
         else if (strcasecmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
         else if (strcasecmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
@@ -450,7 +501,7 @@ static int ProcessApplyEarlyConfig(const char *Config)
 //Apply config changes that are relevant AFTER chroot/daemonize
 static int ProcessApplyLateConfig(int Flags, const char *Config)
 {
-    char *Name=NULL, *Value=NULL, *Capabilities=NULL;
+    char *Name=NULL, *Value=NULL, *Capabilities=NULL, *SeccompDeny=NULL;
     const char *ptr;
     long uid=0, gid=0;
     int lockfd, ctty_fd=0;
@@ -485,8 +536,12 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
             close(0);
             lockfd=CreateLockFile(Value, 0);
             if (lockfd==-1) _exit(1);
-        }
+        } 
+        else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
+        else if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &SeccompDeny);
         else if (strcasecmp(Name,"ctty")==0)
         {
             ctty_fd=atoi(Value);
@@ -533,11 +588,19 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
     else if (Flags & PROC_NO_NEW_PRIVS)
     {
         if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
+				else if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: set 'PROC_NO_NEW_PRIVS', su/suid should not be possible now\n");
+
+
+		//seccomp must come after PROC_NO_NEW_PRIVS
+		#ifdef USE_SECCOMP
+		if (StrValid(SeccompDeny)) SeccompAddRules(SeccompDeny);
+		#endif
     }
 
     Destroy(Name);
     Destroy(Value);
     Destroy(Capabilities);
+    Destroy(SeccompDeny);
 
     return(Flags);
 }

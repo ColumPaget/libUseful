@@ -855,13 +855,13 @@ int STREAMIsConnected(STREAM *S)
     result=IsSockConnected(S->in_fd);
     if (result==TRUE)
     {
-        if (S->State & SS_CONNECTING)
+        if (S->State & LU_SS_CONNECTING)
         {
-            S->State |= SS_CONNECTED;
-            S->State &= (~SS_CONNECTING);
+            S->State |= LU_SS_CONNECTED;
+            S->State &= (~LU_SS_CONNECTING);
         }
     }
-    if ((result==SOCK_CONNECTING) && (! (S->State & SS_CONNECTING))) result=FALSE;
+    if ((result==SOCK_CONNECTING) && (! (S->State & LU_SS_CONNECTING))) result=FALSE;
     return(result);
 }
 
@@ -896,7 +896,7 @@ int STREAMDoPostConnect(STREAM *S, int Flags)
         }
 
         result=TRUE;
-        S->State |=SS_CONNECTED;
+        S->State |=LU_SS_CONNECTED;
     }
     else
     {
@@ -971,7 +971,7 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         if (S->Type==STREAM_TYPE_SSL) S->Flags |= CONNECT_SSL;
         if (S->Flags & SF_NONBLOCK)
         {
-            S->State |=SS_CONNECTING;
+            S->State |=LU_SS_CONNECTING;
             S->Flags |=SF_NONBLOCK;
         }
 

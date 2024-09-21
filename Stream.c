@@ -326,7 +326,7 @@ int STREAMCheckForBytes(STREAM *S)
     struct stat Stat;
 
     if (! S) return(FALSE);
-    if (S->State & SS_EMBARGOED) return(FALSE);
+    if (S->State & LU_SS_EMBARGOED) return(FALSE);
     if (S->InEnd > S->InStart) return(TRUE);
     if (S->in_fd==-1) return(FALSE);
 
@@ -349,7 +349,7 @@ int STREAMCountWaitingBytes(STREAM *S)
     int read_result=0, result;
 
     if (! S) return(0);
-    if (S->State & SS_EMBARGOED) return(0);
+    if (S->State & LU_SS_EMBARGOED) return(0);
 
     result=FDCheckForBytes(S->in_fd);
     if (result > 0) read_result=STREAMReadCharsToBuffer(S);
@@ -379,7 +379,7 @@ STREAM *STREAMSelect(ListNode *Streams, struct timeval *tv)
     while (Curr)
     {
         S=(STREAM *) Curr->Item;
-        if (S && (! (S->State & SS_EMBARGOED)))
+        if (S && (! (S->State & LU_SS_EMBARGOED)))
         {
             //server type streams don't have buffers
             if ( (S->Type != STREAM_TYPE_UNIX_SERVER) && (S->Type != STREAM_TYPE_TCP_SERVER) )
@@ -439,7 +439,7 @@ int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
     char *found_char;
 
     if (! S) return(0);
-    if (S->State & SS_EMBARGOED) return(0);
+    if (S->State & LU_SS_EMBARGOED) return(0);
 
     result=FDCheckForBytes(S->in_fd);
     if (result > 0) read_result=STREAMReadCharsToBuffer(S);
@@ -509,7 +509,7 @@ int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 int STREAMPushBytes(STREAM *S, const char *Data, int DataLen)
 {
 
-    if (S->State & SS_SSL) return(OpenSSLSTREAMWriteBytes(S, Data, DataLen));
+    if (S->State & LU_SS_SSL) return(OpenSSLSTREAMWriteBytes(S, Data, DataLen));
     return(STREAMBasicSendBytes(S, Data, DataLen));
 }
 
@@ -658,7 +658,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
     }
 
     if (
-        (! (S->State & SS_DATA_ERROR)) &&
+        (! (S->State & LU_SS_DATA_ERROR)) &&
         (len > 0)
     )
     {
@@ -679,7 +679,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
     if (len==0)
     {
         if (state==STREAM_CLOSED) return(STREAM_CLOSED);
-        if (S->State & SS_DATA_ERROR) return(STREAM_DATA_ERROR);
+        if (S->State & LU_SS_DATA_ERROR) return(STREAM_DATA_ERROR);
     }
 
     // this indicates that there's still data in the processing chain
@@ -1458,7 +1458,7 @@ int STREAMWaitForBytes(STREAM *S)
     struct timeval tv;
 
     //if using SSL and already has bytes queued, don't do a wait on select
-    if ( (S->State & SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
+    if ( (S->State & LU_SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
 
     //must set this to 1 in case not doing a select, 'cos if S->Timeout is not set
     //then we won't wait at all, won't set read_result, so we must do it here
@@ -1531,7 +1531,7 @@ static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
 
 int STREAMPullBytes(STREAM *S, char *Buffer, int Len)
 {
-    if (S->State & SS_SSL) return(OpenSSLSTREAMReadBytes(S, Buffer, Len));
+    if (S->State & LU_SS_SSL) return(OpenSSLSTREAMReadBytes(S, Buffer, Len));
     return(STREAMReadCharsToBuffer_Default(S, Buffer, Len));
 }
 
@@ -1545,7 +1545,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
 
 //we don't read from and embargoed stream. Embargoed is a state that we
 //use to indicate a stream must be ignored for a while
-    if (S->State & SS_EMBARGOED) return(0);
+    if (S->State & LU_SS_EMBARGOED) return(0);
 
 //number of bytes queued in STREAM
     val=S->InEnd-S->InStart;
@@ -1887,7 +1887,7 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 
     if (! S) return(STREAM_CLOSED);
     if (S->out_fd==-1) return(STREAM_CLOSED);
-    if (S->State & SS_WRITE_ERROR) return(STREAM_CLOSED);
+    if (S->State & LU_SS_WRITE_ERROR) return(STREAM_CLOSED);
 
 
     i_data=Data;
@@ -2258,7 +2258,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
 
     //for documents where we know the size, e.g. HTTP documents where we've had 'Content-Length'
     //there will be a size booked against the stream 'S'
-    if ( (S->Size > 0) && (! (S->State & SS_COMPRESSED)) ) size=S->Size;
+    if ( (S->Size > 0) && (! (S->State & LU_SS_COMPRESSED)) ) size=S->Size;
 
     //we can set a program-wide max document size
     max=LibUsefulGetInteger("MaxDocumentSize");
