@@ -319,13 +319,14 @@ const char *SyscallGroupLookup(const char *Name)
     if (strcmp(Name, "group:swap")==0) return("swapon;swapoff");
     if (strcmp(Name, "group:ns")==0) return("unshare;setns");
     if (strcmp(Name, "group:net")==0) return("socket;socketcall;connect;bind;listen;accept");
-    if (strcmp(Name, "group:sysadmin")==0) return("settimeofday;clocksettime;clockadjtime;quotactl;reboot;swapon;swapoff;kexec_load;kexec_file_load;mount;umount;umount2;mknod;quotactl");
+    if (strcmp(Name, "group:sysadmin")==0) return("settimeofday;clocksettime;clockadjtime;quotactl;reboot;swapon;swapoff;mount;umount;umount2;mknod;quotactl");
     if (strcmp(Name, "group:keyring")==0) return("add_key;request_key;keyctl");
     if (strcmp(Name, "group:shm")==0) return("shmat;shmdt;shmget;shmctl");
     if (strcmp(Name, "group:fsrm")==0) return("unlink;rmdir");
     if (strcmp(Name, "group:ptrace")==0) return("ptrace;process_vm_readv;process_vm_writev;kcmp");
     if (strcmp(Name, "group:kern_mod")==0) return("create_module;delete_module;init_module;finit_module;query_module");
     if (strcmp(Name, "group:exec")==0) return("exec_with_loader;execv;execve;execveat");
+    if (strcmp(Name, "group:kexec")==0) return("kexec_load;kexec_file_load");
 
     return(Name);
 }

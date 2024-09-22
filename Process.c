@@ -367,8 +367,8 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
 char *Token=NULL;
 const char *ptr;
 int Flags=0, val;
-const char *Levels[]={"minimal", "basic", "user", "untrusted", "constrained", NULL};
-typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED} TSecLevel;
+const char *Levels[]={"minimal", "basic", "user", "untrusted", "constrained", "high", NULL};
+typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH} TSecLevel;
 
 ptr=GetToken(Config, " ", &Token, 0);
 while (ptr)
@@ -377,25 +377,29 @@ while (ptr)
 
 	switch (val)
 	{
+		case LU_SEC_HIGH:
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net ");
+		//break; //fall through to LU_SEC_CONSTRAINED
+	
 		case LU_SEC_CONSTRAINED:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net;group:exec;mprotect;ioctl;group:ptrace ");
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:net syscall_kill=group:exec;mprotect;ioctl;group:ptrace ");
 		//break; //fall through to LU_SEC_UNTRUSTED
 
 		case LU_SEC_UNTRUSTED:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:keyring;group:ns ");
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;acct ");
 		//break; //fall through to LU_SEC_USER
 
 		case LU_SEC_USER:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:sysadmin;bpf ");
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:sysadmin;bpf ");
 		//break; //fall through to LU_SEC_BASIC
 	
 		case LU_SEC_BASIC:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill= ");
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=acct ");
 		//break; //fall through to LU_SEC_MINIMAL
 
 		case LU_SEC_MINIMAL:
 		//sadly, things like wine use ptrace, so we'd rather deny it than kill them.
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:ptrace syscall_kill=acct;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load,get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages;nfsservctl ");
+    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:ptrace syscall_kill=group:kexec;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages;nfsservctl ");
 
 		Flags |= PROC_NO_NEW_PRIVS;
 		break;

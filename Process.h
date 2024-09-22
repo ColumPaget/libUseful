@@ -134,12 +134,23 @@ files=<value>      resource limit for open files
 coredumps=<value>  resource limit for max size of coredump files
 procs=<value>      resource limit for max number of processes ON A PER USER BASIS.
 nproc=<value>      resource limit for max number of processes ON A PER USER BASIS.
-resist_ptrace    set prctrl(PR_NONE_DUMPABLE) to prevent ptracing of the process. This also prevents coredumps totally.
-openlog=<name>   set 'ident' of future syslog messages to 'name'. Also adds 'LOG_PID' and sets facility to 'LOG_USER' (see "man openlog" for more details).
-mlock            lock all current and future pages in memory so they don't swap out
-memlock          lock all current and future pages in memory so they don't swap out
-pidfile=<path>   create pidfile for this process at 'path'
-lockfile=<path>  create lockfile at 'path'
+resist_ptrace      set prctrl(PR_NONE_DUMPABLE) to prevent ptracing of the process. This also prevents coredumps totally.
+openlog=<name>     set 'ident' of future syslog messages to 'name'. Also adds 'LOG_PID' and sets facility to 'LOG_USER' (see "man openlog" for more details).
+mlock              lock all current and future pages in memory so they don't swap out
+memlock            lock all current and future pages in memory so they don't swap out
+pidfile=<path>     create pidfile for this process at 'path'
+lockfile=<path>    create lockfile at 'path'
+
+security=<level>   set security levels for seccomp. These are intended to mostly kill processess that are trying to use suspicious/dangerous or inappropriate syscalls.
+									 Any level includes the 'nosu' setting as seccomp requires setting 'prctrl(PR_NO_NEW_PRIVS)
+                   Levels are 'minimal', 'basic', 'user', 'untrusted', 'constrained' and 'high'. Each level includes the level below it, so 'untrsted' gives you everything in 'minimal', 'basic' and 'user'.
+
+                   minimal: disable ptrace and kill apps that try to use: personality, uselib, userfaultfd, perf_event_open, kexec_load, get_kernel_syms, lookup_dcookie, vm86, vm86old, mbind, move_pages, nfsservctl, and anything involving kernel modules
+									 basic: everything in 'minimal' but also disable the 'acct' syscall
+									 user: everything in 'basic' but also kill processes that try to use bpf, or any 'sysadmin' calls: settimeofday, clocksettime, clockadjtime, quotactl, reboot, swapon, swapoff, mount, umount, umount2, mknod, quotactl
+                   untrusted: everyting in 'user' but kill apps that try to use: chroot, access the keyring, unshare or change namespaces group:ns or all acct
+                   constrained: everything in 'untrusted' but kill apps that try to use: socket/network syscalls, exec syscalls, mprotect, ioctl or ptrace
+									 high: kill apps that try to use networking
 */
 
 
