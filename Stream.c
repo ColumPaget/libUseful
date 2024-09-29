@@ -521,7 +521,6 @@ static int STREAMInternalPushBytes(STREAM *S, const char *Data, int DataLen)
     if (! S) return(STREAM_CLOSED);
     if (S->out_fd==-1) return(STREAM_CLOSED);
 
-
 //if we are flushing blocks, then pad out to the blocksize
     if (S->Flags & FLUSH_BLOCK)
     {
@@ -782,41 +781,41 @@ static int STREAMAutoRecoverRequired(int Flags)
 
 void STREAMFileAutoRecover(const char *Path, int Flags)
 {
-char *BackupPath=NULL;
-struct stat FStat;
-int result;
+    char *BackupPath=NULL;
+    struct stat FStat;
+    int result;
 
-BackupPath=MCopyStr(BackupPath, Path, ".autorecover", NULL);
-result=stat(BackupPath, &FStat);
-if (result==0)
-{
-    //never use an autorecover that is zero bytes in size
-    if (FStat.st_size == 0) 
-    {
-	result=unlink(BackupPath);
-        if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "zero-length autorecovery found, but cannot remove it %s", BackupPath);
-    }
-    // if we are writing to the file, and we are not appending to it, then we are going to blank the file down anyways, so no need to autorecover
-    else if (! (Flags & (SF_RDONLY|STREAM_APPEND)) )
-    {
-	result=unlink(BackupPath);
-        if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery found, not needed, but cannot remove it %s", BackupPath);
-    }
-    else
-    {
-    RaiseError(ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery from %s", BackupPath);
-    //first take a backup for the current 'live' file
-    BackupPath=MCopyStr(BackupPath, Path, ".", GetDateStr("%Y-%m-%dT%H%M%S", NULL), ".error", NULL);
-    result=rename(Path, BackupPath);
-    if (result != 0) RaiseError(ERRFLAG_ERRNO | ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery cannot archive current file to %s", BackupPath);
-    
     BackupPath=MCopyStr(BackupPath, Path, ".autorecover", NULL);
-    result=rename(BackupPath, Path);
-    if (result != 0) RaiseError(ERRFLAG_ERRNO | ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery cannot import %s", BackupPath);
-    }
-}
+    result=stat(BackupPath, &FStat);
+    if (result==0)
+    {
+        //never use an autorecover that is zero bytes in size
+        if (FStat.st_size == 0)
+        {
+            result=unlink(BackupPath);
+            if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "zero-length autorecovery found, but cannot remove it %s", BackupPath);
+        }
+        // if we are writing to the file, and we are not appending to it, then we are going to blank the file down anyways, so no need to autorecover
+        else if (! (Flags & (SF_RDONLY|STREAM_APPEND)) )
+        {
+            result=unlink(BackupPath);
+            if (result != 0) RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery found, not needed, but cannot remove it %s", BackupPath);
+        }
+        else
+        {
+            RaiseError(ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery from %s", BackupPath);
+            //first take a backup for the current 'live' file
+            BackupPath=MCopyStr(BackupPath, Path, ".", GetDateStr("%Y-%m-%dT%H%M%S", NULL), ".error", NULL);
+            result=rename(Path, BackupPath);
+            if (result != 0) RaiseError(ERRFLAG_ERRNO | ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery cannot archive current file to %s", BackupPath);
 
-Destroy(BackupPath);
+            BackupPath=MCopyStr(BackupPath, Path, ".autorecover", NULL);
+            result=rename(BackupPath, Path);
+            if (result != 0) RaiseError(ERRFLAG_ERRNO | ERRFLAG_DEBUG, "STREAMFileOpen", "autorecovery cannot import %s", BackupPath);
+        }
+    }
+
+    Destroy(BackupPath);
 }
 
 
@@ -1335,7 +1334,7 @@ void STREAMTruncate(STREAM *S, long size)
 //doesn't require caching (maybe becasue it's a logfile rather than data)
 void STREAMCloseFile(STREAM *S)
 {
-char *Tempstr=NULL;
+    char *Tempstr=NULL;
 
     if (
         (StrValid(S->Path)) &&
@@ -1345,7 +1344,7 @@ char *Tempstr=NULL;
 
         if (S->out_fd != -1)
         {
-	    //as we have closed the file sucessfully, we no longer need backup
+            //as we have closed the file sucessfully, we no longer need backup
             if (STREAMAutoRecoverRequired(S->Flags))
             {
                 Tempstr=MCopyStr(Tempstr, S->Path, ".autorecover", NULL);
@@ -1374,7 +1373,7 @@ char *Tempstr=NULL;
         }
     }
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 }
 
 
@@ -1907,7 +1906,10 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 //thus the calling application always believes all data is written
 //Thus we only report errors if len==0;
     if (len > 0) result=STREAMInternalQueueBytes(S, i_data, len);
-    else if (S->OutEnd > S->StartPoint) result=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
+    else if (S->OutEnd > S->StartPoint) 
+    {
+	result=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
+    }
 
     Destroy(TempBuff);
 

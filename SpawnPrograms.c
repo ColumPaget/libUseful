@@ -350,18 +350,15 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
     if (pid > 0)
     {
         S=STREAMFromDualFD(from_fd, to_fd);
-        /*
-        if (waitpid(pid, NULL, WNOHANG) < 1)
-        //sleep to allow spawned function time to exit due to startup problems
-        usleep(250);
-        //use waitpid to check process has not exited, if so then spawn stream
-        else fprintf(stderr, "ERROR: Subprocess exited: %s %s\n", strerror(errno), Data);
-        */
     }
 
     if (S)
     {
-        STREAMSetFlushType(S,FLUSH_LINE,0,0);
+	//if we are doing to be sending raw data to the process, then flush always
+        //otherwise we expect lines of text and flush on a line terminator
+	if (Flags & TTYFLAG_DATA) STREAMSetFlushType(S,FLUSH_ALWAYS,0,0);
+        else STREAMSetFlushType(S,FLUSH_LINE,0,0);
+
         Tempstr=FormatStr(Tempstr,"%d",pid);
         STREAMSetValue(S,"PeerPID",Tempstr);
         S->Type=STREAM_TYPE_PIPE;

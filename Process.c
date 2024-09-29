@@ -364,57 +364,71 @@ static int ProcessMemLockAdd()
 
 static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
 {
-char *Token=NULL;
-const char *ptr;
-int Flags=0, val;
-const char *Levels[]={"minimal", "basic", "user", "untrusted", "constrained", "high", NULL};
-typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH} TSecLevel;
+    char *Token=NULL;
+    const char *ptr;
+    int Flags=0, val;
+    const char *Levels[]= {"minimal", "basic", "user", "guest", "client", "untrusted", "local", "constrained", "high", NULL};
+    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_CLIENT, LU_SEC_UNTRUSTED, LU_SEC_LOCAL, LU_SEC_CONSTRAINED, LU_SEC_HIGH} TSecLevel;
 
-ptr=GetToken(Config, " ", &Token, 0);
-while (ptr)
-{
-	val=MatchTokenFromList(Token, Levels, 0);
+    ptr=GetToken(Config, " ", &Token, 0);
+    while (ptr)
+    {
+        val=MatchTokenFromList(Token, Levels, 0);
 
-	switch (val)
-	{
-		case LU_SEC_HIGH:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net ");
-		//break; //fall through to LU_SEC_CONSTRAINED
-	
-		case LU_SEC_CONSTRAINED:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:net syscall_kill=group:exec;mprotect;ioctl;group:ptrace ");
-		//break; //fall through to LU_SEC_UNTRUSTED
+        switch (val)
+        {
+        case LU_SEC_HIGH:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net ");
+        //break; //fall through to LU_SEC_CONSTRAINED
 
-		case LU_SEC_UNTRUSTED:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;acct ");
-		//break; //fall through to LU_SEC_USER
+        case LU_SEC_CONSTRAINED:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=ioctl(termget);ioctl(termset) syscall_deny=group:net syscall_kill=group:exec;mprotect(exec);mmap(exec);ioctl;group:ptrace ");
+        //break; //fall through to LU_SEC_LOCAL
 
-		case LU_SEC_USER:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:sysadmin;bpf ");
-		//break; //fall through to LU_SEC_BASIC
-	
-		case LU_SEC_BASIC:
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=acct ");
-		//break; //fall through to LU_SEC_MINIMAL
+        case LU_SEC_LOCAL:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix) syscall_deny=socket ");
+        //break; //fall through to LU_SEC_UNTRUSTED
 
-		case LU_SEC_MINIMAL:
-		//sadly, things like wine use ptrace, so we'd rather deny it than kill them.
-    *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:ptrace syscall_kill=group:kexec;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages;nfsservctl ");
+        case LU_SEC_UNTRUSTED:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;setsid;acct ");
+        //break; //fall through to LU_SEC_CLENT
 
-		Flags |= PROC_NO_NEW_PRIVS;
-		break;
+        case LU_SEC_CLIENT:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=listen;accept ");
+        //break; //fall through to LU_SEC_GUEST
 
-		default:
-	  if (strncmp(Token, "syscall_allow=", 14)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
-	  else if (strncmp(Token, "syscall_kill=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
-		break;
-  }
-ptr=GetToken(ptr, " ", &Token, 0);
-}
+        case LU_SEC_GUEST:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:keyring ");
+        //break; //fall through to LU_SEC_USER
 
-Destroy(Token);
+        case LU_SEC_USER:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=chown;chmod(exec) syscall_kill=group:sysadmin;bpf ");
+        //break; //fall through to LU_SEC_BASIC
 
-return(Flags);
+        case LU_SEC_BASIC:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=acct ");
+        //break; //fall through to LU_SEC_MINIMAL
+
+        case LU_SEC_MINIMAL:
+            //sadly, things like wine use ptrace, so we'd rather deny it than kill them.
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=ptrace syscall_kill=group:kexec;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages ");
+
+            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+
+        default:
+            if (strncmp(Token, "syscall_allow=", 14)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
+            else if (strncmp(Token, "syscall_kill=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
+            else if (strncmp(Token, "syscall_deny=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
+            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+        }
+        ptr=GetToken(ptr, " ", &Token, 0);
+    }
+
+    Destroy(Token);
+
+    return(Flags);
 }
 
 
@@ -540,7 +554,7 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
             close(0);
             lockfd=CreateLockFile(Value, 0);
             if (lockfd==-1) _exit(1);
-        } 
+        }
         else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
@@ -592,13 +606,13 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
     else if (Flags & PROC_NO_NEW_PRIVS)
     {
         if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
-				else if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: set 'PROC_NO_NEW_PRIVS', su/suid should not be possible now\n");
+        else if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: set 'PROC_NO_NEW_PRIVS', su/suid should not be possible now\n");
 
 
-		//seccomp must come after PROC_NO_NEW_PRIVS
-		#ifdef USE_SECCOMP
-		if (StrValid(SeccompDeny)) SeccompAddRules(SeccompDeny);
-		#endif
+        //seccomp must come after PROC_NO_NEW_PRIVS
+#ifdef USE_SECCOMP
+        if (StrValid(SeccompDeny)) SeccompAddRules(SeccompDeny);
+#endif
     }
 
     Destroy(Name);

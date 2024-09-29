@@ -1,3 +1,9 @@
+v5.29 (2024-10-29)
+  * much more seccomp work
+  * add 'data' option to pty config (PtyParseConfig) so if a pipe or pty is going to be used for raw data transfer, use FLUSH_ALWAYS not FLUSH_LINE
+  * support uuencoded data using either ' ' or '`' as 1st char of alphabet
+  * add support for yenc encoded data
+
 v5.28 (2024-10-21)
   * added seccomp support, and process security levels
   * change SS_ stream state values to LU_SS_ to prevent clashes with linux defines like SS_CONNECTING

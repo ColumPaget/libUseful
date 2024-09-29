@@ -30,12 +30,14 @@ all:
 	gcc -oHttpServer.exe HttpServer.c $(LIBS)
 	gcc -oPasswordFile.exe PasswordFile.c $(LIBS)
 	gcc -obase32.exe base32.c $(LIBS)
+	gcc -ouudecode.exe uudecode.c $(LIBS)
 	gcc -ononewprivs.exe nonewprivs.c $(LIBS)
 	gcc -ochroot.exe chroot.c $(LIBS)
 	gcc -omovetest.exe movetest.c $(LIBS)
 	gcc -oencrypt.exe encrypt.c $(LIBS)
 	gcc -odecrypt.exe decrypt.c $(LIBS)
 	gcc -opbkdf2.exe pbkdf2.c $(LIBS)
+seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)
 
 clean:

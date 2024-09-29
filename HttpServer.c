@@ -4,6 +4,7 @@
 #include "ContentType.h"
 #include "StreamAuth.h"
 
+
 static void HTTPServerSetValue(STREAM *S, const char *Name, const char *Value)
 {
     char *Tempstr=NULL;
@@ -18,6 +19,7 @@ static void HTTPServerSetValue(STREAM *S, const char *Name, const char *Value)
 
     Destroy(Tempstr);
 }
+
 
 void HTTPServerParseClientCookies(ListNode *Vars, const char *Str)
 {
