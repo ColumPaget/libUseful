@@ -1244,21 +1244,37 @@ STREAM *HTTPWithConfig(const char *URL, const char *Config)
 
 
 
+
+int HTTPCopyToSTREAM(STREAM *Con, STREAM *S)
+{
+    const char *ptr;
+    size_t size=0;
+
+    //do not check response code of HTTP server streams (strictly speaking STREAM_TYPE_HTTP_ACCEPT)
+    if (S->Type == STREAM_TYPE_HTTP)
+    {
+        ptr=STREAMGetValue(Con, "HTTP:ResponseCode");
+        if ((! ptr) || (*ptr !='2'))
+        {
+            STREAMClose(Con);
+            return(-1);
+        }
+    }
+
+    ptr=STREAMGetValue(Con, "HTTP:Content-Length");
+    if (StrValid(ptr)) size=strtol(ptr, NULL, 10);
+
+    return(STREAMSendFile(Con, S, size, SENDFILE_LOOP));
+}
+
+
 int HTTPDownload(char *URL, STREAM *S)
 {
     STREAM *Con;
-    const char *ptr;
 
     Con=HTTPGet(URL);
     if (! Con) return(-1);
-
-    ptr=STREAMGetValue(Con, "HTTP:ResponseCode");
-    if ((! ptr) || (*ptr !='2'))
-    {
-        STREAMClose(Con);
-        return(-1);
-    }
-    return(STREAMSendFile(Con, S, 0, SENDFILE_LOOP));
+    return(HTTPCopyToSTREAM(Con, S));
 }
 
 

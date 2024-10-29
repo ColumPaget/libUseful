@@ -115,9 +115,8 @@ static void STREAMServerParseConfig(STREAM *S, const char *Config)
     ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
     while (ptr)
     {
-        if (strncasecmp(Name, "SSL:", 4)==0) STREAMSetValue(S, Name, Value);
-        else if (strcasecmp(Name, "Authentication")==0) STREAMSetValue(S, "Authenticator", Value);
-        else if (strcasecmp(Name, "Auth")==0) STREAMSetValue(S, "Authenticator", Value);
+        if (strcasecmp(Name, "Auth")==0) STREAMSetValue(S, "AUTH:Types", Value);
+        else STREAMSetValue(S, Name, Value);
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }

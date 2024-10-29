@@ -1906,9 +1906,9 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 //thus the calling application always believes all data is written
 //Thus we only report errors if len==0;
     if (len > 0) result=STREAMInternalQueueBytes(S, i_data, len);
-    else if (S->OutEnd > S->StartPoint) 
+    else if (S->OutEnd > S->StartPoint)
     {
-	result=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
+        result=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
     }
 
     Destroy(TempBuff);

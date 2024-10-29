@@ -1,5 +1,5 @@
 CC = gcc
-VERSION = 5.29
+VERSION = 5.30
 MAJOR=5
 LIBFILE=libUseful.so.$(VERSION)
 SONAME=libUseful.so.$(MAJOR)
@@ -270,7 +270,7 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f *.o *.so *.so.* *.a *.orig .*.swp
+	-rm -f *.o *.so *.so.* *.a *.orig .*.swp *~
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples

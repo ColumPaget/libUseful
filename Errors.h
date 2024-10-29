@@ -54,6 +54,16 @@ Errors are injected into the list with RaiseError like this:
 
 	ListUsefulSetValue("Error:notty","Y")
 
+	If the ERRFLAG_SYSLOG flag is passed, like this:
+
+	RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ServiceConnect", "host=%s port=%d",Host, Port);
+
+	Then the error will be logged to the system logger. Alternatively if the LibUseful value 'Error:Syslog' is set, like this:
+
+	ListUsefulSetValue("Error:Syslog","Y")
+
+        then all error and debug messages are sent to the system logger via syslog.
+
 	If the flag ERRFLAG_DEBUG is set then RaiseError won't print anything out by default. So this line:
 
 	RaiseError(ERRFLAG_DEBUG, "ServiceConnect", "host=%s port=%d",Host, Port);
@@ -70,7 +80,6 @@ Errors are injected into the list with RaiseError like this:
 	If the libUseful internal value 'Error:Silent' is set true/yes/y with ListUsefulSetValue then RaiseError never
   prints errors to stderr, regardless of any other config.
 
-	If  the value 'Error:Syslog' is set true/yes/y then error and debug messages are sent to the system logger via syslog
 */
 
 
@@ -90,6 +99,7 @@ extern "C" {
 #endif
 
 
+//call 'RaiseError' to add an error into the error sytem
 #define RaiseError(flags, where, fmt, ...) InternalRaiseError(flags, where, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
 //clears the list of errors

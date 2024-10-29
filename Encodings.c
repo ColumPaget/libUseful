@@ -14,8 +14,8 @@ char *EncodeQuoted(char *Return, const char *Input, int len, char QuoteChar)
     {
         if ( (*ptr < 32) || (*ptr > 127) || (*ptr == '=') )
         {
-                snprintf(Hex, 3, "%02x", (*ptr) & 0xFF);
-								Return=MCatStr(Return, "=", Hex, NULL); 
+            snprintf(Hex, 3, "%02x", (*ptr) & 0xFF);
+            Return=MCatStr(Return, "=", Hex, NULL);
         }
         else Return=AddCharToStr(Return, *ptr);
     }
@@ -43,16 +43,16 @@ int DecodeQuoted(char **Return, const char *Text, char QuoteChar)
             {
                 strncpy(Hex, ptr, 2);
                 *Return=AddCharToBuffer(*Return, len, strtol(Hex, NULL, 16));
-								len++;
+                len++;
                 ptr++;
                 if (*ptr=='\0') break;
             }
         }
-        else 
-				{
-					*Return=AddCharToBuffer(*Return, len, *ptr);
-					len++;
-				}
+        else
+        {
+            *Return=AddCharToBuffer(*Return, len, *ptr);
+            len++;
+        }
     }
 
     return(len);
@@ -63,18 +63,18 @@ int DecodeQuoted(char **Return, const char *Text, char QuoteChar)
 char *EncodeYenc(char *Return, const char *Input, int len, char QuoteChar)
 {
     const char *ptr;
-		char echar;
+    char echar;
 
     for (ptr=Input; ptr < (Input + len); ptr++)
     {
-				//shift the character up some bytes, because the null byte is a common occurance
-				//in binary files, and we don't want to escape it, increasing the size of the 
-				//file. We'll escape some less common byte in it's place
-				echar = (*ptr + 42) % 256; //of course it's 42
+        //shift the character up some bytes, because the null byte is a common occurance
+        //in binary files, and we don't want to escape it, increasing the size of the
+        //file. We'll escape some less common byte in it's place
+        echar = (*ptr + 42) % 256; //of course it's 42
         if ( (echar==0) || (echar=='\r') || (echar=='\n') || (echar==QuoteChar))
         {
-								Return=AddCharToStr(Return, QuoteChar); 
-        				Return=AddCharToStr(Return, (echar + 62) % 256);
+            Return=AddCharToStr(Return, QuoteChar);
+            Return=AddCharToStr(Return, (echar + 62) % 256);
         }
         else Return=AddCharToStr(Return, echar);
     }
@@ -94,12 +94,12 @@ int DecodeYenc(char **Return, const char *Text, char QuoteChar)
         {
             ptr++;
             if (*ptr=='\0') break;
-						echar=*ptr - 62;
+            echar=*ptr - 62;
         }
         else echar=*ptr;
-				
-				*Return=AddCharToBuffer(*Return, len, echar - 42);
-				len++;
+
+        *Return=AddCharToBuffer(*Return, len, echar - 42);
+        len++;
     }
 
     return(len);
@@ -231,11 +231,11 @@ int EncodingParse(const char *Str)
             else if (strcasecmp(Str,"xxenc")==0) Encode=ENCODE_XXENC;
             break;
 
-				case 'y':
-				case 'Y':
+        case 'y':
+        case 'Y':
             if (strcasecmp(Str,"yenc")==0) Encode=ENCODE_YENCODE;
             else if (strcasecmp(Str,"yencode")==0) Encode=ENCODE_YENCODE;
-				break;
+            break;
 
         case 'z':
         case 'Z':
@@ -309,12 +309,12 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
     switch (Encoding)
     {
     case ENCODE_QUOTED_MIME:
-				RetStr=EncodeQuoted(RetStr, Bytes, len, '=');
-				break;
+        RetStr=EncodeQuoted(RetStr, Bytes, len, '=');
+        break;
 
     case ENCODE_YENCODE:
-				RetStr=EncodeYenc(RetStr, Bytes, len, '=');
-				break;
+        RetStr=EncodeYenc(RetStr, Bytes, len, '=');
+        break;
 
     case ENCODE_BASE32:
         RetStr=base32encode(RetStr, Bytes, len, BASE32_RFC4648_CHARS, '=');

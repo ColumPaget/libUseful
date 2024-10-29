@@ -1,3 +1,9 @@
+v5.30 (2024-10-29)
+  * Fix crash if TerminalTextAlign has NULL for the Terminal
+	* Added HttpGet and HttpPost functions
+  * Improvements to httpserver authentication. 
+  * Add 'extra' field to passwords file to allow storing data against a user.
+
 v5.29 (2024-10-29)
   * much more seccomp work
   * add 'data' option to pty config (PtyParseConfig) so if a pipe or pty is going to be used for raw data transfer, use FLUSH_ALWAYS not FLUSH_LINE

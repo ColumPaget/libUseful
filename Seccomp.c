@@ -11,9 +11,9 @@
 #include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/mman.h>
-#include <asm/termbits.h> 
-#include <asm/ioctls.h> 
-#include <asm/ioctl.h> 
+#include <asm/termbits.h>
+#include <asm/ioctls.h>
+#include <asm/ioctl.h>
 #include <stddef.h>  //for offsetof macro
 
 static int InstructionCount=0;
@@ -649,8 +649,8 @@ int SeccompFilterAddSyscall(struct sock_filter **Filt, int SysCall, const char *
                 break;
             }
         }
-	else RaiseError(0, "SeccompFilterAddSyscall","ERROR: BadArgument %d to syscall %d", argcount, SysCall);
-	argcount++;
+        else RaiseError(0, "SeccompFilterAddSyscall","ERROR: BadArgument %d to syscall %d", argcount, SysCall);
+        argcount++;
 
         ptr=GetArg(ptr, &pos, &type, &value);
     }
@@ -680,7 +680,7 @@ static int SeccompCommit(struct sock_filter **Filt, int Action)
 
     if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &SeccompProg))
     {
-	RaiseError(ERRFLAG_ERRNO, "SeccompCommit","ERROR: prctl(PR_SET_SECCOMP) failed ");
+        RaiseError(ERRFLAG_ERRNO, "SeccompCommit","ERROR: prctl(PR_SET_SECCOMP) failed ");
         return(FALSE);
     }
 
@@ -706,15 +706,15 @@ static int LookupSocketFamily(const char *name)
 //equals something, or "2b" to check a bit within the second argument
 static int SeccompAddCheck(char **Args, const char *Fmt, int Value)
 {
-int ArgInt;
-char *Tempstr=NULL;
+    int ArgInt;
+    char *Tempstr=NULL;
 
-                ArgInt=Value;
-                Tempstr=FormatStr(Tempstr, Fmt, ArgInt);
-                *Args=MCatStr(*Args, Tempstr, " ", NULL);
+    ArgInt=Value;
+    Tempstr=FormatStr(Tempstr, Fmt, ArgInt);
+    *Args=MCatStr(*Args, Tempstr, " ", NULL);
 
-Destroy(Tempstr);
-return(ArgInt);
+    Destroy(Tempstr);
+    return(ArgInt);
 }
 
 static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
@@ -801,11 +801,11 @@ static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
             if (strcasecmp(Name, "create")==0) SeccompAddCheck(Args, "1b%d", O_CREAT);
             if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "1b%d", O_CREAT | O_WRONLY | O_RDWR | O_APPEND);
             if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "2b%d", S_ISUID | S_ISGID);
-            if (strcasecmp(Name, "exec")==0) 
-						{
-							SeccompAddCheck(Args, "1b%d", O_CREAT);
-							SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-						}
+            if (strcasecmp(Name, "exec")==0)
+            {
+                SeccompAddCheck(Args, "1b%d", O_CREAT);
+                SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            }
             break;
 #endif
 
@@ -814,11 +814,11 @@ static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
             if (strcasecmp(Name, "create")==0) SeccompAddCheck(Args, "1b%d", O_CREAT);
             if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "1b%d", O_CREAT | O_WRONLY | O_RDWR | O_APPEND);
             if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "2b%d", S_ISUID | S_ISGID);
-            if (strcasecmp(Name, "exec")==0) 
-						{
-							SeccompAddCheck(Args, "1b%d", O_CREAT);
-							SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-						}
+            if (strcasecmp(Name, "exec")==0)
+            {
+                SeccompAddCheck(Args, "1b%d", O_CREAT);
+                SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            }
             break;
 #endif
 
@@ -828,11 +828,11 @@ static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
             if (strcasecmp(Name, "create")==0) SeccompAddCheck(Args, "2b%d", O_CREAT);
             if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "2b%d", O_CREAT | O_WRONLY | O_RDWR | O_APPEND);
             if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "3b%d", S_ISUID | S_ISGID);
-            if (strcasecmp(Name, "exec")==0) 
-						{
-							SeccompAddCheck(Args, "2b%d", O_CREAT);
-							SeccompAddCheck(Args, "3b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-						}
+            if (strcasecmp(Name, "exec")==0)
+            {
+                SeccompAddCheck(Args, "2b%d", O_CREAT);
+                SeccompAddCheck(Args, "3b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            }
             break;
 #endif
 
@@ -841,11 +841,11 @@ static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
             if (strcasecmp(Name, "create")==0) SeccompAddCheck(Args, "2b%d", O_CREAT);
             if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "2b%d", O_CREAT | O_WRONLY | O_RDWR | O_APPEND);
             if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "3b%d", S_ISUID | S_ISGID);
-            if (strcasecmp(Name, "exec")==0) 
-						{
-							SeccompAddCheck(Args, "2b%d", O_CREAT);
-							SeccompAddCheck(Args, "3b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-						}
+            if (strcasecmp(Name, "exec")==0)
+            {
+                SeccompAddCheck(Args, "2b%d", O_CREAT);
+                SeccompAddCheck(Args, "3b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            }
             break;
 #endif
 

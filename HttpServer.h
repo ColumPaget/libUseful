@@ -79,6 +79,9 @@ void HTTPServerParseClientHeaders(STREAM *S);
 void HTTPServerSendHeaders(STREAM *S, int ResponseCode, const char *ResponseText, const char *Headers);
 void HTTPServerAccept(STREAM *S);
 
+int HTTPServerSendResponse(STREAM *S, const char *ResponseCode, const char *ResponseReason, const char *Content, int Length, const char *ContentType, const char *Headers);
+int HTTPServerSendDocument(STREAM *S, const char *Content, int Length, const char *ContentType, const char *Headers);
+int HTTPServerSendStatus(STREAM *S, const char *ErrorCode, const char *ErrorReason);
 int HTTPServerSendDocument(STREAM *S, const char *Bytes, int Length, const char *ContentType, const char *Headers);
 int HTTPServerSendFile(STREAM *S, const char *Path, const char *ContentType, const char *Headers);
 

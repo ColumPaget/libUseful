@@ -354,9 +354,9 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 
     if (S)
     {
-	//if we are doing to be sending raw data to the process, then flush always
+        //if we are doing to be sending raw data to the process, then flush always
         //otherwise we expect lines of text and flush on a line terminator
-	if (Flags & TTYFLAG_DATA) STREAMSetFlushType(S,FLUSH_ALWAYS,0,0);
+        if (Flags & TTYFLAG_DATA) STREAMSetFlushType(S,FLUSH_ALWAYS,0,0);
         else STREAMSetFlushType(S,FLUSH_LINE,0,0);
 
         Tempstr=FormatStr(Tempstr,"%d",pid);

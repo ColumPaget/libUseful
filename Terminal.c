@@ -395,6 +395,12 @@ const char *TerminalAlignText(const char *Text, char **RetStr, int Flags, STREAM
     int pos=0, cols, rows, len, i;
     const char *ptr;
 
+    if (! Term)
+    {
+        *RetStr=CopyStr(*RetStr, Text);
+        return(Text+StrLen(Text));
+    }
+
     TerminalGeometry(Term, &cols, &rows);
     len=TerminalStrLen(Text);
 
