@@ -5,12 +5,13 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 // These functions relate to a password file that stores passwords
 // in the form:
-// <user>:<pass type>:<salt>:<credential>
+// <user>:<pass type>:<salt>:<credential>:<extra>
 //
 // if 'pass type' is blank or is 'plain' then the password is stored as-is in plaintext
 // otherwise 'pass type' will be a hash type, like md5, sha256 etc.
 // For hash types a 20 character salt is generated and prepended to the password,
 // and the resulting string is then hashed before being stored
+// 'extra' is populated with any extra data for/about this user
 
 
 #ifndef LIBUSEFUL_PASSWORD_FILE_H

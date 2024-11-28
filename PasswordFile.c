@@ -136,6 +136,9 @@ int PasswordFileCheck(const char *Path, const char *User, const char *Password, 
     const char *ptr;
     int result=FALSE;
 
+		if (! StrValid(Path)) return(FALSE);
+		if (! StrValid(User)) return(FALSE);
+
     F=STREAMOpen(Path, "r");
     if (F)
     {
@@ -159,7 +162,7 @@ int PasswordFileCheck(const char *Path, const char *User, const char *Password, 
 
         STREAMClose(F);
     }
-
+    else RaiseError(ERRFLAG_DEBUG, "PasswordFileCheck", "can't open %s", Path);
     Destroy(Tempstr);
 
     return(result);

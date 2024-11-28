@@ -13,7 +13,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 Support for very basic in-app http servers.
 Usage is:
 
-Serv=STREAMServerNew("http:127.0.0.1:8080");
+Serv=STREAMServerNew("http:127.0.0.1:8080", "");
 S=STREAMServerAccept(Serv);
 if (S)
 {
@@ -59,7 +59,7 @@ while (1)
 {
 STREAMSelect(Connections, NULL);
 S=STREAMServerAccept(Serv);
-if (! STREAMAuth(S)) HTTPServerSendHeaders(S, 401, "Authentication Required", "WWW-Authenticate=Basic");
+if (! STREAMIsAuth(S)) HTTPServerSendHeaders(S, 401, "Authentication Required", "WWW-Authenticate=Basic");
 else
 {
 

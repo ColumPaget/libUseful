@@ -41,9 +41,12 @@ static int STREAMBasicAuthPasswordFile(const char *Path, STREAM *S)
     const char *ptr;
     int AuthResult=FALSE;
 
+		if (StrValid(Path))
+		{
     User=CopyStr(User, STREAMGetValue(S, "AUTH:User"));
     Password=CopyStr(Password, STREAMGetValue(S, "AUTH:Password"));
     AuthResult=PasswordFileCheck(Path, User, Password, NULL);
+		}
 
     Destroy(User);
     Destroy(Password);
@@ -108,7 +111,11 @@ int STREAMAuth(STREAM *S)
     ptr=STREAMGetValue(S, "AUTH:Types");
     if (! StrValid(ptr)) return(TRUE);
 
-    return(STREAMAuthProcess(S, ptr));
+    if (STREAMAuthProcess(S, ptr))
+		{
+      S->Flags |= LU_SS_AUTH;
+			return(TRUE);
+		}
 
     return(FALSE);
 }

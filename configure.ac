@@ -6,6 +6,17 @@ AC_PROG_MAKE_SET
 AC_PROG_EGREP
 AC_SYS_LARGEFILE
 
+m4_ifdef([AC_PROG_AR], [AC_PROG_AR])
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+if test "$AR" = ""
+then
+AR=ar
+fi
+AC_SUBST(AR)
+
+echo "CC=$CC AR=$AR"
+
+
 cf_have_libssl=no
 cf_have_libcrypto=no
 cf_have_libz=no
@@ -15,6 +26,9 @@ cf_use_sendfile=no
 cf_use_xattr=no
 
 cf_use_hashopenssl=auto
+
+
+
 
 AC_ARG_ENABLE(wall, [  --enable-wall               use -Wall to get maximum compile warnings], cf_use_wall=$enableval, cf_use_wall=no )
 if test "$cf_use_wall" = "yes"
