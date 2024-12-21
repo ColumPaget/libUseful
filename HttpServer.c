@@ -3,7 +3,7 @@
 #include "String.h"
 #include "ContentType.h"
 #include "StreamAuth.h"
-
+#include "HttpUtil.h"
 
 static void HTTPServerSetValue(STREAM *S, const char *Name, const char *Value)
 {

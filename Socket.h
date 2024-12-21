@@ -166,9 +166,12 @@ STREAM *STREAMServerAccept(STREAM *Serv);
 //you don't want that particular info
 int GetSockDetails(int fd, char **LocalAddress, int *LocalPort, char **RemoteAddress, int *RemotePort);
 
-//if using SOCK_TPROXY 'tcp transparent proxying' then we will receive connections that are really intended for elsewhere.
-//This function allows looking up what the original intended destination was
+//if using SOCK_TPROXY 'tcp transparent proxying' then we will receive connections that are really intended 
+//for elsewhere. This function allows looking up what the original intended destination was
 int GetSockDestination(int sock, char **Host, int *Port);
+
+//STREAM based version of the above function
+#define STREAMGetDestination(S,H,P) (GetSockDestination((S)->in_fd, (H), (P)))
 
 //returns TRUE if a socket is connected, FALSE otherwise
 int IsSockConnected(int sock);
@@ -206,6 +209,8 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config);
 
 //Send a UDP dgram (or maybe unix socket dgram) 
 int STREAMSendDgram(STREAM *S, const char *Host, int Port, char *Data, int len);
+
+
 
 
 //these are internal functions that you won't usually be concerned with

@@ -143,6 +143,115 @@ time_t ParseDuration(const char *Dur)
 }
 
 
+
+const char *FormatDuration(const char *Fmt, time_t Duration)
+{
+		char *Tempstr=NULL;
+		static char *RetStr=NULL;
+		unsigned long weeks, days, hours, mins, secs;
+		const char *ptr;
+		int len=0;
+
+
+		if (strstr(Fmt, "%w"))
+		{
+		weeks=Duration / (DAYSECS * 7);
+		if (weeks > 0) Duration -= (weeks * DAYSECS * 7);
+		}
+	
+		if (strstr(Fmt, "%d"))
+		{
+		days=Duration / DAYSECS;
+		if (days > 0) Duration -= (days * DAYSECS);
+		}
+
+		if (strstr(Fmt, "%h"))
+		{
+		hours=Duration / 3600;
+		if (hours > 0) Duration -= (hours * 3600);
+		}
+
+		if (strstr(Fmt, "%m"))
+		{
+		mins=Duration / 60;
+		if (mins > 0) Duration -= (mins * 60);
+		}
+
+		secs=Duration;
+
+		for (ptr=Fmt; *ptr !='\0'; ptr++)
+		{
+			if (*ptr == '%')
+			{
+				ptr++;
+
+				//handle problematic case where % is the last char in the string
+				if (*ptr == '\0')
+				{
+				   RetStr=AddCharToBuffer(RetStr, len, '%');
+					 len++;
+					break;
+				}
+
+				switch (*ptr)
+				{
+					case 'w':
+						Tempstr=FormatStr(Tempstr, "%lu", weeks);
+						RetStr=CatStr(RetStr, Tempstr);						
+						len+=StrLen(Tempstr);
+					break;
+
+					case 'd':
+						Tempstr=FormatStr(Tempstr, "%lu", days);
+						RetStr=CatStr(RetStr, Tempstr);						
+						len+=StrLen(Tempstr);
+					break;
+
+					case 'h':
+						Tempstr=FormatStr(Tempstr, "%lu", hours);
+						RetStr=CatStr(RetStr, Tempstr);						
+						len+=StrLen(Tempstr);
+					break;
+
+					case 'm':
+						Tempstr=FormatStr(Tempstr, "%lu", mins);
+						RetStr=CatStr(RetStr, Tempstr);						
+						len+=StrLen(Tempstr);
+					break;
+
+					case 's':
+						Tempstr=FormatStr(Tempstr, "%lu", secs);
+						RetStr=CatStr(RetStr, Tempstr);						
+						len+=StrLen(Tempstr);
+					break;
+
+					case '%':
+				   RetStr=AddCharToBuffer(RetStr, len, '%');
+					 len++;
+					break;
+
+					default:
+				   RetStr=AddCharToBuffer(RetStr, len, '%');
+					 len++;
+				   RetStr=AddCharToBuffer(RetStr, len, *ptr);
+					 len++;
+					break;
+				}
+			}
+			else 
+			{
+				RetStr=AddCharToBuffer(RetStr, len, *ptr);
+				len++;
+			}
+		}
+
+		Destroy(Tempstr);
+
+    return(RetStr);
+}
+
+
+
 long TimezoneOffset(const char *TimeZone)
 {
     long Secs=0;

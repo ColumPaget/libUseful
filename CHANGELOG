@@ -1,3 +1,8 @@
+v5.31 (2024-12-20)
+  * Added 'FormatDuration' function
+  * Added STREAMGetDestination function
+  * Fixes for udp and bcast socket types
+
 v5.30 (2024-10-29)
   * Fix crash if TerminalTextAlign has NULL for the Terminal
 	* Added HttpGet and HttpPost functions

@@ -21,6 +21,9 @@ the cache will still think the string has it's old length and functions like
 CatStr will misbehave, as characters will be added *after* the terminating 
 null character, and so lost. This you must use the 'StrTrunc', 'StrTruncChar'
 and 'StrRTruncChar' functions to truncate strings
+
+Although, since the above was written, modern CPUs that have a strlen opcode
+are faster, but the difference is close enough to be hard to detect. 
 *****************************************************************************/
 
 #include <stdarg.h>
@@ -29,7 +32,7 @@ and 'StrRTruncChar' functions to truncate strings
 #include "GeneralFunctions.h"
 #include "StrLenCache.h"
 
-//UsedW with 'MatchTokenFromList'
+//Used with 'MatchTokenFromList'
 #define MATCH_TOKEN_PART 1
 #define MATCH_TOKEN_CASE 2
 

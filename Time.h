@@ -42,6 +42,12 @@ time_t DateStrToSecs(const char *DateFormat, const char *Str, const char *TimeZo
 //Convert a string describing a duration to seconds. String in the form "1d 5h 30m" where m=minutes h=hours d=days w=weeks y=year Y=year (year always 365 days)
 time_t ParseDuration(const char *Dur);
 
+//format a string using the substitutions %w %d %h %m %s for weeks, days, hours, minutes and seconds
+//if any of the substututions are missing, then their value is carried over to the next highest substitution
+//so if there's no '%d', then the 'days' part will be counted in '%h' (hours) 
+//or if that is missing in '%m' (mins) or '%s' (seconds) 
+const char *FormatDuration(const char *Fmt, time_t Duration);
+
 //convert Time from timezone 'SrcZone' to 'DstZone'
 char *TimeZoneConvert(char *RetStr, const char *Time, const char *SrcZone, const char *DstZone);
 

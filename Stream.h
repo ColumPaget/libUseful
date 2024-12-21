@@ -121,6 +121,8 @@ keepalive=<y/n>     turn on/off socket keepalives
 timeout=<centisecs> connect/read timeout for socket
 
 
+UDP sockets might not work quite as you'd expect: The socket binds to a random port at the local end, and expects to send to the supplied port, rather the same way tcp works. If you want to bind a UDP socket to a specific local port, and receive and send messages from that port from/to other hosts, then you need to use STREAMServerNew from Server.h
+
 
 For SSH streams config argument is a string of characters each of which represents an option 
 that modifies stream behavior, as with 'fopen'. By default SSH streams are treated as a 

@@ -1506,7 +1506,7 @@ static int STREAMReadCharsToBuffer_UDP(STREAM *S, char *Buffer, int Len)
     //if select said there was stuff to read, but there wasn't, then the socket must be closed
     //sockets can return '0' when closed, so we normalize this to -1 here
     if (bytes_read < 1) bytes_read=-1;
-    STREAMSetValue(S, "Peer", Peer);
+    STREAMSetValue(S, "PeerIP", Peer);
 
     Destroy(Peer);
 

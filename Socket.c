@@ -574,7 +574,8 @@ int UDPRecv(int sock,  char *Buffer, int len, char **Addr, int *Port)
         Tempstr=SetStrLen(Tempstr,NI_MAXSERV);
         getnameinfo((struct sockaddr *) &sa, salen, *Addr, NI_MAXHOST, Tempstr, NI_MAXSERV, NI_NUMERICHOST|NI_NUMERICSERV);
 
-        *Port=atoi(Tempstr);
+				//this argument is optional
+        if (Port) *Port=atoi(Tempstr);
     }
 
     DestroyString(Tempstr);

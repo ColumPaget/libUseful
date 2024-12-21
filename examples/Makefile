@@ -37,6 +37,8 @@ all:
 	gcc -oencrypt.exe encrypt.c $(LIBS)
 	gcc -odecrypt.exe decrypt.c $(LIBS)
 	gcc -opbkdf2.exe pbkdf2.c $(LIBS)
+	gcc -ofmtduration.exe fmtduration.c $(LIBS)
+
 seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)
 
