@@ -24,3 +24,22 @@ int InStringList(const char *Item, const char *List, const char *Sep)
     return(RetVal);
 }
 
+
+char *StringListGet(char *RetStr, const char *List, const char *Sep, int Pos)
+{
+    const char *ptr;
+    char *Token=NULL;
+    int count=0;
+
+    RetStr=CopyStr(RetStr, "");
+    ptr=GetToken(List, Sep, &Token, 0);
+    while (ptr)
+    {
+        if (count==Pos) RetStr=CopyStr(RetStr, Token);
+        count++;
+        ptr=GetToken(ptr, Sep, &Token, 0);
+    }
+
+    Destroy(Token);
+    return(RetStr);
+}

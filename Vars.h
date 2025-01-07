@@ -59,6 +59,12 @@ void ClearVars(ListNode *Vars);
 //copy variables from one list to another
 void CopyVars(ListNode *Dest, ListNode *Source);
 
+//set a var to a numeric value
+void SetNumericVar(ListNode *Vars, const char *VarName, int Value);
+
+//add a value to a numeric var
+int AddToNumericVar(ListNode *Vars, const char *VarName, int Add);
+
 //given a format string containing vars in the form $(VarName) and a list of variables, substitute the $(VarName) entries
 //with the approriate named variable
 //'Flags' is a bitmask of the SUBS_ flags:

@@ -1,6 +1,6 @@
 #include "TerminalWidget.h"
 #include "TerminalTheme.h"
-
+#include "Terminal.h"
 
 void TerminalWidgetSetOptions(TERMWIDGET *TW, const char *Choices)
 {
@@ -103,6 +103,19 @@ void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config)
 
     Destroy(Name);
     Destroy(Value);
+}
+
+
+int TerminalWidgetPutLine(TERMWIDGET *TW, int line, const char *Text)
+{
+    if (TW->x > 0) TerminalCommand(TERM_CURSOR_MOVE, TW->x, TW->y + line, TW->Term);
+    else STREAMWriteLine("\r\n", TW->Term);
+
+    TerminalPutStr(Text, TW->Term);
+
+    line++;
+
+    return(line);
 }
 
 

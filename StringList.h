@@ -21,6 +21,7 @@ extern "C" {
 
 
 int InStringList(const char *Item, const char *List, const char *Sep);
+char *StringListGet(char *RetStr, const char *List, const char *Sep, int Pos);
 
 
 #ifdef __cplusplus

@@ -140,11 +140,11 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
 
     switch (*Proto)
     {
-		case 'b':
-			if (strcasecmp(Proto,"bcast")==0) Flags |= SOCK_BROADCAST;
-      fd=IPServerNew(SOCK_DGRAM, Host, Port, Flags);
-      Type=STREAM_TYPE_UDP;
-		break;
+    case 'b':
+        if (strcasecmp(Proto,"bcast")==0) Flags |= SOCK_BROADCAST;
+        fd=IPServerNew(SOCK_DGRAM, Host, Port, Flags);
+        Type=STREAM_TYPE_UDP;
+        break;
 
     case 'h':
         if (strcmp(Proto,"http")==0)

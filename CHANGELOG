@@ -1,3 +1,11 @@
+v5.32 (2025-01-07)
+  * Added 'SetNumericVar' and 'AddToNumericVar' functions in Vars.c
+  * Added 'IsLeapYear' function in Time.c
+  * Added 'GetDaysInMonth' function in Time.c
+  * Added 'CalendarFormatCSV' function in Time.c
+  * Added TerminalCalendar widget
+  * Fix issue in PasswordFile.c where 'Extra' data can get appended to password when doing password check
+
 v5.31 (2024-12-20)
   * Added 'FormatDuration' function
   * Added STREAMGetDestination function

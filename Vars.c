@@ -435,3 +435,28 @@ int FindVarNamesInString(const char *Data, ListNode *Vars)
     return(ListSize(Vars));
 }
 
+
+
+void SetNumericVar(ListNode *Vars, const char *VarName, int Value)
+{
+    char *Tempstr=NULL;
+
+    Tempstr=FormatStr(Tempstr, "%d", Value);
+    SetVar(Vars, VarName, Tempstr);
+
+    Destroy(Tempstr);
+}
+
+int AddToNumericVar(ListNode *Vars, const char *VarName, int Add)
+{
+    const char *ptr;
+    int val=0;
+
+    ptr=GetVar(Vars, VarName);
+    if (ptr) val=atoi(ptr);
+    val += Add;
+
+    SetNumericVar(Vars, VarName, val);
+
+    return(val);
+}

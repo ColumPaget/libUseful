@@ -11,6 +11,7 @@ all:
 	gcc -oTermMenu.exe TermMenu.c $(LIBS)
 	gcc -oTermChoice.exe TermChoice.c $(LIBS)
 	gcc -oTermProgress.exe TermProgress.c $(LIBS)
+	gcc -oTermCalendar.exe TermCalendar.c $(LIBS)
 	gcc -oVars.exe Vars.c $(LIBS)
 	gcc -oParseRSS.exe ParseRSS.c $(LIBS)
 	gcc -oFileCopy.exe FileCopy.c $(LIBS)
@@ -38,6 +39,7 @@ all:
 	gcc -odecrypt.exe decrypt.c $(LIBS)
 	gcc -opbkdf2.exe pbkdf2.c $(LIBS)
 	gcc -ofmtduration.exe fmtduration.c $(LIBS)
+	gcc -ocalendar.exe calendar.c $(LIBS)
 
 seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)

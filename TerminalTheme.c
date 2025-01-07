@@ -24,6 +24,19 @@ ListNode *TerminalThemeInit()
     SetVar(TermTheme, "Choice:CursorLeft", "[");
     SetVar(TermTheme, "Choice:CursorRight", "]");
 
+
+    SetVar(TermTheme, "Calendar:DayHeaders", "Sun,Mon,Tue,Wed,Thu,Fri,Sat");
+    SetVar(TermTheme, "Calendar:MonthNames", "January,Febuary,March,April,May,June,July,August,September,October,November,December");
+    SetVar(TermTheme, "Calendar:CursorLeft", "[");
+    SetVar(TermTheme, "Calendar:CursorRight", "]");
+    SetVar(TermTheme, "Calendar:TitleAttribs", "~B~w");
+    SetVar(TermTheme, "Calendar:TitleMonthAttribs", "~y");
+    SetVar(TermTheme, "Calendar:OutsideMonthAttribs", "~b");
+    SetVar(TermTheme, "Calendar:TodayAttribs", "~e");
+
+
+
+
     ptr=getenv("LIBUSEFUL_TERMINAL_THEME");
     ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     while (ptr)
@@ -85,4 +98,17 @@ void TerminalThemeApply(TERMWIDGET *TW, const char *Type)
         SetVar(TW->Options, "progress", TerminalThemeGet(Type, "progress"));
         SetVar(TW->Options, "remain", TerminalThemeGet(Type, "remain"));
     }
+
+    if (strcasecmp(Type, "calendar")==0)
+    {
+        SetVar(TW->Options, "TitleAttribs", TerminalThemeGet(Type, "TitleAttribs"));
+        SetVar(TW->Options, "TitleMonthAttribs", TerminalThemeGet(Type, "TitleMonthAttribs"));
+        SetVar(TW->Options, "TitleYearAttribs", TerminalThemeGet(Type, "TitleYearAttribs"));
+        SetVar(TW->Options, "OutsideMonthAttribs", TerminalThemeGet(Type, "OutsideMonthAttribs"));
+        SetVar(TW->Options, "InsideMonthAttribs", TerminalThemeGet(Type, "InsideMonthAttribs"));
+        SetVar(TW->Options, "TodayAttribs", TerminalThemeGet(Type, "TodayAttribs"));
+        SetVar(TW->Options, "DayHeaders", TerminalThemeGet(Type, "DayHeaders"));
+        SetVar(TW->Options, "MonthNames", TerminalThemeGet(Type, "MonthNames"));
+    }
+
 }

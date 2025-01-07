@@ -100,7 +100,7 @@ int PasswordFileAppend(const char *Path, const char *PassType, const char *User,
 
 static int PasswordFileMatchItem(const char *Data, const char *User, const char *Password)
 {
-    char *Token=NULL, *Salt=NULL, *Compare=NULL, *Tempstr=NULL;
+    char *Tempstr=NULL, *Token=NULL, *Salt=NULL, *ProvidedCred=NULL,  *StoredCred=NULL;
     const char *ptr;
     int result=FALSE;
 
@@ -109,19 +109,21 @@ static int PasswordFileMatchItem(const char *Data, const char *User, const char 
     {
         ptr=GetToken(ptr, ":", &Token, 0);
         ptr=GetToken(ptr, ":", &Salt, 0);
+        ptr=GetToken(ptr, ":", &StoredCred, 0);
 
-        if ( (! StrValid(Token)) || (strcmp(Token, "plain")==0) ) Compare=CopyStr(Compare, Password);
+        if ( (! StrValid(Token)) || (strcmp(Token, "plain")==0) ) ProvidedCred=CopyStr(ProvidedCred, Password);
         else
         {
             Tempstr=MCopyStr(Tempstr, Salt, Password, NULL);
-            HashBytes(&Compare, Token, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
+            HashBytes(&ProvidedCred, Token, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
         }
 
-        if (strcmp(Compare, ptr) == 0) result=TRUE;
+        if (strcmp(ProvidedCred, StoredCred) == 0) result=TRUE;
     }
 
     Destroy(Tempstr);
-    Destroy(Compare);
+    Destroy(StoredCred);
+    Destroy(ProvidedCred);
     Destroy(Token);
     Destroy(Salt);
 
@@ -136,8 +138,8 @@ int PasswordFileCheck(const char *Path, const char *User, const char *Password, 
     const char *ptr;
     int result=FALSE;
 
-		if (! StrValid(Path)) return(FALSE);
-		if (! StrValid(User)) return(FALSE);
+    if (! StrValid(Path)) return(FALSE);
+    if (! StrValid(User)) return(FALSE);
 
     F=STREAMOpen(Path, "r");
     if (F)

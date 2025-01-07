@@ -14,6 +14,17 @@ static time_t LU_CachedTime=0;
 static uint64_t LU_CachedMillisecs=0;
 
 
+int IsLeapYear(unsigned int year)
+{
+    if ((year % 4) != 0) return(FALSE);
+
+    if ((year % 400) == 0) return(TRUE);
+    if ((year % 100) == 0) return(FALSE);
+
+    return(TRUE);
+}
+
+
 void TimeZoneSet(const char *TimeZone)
 {
     if (StrValid(TimeZone))
@@ -146,106 +157,106 @@ time_t ParseDuration(const char *Dur)
 
 const char *FormatDuration(const char *Fmt, time_t Duration)
 {
-		char *Tempstr=NULL;
-		static char *RetStr=NULL;
-		unsigned long weeks, days, hours, mins, secs;
-		const char *ptr;
-		int len=0;
+    char *Tempstr=NULL;
+    static char *RetStr=NULL;
+    unsigned long weeks, days, hours, mins, secs;
+    const char *ptr;
+    int len=0;
 
 
-		if (strstr(Fmt, "%w"))
-		{
-		weeks=Duration / (DAYSECS * 7);
-		if (weeks > 0) Duration -= (weeks * DAYSECS * 7);
-		}
-	
-		if (strstr(Fmt, "%d"))
-		{
-		days=Duration / DAYSECS;
-		if (days > 0) Duration -= (days * DAYSECS);
-		}
+    if (strstr(Fmt, "%w"))
+    {
+        weeks=Duration / (DAYSECS * 7);
+        if (weeks > 0) Duration -= (weeks * DAYSECS * 7);
+    }
 
-		if (strstr(Fmt, "%h"))
-		{
-		hours=Duration / 3600;
-		if (hours > 0) Duration -= (hours * 3600);
-		}
+    if (strstr(Fmt, "%d"))
+    {
+        days=Duration / DAYSECS;
+        if (days > 0) Duration -= (days * DAYSECS);
+    }
 
-		if (strstr(Fmt, "%m"))
-		{
-		mins=Duration / 60;
-		if (mins > 0) Duration -= (mins * 60);
-		}
+    if (strstr(Fmt, "%h"))
+    {
+        hours=Duration / 3600;
+        if (hours > 0) Duration -= (hours * 3600);
+    }
 
-		secs=Duration;
+    if (strstr(Fmt, "%m"))
+    {
+        mins=Duration / 60;
+        if (mins > 0) Duration -= (mins * 60);
+    }
 
-		for (ptr=Fmt; *ptr !='\0'; ptr++)
-		{
-			if (*ptr == '%')
-			{
-				ptr++;
+    secs=Duration;
 
-				//handle problematic case where % is the last char in the string
-				if (*ptr == '\0')
-				{
-				   RetStr=AddCharToBuffer(RetStr, len, '%');
-					 len++;
-					break;
-				}
+    for (ptr=Fmt; *ptr !='\0'; ptr++)
+    {
+        if (*ptr == '%')
+        {
+            ptr++;
 
-				switch (*ptr)
-				{
-					case 'w':
-						Tempstr=FormatStr(Tempstr, "%lu", weeks);
-						RetStr=CatStr(RetStr, Tempstr);						
-						len+=StrLen(Tempstr);
-					break;
+            //handle problematic case where % is the last char in the string
+            if (*ptr == '\0')
+            {
+                RetStr=AddCharToBuffer(RetStr, len, '%');
+                len++;
+                break;
+            }
 
-					case 'd':
-						Tempstr=FormatStr(Tempstr, "%lu", days);
-						RetStr=CatStr(RetStr, Tempstr);						
-						len+=StrLen(Tempstr);
-					break;
+            switch (*ptr)
+            {
+            case 'w':
+                Tempstr=FormatStr(Tempstr, "%lu", weeks);
+                RetStr=CatStr(RetStr, Tempstr);
+                len+=StrLen(Tempstr);
+                break;
 
-					case 'h':
-						Tempstr=FormatStr(Tempstr, "%lu", hours);
-						RetStr=CatStr(RetStr, Tempstr);						
-						len+=StrLen(Tempstr);
-					break;
+            case 'd':
+                Tempstr=FormatStr(Tempstr, "%lu", days);
+                RetStr=CatStr(RetStr, Tempstr);
+                len+=StrLen(Tempstr);
+                break;
 
-					case 'm':
-						Tempstr=FormatStr(Tempstr, "%lu", mins);
-						RetStr=CatStr(RetStr, Tempstr);						
-						len+=StrLen(Tempstr);
-					break;
+            case 'h':
+                Tempstr=FormatStr(Tempstr, "%lu", hours);
+                RetStr=CatStr(RetStr, Tempstr);
+                len+=StrLen(Tempstr);
+                break;
 
-					case 's':
-						Tempstr=FormatStr(Tempstr, "%lu", secs);
-						RetStr=CatStr(RetStr, Tempstr);						
-						len+=StrLen(Tempstr);
-					break;
+            case 'm':
+                Tempstr=FormatStr(Tempstr, "%lu", mins);
+                RetStr=CatStr(RetStr, Tempstr);
+                len+=StrLen(Tempstr);
+                break;
 
-					case '%':
-				   RetStr=AddCharToBuffer(RetStr, len, '%');
-					 len++;
-					break;
+            case 's':
+                Tempstr=FormatStr(Tempstr, "%lu", secs);
+                RetStr=CatStr(RetStr, Tempstr);
+                len+=StrLen(Tempstr);
+                break;
 
-					default:
-				   RetStr=AddCharToBuffer(RetStr, len, '%');
-					 len++;
-				   RetStr=AddCharToBuffer(RetStr, len, *ptr);
-					 len++;
-					break;
-				}
-			}
-			else 
-			{
-				RetStr=AddCharToBuffer(RetStr, len, *ptr);
-				len++;
-			}
-		}
+            case '%':
+                RetStr=AddCharToBuffer(RetStr, len, '%');
+                len++;
+                break;
 
-		Destroy(Tempstr);
+            default:
+                RetStr=AddCharToBuffer(RetStr, len, '%');
+                len++;
+                RetStr=AddCharToBuffer(RetStr, len, *ptr);
+                len++;
+                break;
+            }
+        }
+        else
+        {
+            RetStr=AddCharToBuffer(RetStr, len, *ptr);
+            len++;
+        }
+    }
+
+    Destroy(Tempstr);
 
     return(RetStr);
 }
@@ -316,4 +327,84 @@ void SetTimeout(int timeout, SIGNAL_HANDLER_FUNC Handler)
 }
 
 
+int GetDaysInMonth(int Month, int Year)
+{
+    int DaysInMonth[]= {31,28,31,30,31,30,31,31,30,31,30,31};
+    int maxday;
 
+
+    if (Month < 1)
+    {
+        Month=12 - Month;
+        Year--;
+    }
+
+    maxday=DaysInMonth[Month -1];
+    //if it's a leap year, then add an extra day to feburary
+    if ((Month == 2) && IsLeapYear(Year)) maxday++;
+
+    return(maxday);
+}
+
+
+
+char *CalendarFormatCSV(char *RetStr, unsigned int Month, unsigned int Year)
+{
+    struct tm InTM, *OutTM;
+    time_t when;
+    int i, wday, day, maxday;
+    char *Tempstr=NULL;
+
+
+    RetStr=CopyStr(RetStr, "");
+    InTM.tm_sec=0;
+    InTM.tm_min=0;
+    InTM.tm_hour=0;
+    InTM.tm_mday=1;
+    InTM.tm_mon=Month-1;
+    InTM.tm_year=Year - 1900;
+    InTM.tm_isdst=-1;
+
+    when=mktime(&InTM);
+    if (when > -1)
+    {
+        OutTM=localtime(&when);
+
+        //if the calendar starts with days from the previous
+        //month, then add those
+        maxday=GetDaysInMonth(Month-1, Year);
+        for (wday=0; wday < OutTM->tm_wday; wday++)
+        {
+            //+1 because OutTM->tm_wday - wday will never  be zero within this loop
+            Tempstr=FormatStr(Tempstr, "-%2d,", maxday - (OutTM->tm_wday - wday) +1);
+            RetStr=CatStr(RetStr, Tempstr);
+        }
+
+        //now add actual days of current month
+        maxday=GetDaysInMonth(Month, Year);
+        for (day=1; day <= maxday; day++)
+        {
+            Tempstr=FormatStr(Tempstr, "%2d,", day);
+            RetStr=CatStr(RetStr, Tempstr);
+            wday++;
+            if (wday == 7)
+            {
+                RetStr=CatStr(RetStr, "\n");
+                wday=0;
+            }
+        }
+
+        //add next months days to end
+        day=1;
+        while (wday < 7)
+        {
+            Tempstr=FormatStr(Tempstr, "+%2d,", day);
+            RetStr=CatStr(RetStr, Tempstr);
+            day++;
+            wday++;
+        }
+    }
+
+    Destroy(Tempstr);
+    return(RetStr);
+}

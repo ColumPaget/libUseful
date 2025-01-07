@@ -64,6 +64,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "TerminalMenu.h"
 #include "TerminalChoice.h"
 #include "TerminalProgress.h"
+#include "TerminalCalendar.h"
 #include "TerminalBar.h"
 #include "Process.h"
 #include "SecureMem.h"
