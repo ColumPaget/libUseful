@@ -1,3 +1,7 @@
+v5.33 (2025-01-10)
+  * Keep '/' in XML tag data, in order to detect <tag /> as end tags
+  * Added 'XMLIsEndTag' function
+
 v5.32 (2025-01-07)
   * Added 'SetNumericVar' and 'AddToNumericVar' functions in Vars.c
   * Added 'IsLeapYear' function in Time.c

@@ -19,6 +19,9 @@ extern "C" {
 //memory just after the tag. Namespace, TagType and TagData must be pointers to libUseful style strings
 const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char **TagData);
 
+//check both TagType and TagData for indications this is an end tag
+int XMLIsEndTag(const char *TagType, const char *TagData);
+
 //copy Str to RetBuff, applying HTML quoting as we go. RetBuff must be a libUseful style string
 char *HTMLQuote(char *RetBuff, const char *Str);
 
