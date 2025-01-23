@@ -460,3 +460,25 @@ int AddToNumericVar(ListNode *Vars, const char *VarName, int Add)
 
     return(val);
 }
+
+
+ListNode *VarsFromNameValueList(const char *List, const char *PairDelim, const char *NameValueDelim)
+{
+    char *Name=NULL, *Value=NULL;
+    const char *ptr;
+    ListNode *Vars;
+
+    Vars=ListCreate();
+    ptr=GetNameValuePair(List, PairDelim, NameValueDelim, &Name, &Value);
+    while (ptr)
+    {
+        SetVar(Vars, Name, Value);
+        ptr=GetNameValuePair(ptr, PairDelim, NameValueDelim, &Name, &Value);
+    }
+
+    Destroy(Name);
+    Destroy(Value);
+
+    return(Vars);
+}
+

@@ -1141,6 +1141,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     const char *ptr;
     int Port=0;
 
+    if (! StrValid(URL)) return(NULL);
     Proto=CopyStr(Proto,"");
     ptr=STREAMExtractMasterURL(URL);
     ParseURL(ptr, &Proto, &Host, &Token, &User, &Pass, &Path, &Args);

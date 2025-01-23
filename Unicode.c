@@ -9,14 +9,13 @@ void UnicodeSetUTF8(int level)
 }
 
 
-char *StrAddUnicodeChar(char *RetStr, int uchar)
+char *BufferAddUnicodeChar(char *RetStr, unsigned int len, unsigned int uchar)
 {
     switch (uchar)
     {
     //non-breaking space
     case 0x00a0:
-        RetStr=AddCharToStr(RetStr,' ');
-        break;
+        RetStr=AddCharToBuffer(RetStr, len, ' ');
         break;
 
 
@@ -27,24 +26,24 @@ char *StrAddUnicodeChar(char *RetStr, int uchar)
     case 0x2013:
     case 0x2014:
     case 0x2015:
-        RetStr=AddCharToStr(RetStr,'-');
+        RetStr=AddCharToBuffer(RetStr, len, '-');
         break;
 
     //2019 is apostrophe in unicode. presumably it gives you as special, pretty apostrophe, but it causes hell with
     //straight ansi terminals, so we remap it here
     case 0x2018:
     case 0x2019:
-        RetStr=AddCharToStr(RetStr,'\'');
+        RetStr=AddCharToBuffer(RetStr, len, '\'');
         break;
 
 
     case 0x201a:
-        RetStr=AddCharToStr(RetStr,',');
+        RetStr=AddCharToBuffer(RetStr, len, ',');
         break;
 
 
     case 0x201b:
-        RetStr=AddCharToStr(RetStr,'`');
+        RetStr=AddCharToBuffer(RetStr, len, '`');
         break;
 
 
@@ -52,48 +51,46 @@ char *StrAddUnicodeChar(char *RetStr, int uchar)
     case 0x201c:
     case 0x201d:
     case 0x201e:
-        RetStr=AddCharToStr(RetStr,'"');
+        RetStr=AddCharToBuffer(RetStr, len, '"');
         break;
 
     case 0x2024:
-        RetStr=CatStr(RetStr,".");
-        break;
-
-    case 0x2025:
-        RetStr=CatStr(RetStr,"..");
-        break;
-
-
-    case 0x2026:
-        RetStr=CatStr(RetStr,"...");
+        RetStr=AddCharToBuffer(RetStr, len, '.');
         break;
 
     case 0x2039:
-        RetStr=CatStr(RetStr,"<");
+        RetStr=AddCharToBuffer(RetStr, len, '<');
         break;
 
     case 0x203A:
-        RetStr=CatStr(RetStr,">");
+        RetStr=AddCharToBuffer(RetStr, len, '>');
         break;
 
     case 0x2044:
-        RetStr=AddCharToStr(RetStr,'/');
+        RetStr=AddCharToBuffer(RetStr, len, '/');
         break;
 
     case 0x204e:
     case 0x2055:
-        RetStr=AddCharToStr(RetStr,'*');
+        RetStr=AddCharToBuffer(RetStr, len, '*');
         break;
 
 
     default:
-        RetStr=UnicodeStr(RetStr, uchar);
+        if (uchar < 127) RetStr=AddCharToBuffer(RetStr, len,  uchar);
+        else RetStr=UnicodeStr(RetStr, uchar);
         break;
     }
 
     return(RetStr);
 }
 
+
+
+char *StrAddUnicodeChar(char *RetStr, int uchar)
+{
+    return(BufferAddUnicodeChar(RetStr, StrLen(RetStr), uchar));
+}
 
 unsigned int UnicodeDecode(const char **ptr)
 {
@@ -114,6 +111,12 @@ unsigned int UnicodeDecode(const char **ptr)
         if (ptr_incr(ptr, 1) != 1) return(0);
         val |= (**ptr) & 127;
     }
+		else
+		{
+			val=(unsigned int) **ptr;
+		}
+
+      ptr_incr(ptr, 1);
 
     return(val);
 }

@@ -86,6 +86,13 @@ int ExtractVarsFromString(const char *Data, const char *FormatStr, ListNode *Var
 //The names are set in the '->Tag' part of the ListNode structures, so that values can be set to the '->Item' part of the structure
 int FindVarNamesInString(const char *Data, ListNode *Vars);
 
+
+//given a list of name-value pairs, parse them into a Vars List. 'PairDelim' is the delimiter between name-value pairs
+//and 'NameValueDelim' is the delimiter between names and values. So to parse a string in the form "<name1>=<value1> <name2>=<value2>"
+//you would call "Vars=VarsFromNameValueList(Input, "\\S", "=");" (where "\\S" means 'any whitespace'
+ListNode *VarsFromNameValueList(const char *List, const char *PairDelim, const char *NameValueDelim);
+
+
 #ifdef __cplusplus
 }
 #endif

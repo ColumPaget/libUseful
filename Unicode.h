@@ -34,6 +34,8 @@ char *UnicodeEncodeChar(char *RetStr, int UnicodeLevel, int Code);
 //encode a single unicode value ('Code') to a unicode string honoring the global unicode level
 char *UnicodeStr(char *RetStr, int Code);
 
+char *BufferAddUnicodeChar(char *RetStr, unsigned int len, unsigned int uchar);
+
 //encode a single unicode value ('Code') to a unicode string honoring the global unicode level, and append that string to a character string
 char *StrAddUnicodeChar(char *RetStr, int uchar);
 

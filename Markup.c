@@ -137,11 +137,11 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
 //End of Parse TagData. Strip any '/' and re-add it as ' /' to prevent it
 //becoming confused with actual TagData
     tptr=*TagData;
-    if ((len > 0) && (tptr[len-1]=='/')) 
+    if ((len > 0) && (tptr[len-1]=='/'))
     {
-      len--;
-      StrTrunc(*TagData, len);
-      *TagData=CatStr(*TagData, " /");
+        len--;
+        StrTrunc(*TagData, len);
+        *TagData=CatStr(*TagData, " /");
     }
 
     strlwr(*TagType);
@@ -153,19 +153,19 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
 
 int XMLIsEndTag(const char *TagType, const char *TagData)
 {
-const char *ptr;
-int len;
+    const char *ptr;
+    int len;
 
-if (TagType && (*TagType=='/')) return(TRUE);
+    if (TagType && (*TagType=='/')) return(TRUE);
 
-if (TagData)
-{
-len=StrLen(TagData);
-ptr=TagData + (StrLen(TagData) - 1);
-if (*ptr=='/') return(TRUE);
-}
+    if (TagData)
+    {
+        len=StrLen(TagData);
+        ptr=TagData + (StrLen(TagData) - 1);
+        if (*ptr=='/') return(TRUE);
+    }
 
-return(FALSE);
+    return(FALSE);
 }
 
 

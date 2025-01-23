@@ -1,3 +1,8 @@
+v5.34 
+  * Fixes for parsing unicode in 'UnQuoteStr'
+  * Handle NULL URL passed to 'STREAMOpen'
+  * Added function 'VarsFromNameValueList' to Vars.c
+
 v5.33 (2025-01-10)
   * Keep '/' in XML tag data, in order to detect <tag /> as end tags
   * Added 'XMLIsEndTag' function
