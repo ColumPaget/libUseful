@@ -8,6 +8,7 @@
 #include "TerminalBar.h" //for TerminalBarsInit
 #include "TerminalTheme.h"
 #include "Encodings.h"
+#include "LineEdit.h"
 
 static const char *ANSIColorStrings[]= {"none","black","red","green","yellow","blue","magenta","cyan","white",NULL};
 
@@ -989,86 +990,62 @@ int TerminalTextConfig(const char *Config)
 }
 
 
+
 char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 {
-    int inchar, len=0;
-    char outchar;
+    TLineEdit *LE;
+    int len, inchar, result;
+    char *Tempstr=NULL, *Text=NULL;
     TKEY_CALLBACK_FUNC Func;
+
+    if (Flags & (TERM_HIDETEXT | TERM_SHOWSTARS | TERM_SHOWTEXTSTARS)) LE=LineEditCreate(LINE_EDIT_NOMOVE);
+    else LE=LineEditCreate(0);
 
     len=StrLen(RetStr);
     if (len > 0)
     {
+        LineEditSetText(LE, RetStr);
         STREAMWriteLine(RetStr, S);
         STREAMFlush(S);
     }
 
-    inchar=TerminalReadChar(S);
+    inchar=0;
     while (inchar != EOF)
     {
-        Func=STREAMGetItem(S, "KeyCallbackFunc");
-        if (Func) Func(S, inchar);
-        outchar=inchar & 0xFF;
+        result=LineEditHandleChar(LE, inchar);
 
-        switch (inchar)
+        Tempstr=CopyStr(Tempstr, "\r");
+        Text=CopyStr(Text, LE->Line);
+        if (LE->Len > 0)
         {
-        //seems like control-c sends this
-        case STREAM_NODATA:
-        case ESCAPE:
-            Destroy(RetStr);
-            return(NULL);
-            break;
+            if (Flags & TERM_SHOWTEXTSTARS) memset(Text, '*', StrLen(Text)-1);
+            else if (Flags & TERM_SHOWSTARS) memset(Text, '*', StrLen(Text));
 
-        case STREAM_TIMEOUT:
-        case '\n':
-        case '\r':
-            break;
-
-        //'backspace' key on keyboard will send the 'del' character in some cases!
-        case 0x7f: //this is 'del'
-        case 0x08: //this is backspace
-            outchar=0;
-            //backspace over previous character and erase it with whitespace!
-            if (len > 0)
+            if (! (Flags & TERM_HIDETEXT))
             {
-                STREAMWriteString("\x08 ",S);
-                outchar=0x08;
-                len--;
+                Tempstr=MCopyStr(Tempstr, "\r", Text, " ~>\r", NULL);
+                Tempstr=CatStrLen(Tempstr, Text, LE->Cursor);
             }
-            break;
-
-        default:
-            if (Flags & TERM_SHOWSTARS) outchar='*';
-            else if ((Flags & TERM_SHOWTEXTSTARS) && (len > 0))
-            {
-                //backspace over previous character and replace with star
-                STREAMWriteString("\x08*",S);
-            }
-            RetStr=AddCharToBuffer(RetStr,len++, inchar & 0xFF);
-            break;
         }
 
-        if ( (inchar == '\n') || (inchar == '\r') )
+        STREAMWriteLine(Tempstr, S);
+        STREAMFlush(S);
+
+        if (result == LINE_EDIT_ENTER)
         {
-            //backspace over previous character and replace with star, so the
-            //last character is not left chnaging when we press 'enter'
-            if (Flags & TERM_SHOWTEXTSTARS) STREAMWriteString("\x08*",S);
-
-            //ensure we don't return NULL, but that we instead return an empty string
-            if (RetStr==NULL) RetStr=CatStr(RetStr, "");
-
+            RetStr=CopyStr(RetStr, LE->Line);
             break;
-        }
-
-        if ( (! (Flags & TERM_HIDETEXT)) && (outchar > 0) )
-        {
-            STREAMWriteBytes(S, &outchar,1);
-            STREAMFlush(S);
         }
 
         inchar=TerminalReadChar(S);
+
+        Func=STREAMGetItem(S, "KeyCallbackFunc");
+        if (Func) Func(S, inchar);
     }
 
-    StrLenCacheAdd(RetStr, len);
+    LineEditDestroy(LE);
+    Destroy(Tempstr);
+    Destroy(Text);
 
     return(RetStr);
 }

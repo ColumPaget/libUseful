@@ -76,5 +76,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "PasswordFile.h"
 #include "StreamAuth.h"
 #include "CGI.h"
+#include "LineEdit.h"
 
 #endif

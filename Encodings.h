@@ -76,6 +76,7 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 #define ENCODE_WBASE32 35  //'word safe' base32
 #define ENCODE_BASE32_WORDSAFE 35
 #define ENCODE_ZBASE32 36
+#define ENCODE_BECH32  37
 #define ENCODE_BASE64  64
 #define ENCODE_IBASE64 65
 #define ENCODE_PBASE64 66
@@ -104,6 +105,7 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 #define BASE32_HEX_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUV"
 #define BASE32_WORDSAFE_CHARS "23456789CFGHJMPQRVWXcfghjmpqrvwx"
 #define BASE32_ZBASE32_CHARS "ybndrfg8ejkmcpqxot1uwisza345h769"
+#define BASE32_BECH32_CHARS "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 
 #ifdef __cplusplus

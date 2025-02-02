@@ -40,6 +40,7 @@ all:
 	gcc -opbkdf2.exe pbkdf2.c $(LIBS)
 	gcc -ofmtduration.exe fmtduration.c $(LIBS)
 	gcc -ocalendar.exe calendar.c $(LIBS)
+	gcc -oLineEdit.exe LineEdit.c $(LIBS)
 
 seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)

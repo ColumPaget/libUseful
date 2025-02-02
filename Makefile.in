@@ -1,6 +1,6 @@
 CC = @CC@
 AR = @AR@
-VERSION = 5.34
+VERSION = 5.35
 MAJOR=5
 LIBFILE=libUseful.so.$(VERSION)
 SONAME=libUseful.so.$(MAJOR)
@@ -10,7 +10,7 @@ LIBS = @LIBS@
 prefix=@prefix@
 sysconfdir=@sysconfdir@
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC @DEFS@ -DVERSION=\"$(VERSION)\" -DSYSCONFDIR=\"$(sysconfdir)\"
-OBJ=StrLenCache.o String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSocket.o Stream.o StreamAuth.o Errors.o Unicode.o TerminalKeys.o Terminal.o TerminalWidget.o TerminalMenu.o TerminalChoice.o TerminalBar.o TerminalProgress.o TerminalCalendar.o TerminalTheme.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o HttpUtil.o HttpChunkedTransfer.o Http.o Gemini.o Smtp.o Inet.o Expect.o base32.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o HashCRC32.o HashMD5.o HashSHA.o HashJH.o HashWhirlpool.o HashOpenSSL.o Hash.o HMAC.o Ssh.o Compression.o Encryption.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o StringList.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Seccomp.o Process.o Container.o Encodings.o RawData.o SecureMem.o CommandLineParser.o SysInfo.o Entropy.o Users.o UnitsOfMeasure.o HttpServer.o WebSocket.o ContentType.o PasswordFile.o OTP.o CGI.o
+OBJ=StrLenCache.o String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSocket.o Stream.o StreamAuth.o Errors.o Unicode.o TerminalKeys.o Terminal.o TerminalWidget.o TerminalMenu.o TerminalChoice.o TerminalBar.o TerminalProgress.o TerminalCalendar.o TerminalTheme.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o HttpUtil.o HttpChunkedTransfer.o Http.o Gemini.o Smtp.o Inet.o Expect.o base32.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o HashCRC32.o HashMD5.o HashSHA.o HashJH.o HashWhirlpool.o HashOpenSSL.o Hash.o HMAC.o Ssh.o Compression.o Encryption.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o StringList.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Seccomp.o Process.o Container.o Encodings.o RawData.o SecureMem.o CommandLineParser.o SysInfo.o Entropy.o Users.o UnitsOfMeasure.o HttpServer.o WebSocket.o ContentType.o PasswordFile.o OTP.o CGI.o LineEdit.o
 
 
 all: $(OBJ)
@@ -267,6 +267,9 @@ OTP.o: OTP.c OTP.h
 
 CGI.o: CGI.c CGI.h
 	$(CC) $(FLAGS) -c CGI.c
+
+LineEdit.o: LineEdit.c LineEdit.h
+	$(CC) $(FLAGS) -c LineEdit.c
 
 
 

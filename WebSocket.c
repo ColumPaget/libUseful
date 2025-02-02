@@ -111,11 +111,11 @@ static void WebSocketSendControl(int Control, STREAM *S)
 
 
 
-static int WebSocketReadFrameHeader(STREAM *S, uint32_t *mask)
+static unsigned int WebSocketReadFrameHeader(STREAM *S, uint32_t *mask)
 {
     char bytes[2];
     uint16_t nlen;
-    unsigned int len;
+    uint64_t len;
     int op, result;
 
     result=STREAMPullBytes(S, bytes, 2);
@@ -126,7 +126,12 @@ static int WebSocketReadFrameHeader(STREAM *S, uint32_t *mask)
 
     len=bytes[1] & 0xFF;
 
-    if (len == 127) printf("ERROR: BigLen\n");
+    if (len == 127)
+    {
+        STREAMPullBytes(S, (char *) &len, 8);
+        len=ntohll(len);
+        fprintf(stderr, "ERROR: BigLen %llu bytes\n", len);
+    }
     else if (len == 126)
     {
         STREAMPullBytes(S, (char *) &nlen, 2);

@@ -37,7 +37,7 @@ int Flags;
 char *Text;
 } TERMWIDGET;
 
-TERMWIDGET *TerminalWidgetNew(STREAM *Term, int x, int y, int width, int high,  const char *Options);
+TERMWIDGET *TerminalWidgetNew(STREAM *Term, int x, int y, int width, int high, const char *Options);
 TERMWIDGET *TerminalWidgetCreate(STREAM *Term, const char *Options);
 void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config);
 void TerminalWidgetDestroy(void *p_Widget);

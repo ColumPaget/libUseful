@@ -1,4 +1,9 @@
-v5.34 
+v5.35
+  * Added LineEdit.c for full line editing with history
+  * Handle 'bigframes' in Websocket.c
+  * Add bech32 encoding
+
+v5.34 (2025-01-23)
   * Fixes for parsing unicode in 'UnQuoteStr'
   * Handle NULL URL passed to 'STREAMOpen'
   * Added function 'VarsFromNameValueList' to Vars.c

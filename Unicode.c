@@ -111,12 +111,12 @@ unsigned int UnicodeDecode(const char **ptr)
         if (ptr_incr(ptr, 1) != 1) return(0);
         val |= (**ptr) & 127;
     }
-		else
-		{
-			val=(unsigned int) **ptr;
-		}
+    else
+    {
+        val=(unsigned int) **ptr;
+    }
 
-      ptr_incr(ptr, 1);
+    ptr_incr(ptr, 1);
 
     return(val);
 }

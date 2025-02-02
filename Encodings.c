@@ -147,6 +147,7 @@ int EncodingParse(const char *Str)
             else if (strcasecmp(Str,"b64")==0) Encode=ENCODE_BASE64;
             else if (strcasecmp(Str,"base32")==0) Encode=ENCODE_BASE32;
             else if (strcasecmp(Str,"b32")==0) Encode=ENCODE_BASE32;
+            else if (strcasecmp(Str,"bech32")==0) Encode=ENCODE_BECH32;
             break;
 
         case 'c':
@@ -336,6 +337,11 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
         RetStr=base32encode(RetStr, Bytes, len, BASE32_WORDSAFE_CHARS, '=');
         break;
 
+    case ENCODE_BECH32:
+        RetStr=base32encode(RetStr, Bytes, len, BASE32_BECH32_CHARS, '\0');
+        break;
+
+
     case ENCODE_BASE64:
         RetStr=SetStrLen(RetStr,len * 4);
         to64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len);
@@ -471,6 +477,10 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
 
     case ENCODE_ZBASE32:
         len=base32decode((unsigned char *) *Return, Text, BASE32_ZBASE32_CHARS);
+        break;
+
+    case ENCODE_BECH32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_BECH32_CHARS);
         break;
 
     case ENCODE_BASE64:
