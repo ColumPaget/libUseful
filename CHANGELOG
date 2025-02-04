@@ -1,4 +1,4 @@
-v5.36
+v5.36 (2025-02-04)
   * Restructure XMLGetTag and ensure whitespace is preserved in data between tags
   * Properly implement 'websocket frame too big', closing connection when this happens
   * Websocket code no longer outputs http debugging.
@@ -7,7 +7,7 @@ v5.36
   * Handle 'Stolen characters' after unicode in TerminalPutStr
   * More work on LineEdit.c
 
-v5.35
+v5.35 (2025-02-1)
   * Added LineEdit.c for full line editing with history
   * Handle 'bigframes' in Websocket.c
   * Add bech32 encoding
