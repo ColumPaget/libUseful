@@ -746,7 +746,13 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
         else if (*ptr & 128)
         {
             val=UnicodeDecode(&ptr);
-            if (val > 0) *RetStr=TerminalCommandStr(*RetStr, TERM_UNICODE, val, 0);
+            if (val > 0)
+            {
+                *RetStr=TerminalCommandStr(*RetStr, TERM_UNICODE, val, 0);
+                //ptr will have moved to the end of the unicode, unfortunately ptr++ on next loop
+                //will result in us skipping a character, so we have to wind back one
+                ptr--;
+            }
         }
         else
         {
@@ -991,7 +997,7 @@ int TerminalTextConfig(const char *Config)
 
 
 
-char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
+char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, STREAM *S)
 {
     TLineEdit *LE;
     int len, inchar, result;
@@ -1014,21 +1020,32 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
     {
         result=LineEditHandleChar(LE, inchar);
 
-        Tempstr=CopyStr(Tempstr, "\r");
         Text=CopyStr(Text, LE->Line);
+        Tempstr=MCopyStr(Tempstr, "\r~>", Prefix, " ", NULL);
+
         if (LE->Len > 0)
         {
-            if (Flags & TERM_SHOWTEXTSTARS) memset(Text, '*', StrLen(Text)-1);
+            if (Flags & TERM_SHOWTEXTSTARS)
+            {
+                //if the user has hit enter, then star out all the text
+                if (result==LINE_EDIT_ENTER) memset(Text, '*', StrLen(Text));
+                //otherwise allow last typed character to be seen
+                else memset(Text, '*', StrLen(Text)-1);
+            }
             else if (Flags & TERM_SHOWSTARS) memset(Text, '*', StrLen(Text));
 
             if (! (Flags & TERM_HIDETEXT))
             {
-                Tempstr=MCopyStr(Tempstr, "\r", Text, " ~>\r", NULL);
-                Tempstr=CatStrLen(Tempstr, Text, LE->Cursor);
+                Tempstr=CatStr(Tempstr, Text);
+                if (LE->Cursor != LE->Len)
+                {
+                    Tempstr=MCatStr(Tempstr, "\r", Prefix, NULL);
+                    Tempstr=CatStrLen(Tempstr, Text, LE->Cursor);
+                }
             }
         }
 
-        STREAMWriteLine(Tempstr, S);
+        TerminalPutStr(Tempstr, S);
         STREAMFlush(S);
 
         if (result == LINE_EDIT_ENTER)
@@ -1051,21 +1068,23 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 }
 
 
+char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
+{
+    return(TerminalReadTextWithPrefix(RetStr, Flags, "", S));
+}
+
 
 char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
 {
     int TTYFlags=0;
 
-    TerminalPutStr("~>",S);
-    TerminalPutStr(Prompt, S);
-    STREAMFlush(S);
     if (Flags & (TERM_HIDETEXT | TERM_SHOWSTARS | TERM_SHOWTEXTSTARS))
     {
         TTYFlags=TTYGetConfig(S->in_fd);
         TTYSetEcho(S->in_fd, FALSE);
         TTYSetCanonical(S->in_fd, FALSE);
     }
-    RetStr=TerminalReadText(RetStr, Flags, S);
+    RetStr=TerminalReadTextWithPrefix(RetStr,Flags, Prompt,  S);
     if (TTYFlags & TTYFLAG_ECHO) TTYSetEcho(S->in_fd, TRUE);
     if (TTYFlags & TTYFLAG_CANON) TTYSetCanonical(S->in_fd, TRUE);
 

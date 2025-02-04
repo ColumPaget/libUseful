@@ -91,6 +91,7 @@ int xsetenv(const char *Name, const char *Value)
     return(FALSE);
 }
 
+//increment ptr but don't go past '\0'
 int ptr_incr(const char **ptr, int count)
 {
     const char *end;

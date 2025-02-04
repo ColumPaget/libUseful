@@ -7,8 +7,11 @@ TLineEdit *LineEditCreate(int Flags)
 
     LE=(TLineEdit *) calloc(1, sizeof(TLineEdit));
     LE->Flags = Flags;
-    if (Flags & LINE_EDIT_HISTORY) LE->History=ListCreate();
-		LE->MaxHistory=30;
+    if (Flags & LINE_EDIT_HISTORY)
+    {
+        LE->History=ListCreate();
+        LE->MaxHistory=30;
+    }
 
     return(LE);
 }
@@ -17,7 +20,7 @@ void LineEditDestroy(TLineEdit *LE)
 {
     if (LE)
     {
-        if (LE->History) ListDestroy(LE->History, Destroy);
+        if ((LE->Flags & LINE_EDIT_HISTORY) && LE->History) ListDestroy(LE->History, NULL);
         Destroy(LE->Line);
         free(LE);
     }
@@ -34,31 +37,44 @@ void LineEditSetText(TLineEdit *LE, const char *Text)
 
 void LineEditClearHistory(TLineEdit *LE)
 {
-if (LE->History) ListClear(LE->History, Destroy);
+    if (LE->History) ListClear(LE->History, NULL);
 }
+
+
+ListNode *LineEditSwapHistory(TLineEdit *LE, ListNode *NewHist)
+{
+    ListNode *Old;
+
+    Old=LE->History;
+    LE->History=NewHist;
+
+    return(Old);
+}
+
 
 void LineEditAddToHistory(TLineEdit *LE, const char *Text)
 {
-ListNode *Node;
+    ListNode *Node;
 
-if (StrValid(Text))
-{
-if (! LE->History) LE->History=ListCreate();
+    if (! LE->History) return;
 
-if (ListSize(LE->History) > LE->MaxHistory) 
-{
- Node=ListGetNext(LE->History);
- ListDeleteNode(Node);
-}
+    if (StrValid(Text))
+    {
 
-Node=ListGetLast(LE->History);
+        if ( (LE->MaxHistory > 0) && (ListSize(LE->History) > LE->MaxHistory) )
+        {
+            Node=ListGetNext(LE->History);
+            ListDeleteNode(Node);
+        }
 
-if (Node && Node->Tag) 
-{
-	if (strcmp(Node->Tag, Text) !=0) ListAddNamedItem(LE->History, Text, NULL);
-}
-else ListAddNamedItem(LE->History, Text, NULL);
-}
+        Node=ListGetLast(LE->History);
+
+        if (Node && Node->Tag)
+        {
+            if (strcmp(Node->Tag, Text) !=0) ListAddNamedItem(LE->History, Text, NULL);
+        }
+        else ListAddNamedItem(LE->History, Text, NULL);
+    }
 
 }
 
@@ -81,10 +97,10 @@ int LineEditHandleChar(TLineEdit *LE, int Char)
     case TKEY_UP:
         if (LE->History)
         {
-            if (LE->History->Side) 
-						{
-						if (LE->History->Side != ListGetNext(LE->History))	LE->History->Side=ListGetPrev(LE->History->Side);
-						}
+            if (LE->History->Side)
+            {
+                if (LE->History->Side != ListGetNext(LE->History)) LE->History->Side=ListGetPrev(LE->History->Side);
+            }
             else LE->History->Side=ListGetLast(LE->History);
 
             if (LE->History->Side) LineEditSetText(LE, LE->History->Side->Tag);
@@ -118,8 +134,7 @@ int LineEditHandleChar(TLineEdit *LE, int Char)
         if ((! (LE->Flags & LINE_EDIT_NOMOVE)) && (LE->Cursor < LE->Len)) LE->Cursor=LE->Len;
         break;
 
-    //'backspace' key on keyboard will send the 'del' character in some cases!
-    case 0x7f: //this is 'del'
+    case TKEY_DELETE:
         if (LE->Cursor < LE->Len)
         {
             ptr=LE->Line + LE->Cursor;
@@ -130,6 +145,7 @@ int LineEditHandleChar(TLineEdit *LE, int Char)
         break;
 
     case TKEY_BACKSPACE:
+    case TKEY_ERASE: //this is 'del'
         if (LE->Cursor > 0)
         {
             LE->Cursor--;
@@ -141,7 +157,7 @@ int LineEditHandleChar(TLineEdit *LE, int Char)
         break;
 
     case TKEY_ENTER:
-				if (LE->History) LE->History->Side=NULL;
+        if (LE->History) LE->History->Side=NULL;
         return(LINE_EDIT_ENTER);
         break;
 

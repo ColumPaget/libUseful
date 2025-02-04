@@ -1,93 +1,99 @@
 #include "Markup.h"
 
-const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char **TagData)
+
+//this part just parses the tag name
+static const char *XMLParseTagName(const char *Input, char **Namespace, char **TagType)
 {
     const char *ptr, *tptr;
-    int len=0, InTag=FALSE, TagHasName=FALSE;
+    int len=0, InTag;
 
-    if (! StrValid(Input)) return(NULL);
     ptr=Input;
 
-//This ensures we are never dealing with nulls
-    if (! *TagType) *TagType=CopyStr(*TagType,"");
-    if (! *TagData) *TagData=CopyStr(*TagData,"");
-
-    if (*ptr=='<')
-    {
-        ptr++;
-        while (isspace(*ptr)) ptr++;
-
-        len=0;
-        InTag=TRUE;
-        TagHasName=TRUE;
-
-        //if we start with a slash tag, then add that to the tag name
-        if (*ptr=='/')
-        {
-            *TagType=AddCharToBuffer(*TagType,len,*ptr);
-            len++;
-            ptr++;
-        }
-
-        while (InTag)
-        {
-            switch (*ptr)
-            {
-            //These all cause us to end. NONE OF THEM REQUIRE ptr++
-            //ptr++ will happen when we read tag data
-            case '>':
-            case '\0':
-            case ' ':
-            case '	':
-            case '\n':
-                InTag=FALSE;
-                break;
-
-            //If a namespace return value is supplied, break the name up into namespace and
-            //tag. Otherwise don't
-            case ':':
-                if (Namespace)
-                {
-                    tptr=*TagType;
-                    if (*tptr=='/')
-                    {
-                        tptr++;
-                        len=1;
-                    }
-                    else len=0;
-                    *Namespace=CopyStr(*Namespace,tptr);
-                }
-                else
-                {
-                    *TagType=AddCharToBuffer(*TagType,len,*ptr);
-                    len++;
-                }
-                ptr++;
-
-                break;
-
-
-
-            case '\r':
-                ptr++;
-                break;
-
-            default:
-                *TagType=AddCharToBuffer(*TagType,len,*ptr);
-                len++;
-                ptr++;
-                break;
-            }
-
-        }
-    }
-
-    StrTrunc(*TagType, len);
+    //it's permissible to have whitespace after the tag open, like < p >
     while (isspace(*ptr)) ptr++;
 
 
     len=0;
+    //we must be in an XML tag for this function to be called
     InTag=TRUE;
+
+    //if we start with a slash tag, then add that to the tag name
+    if (*ptr=='/')
+    {
+        *TagType=AddCharToBuffer(*TagType,len,*ptr);
+        len++;
+        ptr++;
+    }
+
+    while (InTag)
+    {
+        switch (*ptr)
+        {
+        //These all cause us to end. NONE OF THEM REQUIRE ptr++
+        //ptr++ will happen when we read tag data
+        case '>':
+        case '\0':
+        case ' ':
+        case '	':
+        case '\n':
+            InTag=FALSE;
+            break;
+
+        //If a namespace return value is supplied, break the name up into namespace and
+        //tag. Otherwise don't
+        case ':':
+            if (Namespace)
+            {
+                tptr=*TagType;
+                if (*tptr=='/')
+                {
+                    tptr++;
+                    len=1;
+                }
+                else len=0;
+                *Namespace=CopyStr(*Namespace,tptr);
+            }
+            else
+            {
+                *TagType=AddCharToBuffer(*TagType, len, *ptr);
+                len++;
+            }
+            ptr++;
+
+            break;
+
+
+
+        case '\r':
+            ptr++;
+            break;
+
+        default:
+            *TagType=AddCharToBuffer(*TagType,len,*ptr);
+            len++;
+            ptr++;
+            break;
+        }
+
+    }
+    StrTrunc(*TagType, len);
+    strlwr(*TagType);
+
+    return(ptr);
+}
+
+
+
+// this function parses either
+// 1) data within a tag, that comes after the tag type name
+// 2) data (text) between tags
+static const char *XMLParseTagData(const char *Input, int TagHasName, char **TagData)
+{
+    int len=0;
+    int InTag=TRUE; //as this part parses data in or out of a tag, InTag always starts as TRUE, even if parsing data between tags
+    const char *ptr, *tptr;
+
+    ptr=Input;
     while (InTag)
     {
         switch (*ptr)
@@ -115,18 +121,18 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
                 tptr=ptr;
                 while (*tptr != *ptr)
                 {
-                    *TagData=AddCharToBuffer(*TagData,len,*ptr);
+                    if (TagData) *TagData=AddCharToBuffer(*TagData,len,*ptr);
                     len++;
                     ptr++;
                 }
             }
-            *TagData=AddCharToBuffer(*TagData,len,*ptr);
+            if (TagData) *TagData=AddCharToBuffer(*TagData,len,*ptr);
             len++;
             ptr++;
             break;
 
         default:
-            *TagData=AddCharToBuffer(*TagData,len,*ptr);
+            if (TagData) *TagData=AddCharToBuffer(*TagData,len,*ptr);
             len++;
             ptr++;
             break;
@@ -136,16 +142,49 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
 
 //End of Parse TagData. Strip any '/' and re-add it as ' /' to prevent it
 //becoming confused with actual TagData
-    tptr=*TagData;
-    if ((len > 0) && (tptr[len-1]=='/'))
+    if (TagData)
     {
-        len--;
-        StrTrunc(*TagData, len);
-        *TagData=CatStr(*TagData, " /");
+        tptr=*TagData;
+        if ((len > 0) && (tptr[len-1]=='/'))
+        {
+            len--;
+            StrTrunc(*TagData, len);
+            *TagData=CatStr(*TagData, " /");
+        }
+
+        if (TagHasName) StripLeadingWhitespace(*TagData);
     }
 
-    strlwr(*TagType);
-    while (isspace(*ptr)) ptr++;
+    return(ptr);
+}
+
+const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char **TagData)
+{
+    int TagHasName=FALSE;
+    char *LocalTagType=NULL;
+    const char *ptr;
+
+    if (! StrValid(Input)) return(NULL);
+    ptr=Input;
+
+    if (TagType) *TagType=CopyStr(*TagType,"");
+    if (TagData) *TagData=CopyStr(*TagData,"");
+
+    if (*ptr=='<')
+    {
+        ptr++;
+        TagHasName=TRUE;
+        //parsing the tag type is too important to handle if user passes NULL for TagType
+        //as we need it for parsing namespace if the user does not pass NULL for that
+        //uso we use a local tag type variable
+        ptr=XMLParseTagName(ptr, Namespace, &LocalTagType);
+        if (TagType) *TagType=CopyStr(*TagType, LocalTagType);
+    }
+
+
+    ptr=XMLParseTagData(ptr, TagHasName, TagData);
+
+    Destroy(LocalTagType);
 
     return(ptr);
 }

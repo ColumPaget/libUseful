@@ -75,7 +75,6 @@ char *BufferAddUnicodeChar(char *RetStr, unsigned int len, unsigned int uchar)
         RetStr=AddCharToBuffer(RetStr, len, '*');
         break;
 
-
     default:
         if (uchar < 127) RetStr=AddCharToBuffer(RetStr, len,  uchar);
         else RetStr=UnicodeStr(RetStr, uchar);
@@ -89,7 +88,13 @@ char *BufferAddUnicodeChar(char *RetStr, unsigned int len, unsigned int uchar)
 
 char *StrAddUnicodeChar(char *RetStr, int uchar)
 {
-    return(BufferAddUnicodeChar(RetStr, StrLen(RetStr), uchar));
+    int len;
+
+    len=StrLen(RetStr);
+    RetStr=(BufferAddUnicodeChar(RetStr, len, uchar));
+    StrLenCacheAdd(RetStr, len + 1);
+
+    return(RetStr);
 }
 
 unsigned int UnicodeDecode(const char **ptr)
@@ -128,6 +133,7 @@ char *UnicodeEncodeChar(char *RetStr, int UnicodeLevel, int Code)
     char *Tempstr=NULL;
 
     if ((Code==0) || (UnicodeLevel == 0)) return(AddCharToStr(RetStr, '?'));
+
     if (Code < 0x800)
     {
         Tempstr=FormatStr(Tempstr,"%c%c",128+64+((Code & 1984) >> 6), 128 + (Code & 63));

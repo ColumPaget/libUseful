@@ -130,7 +130,11 @@ static unsigned int WebSocketReadFrameHeader(STREAM *S, uint32_t *mask)
     {
         STREAMPullBytes(S, (char *) &len, 8);
         len=ntohll(len);
-        fprintf(stderr, "ERROR: BigLen %llu bytes\n", len);
+        if (len > LibUsefulGetInteger("WEBSOCKET:MaxFrameSize"))
+        {
+            RaiseError(0, "WebsocketReadFrameHeader", "Frame of %llu bytes on %s greater than maximum allowed, closing stream", len, S->Path);
+            return(STREAM_CLOSED);
+        }
     }
     else if (len == 126)
     {
@@ -257,7 +261,6 @@ STREAM *WebSocketOpen(const char *WebsocketURL, const char *Config)
         Type=STREAM_TYPE_WS;
     }
 
-    LibUsefulSetValue("HTTP:Debug", "Y");
     Tempstr=GetRandomAlphabetStr(Tempstr, 16);
     Key=EncodeBytes(Key, Tempstr, 16, ENCODE_BASE64);
     Args=MCopyStr(Args, Config, " Upgrade=websocket Connection=Upgrade Sec-Websocket-Key=", Key, " Sec-Websocket-Version=13", NULL);

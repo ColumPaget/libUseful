@@ -25,6 +25,9 @@ void LibUsefulInitSettings()
     SetVar(LibUsefulSettings,"LibUseful:BuildTime",Tempstr);
     Tempstr=FormatStr(Tempstr, "%d", 4096 * 10000);
     SetVar(LibUsefulSettings,"MaxDocumentSize", Tempstr);
+    Tempstr=FormatStr(Tempstr, "%d", 4096 * 10000);
+    SetVar(LibUsefulSettings,"WEBSOCKET:MaxFrameSize", Tempstr);
+
     DestroyString(Tempstr);
 }
 

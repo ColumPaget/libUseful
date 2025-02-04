@@ -1,3 +1,12 @@
+v5.36
+  * Restructure XMLGetTag and ensure whitespace is preserved in data between tags
+  * Properly implement 'websocket frame too big', closing connection when this happens
+  * Websocket code no longer outputs http debugging.
+  * Handle prompt/prefix in new 'LineEdit' based TerminalReadLine 
+  * Ensure CopyStr/CatStr return allocated memory even if both dst and src start as null
+  * Handle 'Stolen characters' after unicode in TerminalPutStr
+  * More work on LineEdit.c
+
 v5.35
   * Added LineEdit.c for full line editing with history
   * Handle 'bigframes' in Websocket.c
@@ -27,7 +36,7 @@ v5.31 (2024-12-20)
 
 v5.30 (2024-10-29)
   * Fix crash if TerminalTextAlign has NULL for the Terminal
-	* Added HttpGet and HttpPost functions
+  * Added HttpGet and HttpPost functions
   * Improvements to httpserver authentication. 
   * Add 'extra' field to passwords file to allow storing data against a user.
 
@@ -165,6 +174,6 @@ v5.5 (2024-01-13)
   * fixes/improvements for 'PipeSpawn'
   * copy file permissions when FileCopy
   * handle SUPER key in terminal functions
-  * lots of work on Ouath and experimental websocket and http servers
+  * lots of work on OAuth and experimental websocket and http servers
 
 

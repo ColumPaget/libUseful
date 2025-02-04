@@ -29,6 +29,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define TKEY_ESCAPE 0x1b
 #define TKEY_TAB '	'
 #define TKEY_BACKSPACE 0x08
+#define TKEY_ERASE 0x7f
 
 #ifndef TKEY_ENTER
 #define TKEY_ENTER  '\n'

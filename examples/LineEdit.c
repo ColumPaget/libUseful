@@ -7,6 +7,7 @@ STREAM *Term;
 char *Tempstr=NULL;
 int inchar, pos;
 
+
 Term=STREAMFromDualFD(0,1);
 TerminalInit(Term, TERM_RAWKEYS | TERM_SAVEATTRIBS);
 
