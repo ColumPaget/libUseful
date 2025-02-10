@@ -981,6 +981,7 @@ int TerminalReadChar(STREAM *S)
         }
     }
 
+    if (inchar == STREAM_NODATA) return(0);
     return(inchar);
 }
 

@@ -367,7 +367,8 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 
     if (ListStart->Flags & LIST_FLAG_MAP_HEAD) ListStart=MapGetChain(ListStart, Name);
 
-    Curr=ListGetLast(ListStart);
+    if (ListStart->Flags & LIST_FLAG_ORDERED) Curr=ListFindNamedItemInsert(ListStart, Name);
+    else Curr=ListGetLast(ListStart);
 
     if (Curr==NULL) return(Curr);
     return(ListInsertTypedItem(Curr,Type,Name,Item));
@@ -375,14 +376,27 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 
 
 
+int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name)
+{
+    int result;
 
+    if (Prev && (Prev != Head) && Prev->Tag)
+    {
+        if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag,Name);
+        else result=strcasecmp(Prev->Tag,Name);
+
+        if (result == 0) return(TRUE);
+        if ((Head->Flags & LIST_FLAG_ORDERED) && (result < 1)) return(TRUE);
+    }
+
+    return(FALSE);
+}
 
 
 ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 {
     ListNode *Prev, *Curr, *Next, *Head;
-    int result=0, count=0;
-    int hops=0;
+    int result=0;
     unsigned long long val;
 
     if (! Root) return(Root);
@@ -391,59 +405,28 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
     if (Root->Flags & LIST_FLAG_MAP_HEAD) Head=MapGetChain(Root, Name);
     else Head=Root;
 
+    //Check last item in list
+    if (ListConsiderInsertPoint(Head, Head->Prev, Name)) return(Head->Prev);
 
-    //Dont use 'ListGetNext' internally
     Curr=Head->Next;
-    if (! Curr) return(Head);
-
     //if LIST_FLAG_CACHE is set, then the general purpose 'Side' pointer of the head node points to a cached item
     if ((Root->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
     {
-        //use next to hold Head->Side for less typing!
-        Next=Head->Side;
-
-        if (Next->Tag)
-        {
-            if (Root->Flags & LIST_FLAG_CASE) result=strcmp(Next->Tag,Name);
-            else result=strcasecmp(Next->Tag,Name);
-        }
-        else result=-1;
-
-        if (result==0) return(Next);
-        //if result < 0 AND ITS AN ORDERED LIST then it means the cached item is ahead of our insert point, so we might as well jump to it
-        else if ((Root->Flags & LIST_FLAG_ORDERED) && (result < 0)) Curr=Next;
+        if (ListConsiderInsertPoint(Head, Head->Side, Name)) Curr=Head->Side;
     }
-
-    //Check last item in list
-    Prev=Head->Prev;
-    if (Prev && (Prev != Head) && Prev->Tag)
-    {
-        if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag,Name);
-        else result=strcasecmp(Prev->Tag,Name);
-
-        if (result == 0) return(Prev);
-        if ((Head->Flags & LIST_FLAG_ORDERED) && (result < 1)) return(Prev);
-    }
-
-    Prev=Head;
 
     while (Curr)
     {
+        //we get 'Next' here because we might delete 'Curr' if we are operating
+        //as a list with 'timeouts' (LIST_FLAG_TIMEOUT)
         Next=Curr->Next;
+
         if (Curr->Tag)
         {
-            if (Root->Flags & LIST_FLAG_CASE) result=strcmp(Curr->Tag,Name);
-            else result=strcasecmp(Curr->Tag,Name);
+            if (ListConsiderInsertPoint(Head, Curr, Name)) return(Curr);
 
-            if (result==0)
-            {
-                if (Root->Flags & LIST_FLAG_SELFORG) ListSwapItems(Curr->Prev, Curr);
-                return(Curr);
-            }
-
-            if ((result > 0) && (Root->Flags & LIST_FLAG_ORDERED)) return(Prev);
-
-            //Can only get here if it's not a match
+            //Can only get here if it's not a match, in which
+            //case we can safely delete any 'timed out' items
             if (Root->Flags & LIST_FLAG_TIMEOUT)
             {
                 val=ListNodeGetTime(Curr);
@@ -455,11 +438,6 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
             }
         }
 
-        hops++;
-        count++;
-
-
-        Prev=Curr;
         Curr=Next;
     }
 
@@ -487,8 +465,6 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
         {
             if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
             else result=strcasecmp(Node->Tag,Name);
-
-            if (result !=0) return(NULL);
 
             if (
                 (result==0) &&
@@ -544,24 +520,6 @@ ListNode *MapChainGetNext(ListNode *CurrItem)
 
     if (CurrItem->Next)
     {
-        if (CurrItem->Next->Next)
-        {
-            //it's unlikely that we will be looking up the same item again, because maps maintain seperate chains of items
-            //and the likelyhood of hitting the same chain twice is low. THIS IS NOT TRUE FOR REPEATED LOOKUPS ON A LIST
-            //because with a list we go through the same items over and over again whenever looking for items in the chain
-
-            //Thus for maps we call this prefetch code, which prefetches into the L1 cache, but not into the larger, long-term
-            //L2 cache. As we're unlikely to be revisiting this chain in the near future, we don't want to pollute the L2
-            //cache with it
-
-            //This is a disaster for straight forward lists though, because they have only one chain that gets revisited on
-            //every search for an item
-#ifdef __GNUC__
-            __builtin_prefetch (CurrItem->Next->Next, 0, 0);
-#endif
-
-            if (CurrItem->Next->Next->Tag) __builtin_prefetch (CurrItem->Next->Next->Tag, 0, 0);
-        }
         return(CurrItem->Next);
     }
 

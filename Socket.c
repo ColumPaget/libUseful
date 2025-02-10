@@ -35,34 +35,38 @@ static void SocketParseConfigFlags(const char *Config, TSockSettings *Settings)
 
         switch (*ptr)
         {
-        case 'n':
-            Settings->Flags |= CONNECT_NONBLOCK;
-            break;
-        case 'E':
-            Settings->Flags |= CONNECT_ERROR;
-            break;
-        case 'k':
-            Settings->Flags |= SOCK_NOKEEPALIVE;
-            break;
         case 'A':
             Settings->Flags |= SOCK_TLS_AUTO;
             break;
         case 'B':
             Settings->Flags |= SOCK_BROADCAST;
             break;
-#ifdef TCP_FASTOPEN
+        case 'E':
+            Settings->Flags |= CONNECT_ERROR;
+            break;
+        case 'f':
+            Settings->Flags |= SOCK_TCP_FULL_FLUSH;
+            break;
         case 'F':
             Settings->Flags |= SOCK_TCP_FASTOPEN;
             break;
-#endif
-        case 'R':
-            Settings->Flags |= SOCK_DONTROUTE;
+        case 'k':
+            Settings->Flags |= SOCK_NOKEEPALIVE;
+            break;
+        case 'n':
+            Settings->Flags |= CONNECT_NONBLOCK;
+            break;
+        case 'N':
+            Settings->Flags |= SOCK_TCP_NODELAY;
             break;
         case 'P':
             Settings->Flags |= SOCK_REUSEPORT;
             break;
-        case 'N':
-            Settings->Flags |= SOCK_TCP_NODELAY;
+        case 'q':
+            Settings->Flags |= SOCK_TCP_QUICKACK;
+            break;
+        case 'R':
+            Settings->Flags |= SOCK_DONTROUTE;
             break;
         }
     }
@@ -182,6 +186,10 @@ void SockSetOptions(int sock, int SetFlags, int UnsetFlags)
     if (SetFlags & SOCK_TCP_FASTOPEN) SockSetOpt(sock, TCP_FASTOPEN, "TCP_FASTOPEN", 1);
 #endif
 
+#ifdef TCP_QUICKACK
+    if (SetFlags & SOCK_TCP_QUICKACK) SockSetOpt(sock, TCP_QUICKACK, "TCP_QUICKACK", 1);
+#endif
+
 
 #ifdef SO_KEEPALIVE
     //Default is KEEPALIVE ON
@@ -216,6 +224,11 @@ void SockSetOptions(int sock, int SetFlags, int UnsetFlags)
 #ifdef TCP_FASTOPEN
     if (UnsetFlags & SOCK_TCP_FASTOPEN) SockSetOpt(sock, TCP_FASTOPEN, "TCP_FASTOPEN", 0);
 #endif
+
+#ifdef TCP_QUICKACK
+    if (UnsetFlags & SOCK_TCP_QUICKACK) SockSetOpt(sock, TCP_QUICKACK, "TCP_QUICKACK", 0);
+#endif
+
 
 #ifdef SO_KEEPALIVE
     //SOCK_NOKEEPALIVE unsets the default, so looks opposite to all the others
@@ -967,16 +980,23 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         else if (strcasecmp(Proto, "bcast")==0) S->Type=STREAM_TYPE_UDP;
         else S->Type=STREAM_TYPE_TCP;
 
-        //if (S->Timeout > 0) S->Flags |= SF_NONBLOCK;
+        if (S->Type==STREAM_TYPE_SSL) Settings.Flags |= CONNECT_SSL;
 
-        if (S->Type==STREAM_TYPE_SSL) S->Flags |= CONNECT_SSL;
-        if (S->Flags & SF_NONBLOCK)
+
+        // a couple of flags are not just about opening the socket,
+        // but are about ongoing operations of the stream.
+        // These need to be copied to the stream Flags in order
+        // that the STREAM functions know about them.
+        if (Settings.Flags & SOCK_TCP_FULL_FLUSH) S->Flags |= SF_FULL_FLUSH;
+        if (Settings.Flags & SOCK_TCP_QUICKACK) S->Flags |= SF_QUICKACK;
+
+        if (Settings.Flags & SOCK_NONBLOCK)
         {
-            S->State |=LU_SS_CONNECTING;
-            S->Flags |=SF_NONBLOCK;
+            S->State |= LU_SS_CONNECTING;
+            S->Flags |= SF_NONBLOCK;
         }
 
-        if (STREAMWaitConnect(S)) result=STREAMDoPostConnect(S, S->Flags);
+        if (STREAMWaitConnect(S)) result=STREAMDoPostConnect(S, Settings.Flags);
         else result=FALSE;
     }
 

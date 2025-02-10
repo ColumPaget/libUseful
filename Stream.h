@@ -69,6 +69,7 @@ w     write only
 a     append 
 +     make read-only, append or write-only be read-write
 E     raise an error if this file fails to open
+f  - 'Full Flush'. For file-based STREAMS whenever 'STREAMFlush' is called, call 'fsync' to force data write to disk.
 F     follow symlinks. Without this flag an error is raised when a symlink is opened.
 l     lock/unlock file on each read
 L     lock/unlock file on each write
@@ -108,6 +109,7 @@ n  - nonblocking socket
 E  - report socket connection errors
 k  - TURN OFF socket keep alives
 B  - broadcast socket
+f  - 'Full Flush'. For TCP based STREAMS, whenever 'STREAMFlush' is called,  turn Nagle's algorithm off and on again using setsockopt, forcing data to be sent to the network immediately.
 F  - TCP Fastopen
 R  - Don't route (equivalent to applying SOCKOPT_DONTROUTE)
 N  - TCP no-delay (disable Nagle algo)
@@ -120,6 +122,7 @@ mark=<value>        set SOCKOPT_MARK if supported
 keepalive=<y/n>     turn on/off socket keepalives
 timeout=<centisecs> connect/read timeout for socket
 
+The options 'N' and 'f' both turn off the TCP Nagle algorithm. However 'N' turns it off completely, whereas 'f' only briefly turns it off when 'STREAMFlush' is called, which causes any cached data to be immediately written to the network. The reason for doing this is to handle situations where rapid exchange of short messages is required (e.g. industrial automation use cases). By default TCP uses the Nagle algorithm to queue data, waiting a while for more data so that it can send as much data in one packet as efficiently as possible, but this not desirable if speed of communications is important. However, the 'N' option that completely turns off Nagle on a socket, has been seen to cause some issues with simple embedded device peers. Possibly these issues are because such peers do not do full TCP message reconstruction, and simply treat a packet as a complete message, and are thus unable to handle messages spread across more than one packet. If Nagle is turned off, the O.S. might decided to send partial data, resulting in issues with these devices. 'f' offers an alternative use case, where a program can write it's full message to the network, and then call 'STREAMFlush' to force all the data to be sent immediately. 
 
 UDP sockets might not work quite as you'd expect: The socket binds to a random port at the local end, and expects to send to the supplied port, rather the same way tcp works. If you want to bind a UDP socket to a specific local port, and receive and send messages from that port from/to other hosts, then you need to use STREAMServerNew from Server.h
 
@@ -150,6 +153,8 @@ W    PUT method
 D    DELETE method
 P    PATCH method
 H    HEAD  method
+
+If the method used is 'GET' and TCP_QUICKACK is available, it is automatically enabled as no data is sent from the client during GET
 
 
 method=<method>  //override method (GET/POST etc) with any default value
@@ -197,9 +202,11 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 //error condition return values from functions like "STREAMReadBytes". Mostly you will just see 'STREAM_TIMEOUT', meaning no data was read in the 
 //time that a stream it configured to block for, or STREAM_CLOSED, meaning the end-of-file has been reached, or that the remote peer has closed
 //a network connection
+#define STREAM_BYTES_READ 1
 #define STREAM_TIMEOUT 0
 #define STREAM_CLOSED -1
 #define STREAM_NODATA -2
+#define STREAM_MESSAGE_END -3
 #define STREAM_DATA_ERROR -4
 
 
@@ -219,17 +226,17 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 
 //FLUSH_ flags go in this gap
 
-#define SF_RDONLY 16       //open stream read only 
-#define SF_WRONLY 32       //open stream write only
-#define SF_CREAT 64        //create stream if it doesn't exist
-#define SF_CREATE 64       //create stream if it doesn't exist
-#define STREAM_APPEND 128  //append to file
-#define SF_TRUNC 256       //truncate file to zero bytes on open
-#define SF_MMAP  512       //create a memory mapped file
-#define SF_WRLOCK 1024     //lock file on every write
-#define SF_RDLOCK 2048     //lock file on every read
-#define SF_FOLLOW 4096     //ONLY FOR FILES: follow symbolic links
-#define SF_TLS    4096     //ONLY FOR SOCKETS: use SSL/TLS
+#define SF_RDONLY               16  //open stream read only 
+#define SF_WRONLY               32  //open stream write only
+#define SF_CREAT                64  //create stream if it doesn't exist
+#define SF_CREATE               64  //create stream if it doesn't exist
+#define STREAM_APPEND          128  //append to file
+#define SF_TRUNC               256  //truncate file to zero bytes on open
+#define SF_MMAP                512  //create a memory mapped file
+#define SF_WRLOCK             1024  //ONLY FOR FILES: lock file on every write
+#define SF_RDLOCK             2048  //lock file on every read
+#define SF_FOLLOW             4096  //ONLY FOR FILES: follow symbolic links
+#define SF_TLS                4096  //ONLY FOR SOCKETS: use SSL/TLS
 #define SF_SECURE             8192  //lock internal buffers into memory so they aren't written to swap or coredumps
 #define SF_NONBLOCK          16384  //nonblocking open (you must use select to check that the file is ready to use)
 #define SF_EXCL              32768  //ONLY FOR FILES: exclusive create with O_EXCL, file must not pre-exist
@@ -238,7 +245,8 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_EXEC_INHERIT     131072  //allow stream to be inherited across an exec (default is close-on-exec)
 #define SF_AUTORECOVER      262144  //ONLY FOR FILES: take autorecovery backup on writing a file, and apply it on read
 #define SF_BINARY           262144  //ONLY FOR SOCKETS: 'binary mode' for, websockets etc
-#define SF_NOCACHE          524288  //don't cache file data in filesystem cache
+#define SF_NOCACHE          524288  //ONLY FOR FILES: don't cache file data in filesystem cache
+#define SF_QUICKACK         524288  //ONLY FOR SOCKETS: set TCP_QUICKACK after every read
 #define SF_LIST             524288  //only for SSH streams: list files
 #define SF_SORTED          1048576  //file is sorted, this is a hint to 'STREAMFind'
 #define STREAM_IMMUTABLE   2097152  //file is immutable (if supported by fs)
@@ -246,6 +254,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define SF_COMPRESSED      8388608  //enable compression, this requests compression
 #define SF_TMPNAME        16777216  //file path is a template to create a temporary file name (must end in 'XXXXXX')
 #define SF_ENCRYPT        33554432  //file path is a template to create a temporary file name (must end in 'XXXXXX')
+#define SF_FULL_FLUSH     67108864  //On 'STREAMFlush(S) force a full flush of data, using fsync to write data to disk for files, or overriding TCP's Nagle algorithm for sockets
 
 
 //Stream state values, set in S->State
@@ -408,10 +417,32 @@ int STREAMPeekChar(STREAM *);
 //write a character to a stream
 int STREAMWriteChar(STREAM *,unsigned char c);
 
+
+//Read 'ByteCount' bytes from a stream into 'Buffer'. Buffer must be large enough to take the specified number of bytes.
+//Number of bytes actually read, which can be less than number requested, is returned in 'BytesRead'. 
+//Return value of function is a state value that is one of
+
+// STREAM_BYTES_READ    - data was read successfully
+// STREAM_TIMEOUT       - we timed out waiting for data (quiet socket)
+// STREAM_CLOSED        - end-of-file or connection closed
+// STREAM_NODATA        - we didn't time out, but we know there's no data to be read
+// STREAM_MESSAGE_END   - we reached the end of a 'message' block
+// STREAM_DATA_ERROR    - something else went wrong
+
+//This function is intended for message oriented streams,  (e.g. websocket).
+//Keep reading bytes until 'STREAM_MESSAGE_END' is returned, and you will have the full message. 
+//Even when 'STREAM_MESSAGE_END' is returned, some bytes may have been read, 
+//so check 'BytesRead' to see how many bytes have been read into the buffer. 
+//For instance, short messages may return STREAM_MESSAGE_END straight away, 
+//because the whole message has been read in one call.
+int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead);
+
+
 //Read 'ByteCount' bytes from a stream into 'Buffer'. Buffer must be large enough to take the specified number of bytes.
 //Return value is number of bytes actually read, which can be less than number requested. Negative return values 
 //indicate errors or end of stream.
 int STREAMReadBytes(STREAM *, char *Buffer, int ByteCount);
+
 
 //Read 'ByteCount' bytes from a stream into 'Buffer', but do not remove them from the STREAM objects internal buffer, so they
 //are still there to be read again. Buffer must be large enough to take the specified number of bytes
@@ -446,7 +477,9 @@ char* STREAMReadToMultiTerminator(char *Buffer, STREAM *S, char *Terms);
 //read bytes until newline is encountered
 char* STREAMReadLine(char *Buffer, STREAM *S);
 
-//read bytes until end-of-file/stream closed
+//read bytes until end-of-file/stream closed/message end. 
+//Use this for reading all of an http document, all of a file
+//or reading text-based 'messages' in protocols like websocket.
 char *STREAMReadDocument(char *RetStr, STREAM *S);
 
 //read till the string 'Term' is found. Return value is true or false depending on whether the string was found. 

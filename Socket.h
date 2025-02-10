@@ -9,19 +9,22 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "includes.h"
 
 //These flags are mostly used internally and you'll rarely be concerned with them
-#define CONNECT_NONBLOCK 1
-#define CONNECT_SSL 2
-#define CONNECT_HTTP_PROXY 4
-#define CONNECT_SOCKS_PROXY 8
-#define SOCK_NOKEEPALIVE 16 //by default sockets have TCP keepalive set. This option turns it off
-#define SOCK_BROADCAST 32   //used internally to create broadcast sockets
-#define SOCK_DONTROUTE 64
-#define SOCK_REUSEPORT 128
-#define SOCK_PEERCREDS 512  //used with UNIX sockets to get remote user ID
-#define CONNECT_ERROR 1024  //report errors even if Error:IgnoreIP is set
-#define SOCK_TLS_AUTO 2048
-#define SOCK_TCP_NODELAY  4096
-#define SOCK_TCP_FASTOPEN 8192
+//they do not clash with the stream flags, as they are applied to a seperate variable
+#define CONNECT_NONBLOCK        1
+#define CONNECT_SSL             2
+#define CONNECT_HTTP_PROXY      4
+#define CONNECT_SOCKS_PROXY     8
+#define SOCK_NOKEEPALIVE       16 //by default sockets have TCP keepalive set. This option turns it off
+#define SOCK_BROADCAST         32 //used internally to create broadcast sockets
+#define SOCK_DONTROUTE         64
+#define SOCK_REUSEPORT        128
+#define SOCK_PEERCREDS        512  //used with UNIX sockets to get remote user ID
+#define CONNECT_ERROR        1024  //report errors even if Error:IgnoreIP is set
+#define SOCK_TLS_AUTO        2048
+#define SOCK_TCP_NODELAY     4096
+#define SOCK_TCP_FASTOPEN    8192
+#define SOCK_TCP_FULL_FLUSH 16384 //whenever 'STREAMFlush' is called turn nagle's algorithm on/off to force flush to network
+#define SOCK_TCP_QUICKACK   32768 //whenever 'STREAMFlush' is called turn nagle's algorithm on/off to force flush to network
 
 #define SOCK_CONNECTED 1
 #define SOCK_CONNECTING -1

@@ -71,7 +71,17 @@ RAWDATA *RAWDATACopy(RAWDATA *RD, size_t offset, size_t len)
     return(RAWDATACreate(RD->Buffer+offset, "", len));
 }
 
+void RAWDATAMove(RAWDATA *RD, size_t from, size_t to, size_t len)
+{
+    if (len==0) len=RD->DataLen-from;
+    if ((from+len) > RD->BuffLen) len=RD->BuffLen-from;
+    memmove(RD->Buffer + to, RD->Buffer + from, len);
+}
 
+void RAWDATATrunc(RAWDATA *RD, size_t len)
+{
+    RD->DataLen=len;
+}
 
 int RAWDATAReadAt(RAWDATA *RD, STREAM *S, size_t offset, size_t size)
 {
@@ -100,10 +110,11 @@ int RAWDATAReadAt(RAWDATA *RD, STREAM *S, size_t offset, size_t size)
 
 int RAWDATAWrite(RAWDATA *RD, STREAM *S, size_t offset, size_t size)
 {
+    int result;
 
     if (offset > RD->BuffLen) return(FALSE);
     if (size==0) size=RD->DataLen;
-    if ((offset+size) > RD->BuffLen) size=RD->DataLen-offset;
+    if ((offset+size) > RD->DataLen) size=RD->DataLen-offset;
 
     return(STREAMWriteBytes(S, RD->Buffer+offset, size));
 }

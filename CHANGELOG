@@ -1,3 +1,15 @@
+v5.37 (2025-02-09)
+	* TCP Quickack support added and used as default in HTTP Get
+	* 'Full flush' option added to file and TCP, using fsync with files and pipes and disabling Nagle's algorithm for TCP
+  * 'Ordered List' functionality in List.c simplified/repaired
+	* When writing to pipes in STREAMs honor the PIPE_BUF constant if declared
+	* Added RAWDATAMove and RAWDATATrunc functions to enable using RAWDATA as a fifo
+  * Websocket client connection ceases to be experimental
+  * Added 'STREAMReadMessage' to handle websocket messages
+  * STREAMReadDocument now uses STREAMReadMessage and is the user interface to websocket messages
+  * Removed 'insert line feeds between websocket messages' testing bodge
+  * ditch __builtin_prefetch in List.c, once upon a time it seemed to give a benefit, but not now
+
 v5.36 (2025-02-04)
   * Restructure XMLGetTag and ensure whitespace is preserved in data between tags
   * Properly implement 'websocket frame too big', closing connection when this happens

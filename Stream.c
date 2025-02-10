@@ -459,11 +459,21 @@ int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
 
 
 //this is the function that finally pushes bytes onto the wire for a basic file-descriptor
-int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
+static int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 {
     int result;
     fd_set selectset;
     struct timeval tv;
+
+    //if the OS defines the PIPE_BUF variable that indicates how much data can
+    //be written to a pipe in one read, and we are using a pipe, then we want to
+    //limit our reads to that much
+#ifdef PIPE_BUF
+    if (S->Type == STREAM_TYPE_PIPE)
+    {
+        if (DataLen > PIPE_BUF) DataLen=PIPE_BUF;
+    }
+#endif
 
     //wait for fd to become writeable
     if (S->Timeout > 0)
@@ -481,8 +491,6 @@ int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 
     //if we lock on write, do the lock
     if (S->Flags & SF_WRLOCK) flock(S->out_fd,LOCK_EX);
-
-    //if (S->BlockSize && (S->BlockSize < (DataLen-count))) result=S->BlockSize;
 
     //do the actual write! Whoohoo!
     result=write(S->out_fd, Data, DataLen);
@@ -506,6 +514,8 @@ int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 }
 
 
+//this is not static, because it is the entry point for protocols like websocket
+//and is called in Websocket.c
 int STREAMPushBytes(STREAM *S, const char *Data, int DataLen)
 {
 
@@ -580,6 +590,33 @@ int STREAMFlush(STREAM *S)
 
     val=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
 
+    if (S->Flags & SF_FULL_FLUSH)
+    {
+        switch (S->Type)
+        {
+        case STREAM_TYPE_FILE:
+        case STREAM_TYPE_PIPE:
+        case STREAM_TYPE_UNIX:
+        case STREAM_TYPE_UNIX_DGRAM:
+            fsync(S->out_fd);
+            break;
+
+
+        case STREAM_TYPE_TCP:
+        case STREAM_TYPE_SSL:
+        case STREAM_TYPE_HTTP:
+        case STREAM_TYPE_CHUNKED_HTTP:
+        case STREAM_TYPE_TPROXY:
+        case STREAM_TYPE_WS:
+        case STREAM_TYPE_WSS:
+            //turning off Nagle's algorithm forces a flush of the buffer
+            SockSetOptions(S->out_fd, SOCK_TCP_NODELAY, 1);
+            //turn Nagle's back on, so we don't send partial data when we don't intend it
+            SockSetOptions(S->out_fd, SOCK_TCP_NODELAY, 0);
+            break;
+        }
+    }
+
     //if nothing left in stream (There shouldn't be) then wipe data because
     //there might have been passwords sent on the stream, and we don't want
     //that hanging about in memory
@@ -614,7 +651,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
     p_Input=Bytes;
     Curr=ListGetNext(S->ProcessingModules);
 
-    if (InLen==-1) state=STREAM_CLOSED;
+    if (InLen < 0) state=InLen;
     else len=InLen;
 
     //this is used if InLen==-1 to trigger flush of modules. After first use it becomes the exit values of the
@@ -635,11 +672,11 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
             else
             {
                 OutputBuff=SetStrLen(OutputBuff,olen);
-                //if InLen == -1 then we are requesting a flush
-                if (InLen==STREAM_CLOSED) result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, TRUE);
+                //if InLen < 0 then we are requesting a flush
+                if (InLen < 0) result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, TRUE);
                 else result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, FALSE);
 
-                if (result != STREAM_CLOSED) state=0;
+                if (result > 0) state=0;
 
 
                 if (result > 0)
@@ -677,7 +714,8 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
 
     if (len==0)
     {
-        if (state==STREAM_CLOSED) return(STREAM_CLOSED);
+        //if state is STREAM_CLOSED or STREAM_MESSAGE_END then return that
+        if (state < 0) return(state);
         if (S->State & LU_SS_DATA_ERROR) return(STREAM_DATA_ERROR);
     }
 
@@ -990,8 +1028,8 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
 
 static int STREAMParseConfig(const char *Config)
 {
-    const char *ptr;
     int Flags=SF_RDWR;
+    const char *ptr;
 
     if (StrValid(Config))
     {
@@ -1002,28 +1040,45 @@ static int STREAMParseConfig(const char *Config)
             //any space indicates end of open flags
             if (isspace(*ptr)) break;
 
+
             switch (*ptr)
             {
-            case 'c':
-                Flags |= SF_CREATE;
-                break;
+            //these four are the most basic open flags, and can have meaning in ssh, http and file streams
             case 'r':
                 if (Flags & SF_WRONLY) Flags &= ~(SF_RDONLY | SF_WRONLY);
                 else Flags |= SF_RDONLY;
                 break;
-            case 'w':
+            case 'w':  //means 'POST method' for HTTP
                 if (Flags & SF_RDONLY) Flags &= ~(SF_RDONLY | SF_WRONLY);
                 else Flags |= SF_WRONLY | SF_CREATE| SF_TRUNC;
                 break;
+            //case 'W': //means 'PUT method' for HTTP
             case 'a':
                 Flags |= STREAM_APPEND | SF_CREATE;
                 break;
+            case 'c':
+                Flags |= SF_CREATE;
+                break;
+
+            case 'A': //is mapped to 'SOCK_TLS_AUTO' in Socket.c, as STREAM_APPENDONLY has no meaning for sockets and is ignored
+                Flags |= STREAM_APPENDONLY;
+                break;
+            //case 'B': //is mapped to 'SOCK_BROADCAST' in Socket.c
+            //case 'D': //is mapped to 'DELETE method' in http
             case 'e':
                 Flags |= SF_ENCRYPT;
                 break;
             case 'E':
                 Flags |= SF_ERROR;
                 break;
+            case 'f':
+                Flags |= SF_FULL_FLUSH;
+                break;
+            case 'F':  //is mapped to 'SOCK_TCP_FASTOPEN' in Socket.c as 'SF_FOLLOW' has no meaning for sockets and is ignored
+                Flags |= SF_FOLLOW;
+                break;
+            //case 'k':  //is mapped to 'keep-alive' in Socket.c
+            //case 'H':  //is mapped to 'HEAD method' in Http.c
             case 'l':
                 Flags |= SF_RDLOCK;
                 break;
@@ -1036,22 +1091,18 @@ static int STREAMParseConfig(const char *Config)
             case 'n':
                 Flags |= SF_NONBLOCK;
                 break;
+            //case 'P':  //is mapped to 'SOCK_REUSEPORT' in Socket.c, and 'PATCH method' in Http.c
+            //case 'N':  //is mapped to 'SOC_TCP_NODELAY' in Socket.c
             case 's':
                 Flags |= SF_SECURE;
                 break;
             case 'i':
                 Flags |= SF_EXEC_INHERIT;
                 break;
-            case 'A':
-                Flags |= STREAM_APPENDONLY;
-                break;
             case 'I':
                 Flags |= STREAM_IMMUTABLE;
                 break;
-            case 'F':
-                Flags |= SF_FOLLOW;
-                break;
-            case 'R':
+            case 'R': //is mapped to 'SOCK_DONTROUTE' in Socket.c as 'SF_AUTORECOVER' has no meaning for sockets and is ignored
                 Flags |= SF_AUTORECOVER;
                 break;
             case 'S':
@@ -1104,6 +1155,8 @@ static const char *STREAMExtractMasterURL(const char *URL)
 }
 
 
+//this is only used internally at current, users would call 'STREAMOpen', which itself then calls this
+//this is so that 'STREAMOpen' can keep different STREAM types with diffferent Config's seperate
 #define STREAMFileOpenWithConfig(url, config) STREAMFileOpen((url), STREAMParseConfig(config))
 
 
@@ -1460,6 +1513,10 @@ int STREAMWaitForBytes(STREAM *S)
     //if using SSL and already has bytes queued, don't do a wait on select
     if ( (S->State & LU_SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
 
+    //if using Websockets and we are in the middle of a read, don't wait, as
+    //the next call to websockets might return MESSAGE_END
+    if (S->State & LU_SS_MSG_READ) WaitForBytes=FALSE;
+
     //must set this to 1 in case not doing a select, 'cos if S->Timeout is not set
     //then we won't wait at all, won't set read_result, so we must do it here
     read_result=1;
@@ -1519,13 +1576,27 @@ static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
 {
     int bytes_read;
 
-    if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_SH);
+    if ((S->Type == STREAM_TYPE_FILE) && (S->Flags & SF_RDLOCK)) flock(S->in_fd,LOCK_SH);
+
     bytes_read=read(S->in_fd, Buffer, Len);
     //if select said there was stuff to read, but there wasn't, then the socket must be closed
     //sockets can return '0' when closed, so we normalize this to -1 here
     if (bytes_read < 1) bytes_read=-1;
-    if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
 
+		switch (S->Type)
+		{
+		case STREAM_TYPE_TCP:
+		case STREAM_TYPE_SSL:
+		case STREAM_TYPE_HTTP:
+		case STREAM_TYPE_WS:
+		if (S->Flags & SF_QUICKACK) SockSetOptions(S->in_fd, SOCK_TCP_QUICKACK, 1);
+		break;
+
+		case STREAM_TYPE_FILE:
+    if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
+		break;
+		}
+	
     return(bytes_read);
 }
 
@@ -1615,21 +1686,22 @@ int STREAMReadCharsToBuffer(STREAM *S)
             S->BytesRead+=bytes_read;
             read_result=1;
         }
-        else read_result=STREAM_CLOSED;
+        //else read_result=STREAM_CLOSED;
+        else read_result=bytes_read;
     }
 
 //messing with this block tends to break STREAMSendFile
-    if (read_result > 0)
+    if (read_result >= 0)
     {
         read_result=STREAMReadThroughProcessors(S, tmpBuff, bytes_read);
     }
-    else if (read_result == STREAM_CLOSED)
+    else //if (read_result == STREAM_CLOSED)
     {
         //-1 means 'FLUSH'
         //there's no bytes in tmpBuff in this situation
         bytes_read=STREAMReadThroughProcessors(S, NULL, -1);
         if (bytes_read > 0) read_result=bytes_read;
-        else read_result=STREAM_CLOSED;
+        //else read_result=STREAM_CLOSED;
     }
 
 
@@ -1661,59 +1733,49 @@ int STREAMTransferBytesOut(STREAM *S, char *Dest, int DestSize)
 
 
 
-int STREAMReadBytes(STREAM *S, char *Buffer, int Buffsize)
+int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
 {
-    int bytes=0, result=0, total=0;
+    int state=STREAM_NODATA, bytes=0, result=0, total=0;
 
-
-    if (S->InStart >= S->InEnd)
-    {
-        result=STREAMReadCharsToBuffer(S);
-        if (S->InStart >= S->InEnd)
-        {
-            if (result==STREAM_CLOSED) return(STREAM_CLOSED);
-            if (result==STREAM_TIMEOUT) return(STREAM_TIMEOUT);
-            if (result==STREAM_DATA_ERROR) return(STREAM_DATA_ERROR);
-        }
-    }
 
     while (total < Buffsize)
     {
-        total+=STREAMTransferBytesOut(S, Buffer+total, Buffsize-total);
-
-        bytes=S->InEnd - S->InStart;
-
-        if (bytes < 1)
+        if (S->InStart >= S->InEnd)
         {
-            //in testing, the best way to prevent doing constant checking for new bytes,
-            //and so filling up the buffer, was to only check for new bytes if
-            //we didn't have enough to satisfy another read like the one we just had
-
-            //We must check for '< 1' rather than '-1' because
-            if (S->Flags & SF_MMAP) result=-1;
-            else result=FDCheckForBytes(S->in_fd);
-
-            if (result ==-1)
-            {
-                if (total==0) total=STREAM_CLOSED;
-                break;
-            }
-            if (result < 1) break;
-
             result=STREAMReadCharsToBuffer(S);
-            if (result < 1)
+            if (result > 0) state=STREAM_BYTES_READ;
+            else
             {
-                if (total > 0) return(total);
-                else return(result);
+                state=result;
+                break;
             }
         }
 
+        total+=STREAMTransferBytesOut(S, Buffer+total, Buffsize-total);
+        bytes=S->InEnd - S->InStart;
 
+        //if no other bytes currently available, then drop out
+        if (! FDCheckForBytes(S->in_fd)) break;
     }
-    return(total);
+
+    *BytesRead=total;
+    return(state);
 }
 
 
+
+int STREAMReadBytes(STREAM *S, char *Buffer, int Buffsize)
+{
+    int state, bytes_read;
+    state=STREAMReadMessage(S, Buffer, Buffsize, &bytes_read);
+
+    if (state == STREAM_BYTES_READ) return(bytes_read);
+
+//STREAM_NODATA can occur if no data to be read, but we had some in
+//our buffer
+    if ((state == STREAM_NODATA) && (bytes_read > 0)) return(bytes_read);
+    return(state);
+}
 
 uint64_t STREAMTell(STREAM *S)
 {
@@ -1948,6 +2010,7 @@ int STREAMReadChar(STREAM *S)
     int result;
 
     result=STREAMReadBytes(S, &inchar,1);
+
     if (result < 0) return(result);
     if (result==0) return(STREAM_NODATA);
     return((int) inchar);
@@ -2083,7 +2146,7 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
 
     if (! S)
     {
-        RaiseError(0, "STREAMReadToterminator", "NULL stream object passed to function");
+        RaiseError(0, "STREAMReadToTerminator", "NULL stream object passed to function");
         Destroy(Buffer);
         return(NULL);
     }
@@ -2256,8 +2319,7 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
 {
     char *Tempstr=NULL;
     const char *ptr;
-    int result=0, size, bytes_read=0, max;
-
+    int result=0, size, bytes_read=0, new_bytes=0, max;
 
     //for documents where we know the size, e.g. HTTP documents where we've had 'Content-Length'
     //there will be a size booked against the stream 'S'
@@ -2271,9 +2333,11 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     while (bytes_read < size)
     {
         RetStr=SetStrLen(RetStr, size);
-        result=STREAMReadBytes(S, RetStr+bytes_read, size - bytes_read);
-        if (result >= 0) bytes_read+=result;
-        else break;
+        new_bytes=0;
+        result=STREAMReadMessage(S, RetStr+bytes_read, size - bytes_read, &new_bytes);
+        bytes_read+=new_bytes;
+
+        if (result != STREAM_BYTES_READ) break;
     }
 
     //don't trust StrTrunc here, as we might have read
@@ -2285,11 +2349,13 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     StrLenCacheAdd(RetStr, bytes_read);
 
 
-    //if result > 0 then we didn't break out on reading a 'STREAM_CLOSED' or other close condition, we broke out because we had hit the size limit
-    if ((bytes_read==size) && (result > 0))
-    {
-        if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));
-    }
+    /*
+        //if result > 0 then we didn't break out on reading a 'STREAM_CLOSED' or other close condition, we broke out because we had hit the size limit
+        if ((bytes_read==size) && (new_bytes > 0))
+        {
+            if (bytes_read==max) RaiseError(0, "STREAMReadDocument", "Document size is greater than Max Document Size of %s bytes", ToIEC(max, 1));
+        }
+    */
 
     /*
         }

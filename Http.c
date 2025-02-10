@@ -960,7 +960,10 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
     if (StrValid(Info->ConnectionChain)) URL=FormatStr(URL,"%s|%s:%s:%d/",Info->ConnectionChain,Proto,Host,Port);
     else URL=FormatStr(URL,"%s:%s:%d/",Proto,Host,Port);
 
-    Tempstr=FormatStr(Tempstr, "rw timeout=%d", Info->Timeout);
+
+    //there's no data to send in a GET, so turn on quickack with 'q'
+    if (strcasecmp(Info->Method,"GET")==0) Tempstr=FormatStr(Tempstr, "rwq timeout=%d", Info->Timeout);
+    else Tempstr=FormatStr(Tempstr, "rw timeout=%d", Info->Timeout);
 
     //we cannot create Info->S if there is one, but we can't free/destroy it
     //thus we map it to 'S' and if we don't connect, we set 'S' to null and

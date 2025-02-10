@@ -37,6 +37,7 @@ RAWDATA *RAWDATACreate(const char *Data, const char *Encoding, int MaxSize);
 RAWDATA *RAWDATACopy(RAWDATA *RD, size_t offset, size_t len);
 int RAWDATAAppend(RAWDATA *RD, const char *Data, const char *Encoding, int MaxBuffLen);
 void RAWDATADestroy(void *p_RD);
+
 int RAWDATAReadAt(RAWDATA *RD, STREAM *S, size_t offset, size_t size);
 int RAWDATAWrite(RAWDATA *RD, STREAM *S, size_t offset, size_t size);
 char RAWDATAGetChar(RAWDATA *RD, size_t pos);
@@ -49,7 +50,8 @@ long RAWDATAFindChar(RAWDATA *RD, size_t offset, char Char);
 
 char *RAWDATACopyStr(char *RetStr, RAWDATA *RD);
 char *RAWDATACopyStrLen(char *RetStr, RAWDATA *RD, int len);
-
+void RAWDATAMove(RAWDATA *RD, size_t from, size_t to, size_t len);
+void RAWDATATrunc(RAWDATA *RD, size_t len);
 
 #ifdef __cplusplus
 }
