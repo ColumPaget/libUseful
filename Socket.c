@@ -19,6 +19,11 @@
 #include <linux/netfilter_ipv4.h>
 #endif
 
+#ifndef SOCK_NONBLOCK
+#include <fcntl.h>
+#define SOCK_NONBLOCK O_NONBLOCK
+#endif
+
 
 
 static void SocketParseConfigFlags(const char *Config, TSockSettings *Settings)
