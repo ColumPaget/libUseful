@@ -54,11 +54,11 @@ if test "$cf_use_soname" != "no"
 then
   if test "$GCC" = "yes"
   then
-        AC_SUBST([SONAME_FLAGS], ['-Wl,-soname,${SONAME}'])
+        AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
   else
       if test "$cf_use_soname" = "yes"
       then
-        AC_SUBST([SONAME_FLAGS], ['-Wl,-soname,${SONAME}'])
+        AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
       fi
   fi
 fi

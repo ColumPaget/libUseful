@@ -33,6 +33,9 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include <grp.h>  //for gid_t
 #include <math.h> //for math defines like PI
 
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#endif
 
 
 #include "defines.h"

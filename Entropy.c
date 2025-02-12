@@ -2,6 +2,7 @@
 #include "Encodings.h"
 #include "Hash.h"
 #include <sys/utsname.h>
+#include <sys/random.h>
 
 
 #ifdef HAVE_GETENTROPY
