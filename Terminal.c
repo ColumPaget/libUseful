@@ -998,15 +998,16 @@ int TerminalTextConfig(const char *Config)
 
 
 
-char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, STREAM *S)
+char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, ListNode *History, STREAM *S)
 {
     TLineEdit *LE;
-    int len, inchar, result;
+    int len, inchar, result, LineEditFlags=0;
     char *Tempstr=NULL, *Text=NULL;
     TKEY_CALLBACK_FUNC Func;
 
-    if (Flags & (TERM_HIDETEXT | TERM_SHOWSTARS | TERM_SHOWTEXTSTARS)) LE=LineEditCreate(LINE_EDIT_NOMOVE);
-    else LE=LineEditCreate(0);
+    if (Flags & (TERM_HIDETEXT | TERM_SHOWSTARS | TERM_SHOWTEXTSTARS)) LineEditFlags |= LINE_EDIT_NOMOVE;
+    LE=LineEditCreate(LineEditFlags);
+    if (History) LineEditSwapHistory(LE, History);
 
     len=StrLen(RetStr);
     if (len > 0)
@@ -1022,7 +1023,7 @@ char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, ST
         result=LineEditHandleChar(LE, inchar);
 
         Text=CopyStr(Text, LE->Line);
-        Tempstr=MCopyStr(Tempstr, "\r~>", Prefix, " ", NULL);
+        Tempstr=MCopyStr(Tempstr, "\r~>", Prefix, NULL);
 
         if (LE->Len > 0)
         {
@@ -1052,6 +1053,7 @@ char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, ST
         if (result == LINE_EDIT_ENTER)
         {
             RetStr=CopyStr(RetStr, LE->Line);
+            if (History) LineEditAddToHistory(LE, RetStr);
             break;
         }
 
@@ -1061,6 +1063,7 @@ char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, ST
         if (Func) Func(S, inchar);
     }
 
+    LineEditSwapHistory(LE, NULL);
     LineEditDestroy(LE);
     Destroy(Tempstr);
     Destroy(Text);
@@ -1071,11 +1074,11 @@ char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, ST
 
 char *TerminalReadText(char *RetStr, int Flags, STREAM *S)
 {
-    return(TerminalReadTextWithPrefix(RetStr, Flags, "", S));
+    return(TerminalReadTextWithPrefix(RetStr, Flags, "", NULL, S));
 }
 
 
-char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
+char *TerminalReadPromptWithHistory(char *RetStr, const char *Prompt, int Flags, ListNode *History, STREAM *S)
 {
     int TTYFlags=0;
 
@@ -1085,7 +1088,7 @@ char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
         TTYSetEcho(S->in_fd, FALSE);
         TTYSetCanonical(S->in_fd, FALSE);
     }
-    RetStr=TerminalReadTextWithPrefix(RetStr,Flags, Prompt,  S);
+    RetStr=TerminalReadTextWithPrefix(RetStr, Flags, Prompt, History, S);
     if (TTYFlags & TTYFLAG_ECHO) TTYSetEcho(S->in_fd, TRUE);
     if (TTYFlags & TTYFLAG_CANON) TTYSetCanonical(S->in_fd, TRUE);
 
@@ -1093,6 +1096,10 @@ char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
 }
 
 
+char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S)
+{
+    return(TerminalReadPromptWithHistory(RetStr, Prompt, Flags, NULL, S));
+}
 
 
 int TerminalInit(STREAM *S, int Flags)

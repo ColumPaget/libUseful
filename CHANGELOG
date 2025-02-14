@@ -1,9 +1,14 @@
+v5.38 (2025-02-14)
+  * Fixes for LineEdit in TerminalReadPrompt
+  * TerminalReadPromptWithPrefix now accepts a history list
+  * Ensure that data between XML tags that ends in '/' isn't mistaken for a close tag
+
 v5.37 (2025-02-09)
-	* TCP Quickack support added and used as default in HTTP Get
-	* 'Full flush' option added to file and TCP, using fsync with files and pipes and disabling Nagle's algorithm for TCP
+  * TCP Quickack support added and used as default in HTTP Get
+  * 'Full flush' option added to file and TCP, using fsync with files and pipes and disabling Nagle's algorithm for TCP
   * 'Ordered List' functionality in List.c simplified/repaired
-	* When writing to pipes in STREAMs honor the PIPE_BUF constant if declared
-	* Added RAWDATAMove and RAWDATATrunc functions to enable using RAWDATA as a fifo
+  * When writing to pipes in STREAMs honor the PIPE_BUF constant if declared
+  * Added RAWDATAMove and RAWDATATrunc functions to enable using RAWDATA as a fifo
   * Websocket client connection ceases to be experimental
   * Added 'STREAMReadMessage' to handle websocket messages
   * STREAMReadDocument now uses STREAMReadMessage and is the user interface to websocket messages

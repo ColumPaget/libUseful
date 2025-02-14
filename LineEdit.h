@@ -1,3 +1,9 @@
+/*
+Copyright (c) 2025 Colum Paget <colums.projects@googlemail.com>
+* SPDX-License-Identifier: GPL-3.0
+*/
+
+
 #ifndef LIBUSEFUL_LINEEDIT_H
 #define LIBUSEFUL_LINEEDIT_H
 

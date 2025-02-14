@@ -366,6 +366,9 @@ char *TerminalReadText(char *RetStr, int Flags, STREAM *S);
 //as TerminalReadText but with a prompt 
 char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S);
 
+//as TerminalReadText but with a prompt and supplied history
+char *TerminalReadPromptWithHistory(char *RetStr, const char *Prompt, int Flags, ListNode *History, STREAM *S);
+
 //get width and height/length of a terminal
 void TerminalGeometry(STREAM *S, int *wid, int *len);
 

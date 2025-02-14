@@ -1583,20 +1583,20 @@ static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
     //sockets can return '0' when closed, so we normalize this to -1 here
     if (bytes_read < 1) bytes_read=-1;
 
-		switch (S->Type)
-		{
-		case STREAM_TYPE_TCP:
-		case STREAM_TYPE_SSL:
-		case STREAM_TYPE_HTTP:
-		case STREAM_TYPE_WS:
-		if (S->Flags & SF_QUICKACK) SockSetOptions(S->in_fd, SOCK_TCP_QUICKACK, 1);
-		break;
+    switch (S->Type)
+    {
+    case STREAM_TYPE_TCP:
+    case STREAM_TYPE_SSL:
+    case STREAM_TYPE_HTTP:
+    case STREAM_TYPE_WS:
+        if (S->Flags & SF_QUICKACK) SockSetOptions(S->in_fd, SOCK_TCP_QUICKACK, 1);
+        break;
 
-		case STREAM_TYPE_FILE:
-    if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
-		break;
-		}
-	
+    case STREAM_TYPE_FILE:
+        if (S->Flags & SF_RDLOCK) flock(S->in_fd,LOCK_UN);
+        break;
+    }
+
     return(bytes_read);
 }
 

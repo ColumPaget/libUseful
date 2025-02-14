@@ -114,6 +114,8 @@ int LineEditHandleChar(TLineEdit *LE, int Char)
             {
                 LE->History->Side=ListGetNext(LE->History->Side);
                 if (LE->History->Side) LineEditSetText(LE, LE->History->Side->Tag);
+		//if ListGetNext returned NULL then we must be at the end of the history
+            	else LineEditSetText(LE, "");
             }
         }
         break;
