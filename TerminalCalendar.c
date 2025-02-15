@@ -16,31 +16,12 @@ void TerminalCalendarSetMonthYear(TERMCALENDAR *TC, int Month, int Year)
 
 
 
-
-static int IsToday(int Day, int Month, int Year, struct tm *Today)
-{
-
-    if (
-        (Day == Today->tm_mday) &&
-        (Month == (Today->tm_mon + 1)) &&
-        (Year == Today->tm_year + 1900)
-    )
-    {
-        return(TRUE);
-    }
-
-    return(FALSE);
-}
-
-
 void TerminalCalendarDraw(TERMCALENDAR *TC)
 {
     char *Tempstr=NULL, *Token=NULL, *CalStr=NULL, *Output=NULL, *Attribs=NULL;
     const char *ptr, *p_DayStr, *p_LeftCursor, *p_RightCursor;
     int i, y=0, count, Selector;
     int Day, Month, Year;
-    struct tm *Now;
-    time_t when;
 
     Selector=atoi(GetVar(TC->Options, "Selector"));
     Month=atoi(GetVar(TC->Options, "CurrMonth"));
@@ -60,6 +41,9 @@ void TerminalCalendarDraw(TERMCALENDAR *TC)
     Tempstr=CatStr(Tempstr, Token);
     Tempstr=TerminalPadStr(Tempstr, ' ', 33);
     Tempstr=CatStr(Tempstr, "~0");
+
+
+		TerminalCursorMove(TC->Term, TC->x, TC->y);
     y=TerminalWidgetPutLine(TC, y, Tempstr);
 
     //print out 'day names' headers
@@ -72,12 +56,6 @@ void TerminalCalendarDraw(TERMCALENDAR *TC)
 
     y=TerminalWidgetPutLine(TC, y, Output);
     Output=CopyStr(Output, "");
-
-
-    //must get 'now' late, or it can be changed by other users of 'localtime'
-    when=time(NULL);
-    Now=localtime(&when);
-
 
     count=0;
     ptr=GetToken(CalStr, ",|\n", &Token, GETTOKEN_MULTI_SEP | GETTOKEN_INCLUDE_SEP);
@@ -111,7 +89,7 @@ void TerminalCalendarDraw(TERMCALENDAR *TC)
             if ((*Token == '-') || (*Token == '+')) Attribs=CatStr(Attribs, GetVar(TC->Options, "OutsideMonthAttribs"));
             else Attribs=CatStr(Attribs, GetVar(TC->Options, "InsideMonthAttribs"));
 
-            if (IsToday(Day, Month, Year, Now)) Attribs=CatStr(Attribs, GetVar(TC->Options, "TodayAttribs"));
+            if (IsToday(Day, Month, Year)) Attribs=CatStr(Attribs, GetVar(TC->Options, "TodayAttribs"));
 
             Tempstr=FormatStr(Tempstr, "%s%s%s~0%s ", p_LeftCursor, Attribs, p_DayStr, p_RightCursor);
 
@@ -284,26 +262,31 @@ TERMCALENDAR *TerminalCalendarCreate(STREAM *Term, int x, int y, const char *Con
 }
 
 
-char *TerminalCalendar(char *RetStr, STREAM *Term, int x, int y, const char *Config)
+char *TerminalCalendarProcess(char *RetStr, TERMCALENDAR *TC)
 {
-    TERMCALENDAR *TC;
     int Key;
 
-
-    RetStr=CopyStr(RetStr, "");
-    TC=TerminalCalendarCreate(Term, x, y, Config);
-    if (TC)
-    {
         TerminalCalendarDraw(TC);
         while (1)
         {
-            Key=TerminalReadChar(Term);
+            Key=TerminalReadChar(TC->Term);
             RetStr=TerminalCalendarOnKey(RetStr, TC, Key);
             if (StrValid(RetStr)) break;
             TerminalCalendarDraw(TC);
         }
 
-    }
+return(RetStr);
+}
+ 
+
+char *TerminalCalendar(char *RetStr, STREAM *Term, int x, int y, const char *Config)
+{
+    TERMCALENDAR *TC;
+
+
+    RetStr=CopyStr(RetStr, "");
+    TC=TerminalCalendarCreate(Term, x, y, Config);
+    if (TC) RetStr=TerminalCalendarProcess(RetStr, TC);
 
     return(RetStr);
 }

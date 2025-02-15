@@ -26,7 +26,7 @@ ListNode *TerminalThemeInit()
 
 
     SetVar(TermTheme, "Calendar:DayHeaders", "Sun,Mon,Tue,Wed,Thu,Fri,Sat");
-    SetVar(TermTheme, "Calendar:MonthNames", "January,Febuary,March,April,May,June,July,August,September,October,November,December");
+    SetVar(TermTheme, "Calendar:MonthNames", "January,February,March,April,May,June,July,August,September,October,November,December");
     SetVar(TermTheme, "Calendar:CursorLeft", "[");
     SetVar(TermTheme, "Calendar:CursorRight", "]");
     SetVar(TermTheme, "Calendar:TitleAttribs", "~B~w");

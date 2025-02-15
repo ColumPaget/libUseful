@@ -1753,7 +1753,6 @@ int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
 
         total+=STREAMTransferBytesOut(S, Buffer+total, Buffsize-total);
         bytes=S->InEnd - S->InStart;
-
         //if no other bytes currently available, then drop out
         if (! FDCheckForBytes(S->in_fd)) break;
     }
@@ -1766,14 +1765,15 @@ int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
 
 int STREAMReadBytes(STREAM *S, char *Buffer, int Buffsize)
 {
-    int state, bytes_read;
+    int state, bytes_read=0;
     state=STREAMReadMessage(S, Buffer, Buffsize, &bytes_read);
 
     if (state == STREAM_BYTES_READ) return(bytes_read);
 
-//STREAM_NODATA can occur if no data to be read, but we had some in
-//our buffer
-    if ((state == STREAM_NODATA) && (bytes_read > 0)) return(bytes_read);
+//STREAM_NODATA and STREAM_CLOSE can both occur and still
+//return some data, so if we had any bytes read, return that
+    if (bytes_read > 0) return(bytes_read);
+
     return(state);
 }
 

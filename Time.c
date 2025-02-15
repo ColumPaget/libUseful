@@ -14,6 +14,32 @@ static time_t LU_CachedTime=0;
 static uint64_t LU_CachedMillisecs=0;
 
 
+
+
+int IsToday(int Day, int Month, int Year)
+{
+time_t when;
+struct tm *Today;
+
+    //must get 'now' late, or it can be changed by other users of 'localtime'
+    when=time(NULL);
+    Today=localtime(&when);
+
+
+    if (
+        (Day == Today->tm_mday) &&
+        (Month == (Today->tm_mon + 1)) &&
+        (Year == Today->tm_year + 1900)
+    )
+    {
+        return(TRUE);
+    }
+
+    return(FALSE);
+}
+
+
+
 int IsLeapYear(unsigned int year)
 {
     if ((year % 4) != 0) return(FALSE);

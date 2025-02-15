@@ -70,7 +70,9 @@ TERMCALENDAR *TerminalCalendarCreate(STREAM *Term, int x, int y, const char *Con
 void TerminalCalendarDraw(TERMCALENDAR *TC);
 char *TerminalCalendarProcess(char *RetStr, TERMCALENDAR *TC);
 char *TerminalCalendar(char *RetStr, STREAM *Term, int x, int y, const char *Config);
-
+char *TerminalCalendarOnKey(char *RetStr, TERMCALENDAR *TC, int Key);
+char *TerminalCalendarReturnDate(char *RetStr, TERMCALENDAR *TC);
+void TerminalCalendarSetMonthYear(TERMCALENDAR *TC, int Month, int Year);
 
 #ifdef __cplusplus
 }
