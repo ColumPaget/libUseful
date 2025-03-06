@@ -11,9 +11,9 @@ static void HTTPServerSetValue(STREAM *S, const char *Name, const char *Value)
 
 //do not allow these to be set, as they will
 //overwrite the true HTTP method and url
-    if (strcmp(Name, "HTTP-Version")==0) return;
-    if (strcmp(Name, "Method")==0) return;
-    if (strcmp(Name, "URL")==0) return;
+    if (CompareStrNoCase(Name, "HTTP-Version")==0) return;
+    if (CompareStrNoCase(Name, "Method")==0) return;
+    if (CompareStrNoCase(Name, "URL")==0) return;
 
     Tempstr=MCopyStr(Tempstr, "HTTP:", Name, NULL);
     STREAMSetValue(S, Tempstr, Value);

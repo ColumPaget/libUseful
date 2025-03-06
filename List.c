@@ -466,8 +466,8 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
     {
         while (Node)
         {
-            if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Node->Tag,Name);
-            else result=strcasecmp(Node->Tag,Name);
+            if (Head->Flags & LIST_FLAG_CASE) result=CompareStr(Node->Tag,Name);
+            else result=CompareStrNoCase(Node->Tag,Name);
 
             if (
                 (result==0) &&
@@ -697,7 +697,7 @@ void ListSortNamedItems(ListNode *List)
         {
             if (Prev !=NULL)
             {
-                if (strcmp(Prev->Tag,Curr->Tag) < 0)
+                if (CompareStr(Prev->Tag,Curr->Tag) < 0)
                 {
                     sorted=0;
                     ListSwapItems(Prev,Curr);

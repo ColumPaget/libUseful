@@ -1,3 +1,7 @@
+v5.41 (2025-03-06)
+ * Fix another crash in List.c
+ * Use CompareStrNoCase in preference to strcmp and strcasecmp in a few places.
+
 v5.40 (2025-03-06)
   * Add 'binary' encoding
   * Avoid use of 'SetStrLen' in stream/binary functions to avoid polluting the StrLen cache

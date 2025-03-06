@@ -55,19 +55,19 @@ char *StringListAdd(char *RetStr, const char *Item, const char *Sep)
 
 char *StringListAddUnique(char *RetStr, const char *Item, const char *Sep)
 {
-char *Token=NULL;
-const char *ptr;
+    char *Token=NULL;
+    const char *ptr;
 
-ptr=GetToken(RetStr, Sep, &Token, 0);
-while (ptr)
-{
-if (CompareStr(Token, Item) ==0)
-{
-Destroy(Token);
-return(RetStr);
-}
-ptr=GetToken(ptr, Sep, &Token, 0);
-}
+    ptr=GetToken(RetStr, Sep, &Token, 0);
+    while (ptr)
+    {
+        if (CompareStr(Token, Item) ==0)
+        {
+            Destroy(Token);
+            return(RetStr);
+        }
+        ptr=GetToken(ptr, Sep, &Token, 0);
+    }
 
-return(StringListAdd(RetStr, Item, Sep));
+    return(StringListAdd(RetStr, Item, Sep));
 }

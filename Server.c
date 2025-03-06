@@ -115,7 +115,7 @@ static void STREAMServerParseConfig(STREAM *S, const char *Config)
     ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
     while (ptr)
     {
-        if (strcasecmp(Name, "Auth")==0) STREAMSetValue(S, "AUTH:Types", Value);
+        if (CompareStrNoCase(Name, "Auth")==0) STREAMSetValue(S, "AUTH:Types", Value);
         else STREAMSetValue(S, Name, Value);
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
@@ -141,18 +141,18 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
     switch (*Proto)
     {
     case 'b':
-        if (strcasecmp(Proto,"bcast")==0) Flags |= SOCK_BROADCAST;
+        if (CompareStrNoCase(Proto,"bcast")==0) Flags |= SOCK_BROADCAST;
         fd=IPServerNew(SOCK_DGRAM, Host, Port, Flags);
         Type=STREAM_TYPE_UDP;
         break;
 
     case 'h':
-        if (strcmp(Proto,"http")==0)
+        if (CompareStrNoCase(Proto,"http")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_HTTP_SERVER;
         }
-        else if (strcmp(Proto,"https")==0)
+        else if (CompareStrNoCase(Proto,"https")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_HTTP_SERVER;
@@ -162,7 +162,7 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
 
 
     case 's':
-        if (strcmp(Proto,"ssl")==0)
+        if (CompareStrNoCase(Proto,"ssl")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_TCP_SERVER;
@@ -171,18 +171,18 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         break;
 
     case 't':
-        if (strcmp(Proto,"tcp")==0)
+        if (CompareStrNoCase(Proto,"tcp")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_TCP_SERVER;
         }
-        else if (strcmp(Proto,"tls")==0)
+        else if (CompareStrNoCase(Proto,"tls")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_TCP_SERVER;
             Flags |= SF_TLS;
         }
-        else if (strcmp(Proto,"tproxy")==0)
+        else if (CompareStrNoCase(Proto,"tproxy")==0)
         {
 #ifdef SOCK_TPROXY
             fd=IPServerNew(SOCK_TPROXY, Host, Port, Flags);
@@ -192,18 +192,18 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         break;
 
     case 'u':
-        if (strcmp(Proto,"udp")==0)
+        if (CompareStrNoCase(Proto,"udp")==0)
         {
             fd=IPServerNew(SOCK_DGRAM, Host, Port, Flags);
             Type=STREAM_TYPE_UDP;
         }
-        else if (strcmp(Proto,"unix")==0)
+        else if (CompareStrNoCase(Proto,"unix")==0)
         {
             fd=UnixServerInit(SOCK_STREAM, URL+5);
             Type=STREAM_TYPE_UNIX_SERVER;
             if (Settings.Perms > -1) chmod(URL+5, Settings.Perms);
         }
-        else if (strcmp(Proto,"unixdgram")==0)
+        else if (CompareStrNoCase(Proto,"unixdgram")==0)
         {
             fd=UnixServerInit(SOCK_DGRAM, URL+10);
             Type=STREAM_TYPE_UNIX_DGRAM;
@@ -212,12 +212,12 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
         break;
 
     case 'w':
-        if (strcmp(Proto, "ws")==0)
+        if (CompareStrNoCase(Proto, "ws")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_WS_SERVER;
         }
-        else if (strcmp(Proto, "wss")==0)
+        else if (CompareStrNoCase(Proto, "wss")==0)
         {
             fd=TCPServerNew(Host, Port, Flags, &Settings);
             Type=STREAM_TYPE_WS_SERVER;

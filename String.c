@@ -87,7 +87,7 @@ char *strmrep(char *str, char *oldchars, char newchar)
 
 
 
-int CompareStr(const char *S1, const char *S2)
+inline int CompareStr(const char *S1, const char *S2)
 {
     if (
         (! StrValid(S1)) &&
@@ -101,7 +101,7 @@ int CompareStr(const char *S1, const char *S2)
 }
 
 
-int CompareStrNoCase(const char *S1, const char *S2)
+inline int CompareStrNoCase(const char *S1, const char *S2)
 {
     if (
         (! StrValid(S1)) &&

@@ -101,18 +101,18 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
 
     while (ptr)
     {
-        if (strcasecmp(Name, "listen")==0) Settings->QueueLen=atoi(Value);
-        else if (strcasecmp(Name, "ttl")==0) Settings->TTL=atoi(Value);
-        else if (strcasecmp(Name, "tos")==0) Settings->ToS=atoi(Value);
-        else if (strcasecmp(Name, "mark")==0) Settings->Mark=atoi(Value);
-        else if (strcasecmp(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        else if (strcasecmp(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        else if (strcasecmp(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        else if (strcasecmp(Name,"keepalive")==0)
+        if (CompareStrNoCase(Name, "listen")==0) Settings->QueueLen=atoi(Value);
+        else if (CompareStrNoCase(Name, "ttl")==0) Settings->TTL=atoi(Value);
+        else if (CompareStrNoCase(Name, "tos")==0) Settings->ToS=atoi(Value);
+        else if (CompareStrNoCase(Name, "mark")==0) Settings->Mark=atoi(Value);
+        else if (CompareStrNoCase(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (CompareStrNoCase(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (CompareStrNoCase(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (CompareStrNoCase(Name,"keepalive")==0)
         {
             if (StrValid(Value) && (strncasecmp(Value, "n",1)==0)) Settings->Flags |= SOCK_NOKEEPALIVE;
         }
-        else if (strcasecmp(Name,"timeout")==0)
+        else if (CompareStrNoCase(Name,"timeout")==0)
         {
             Settings->Timeout=atoi(Value);
         }
@@ -381,7 +381,7 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
         {
             StripTrailingWhitespace(Tempstr);
             ptr=GetToken(Tempstr," ",&Token,0);
-            if (strcmp(Token,IP)==0)
+            if (CompareStr(Token,IP)==0)
             {
                 while (isspace(*ptr)) ptr++;
                 ptr=GetToken(ptr," ",&Token,0);
@@ -791,10 +791,10 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
 
 
     if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
-    if ((strcasecmp(Proto,"udp")==0) || (strcasecmp(Proto,"bcast")==0))
+    if ((CompareStrNoCase(Proto,"udp")==0) || (CompareStrNoCase(Proto,"bcast")==0))
     {
         sock=BindSock(SOCK_DGRAM, p_LocalHost, 0, 0);
-        if (strcasecmp(Proto,"bcast")==0) Settings->Flags |= SOCK_BROADCAST;
+        if (CompareStrNoCase(Proto,"bcast")==0) Settings->Flags |= SOCK_BROADCAST;
     }
     else sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
 
@@ -974,10 +974,10 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
 
     if (result==TRUE)
     {
-        if (strcasecmp(Proto, "ssl")==0) S->Type=STREAM_TYPE_SSL;
-        else if (strcasecmp(Proto, "tls")==0) S->Type=STREAM_TYPE_SSL;
-        else if (strcasecmp(Proto, "udp")==0) S->Type=STREAM_TYPE_UDP;
-        else if (strcasecmp(Proto, "bcast")==0) S->Type=STREAM_TYPE_UDP;
+        if (CompareStrNoCase(Proto, "ssl")==0) S->Type=STREAM_TYPE_SSL;
+        else if (CompareStrNoCase(Proto, "tls")==0) S->Type=STREAM_TYPE_SSL;
+        else if (CompareStrNoCase(Proto, "udp")==0) S->Type=STREAM_TYPE_UDP;
+        else if (CompareStrNoCase(Proto, "bcast")==0) S->Type=STREAM_TYPE_UDP;
         else S->Type=STREAM_TYPE_TCP;
 
         if (S->Type==STREAM_TYPE_SSL) Settings.Flags |= CONNECT_SSL;
@@ -1031,15 +1031,15 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
         if (StrValid(Token)) Port=strtoul(Token, 0, 10);
 
         STREAMSetFlushType(S,FLUSH_LINE,0,0);
-        if (strcasecmp(Proto,"fifo")==0)
+        if (CompareStrNoCase(Proto,"fifo")==0)
         {
             mknod(Host, S_IFIFO|0666, 0);
             S->in_fd=open(Host, O_RDWR);
             S->out_fd=S->in_fd;
         }
-        else if (strcasecmp(Proto,"unix")==0)  result=STREAMConnectUnixSocket(S, URL+5, SOCK_STREAM); //whole of URL is path
-        else if (strcasecmp(Proto,"unixstream")==0)  result=STREAMConnectUnixSocket(S, URL+11, SOCK_STREAM); //whole of URL is path
-        else if (strcasecmp(Proto,"unixdgram")==0) result=STREAMConnectUnixSocket(S, URL+10, SOCK_DGRAM); //whole of URL is path
+        else if (CompareStrNoCase(Proto,"unix")==0)  result=STREAMConnectUnixSocket(S, URL+5, SOCK_STREAM); //whole of URL is path
+        else if (CompareStrNoCase(Proto,"unixstream")==0)  result=STREAMConnectUnixSocket(S, URL+11, SOCK_STREAM); //whole of URL is path
+        else if (CompareStrNoCase(Proto,"unixdgram")==0) result=STREAMConnectUnixSocket(S, URL+10, SOCK_DGRAM); //whole of URL is path
         else result=STREAMNetConnect(S, Proto, Host, Port, Config);
     }
 

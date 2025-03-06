@@ -93,22 +93,25 @@ void TerminalThemeApply(TERMWIDGET *TW, const char *Type)
     TW->CursorLeft=TerminalThemeLoadValue(TW->CursorLeft, Type, "CursorLeft");
     TW->CursorRight=TerminalThemeLoadValue(TW->CursorRight, Type, "CursorRight");
 
-    if (strcasecmp(Type, "progress")==0)
+    if (StrValid(Type))
     {
-        SetVar(TW->Options, "progress", TerminalThemeGet(Type, "progress"));
-        SetVar(TW->Options, "remain", TerminalThemeGet(Type, "remain"));
-    }
+        if (strcasecmp(Type, "progress")==0)
+        {
+            SetVar(TW->Options, "progress", TerminalThemeGet(Type, "progress"));
+            SetVar(TW->Options, "remain", TerminalThemeGet(Type, "remain"));
+        }
 
-    if (strcasecmp(Type, "calendar")==0)
-    {
-        SetVar(TW->Options, "TitleAttribs", TerminalThemeGet(Type, "TitleAttribs"));
-        SetVar(TW->Options, "TitleMonthAttribs", TerminalThemeGet(Type, "TitleMonthAttribs"));
-        SetVar(TW->Options, "TitleYearAttribs", TerminalThemeGet(Type, "TitleYearAttribs"));
-        SetVar(TW->Options, "OutsideMonthAttribs", TerminalThemeGet(Type, "OutsideMonthAttribs"));
-        SetVar(TW->Options, "InsideMonthAttribs", TerminalThemeGet(Type, "InsideMonthAttribs"));
-        SetVar(TW->Options, "TodayAttribs", TerminalThemeGet(Type, "TodayAttribs"));
-        SetVar(TW->Options, "DayHeaders", TerminalThemeGet(Type, "DayHeaders"));
-        SetVar(TW->Options, "MonthNames", TerminalThemeGet(Type, "MonthNames"));
+        if (strcasecmp(Type, "calendar")==0)
+        {
+            SetVar(TW->Options, "TitleAttribs", TerminalThemeGet(Type, "TitleAttribs"));
+            SetVar(TW->Options, "TitleMonthAttribs", TerminalThemeGet(Type, "TitleMonthAttribs"));
+            SetVar(TW->Options, "TitleYearAttribs", TerminalThemeGet(Type, "TitleYearAttribs"));
+            SetVar(TW->Options, "OutsideMonthAttribs", TerminalThemeGet(Type, "OutsideMonthAttribs"));
+            SetVar(TW->Options, "InsideMonthAttribs", TerminalThemeGet(Type, "InsideMonthAttribs"));
+            SetVar(TW->Options, "TodayAttribs", TerminalThemeGet(Type, "TodayAttribs"));
+            SetVar(TW->Options, "DayHeaders", TerminalThemeGet(Type, "DayHeaders"));
+            SetVar(TW->Options, "MonthNames", TerminalThemeGet(Type, "MonthNames"));
+        }
     }
 
 }

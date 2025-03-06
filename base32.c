@@ -54,7 +54,7 @@ int base32decode(unsigned char *Out, const char *In, const char *Encoder)
     end=Tempstr+val;
 
     p_Out=Out;
-    
+
     for (ptr=Tempstr; ptr < end; ptr+=8)
     {
         val=parse_bcd_byte(ptr);

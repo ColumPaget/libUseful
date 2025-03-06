@@ -192,7 +192,7 @@ char *UnicodeStrFromNameAtLevel(char *RetStr, int UnicodeLevel, const char *Name
         {
             StripTrailingWhitespace(Tempstr);
             ptr=GetToken(Tempstr, "\\S", &Token, 0);
-            if (strcasecmp(Token, Name)==0)
+            if (CompareStrNoCase(Token, Name)==0)
             {
                 SetVar(UnicodeNamesCache, Name, ptr);
                 code=strtol(ptr, NULL, 16);

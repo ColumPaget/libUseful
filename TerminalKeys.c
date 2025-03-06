@@ -555,6 +555,7 @@ const char *TerminalTranslateKeyCode(int key)
 int TerminalTranslateKeyStrWithMod(const char *str, int *mod)
 {
     if (mod != NULL) *mod=0;
+    if (! StrValid(str)) return(0);
 
 //read as many modifiers as are found, then break
     while (1)
