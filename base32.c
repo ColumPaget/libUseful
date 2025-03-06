@@ -2,9 +2,6 @@
 
 
 
-
-
-
 /* This is surely not the fastest base32 decoder, it is written for understanding/legiblity, not speed.
  * first we convert base32 into a binary, as a string of '1' and '0' characters (binary coded decimal).
  * Then we work through this string converting it into eight-bit values.
@@ -18,12 +15,12 @@ char *base32tobinary(char *RetStr, const char *In, const char *Encoder)
     const char *ptr, *found;
     uint32_t val=0, bit;
 
-    for (ptr=In; *ptr != '\0'; ptr++)
+    for (ptr=In; (*ptr != '\0') ; ptr++)
     {
 //find the position in the base32 characterset. That position is the 'value' of the character
         found=strchr(Encoder, *ptr);
         if (found) val=(found - Encoder);
-        else break;;
+        else break;
 
 //the highest value a base 32 character can express is 16 (0x10)
         bit=16;
@@ -46,18 +43,25 @@ int base32decode(unsigned char *Out, const char *In, const char *Encoder)
 {
     char *Tempstr=NULL;
     unsigned char *p_Out;
-    const char *ptr;
+    const char *ptr, *end;
     uint32_t val;
 
     Tempstr=base32tobinary(Tempstr, In, Encoder);
 
+    val=StrLen(Tempstr);
+    val -= val % 8;
+    StrUnsafeTrunc(Tempstr, val);
+    end=Tempstr+val;
+
     p_Out=Out;
-    for (ptr=Tempstr; ptr < Tempstr+StrLen(Tempstr); ptr+=8)
+    
+    for (ptr=Tempstr; ptr < end; ptr+=8)
     {
         val=parse_bcd_byte(ptr);
         *p_Out=val & 0xFF;
         p_Out++;
     }
+    *p_Out='\0';
 
     val=p_Out - Out;
 
@@ -73,22 +77,26 @@ char *base32encode(char *RetStr, const char *Input, int Len, const char *Encoder
 {
     char *Tempstr=NULL, *BCD=NULL;
     const char *ptr, *end;
-    int val;
+    int val, len=0;
 
     RetStr=CopyStr(RetStr, "");
     BCD=encode_bcd_bytes(BCD, (unsigned const char *) Input, Len);
-
     end=BCD+StrLen(BCD);
+
     for (ptr=BCD; ptr < end; ptr+=5)
     {
         Tempstr=CopyStrLen(Tempstr, ptr, 5);
         Tempstr=PadStrTo(Tempstr, '0', 5);
         val=(int) parse_bcd_byte(Tempstr);
-        RetStr=AddCharToStr(RetStr, Encoder[val]);
+        RetStr=AddCharToBuffer(RetStr, len, Encoder[val]);
+        len++;
     }
 
     val=StrLen(RetStr) % 8;
-    for (; val < 8; val++) RetStr=AddCharToStr(RetStr, Pad);
+    if (val > 0)
+    {
+        for (; val < 8; val++) RetStr=AddCharToStr(RetStr, Pad);
+    }
 
     Destroy(Tempstr);
     Destroy(BCD);

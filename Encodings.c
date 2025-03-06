@@ -122,6 +122,11 @@ int EncodingParse(const char *Str)
             else if (strcasecmp(Str,"10")==0) Encode=ENCODE_DECIMAL;
             break;
 
+        case '2':
+            if (strcasecmp(Str,"2")==0) Encode=ENCODE_BINARY;
+            break;
+
+
         case '3':
             if (strcasecmp(Str,"32")==0) Encode=ENCODE_BASE32;
             break;
@@ -143,11 +148,16 @@ int EncodingParse(const char *Str)
 
         case 'b':
         case 'B':
-            if (strcasecmp(Str,"base64")==0) Encode=ENCODE_BASE64;
-            else if (strcasecmp(Str,"b64")==0) Encode=ENCODE_BASE64;
+            if (strcasecmp(Str, "base2")==0) Encode=ENCODE_BINARY;
+            else if (strcasecmp(Str, "bin")==0) Encode=ENCODE_BINARY;
+            else if (strcasecmp(Str, "binary")==0) Encode=ENCODE_BINARY;
+            else if (strcasecmp(Str,"base8")==0) Encode=ENCODE_OCTAL;
+            else if (strcasecmp(Str,"base16")==0) Encode=ENCODE_HEX;
             else if (strcasecmp(Str,"base32")==0) Encode=ENCODE_BASE32;
             else if (strcasecmp(Str,"b32")==0) Encode=ENCODE_BASE32;
             else if (strcasecmp(Str,"bech32")==0) Encode=ENCODE_BECH32;
+            else if (strcasecmp(Str,"base64")==0) Encode=ENCODE_BASE64;
+            else if (strcasecmp(Str,"b64")==0) Encode=ENCODE_BASE64;
             break;
 
         case 'c':
@@ -301,21 +311,61 @@ char *Ascii85(char *RetStr, const char *Bytes, int ilen, const char *CharMap)
 }
 
 
-char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
+char *EncodeBytes(char *RetStr, const char *Bytes, int len, int Encoding)
 {
-    char *Tempstr=NULL, *RetStr=NULL;
-    int i;
+    char *Tempstr=NULL;
+    char PrintBuff[10];
+    int i, olen;
 
-    RetStr=CopyStr(Buffer,"");
     switch (Encoding)
     {
-    case ENCODE_QUOTED_MIME:
-        RetStr=EncodeQuoted(RetStr, Bytes, len, '=');
+    case ENCODE_BINARY:
+        if (len > 0) RetStr=encode_bcd_bytes(RetStr, Bytes, len);
         break;
 
-    case ENCODE_YENCODE:
-        RetStr=EncodeYenc(RetStr, Bytes, len, '=');
+    case ENCODE_OCTAL:
+        olen=StrLen(RetStr);
+        for (i=0; i < len; i++)
+        {
+            snprintf(PrintBuff,8,"%03o",Bytes[i] & 255);
+            RetStr=AddBytesToBuffer(RetStr, olen, PrintBuff, 3);
+            olen+=3;
+        }
+        StrUnsafeTrunc(RetStr, olen);
         break;
+
+    case ENCODE_DECIMAL:
+        olen=StrLen(RetStr);
+        for (i=0; i < len; i++)
+        {
+            snprintf(PrintBuff,8,"%03d",Bytes[i] & 255);
+            RetStr=AddBytesToBuffer(RetStr, olen, PrintBuff, 3);
+            olen+=3;
+        }
+        StrUnsafeTrunc(RetStr, olen);
+        break;
+
+    case ENCODE_HEX:
+        olen=StrLen(RetStr);
+        for (i=0; i < len; i++)
+        {
+            snprintf(PrintBuff,8,"%02x",Bytes[i] & 255);
+            RetStr=AddBytesToBuffer(RetStr, olen, PrintBuff, 2);
+            olen+=2;
+        }
+        StrUnsafeTrunc(RetStr, olen);
+        break;
+
+    case ENCODE_HEXUPPER:
+        for (i=0; i < len; i++)
+        {
+            snprintf(PrintBuff,8,"%02X",Bytes[i] & 255);
+            RetStr=AddBytesToBuffer(RetStr, olen, PrintBuff, 2);
+            olen+=2;
+        }
+        StrUnsafeTrunc(RetStr, olen);
+        break;
+
 
     case ENCODE_BASE32:
         RetStr=base32encode(RetStr, Bytes, len, BASE32_RFC4648_CHARS, '=');
@@ -341,7 +391,6 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
         RetStr=base32encode(RetStr, Bytes, len, BASE32_BECH32_CHARS, '\0');
         break;
 
-
     case ENCODE_BASE64:
         RetStr=SetStrLen(RetStr,len * 4);
         to64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len);
@@ -349,27 +398,27 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
 
     case ENCODE_IBASE64:
         RetStr=SetStrLen(RetStr,len * 4);
-        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len,IBASE64_CHARS,'\0');
+        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes, len, IBASE64_CHARS,'\0');
         break;
 
     case ENCODE_PBASE64:
         RetStr=SetStrLen(RetStr,len * 4);
-        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len,PBASE64_CHARS,'\0');
+        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes, len, PBASE64_CHARS,'=');
         break;
 
     case ENCODE_RBASE64:
         RetStr=SetStrLen(RetStr,len * 4);
-        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len,RBASE64_CHARS,'=');
+        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes, len, RBASE64_CHARS,'=');
         break;
 
     case ENCODE_CRYPT:
         RetStr=SetStrLen(RetStr,len * 4);
-        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len,CRYPT_CHARS,'\0');
+        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes, len, CRYPT_CHARS,'\0');
         break;
 
     case ENCODE_XXENC:
         RetStr=SetStrLen(RetStr,len * 4);
-        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes,len,XXENC_CHARS,'+');
+        Radix64frombits((unsigned char *) RetStr,(unsigned char *) Bytes, len, XXENC_CHARS,'\0');
         break;
 
     case ENCODE_UUENC:
@@ -387,38 +436,13 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
         RetStr=Ascii85(RetStr,Bytes,len,Z85_CHARS);
         break;
 
-    case ENCODE_OCTAL:
-        for (i=0; i < len; i++)
-        {
-            Tempstr=FormatStr(Tempstr,"%03o",Bytes[i] & 255);
-            RetStr=CatStr(RetStr,Tempstr);
-        }
+    case ENCODE_QUOTED_MIME:
+        RetStr=EncodeQuoted(RetStr, Bytes, len, '=');
         break;
 
-    case ENCODE_DECIMAL:
-        for (i=0; i < len; i++)
-        {
-            Tempstr=FormatStr(Tempstr,"%03d",Bytes[i] & 255);
-            RetStr=CatStr(RetStr,Tempstr);
-        }
+    case ENCODE_YENCODE:
+        RetStr=EncodeYenc(RetStr, Bytes, len, '=');
         break;
-
-    case ENCODE_HEX:
-        for (i=0; i < len; i++)
-        {
-            Tempstr=FormatStr(Tempstr,"%02x",Bytes[i] & 255);
-            RetStr=CatStr(RetStr,Tempstr);
-        }
-        break;
-
-    case ENCODE_HEXUPPER:
-        for (i=0; i < len; i++)
-        {
-            Tempstr=FormatStr(Tempstr,"%02X",Bytes[i] & 255);
-            RetStr=CatStr(RetStr,Tempstr);
-        }
-        break;
-
 
     default:
         RetStr=SetStrLen(RetStr, len);
@@ -432,91 +456,43 @@ char *EncodeBytes(char *Buffer, const char *Bytes, int len, int Encoding)
 }
 
 
+char *EncodingPad(char *RetStr, const char *Input, int InputLen, char PadByte, int BlockSize)
+{
+    int val;
+
+    RetStr=CopyStr(RetStr, Input);
+    val=4 - InputLen % 4;
+    if (val==0) return(RetStr);
+    if (val==4) return(RetStr);
+
+    return(PadStr(RetStr, PadByte, val));
+}
 
 
 int DecodeBytes(char **Return, const char *Text, int Encoding)
 {
     long len=0, val, i=0;
     const char *ptr, *end;
+    char *Padded=NULL;
 
     len=StrLen(Text);
     //for all these encodings the result will be no bigger than the input
     *Return=SetStrLen(*Return,len);
-
     memset(*Return,0,len);
+
+
     switch (Encoding)
     {
-    case ENCODE_QUOTED_MIME:
-        len=DecodeQuoted(Return,Text,'=');
-        break;
-
-    case ENCODE_YENCODE:
-        len=DecodeYenc(Return,Text,'=');
-        break;
-
-    case ENCODE_QUOTED_HTTP:
-        *Return=HTTPUnQuote(*Return, Text);
-        len=StrLen(*Return);
-        break;
-
-    case ENCODE_BASE32:
-        len=base32decode((unsigned char *) *Return, Text, BASE32_RFC4648_CHARS);
-        break;
-
-    case ENCODE_CBASE32:
-        len=base32decode((unsigned char *) *Return, Text, BASE32_CROCKFORD_CHARS);
-        break;
-
-    case ENCODE_HBASE32:
-        len=base32decode((unsigned char *) *Return, Text, BASE32_HEX_CHARS);
-        break;
-
-    case ENCODE_WBASE32:
-        len=base32decode((unsigned char *) *Return, Text, BASE32_WORDSAFE_CHARS);
-        break;
-
-    case ENCODE_ZBASE32:
-        len=base32decode((unsigned char *) *Return, Text, BASE32_ZBASE32_CHARS);
-        break;
-
-    case ENCODE_BECH32:
-        len=base32decode((unsigned char *) *Return, Text, BASE32_BECH32_CHARS);
-        break;
-
-    case ENCODE_BASE64:
-        len=Radix64tobits(*Return,Text,BASE64_CHARS,'=');
-        break;
-
-    case ENCODE_IBASE64:
-        len=Radix64tobits(*Return,Text,IBASE64_CHARS,'\0');
-        break;
-
-    case ENCODE_PBASE64:
-        len=Radix64tobits(*Return,Text,PBASE64_CHARS,'\0');
-        break;
-
-    case ENCODE_RBASE64:
-        len=Radix64tobits(*Return,Text,RBASE64_CHARS,'\0');
-        break;
-
-    case ENCODE_CRYPT:
-        len=Radix64tobits(*Return,Text,CRYPT_CHARS,'\0');
-        break;
-
-    case ENCODE_XXENC:
-        len=Radix64tobits(*Return,Text,XXENC_CHARS,'+');
-        break;
-
-    case ENCODE_UUENC:
-        len=Radix64tobits(*Return,Text,UUENC_CHARS,'\0');
-        break;
-
-    case ENCODE_ASCII85:
-        //RetStr=Ascii85(RetStr,Bytes,len,ASCII85_CHARS); break;
-        break;
-
-    case ENCODE_Z85:
-        //RetStr=Ascii85(RetStr,Bytes,len,Z85_CHARS); break;
+    case ENCODE_BINARY:
+        ptr=Text;
+        end=ptr+len;
+        while (ptr < end)
+        {
+            strntol(&ptr, 8, 2, &val);
+            (*Return)[i]=val & 0xFF;
+            i++;
+        }
+        len=i;
         break;
 
     case ENCODE_OCTAL:
@@ -556,6 +532,88 @@ int DecodeBytes(char **Return, const char *Text, int Encoding)
         len=i;
         break;
 
+    case ENCODE_BASE32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_RFC4648_CHARS);
+        break;
+
+    case ENCODE_CBASE32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_CROCKFORD_CHARS);
+        break;
+
+    case ENCODE_HBASE32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_HEX_CHARS);
+        break;
+
+    case ENCODE_WBASE32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_WORDSAFE_CHARS);
+        break;
+
+    case ENCODE_ZBASE32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_ZBASE32_CHARS);
+        break;
+
+    case ENCODE_BECH32:
+        len=base32decode((unsigned char *) *Return, Text, BASE32_BECH32_CHARS);
+        break;
+
+    case ENCODE_BASE64:
+        Padded=EncodingPad(Padded, Text, len, '=', 4);
+        len=Radix64tobits(*Return, Padded, BASE64_CHARS,'=');
+        break;
+
+    case ENCODE_IBASE64:
+        Padded=EncodingPad(Padded, Text, len, '=', 4);
+        len=Radix64tobits(*Return, Padded, IBASE64_CHARS,'=');
+        break;
+
+    case ENCODE_PBASE64:
+        Padded=EncodingPad(Padded, Text, len, '=', 4);
+        len=Radix64tobits(*Return, Padded, PBASE64_CHARS,'=');
+        break;
+
+    case ENCODE_RBASE64:
+        Padded=EncodingPad(Padded, Text, len, '=', 4);
+        len=Radix64tobits(*Return, Padded, RBASE64_CHARS,'=');
+        break;
+
+    case ENCODE_CRYPT:
+        Padded=EncodingPad(Padded, Text, len, '=', 4);
+        len=Radix64tobits(*Return, Padded, CRYPT_CHARS,'=');
+        break;
+
+    case ENCODE_XXENC:
+        Padded=EncodingPad(Padded, Text, len, '=', 4);
+        len=Radix64tobits(*Return, Padded, XXENC_CHARS,'=');
+        break;
+
+    case ENCODE_UUENC:
+        Padded=EncodingPad(Padded, Text, len, '|', 4);
+        len=Radix64tobits(*Return, Padded, UUENC_CHARS,'|');
+        break;
+
+    case ENCODE_ASCII85:
+        //RetStr=Ascii85(RetStr,Bytes,len,ASCII85_CHARS); break;
+        break;
+
+    case ENCODE_Z85:
+        //RetStr=Ascii85(RetStr,Bytes,len,Z85_CHARS); break;
+        break;
+
+    case ENCODE_QUOTED_MIME:
+        len=DecodeQuoted(Return,Text,'=');
+        break;
+
+    case ENCODE_YENCODE:
+        len=DecodeYenc(Return,Text,'=');
+        break;
+
+    case ENCODE_QUOTED_HTTP:
+        *Return=HTTPUnQuote(*Return, Text);
+        len=StrLen(*Return);
+        break;
+
+
+
     default:
         break;
     }
@@ -570,8 +628,7 @@ char *DecodeToText(char *RetStr, const char *Text, int Encoding)
     int len;
 
     len=DecodeBytes(&RetStr, Text, Encoding);
-    RetStr[len]='\0';
-    StrLenCacheAdd(RetStr, len);
+    StrUnsafeTrunc(RetStr, len);
 
     return(RetStr);
 }

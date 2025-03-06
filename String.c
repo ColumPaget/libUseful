@@ -259,6 +259,15 @@ char *InternalMCopyStr(char *Dest, const char *Str1,  ...)
     return(ptr);
 }
 
+inline char *StrUnsafeTrunc(char *Str, int Len)
+{
+    Str[Len]='\0';
+    StrLenCacheAdd(Str, Len);
+    return(Str);
+}
+
+
+
 char *StrTrunc(char *Str, int Len)
 {
     if (StrLen(Str) > Len)
@@ -472,24 +481,32 @@ char *AddCharToStr(char *Dest,char Src)
 
 inline char *AddCharToBuffer(char *Dest, size_t DestLen, char Char)
 {
-    char *actb_ptr;
+    char *ptr;
 
-    actb_ptr=SetStrLen(Dest, DestLen);
-    actb_ptr[DestLen]=Char;
-    actb_ptr[DestLen+1]='\0';
+    //AddCharToBuffer is intended to be used where length of the string
+    //is known, so don't involve StrLenCache
+    //ptr=SetStrLen(Dest, DestLen);
 
-    return(actb_ptr);
+    Dest=(char *) realloc(Dest, DestLen + 8);
+    ptr=Dest + DestLen;
+    *ptr=Char;
+    ptr++;
+    *ptr='\0';
+
+    return(Dest);
 }
 
 
 inline char *AddBytesToBuffer(char *Dest, size_t DestLen, char *Bytes, size_t NoOfBytes)
 {
-    char *actb_ptr=NULL;
+    //AddBytesToBuffer is intended to be used where length of the string
+    //is known, so don't involve StrLenCache
+    //ptr=SetStrLen(Dest, DestLen);
 
-    actb_ptr=SetStrLen(Dest, DestLen + NoOfBytes);
-    memcpy(actb_ptr+DestLen,Bytes,NoOfBytes);
+    Dest=(char *)realloc(Dest, DestLen + NoOfBytes + 8);
+    memcpy(Dest+DestLen,Bytes,NoOfBytes);
 
-    return(actb_ptr);
+    return(Dest);
 }
 
 

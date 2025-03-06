@@ -43,3 +43,31 @@ char *StringListGet(char *RetStr, const char *List, const char *Sep, int Pos)
     Destroy(Token);
     return(RetStr);
 }
+
+
+char *StringListAdd(char *RetStr, const char *Item, const char *Sep)
+{
+    if (StrValid(RetStr)) RetStr=MCatStr(RetStr, Sep, Item, NULL);
+    else RetStr=CopyStr(RetStr, Item);
+
+    return(RetStr);
+}
+
+char *StringListAddUnique(char *RetStr, const char *Item, const char *Sep)
+{
+char *Token=NULL;
+const char *ptr;
+
+ptr=GetToken(RetStr, Sep, &Token, 0);
+while (ptr)
+{
+if (CompareStr(Token, Item) ==0)
+{
+Destroy(Token);
+return(RetStr);
+}
+ptr=GetToken(ptr, Sep, &Token, 0);
+}
+
+return(StringListAdd(RetStr, Item, Sep));
+}

@@ -92,9 +92,7 @@ char *HTTPQuoteChars(char *RetBuff, const char *Str, const char *CharList)
         }
     }
 
-
-    RetStr[olen]='\0';
-    StrLenCacheAdd(RetStr, olen);
+    StrUnsafeTrunc(RetStr, olen);
 
     DestroyString(Token);
     return(RetStr);

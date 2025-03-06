@@ -101,7 +101,7 @@ static void WebSocketSendControl(int Control, STREAM *S)
     uint32_t mask;
 
     mask=rand() & 0xFFFFFFFF;
-    Tempstr=SetStrLen(Tempstr, 20);
+    Tempstr=malloc(20);
     len=WebSocketHeader(Tempstr, Control, 0, mask);
     STREAMPushBytes(S, Tempstr, len);
     Destroy(Tempstr);
@@ -182,7 +182,7 @@ static void WebSocketSendFrame(STREAM *S, const char *Data, int Len)
         if (mask==0) mask=12345;
     }
 
-    Frame=SetStrLen(Frame, Len + 20);
+    Frame=(char *) malloc(Len + 20);
     if (S->Flags & SF_BINARY) pos=WebSocketHeader(Frame, WS_BINARY, Len, mask);
     else pos=WebSocketHeader(Frame, WS_TEXT, Len, mask);
     memcpy(Frame + pos, Data, Len);

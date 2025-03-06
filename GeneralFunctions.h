@@ -28,6 +28,7 @@ uint32_t reverse_uint32(uint32_t Input);
 //take a string of up to 8 '1' and '0' characters and convert them to an integer value
 uint8_t parse_bcd_byte(const char *In);
 
+//encoded bytes into a string of '1' or '0' characters
 char *encode_bcd_bytes(char *RetStr, unsigned const char *Bytes, int Len);
 
 //fill 'size' bytes pointed to by 'Str' with char 'fill'. 'Str' is treated as a volatile, which is intended to prevent

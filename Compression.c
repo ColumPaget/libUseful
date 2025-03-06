@@ -223,7 +223,7 @@ int CompressBytes(char **Out, const char *Alg, const char *In, unsigned long Len
     if (! Mod) return(-1);
 
     val=Len *2;
-    *Out=SetStrLen(*Out,val);
+    *Out=(char *) realloc(*Out,val);
     result=Mod->Write(Mod,In,Len,Out,&val,TRUE);
 
     DestroyString(Tempstr);
@@ -243,7 +243,7 @@ int DeCompressBytes(char **Out, const char *Alg, const char *In, unsigned long L
     if (! Mod) return(-1);
 
     val=Len *2;
-    *Out=SetStrLen(*Out,val);
+    *Out=(char *) realloc(*Out,val);
     result=Mod->Read(Mod,In,Len,Out,&val,TRUE);
 
     DataProcessorDestroy(Mod);

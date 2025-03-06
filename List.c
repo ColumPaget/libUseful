@@ -395,7 +395,7 @@ int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name)
 
 ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 {
-    ListNode *Prev, *Curr, *Next, *Head;
+    ListNode *Prev=NULL, *Curr, *Next, *Head;
     int result=0;
     unsigned long long val;
 
@@ -408,6 +408,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
     //Check last item in list
     if (ListConsiderInsertPoint(Head, Head->Prev, Name)) return(Head->Prev);
 
+    Prev=Head;
     Curr=Head->Next;
     //if LIST_FLAG_CACHE is set, then the general purpose 'Side' pointer of the head node points to a cached item
     if ((Root->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
@@ -437,7 +438,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
                 }
             }
         }
-
+        Prev=Curr;
         Curr=Next;
     }
 
@@ -453,6 +454,8 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
     if (! Root) return(NULL);
     Node=ListFindNamedItemInsert(Root, Name);
+
+    //item must have a name, and can't be the 'head' of the list
     if ((! Node) || (Node==Node->Head) || (! Node->Tag)) return(NULL);
 
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct

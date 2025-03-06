@@ -359,7 +359,7 @@ char *ExtractVarsGetLiteralString(char *Buffer, const char *InStr)
     RetStr=Buffer;
 
     ptr=InStr;
-    while ((*ptr !=0) && (*ptr !='$') && (*ptr !='?') && (*ptr !='*')) ptr++;
+    while ((*ptr !='\0') && (*ptr !='$') && (*ptr !='?') && (*ptr !='*')) ptr++;
 
     RetStr=CopyStrLen(Buffer,InStr,ptr-InStr);
     return(RetStr);

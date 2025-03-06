@@ -671,10 +671,10 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
             if (Mod->Flags & DPM_PROGRESS) Mod->Read(Mod,S->Path,S->BytesRead,NULL,&S->Size,0);
             else
             {
-                OutputBuff=SetStrLen(OutputBuff,olen);
+                OutputBuff=(char *) realloc(OutputBuff, olen);
                 //if InLen < 0 then we are requesting a flush
-                if (InLen < 0) result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, TRUE);
-                else result=Mod->Read(Mod,p_Input,len,&OutputBuff,&olen, FALSE);
+                if (InLen < 0) result=Mod->Read(Mod, p_Input, len, &OutputBuff, &olen,  TRUE);
+                else result=Mod->Read(Mod, p_Input, len, &OutputBuff, &olen,  FALSE);
 
                 if (result > 0) state=0;
 
@@ -682,8 +682,8 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
                 if (result > 0)
                 {
                     len=result;
-                    InBuff=SetStrLen(InBuff,len);
-                    memcpy(InBuff,OutputBuff,len);
+                    InBuff=(char *) realloc(InBuff, len + 8);
+                    memcpy(InBuff, OutputBuff, len);
                     p_Input=InBuff;
                 }
                 else len=0;
@@ -1467,7 +1467,7 @@ void STREAMShutdown(STREAM *S)
     Curr=ListGetNext(S->Values);
     while (Curr)
     {
-        if (strncmp(Curr->Tag,"HelperPID",9)==0)
+        if (strncmp(Curr->Tag, "HelperPID", 9)==0)
         {
             val=atoi(Curr->Item);
             if (val > 1) kill(0-val, SIGKILL);
@@ -1640,7 +1640,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
     }
 
 
-//if buffer is half full, or full 'cept for space at the start, then make room
+//if buffer is half full, or full except for space at the start, then make room
     if (
         (S->InStart > (S->BuffSize / 2)) ||
         ((S->InEnd >= S->BuffSize) && (S->InStart > 0))
@@ -1660,7 +1660,8 @@ int STREAMReadCharsToBuffer(STREAM *S)
     if (read_result==1)
     {
         val=S->BuffSize - S->InEnd;
-        tmpBuff=SetStrLen(tmpBuff,val);
+        if (val < 0) return(1);
+        tmpBuff=(char *) realloc(tmpBuff, val);
 
         //OpenSSL can return 0 bytes, even if select said there was stuff to be read from the
         //socket, due to keepalives etc
@@ -1686,7 +1687,6 @@ int STREAMReadCharsToBuffer(STREAM *S)
             S->BytesRead+=bytes_read;
             read_result=1;
         }
-        //else read_result=STREAM_CLOSED;
         else read_result=bytes_read;
     }
 
@@ -1867,12 +1867,14 @@ static int STREAMInternalPushProcessingModules(STREAM *S, const char *InData, un
 
         if (Mod->Write && ((len > 0) || Flush))
         {
-            len=Mod->Write(Mod,ptr,len,OutData,OutLen,Flush);
+            len=Mod->Write(Mod, ptr, len, OutData, OutLen, Flush);
             if (Flush && (len !=STREAM_CLOSED)) AllDataWritten=FALSE;
             if (Next)
             {
-                TempBuff=SetStrLen(TempBuff, *OutLen);
-                memcpy(TempBuff,*OutData,*OutLen);
+                //BEWARE: OutLen can be changed, and made larger, by processing modules
+                TempBuff=(char *) realloc(TempBuff, (*OutLen) + 8);
+
+                memcpy(TempBuff, *OutData, *OutLen);
                 ptr=TempBuff;
                 len=*OutLen;
             }
@@ -1959,7 +1961,9 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
     {
         if (len < 4096) len=4096;
 
-        TempBuff=SetStrLen(TempBuff, len * 2);
+        //BEWARE: TempBuff can be changed in functions below, so always realloc it
+        TempBuff=(char *) realloc(TempBuff, len * 2);
+
         len=0;
         STREAMInternalPushProcessingModules(S, i_data, DataLen, &TempBuff, &len);
         i_data=TempBuff;
@@ -2200,10 +2204,18 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
         //if len > 0 then we have a string to return!
         else
         {
-            RetStr=SetStrLen(RetStr,bytes_read + len);
-            len=STREAMTransferBytesOut(S, RetStr+bytes_read, len);
+            // RetStr will likely be an ascii string as we are reading to a
+            // terminating character, but we can use realloc here as we
+            // call StrLenCacheAdd below
+            RetStr=(char *) realloc(RetStr, bytes_read + len + 8);
+
+            len=STREAMTransferBytesOut(S, RetStr + bytes_read, len);
             bytes_read+=len;
-            *(RetStr+bytes_read)='\0';
+
+            //cannot use StrTrunc here, just in case we have a binary or
+            //partial string, which could confuse it. StrUnsafeTrunc is
+            //suitable though, as it doesn't StrLen the string
+            if (bytes_read > -1) StrUnsafeTrunc(RetStr, bytes_read);
 
             if (p_Term) return(RetStr);
         }
@@ -2230,9 +2242,6 @@ char *STREAMReadToMultiTerminator(char *Buffer, STREAM *S, char *Terms)
 //no more data to read
     while (inchar > -1)
     {
-        //if ((len % 100)== 0) Tempptr=realloc(Tempptr,(len/100 +1) *100 +2);
-        // *(Tempptr+len)=inchar;
-
         if (inchar > 0)
         {
             Tempptr=AddCharToBuffer(Tempptr,len,(char) inchar);
@@ -2319,7 +2328,8 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
 {
     char *Tempstr=NULL;
     const char *ptr;
-    int result=0, size, bytes_read=0, new_bytes=0, max;
+    int result=0, bytes_read=0, new_bytes=0;
+    int size, max;
 
     //for documents where we know the size, e.g. HTTP documents where we've had 'Content-Length'
     //there will be a size booked against the stream 'S'
@@ -2329,10 +2339,14 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     max=LibUsefulGetInteger("MaxDocumentSize");
     if (max > 0) size=max;
 
+    //we don't need to use SetStrLen here, as we use StrLenCacheAdd
+    //before the end of this function to update the length of this object
+    //we do need to use realloc rather than malloc though, as we've been
+    //passed in RetStr which is of unknown size.
+    RetStr=(char *) realloc(RetStr, size +8);
 
     while (bytes_read < size)
     {
-        RetStr=SetStrLen(RetStr, size);
         new_bytes=0;
         result=STREAMReadMessage(S, RetStr+bytes_read, size - bytes_read, &new_bytes);
         bytes_read+=new_bytes;
@@ -2344,9 +2358,8 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     //binary data that can include '\0' characters
     //StrTrunc(RetStr,bytes_read);
 
-    //instead of StrTrunc do this.
-    RetStr[bytes_read]='\0';
-    StrLenCacheAdd(RetStr, bytes_read);
+    //instead of StrTrunc use StrUnsafeTrunc to save a StrLen call
+    StrUnsafeTrunc(RetStr, bytes_read);
 
 
     /*

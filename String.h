@@ -152,6 +152,11 @@ int istext(const char *Str);
 //returns true if string only contains digits
 int isnum(const char *Str);
 
+//Truncate a string to so many chars, WITHOUT CHECKING IT'S GOT THAT MANY
+//this is mostly for internal use
+char *StrUnsafeTrunc(char *Str, int Len);
+
+
 //Truncate a string to so many chars
 char *StrTrunc(char *Str, int Len);
 

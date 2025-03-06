@@ -18,8 +18,8 @@ static uint64_t LU_CachedMillisecs=0;
 
 int IsToday(int Day, int Month, int Year)
 {
-time_t when;
-struct tm *Today;
+    time_t when;
+    struct tm *Today;
 
     //must get 'now' late, or it can be changed by other users of 'localtime'
     when=time(NULL);
@@ -95,7 +95,7 @@ char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZo
     TMS=localtime(&val);
 
     val=StrLen(DateFormat)+ DATE_BUFF_LEN;
-    Buffer=SetStrLen(Buffer,val);
+    Buffer=realloc(Buffer,val +1);
     strftime(Buffer,val,DateFormat,TMS);
 
     TimeZoneSet(SavedTimeZone);

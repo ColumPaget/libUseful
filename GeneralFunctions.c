@@ -7,7 +7,7 @@
 
 
 
-void Destroy(void *Obj)
+inline void Destroy(void *Obj)
 {
     if (Obj)
     {
@@ -31,6 +31,7 @@ uint32_t reverse_uint32(uint32_t Input)
 }
 
 
+//parse up to eight bits expressed as '1' and '0'
 uint8_t parse_bcd_byte(const char *In)
 {
     uint8_t val=0;
@@ -58,20 +59,30 @@ uint8_t parse_bcd_byte(const char *In)
 char *encode_bcd_bytes(char *RetStr, unsigned const char *Bytes, int Len)
 {
     unsigned const char *ptr, *end;
-    int bit, i;
+    unsigned char *optr;
+    int bit, i, ilen, olen;
 
     end=Bytes+Len;
+
+    //BEWARE: We cannot 'point' optr into RetStr until we call 'SetStrLen', as
+    //RetStr might be NULL before then, or SetStrLen might realloc and change its address
+    ilen = StrLen(RetStr);
+    olen = ilen + (Len * 8);
+    RetStr=SetStrLen(RetStr, olen);
+    optr=RetStr + ilen;
 
     for (ptr=Bytes; ptr < end; ptr++)
     {
         bit=128;
         for (i=0; i < 8; i++)
         {
-            if (*ptr & bit) RetStr=CatStr(RetStr, "1");
-            else RetStr=CatStr(RetStr, "0");
+            if (*ptr & bit) *optr='1';
+            else *optr='0';
             bit = bit >> 1;
+            optr++;
         }
     }
+    *optr='\0';
 
     return(RetStr);
 }
@@ -91,8 +102,10 @@ int xsetenv(const char *Name, const char *Value)
     return(FALSE);
 }
 
+
 //increment ptr but don't go past '\0'
-int ptr_incr(const char **ptr, int count)
+//we expect this function to be frequently called, so we inline it
+inline int ptr_incr(const char **ptr, int count)
 {
     const char *end;
 
@@ -104,7 +117,10 @@ int ptr_incr(const char **ptr, int count)
     return(TRUE);
 }
 
-const char *traverse_until(const char *ptr, char terminator)
+
+//increment ptr until either the terminator is encountered, or we hit '\0'
+//we expect this function to be frequently called, so we inline it
+inline const char *traverse_until(const char *ptr, char terminator)
 {
     while ((*ptr != terminator) && (*ptr != '\0'))
     {
@@ -115,8 +131,10 @@ const char *traverse_until(const char *ptr, char terminator)
     return(ptr);
 }
 
-
-const char *traverse_quoted(const char *ptr)
+//given that the first character is some kind of quote,
+//safely traverse the string until we encounter another
+//we expect this function to be frequently called, so we inline it
+inline const char *traverse_quoted(const char *ptr)
 {
     char Quote;
 

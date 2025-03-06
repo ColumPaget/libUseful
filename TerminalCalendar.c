@@ -43,7 +43,7 @@ void TerminalCalendarDraw(TERMCALENDAR *TC)
     Tempstr=CatStr(Tempstr, "~0");
 
 
-		TerminalCursorMove(TC->Term, TC->x, TC->y);
+    TerminalCursorMove(TC->Term, TC->x, TC->y);
     y=TerminalWidgetPutLine(TC, y, Tempstr);
 
     //print out 'day names' headers
@@ -266,18 +266,18 @@ char *TerminalCalendarProcess(char *RetStr, TERMCALENDAR *TC)
 {
     int Key;
 
+    TerminalCalendarDraw(TC);
+    while (1)
+    {
+        Key=TerminalReadChar(TC->Term);
+        RetStr=TerminalCalendarOnKey(RetStr, TC, Key);
+        if (StrValid(RetStr)) break;
         TerminalCalendarDraw(TC);
-        while (1)
-        {
-            Key=TerminalReadChar(TC->Term);
-            RetStr=TerminalCalendarOnKey(RetStr, TC, Key);
-            if (StrValid(RetStr)) break;
-            TerminalCalendarDraw(TC);
-        }
+    }
 
-return(RetStr);
+    return(RetStr);
 }
- 
+
 
 char *TerminalCalendar(char *RetStr, STREAM *Term, int x, int y, const char *Config)
 {

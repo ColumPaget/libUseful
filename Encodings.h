@@ -63,7 +63,7 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 
 #define ENCODE_NONE        0
 #define ENCODE_QUOTED_MIME 1
-#define ENCODE_QUOTED_HTTP 2
+#define ENCODE_BINARY      2
 #define ENCODE_YENCODE     3
 #define ENCODE_OCTAL       8
 #define ENCODE_DECIMAL    10
@@ -87,6 +87,7 @@ If you *KNOW* that your output of DecodeBytes is going to be null-terminated tex
 
 #define ENCODE_ASCII85 85
 #define ENCODE_Z85 86
+#define ENCODE_QUOTED_HTTP 404
 
 #define HEX_CHARS "0123456789ABCDEF"
 #define ALPHA_CHARS "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

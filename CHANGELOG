@@ -1,3 +1,12 @@
+v5.40 (2025-03-06)
+  * Add 'binary' encoding
+  * Avoid use of 'SetStrLen' in stream/binary functions to avoid polluting the StrLen cache
+  * Fix bug in ListFindNamedItemInsert returning unset 'Prev' variable (revealed by using -O0 to turn off optimizations)
+  * Added 'StringListAdd' and 'StringListAddUnique' functions
+  * Don't use '+' as padding for xxencode
+  * Fix 'trailing bytes' on all base32 encodings
+
+
 v5.39 (2025-02-15)
   * Fix issue with STREAMReadBytes returning 'STREAM_CLOSED' too early
   * Changes to use TerminalCalendar in libUseful-lua

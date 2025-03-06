@@ -142,7 +142,7 @@ static const char *XMLParseTagData(const char *Input, int TagHasName, char **Tag
 
 //If 'TagHasName' is set, then we are reading data *inside a tag*. In that
 //case the tag can end with '/', like <br/>. If that's the case then
-//strip any '/' and re-add it as ' /' to prevent it becoming 
+//strip any '/' and re-add it as ' /' to prevent it becoming
 //confused with actual TagData
     if (TagHasName && TagData)
     {

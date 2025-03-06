@@ -19,7 +19,7 @@ int RAWDATAAppend(RAWDATA *RD, const char *Data, const char *Encoding, int MaxBu
         {
             RD->BuffLen=MaxBuffLen;
             RD->DataLen=MaxBuffLen;
-            RD->Buffer=SetStrLen(RD->Buffer,MaxBuffLen);
+            RD->Buffer=(char *) realloc(RD->Buffer, MaxBuffLen + 8);
             memcpy(RD->Buffer, Data, MaxBuffLen);
         }
     }
@@ -44,7 +44,7 @@ RAWDATA *RAWDATACreate(const char *Data, const char *Encoding, int MaxBuffLen)
     else
     {
         Item->BuffLen=MaxBuffLen;
-        Item->Buffer=SetStrLen(Item->Buffer,MaxBuffLen);
+        Item->Buffer=(char *) realloc(Item->Buffer,MaxBuffLen+8);
     }
 
     return(Item);
@@ -91,12 +91,12 @@ int RAWDATAReadAt(RAWDATA *RD, STREAM *S, size_t offset, size_t size)
     if ((offset+size) > RD->BuffLen)
     {
         RD->BuffLen=offset+size;
-        RD->Buffer=SetStrLen(RD->Buffer,RD->BuffLen);
+        RD->Buffer=(char *) realloc(RD->Buffer,RD->BuffLen + 8);
     }
 
     if (size > RD->BuffLen)
     {
-        RD->Buffer=SetStrLen(RD->Buffer, size);
+        RD->Buffer=(char *) realloc(RD->Buffer, size + 8);
         RD->BuffLen=size;
     }
 
