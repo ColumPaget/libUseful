@@ -1,6 +1,6 @@
 CC = gcc
 AR = ar
-VERSION = 5.41
+VERSION = 5.42
 MAJOR=5
 LIBFILE=libUseful.so.$(VERSION)
 SONAME=libUseful.so.$(MAJOR)

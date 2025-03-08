@@ -16,6 +16,57 @@ void TerminalCalendarSetMonthYear(TERMCALENDAR *TC, int Month, int Year)
 
 
 
+void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year, const char *State, const char *Attribs)
+{
+char *Tempstr=NULL, *Key=NULL;
+const char *ptr;
+
+Key=FormatStr(Key, "datestate:%04d-%02d-%02d", Year, Month, Day);
+SetVar(TC->Options, Key, State);
+
+if (StrValid(ptr)) 
+{
+Tempstr=FormatStr(Tempstr, "stateattribs:%s", Key);
+SetVar(TC->Options, Tempstr, Attribs);
+}
+
+Destroy(Tempstr);
+Destroy(Key);
+}
+
+
+
+//Lookup TerminalAttributes (colors, bold, etc) for a day in the calendar.
+static char *TerminalCalendarLookupDayAttribs(char *Attribs, TERMCALENDAR *TC, const char *DayStr, int Day, int Month, int Year)
+{
+char *Tempstr=NULL;
+const char *ptr;
+
+Attribs=CopyStr(Attribs, "");
+
+Tempstr=FormatStr(Tempstr, "datestate:%04d-%02d-%02d", Year, Month, Day);
+ptr=GetVar(TC->Options, Tempstr);
+
+if (StrValid(ptr)) 
+{
+Tempstr=FormatStr(Tempstr, "stateattribs:%s", ptr);
+ptr=GetVar(TC->Options, Tempstr);
+}
+
+if (StrValid(ptr)) Attribs=CatStr(Attribs, ptr);
+else if ((*DayStr == '-') || (*DayStr == '+')) Attribs=CatStr(Attribs, GetVar(TC->Options, "OutsideMonthAttribs"));
+else 
+{
+Attribs=CatStr(Attribs, GetVar(TC->Options, "InsideMonthAttribs"));
+if (IsToday(Day, Month, Year)) Attribs=CatStr(Attribs, GetVar(TC->Options, "TodayAttribs"));
+}
+
+Destroy(Tempstr);
+
+return(Attribs);
+}
+
+
 void TerminalCalendarDraw(TERMCALENDAR *TC)
 {
     char *Tempstr=NULL, *Token=NULL, *CalStr=NULL, *Output=NULL, *Attribs=NULL;
@@ -85,12 +136,8 @@ void TerminalCalendarDraw(TERMCALENDAR *TC)
             }
 
 
-            Attribs=CopyStr(Attribs, "");
-            if ((*Token == '-') || (*Token == '+')) Attribs=CatStr(Attribs, GetVar(TC->Options, "OutsideMonthAttribs"));
-            else Attribs=CatStr(Attribs, GetVar(TC->Options, "InsideMonthAttribs"));
-
-            if (IsToday(Day, Month, Year)) Attribs=CatStr(Attribs, GetVar(TC->Options, "TodayAttribs"));
-
+						//'Token' passed here is the day with the leading +/- to indicate days outside of the month
+						Attribs=TerminalCalendarLookupDayAttribs(Attribs, TC, Token, Day, Month, Year);
             Tempstr=FormatStr(Tempstr, "%s%s%s~0%s ", p_LeftCursor, Attribs, p_DayStr, p_RightCursor);
 
             count++;

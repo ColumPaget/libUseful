@@ -1,6 +1,10 @@
+v5.42 (2025-03-08)
+  * Make StrUnsafeTrunc a bit safer, by checking string is not null
+  * Add 'daystate' feature to TerminalCalendars
+
 v5.41 (2025-03-06)
- * Fix another crash in List.c
- * Use CompareStrNoCase in preference to strcmp and strcasecmp in a few places.
+  * Fix another crash in List.c
+  * Use CompareStrNoCase in preference to strcmp and strcasecmp in a few places.
 
 v5.40 (2025-03-06)
   * Add 'binary' encoding

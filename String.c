@@ -259,10 +259,16 @@ char *InternalMCopyStr(char *Dest, const char *Str1,  ...)
     return(ptr);
 }
 
+
+//this is a StrTrunc that doesn't check the length of the string
+//it only checks that the string is not NULL
 inline char *StrUnsafeTrunc(char *Str, int Len)
+{
+if (Str)
 {
     Str[Len]='\0';
     StrLenCacheAdd(Str, Len);
+}
     return(Str);
 }
 

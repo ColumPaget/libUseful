@@ -153,7 +153,8 @@ int istext(const char *Str);
 int isnum(const char *Str);
 
 //Truncate a string to so many chars, WITHOUT CHECKING IT'S GOT THAT MANY
-//this is mostly for internal use
+//this saves a strlen and is mostly for internal use. 
+//It does at least check that the string is not NULL
 char *StrUnsafeTrunc(char *Str, int Len);
 
 
