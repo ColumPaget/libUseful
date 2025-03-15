@@ -638,7 +638,7 @@ void STREAMClear(STREAM *S)
 /*A stream can have a series of 'processor modules' associated with it' */
 /*which do things to the data before it is read/written. This function  */
 /*pumps the data through the processor list, and eventually writes it out */
-int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
+int STREAMReadThroughProcessors(STREAM *S, char *Bytes, long InLen)
 {
     TProcessingModule *Mod;
     ListNode *Curr;
@@ -673,6 +673,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, int InLen)
             {
                 OutputBuff=(char *) realloc(OutputBuff, olen);
                 //if InLen < 0 then we are requesting a flush
+
                 if (InLen < 0) result=Mod->Read(Mod, p_Input, len, &OutputBuff, &olen,  TRUE);
                 else result=Mod->Read(Mod, p_Input, len, &OutputBuff, &olen,  FALSE);
 
@@ -1170,8 +1171,16 @@ static STREAM *STREAMSetupDataProcessorModules(STREAM *S, const char *Config)
 
     if (S->Flags & SF_COMPRESSED)
     {
-        if (S->Flags & SF_RDONLY) if (! STREAMAddStandardDataProcessor(S, "decompress", "gzip", "")) SetupGood=FALSE;
-            else if (S->Flags & SF_WRONLY) if (! STREAMAddStandardDataProcessor(S, "compress", "gzip", "")) SetupGood=FALSE;
+        // do not remove { braces in the below, otherwise you'll add the 'else if' to the
+        // internal if of the first block. All hail astyle for helping me find this issue
+        if (S->Flags & SF_RDONLY)
+        {
+            if (! STREAMAddStandardDataProcessor(S, "decompress", "auto", "")) SetupGood=FALSE;
+        }
+        else if (S->Flags & SF_WRONLY)
+        {
+            if (! STREAMAddStandardDataProcessor(S, "compress", "gzip", "")) SetupGood=FALSE;
+        }
     }
 
     if (S->Flags & SF_ENCRYPT) if (! STREAMAddStandardDataProcessor(S, "crypto", "", Config)) SetupGood=FALSE;
@@ -1579,6 +1588,7 @@ static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
     if ((S->Type == STREAM_TYPE_FILE) && (S->Flags & SF_RDLOCK)) flock(S->in_fd,LOCK_SH);
 
     bytes_read=read(S->in_fd, Buffer, Len);
+
     //if select said there was stuff to read, but there wasn't, then the socket must be closed
     //sockets can return '0' when closed, so we normalize this to -1 here
     if (bytes_read < 1) bytes_read=-1;
@@ -1659,6 +1669,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
     //Here we perform the actual read
     if (read_result==1)
     {
+
         val=S->BuffSize - S->InEnd;
         if (val < 0) return(1);
         tmpBuff=(char *) realloc(tmpBuff, val);

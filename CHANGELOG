@@ -1,3 +1,9 @@
+v5.43
+  * More work on tidying up linked-lists implementation
+  * If a variable list/map is declared with 'LIST_FLAG_UNIQ' then assume items are added to the variable list only once, and don't try to look up previous items to replace them (big speed increase)
+  * Support using lzip application for compession/decompression of streams
+  * Add STREAMDetectCompression and compression autodetection for streams and files
+
 v5.42 (2025-03-08)
   * Make StrUnsafeTrunc a bit safer, by checking string is not null
   * Add 'daystate' feature to TerminalCalendars

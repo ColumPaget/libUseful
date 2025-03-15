@@ -375,8 +375,10 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 }
 
 
+#define LIST_FIND_LESSER  1
+#define LIST_FIND_GREATER 2
 
-int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name)
+static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name, int FindType)
 {
     int result;
 
@@ -386,7 +388,11 @@ int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name)
         else result=strcasecmp(Prev->Tag,Name);
 
         if (result == 0) return(TRUE);
-        if ((Head->Flags & LIST_FLAG_ORDERED) && (result < 1)) return(TRUE);
+        if (Head->Flags & LIST_FLAG_ORDERED)
+        {
+            if ((FindType == LIST_FIND_LESSER) && (result < 1)) return(TRUE);
+            if ((FindType == LIST_FIND_GREATER) && (result > 1)) return(TRUE);
+        }
     }
 
     return(FALSE);
@@ -405,15 +411,24 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
     if (Root->Flags & LIST_FLAG_MAP_HEAD) Head=MapGetChain(Root, Name);
     else Head=Root;
 
-    //Check last item in list
-    if (ListConsiderInsertPoint(Head, Head->Prev, Name)) return(Head->Prev);
+    //Check last item in list, it it's a match or we're an ordered list and it's lesser,
+    //then jump to it
+    if (ListConsiderInsertPoint(Head, Head->Prev, Name, LIST_FIND_LESSER)) return(Head->Prev);
 
     Prev=Head;
     Curr=Head->Next;
+
     //if LIST_FLAG_CACHE is set, then the general purpose 'Side' pointer of the head node points to a cached item
+    //if it's a match we can jump there, if an ordered list and it's less, we might as well jump to it too
     if ((Root->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
     {
-        if (ListConsiderInsertPoint(Head, Head->Side, Name)) Curr=Head->Side;
+        if (ListConsiderInsertPoint(Head, Head->Side, Name, LIST_FIND_LESSER))
+        {
+            Curr=Head->Side;
+            //we will actually return Prev rather than Curr, because of how the
+            //loop below works
+            Prev=Curr->Prev;
+        }
     }
 
     while (Curr)
@@ -424,7 +439,9 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 
         if (Curr->Tag)
         {
-            if (ListConsiderInsertPoint(Head, Curr, Name)) return(Curr);
+            //if the current item is a match, or we are in an ordered list and it's
+            //greater, then insert between it and Prev
+            if (ListConsiderInsertPoint(Head, Curr, Name, LIST_FIND_GREATER)) return(Prev);
 
             //Can only get here if it's not a match, in which
             //case we can safely delete any 'timed out' items
@@ -454,42 +471,65 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
     if (! Root) return(NULL);
     Node=ListFindNamedItemInsert(Root, Name);
+    if (! Node) return(NULL);
+    Head=Node->Head;
+    if (Node == Head) Node=Node->Next;
+
 
     //item must have a name, and can't be the 'head' of the list
-    if ((! Node) || (Node==Node->Head) || (! Node->Tag)) return(NULL);
+    //if ((! Node) || (Node==Node->Head) || (! Node->Tag)) return(NULL);
+    if ((! Node) || (! Node->Tag)) return(NULL);
 
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
     //insert chain
-    Head=Node->Head;
+
 
     if (Head)
     {
+        //rewind, as it's possible that we've found a node mid way through a load of
+        //nodes with the same tag, so rewind to the first before we consider them all
+        while (Node)
+        {
+            if (Node->Prev==Head) break;
+            if (! ListConsiderInsertPoint(Head, Node->Prev, Name, 0)) break;
+            Node=Node->Prev;
+        }
+
         while (Node)
         {
             if (Head->Flags & LIST_FLAG_CASE) result=CompareStr(Node->Tag,Name);
             else result=CompareStrNoCase(Node->Tag,Name);
 
-            if (
-                (result==0) &&
-                ( (Type==ANYTYPE) || (Type==Node->ItemType) )
-            )
+            if (result==0)
             {
-                if (Head->Flags & LIST_FLAG_CACHE) Head->Side=Node;
-                if (Node->Stats) Node->Stats->Hits++;
-                return(Node);
+                if  ( (Type==ANYTYPE) || (Type==Node->ItemType) )
+                {
+                    if (Head->Flags & LIST_FLAG_CACHE) Head->Side=Node;
+                    if (Node->Stats) Node->Stats->Hits++;
+
+                    if (
+                        (Node != Head) &&
+                        (Head->Flags & LIST_FLAG_SELFORG) &&
+                        (! (Head->Flags & LIST_FLAG_ORDERED))
+                    ) ListSwapItems(Node->Prev, Node);
+
+                    return(Node);
+                }
+
+                //if this is set then there's at most one instance of an item with a given name
+                //so if the above didn't match, we won't get a match
+                if (Head->Flags & LIST_FLAG_UNIQ) break;
             }
 
-            //if this is set then there's at most one instance of an item with a given name
-            if (Head->Flags & LIST_FLAG_UNIQ) break;
-
-            //if it's an ordered list and the strcmp didn't match, then give up as there will be no more matching items
-            //past this point
-            if ((Head->Flags & LIST_FLAG_ORDERED) && (result !=0)) break;
+            //if it's an ordered list and the strcmp says we've gone beyond the given name
+            //in the list, then we won't get a match
+            if ((Head->Flags & LIST_FLAG_ORDERED) && (result > 0)) break;
 
 
             Node=ListGetNext(Node);
         }
     }
+
     return(NULL);
 }
 

@@ -28,7 +28,7 @@ void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config)
     char *Name=NULL, *Value=NULL;
     const char *ptr;
 
-		if (! StrValid(Config)) return;
+    if (! StrValid(Config)) return;
 
     ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
     while (ptr)

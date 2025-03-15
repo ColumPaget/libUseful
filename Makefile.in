@@ -1,6 +1,6 @@
 CC = @CC@
 AR = @AR@
-VERSION = 5.42
+VERSION = 5.43
 MAJOR=5
 LIBFILE=libUseful.so.$(VERSION)
 SONAME=libUseful.so.$(MAJOR)

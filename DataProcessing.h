@@ -74,6 +74,8 @@ struct t_dpmod
 };
 
 
+TProcessingModule *DataProcessorCreate(const char *Name, const char *Args);
+TProcessingModule *PipeCommandProcessorCreate(const char *Name, const char *Args);
 TProcessingModule *StandardDataProcessorCreate(const char *Class, const char *Name, const char *Arg, unsigned char **Header, int *HeadLen);
 int DataProcessorInit(TProcessingModule *ProcMod, const char *Key, const char *InputVector);
 void DataProcessorDestroy(void *ProcMod);
@@ -88,6 +90,7 @@ void STREAMClearDataProcessors(STREAM *S);
 int STREAMAddDataProcessor(STREAM *S, TProcessingModule *Mod);
 int STREAMReBuildDataProcessors(STREAM *S);
 int STREAMDeleteDataProcessor(STREAM *S, char *Class, char *Name);
+
 
 
 #ifdef __cplusplus

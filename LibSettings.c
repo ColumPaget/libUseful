@@ -19,7 +19,7 @@ void LibUsefulInitSettings()
 {
     char *Tempstr=NULL;
 
-    LibUsefulSettings=ListCreate();
+    LibUsefulSettings=ListCreate(LIST_FLAG_CACHE);
     SetVar(LibUsefulSettings,"LibUseful:Version",__LIBUSEFUL_VERSION__);
     Tempstr=MCopyStr(Tempstr,__LIBUSEFUL_BUILD_DATE__," ",__LIBUSEFUL_BUILD_TIME__,NULL);
     SetVar(LibUsefulSettings,"LibUseful:BuildTime",Tempstr);
