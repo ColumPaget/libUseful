@@ -3,6 +3,9 @@
 #include "Hash.h"
 #include <sys/utsname.h>
 
+#ifdef HAVE_SYS_RANDOM_H
+#include <sys/random.h>
+#endif
 
 #ifdef HAVE_GETENTROPY
 

@@ -1,20 +1,26 @@
 AC_INIT
 
-AC_PROG_CC
-AC_LANG([C])
-AC_PROG_MAKE_SET
-AC_PROG_EGREP
-AC_SYS_LARGEFILE
-
 m4_ifdef([AC_PROG_AR], [AC_PROG_AR])
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 if test "$AR" = ""
 then
 AR=ar
 fi
 AC_SUBST(AR)
 
-echo "CC=$CC AR=$AR"
+m4_ifdef([AC_PROG_LN], [AC_PROG_LN])
+if test "$LN" = ""
+then
+LN=ln
+fi
+AC_SUBST(LN)
+
+echo "CC=$CC AR=$AR LN=$LN"
+
+AC_PROG_CC
+AC_LANG([C])
+AC_PROG_MAKE_SET
+AC_PROG_EGREP
+AC_SYS_LARGEFILE
 
 
 cf_have_libssl=no
@@ -54,11 +60,11 @@ if test "$cf_use_soname" != "no"
 then
   if test "$GCC" = "yes"
   then
-        AC_SUBST([SONAME_FLAGS], ['-Wl,-soname,${SONAME}'])
+        AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
   else
       if test "$cf_use_soname" = "yes"
       then
-        AC_SUBST([SONAME_FLAGS], ['-Wl,-soname,${SONAME}'])
+				AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
       fi
   fi
 fi
@@ -103,6 +109,13 @@ AC_CHECK_FUNC(sendfile, AC_DEFINE([HAVE_SENDFILE]))
 fi
 
 fi 
+
+
+AC_CHECK_HEADER(sys/random.h,cf_use_sys_random=yes,cf_use_sys_random=no,)
+if test "$cf_use_sys_random" != "no"
+then
+AC_DEFINE([HAVE_SYS_RANDOM])
+fi
 
 
 

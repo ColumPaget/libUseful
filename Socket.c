@@ -990,7 +990,7 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         if (Settings.Flags & SOCK_TCP_FULL_FLUSH) S->Flags |= SF_FULL_FLUSH;
         if (Settings.Flags & SOCK_TCP_QUICKACK) S->Flags |= SF_QUICKACK;
 
-        if (Settings.Flags & SOCK_NONBLOCK)
+        if (Settings.Flags & CONNECT_NONBLOCK)
         {
             S->State |= LU_SS_CONNECTING;
             S->Flags |= SF_NONBLOCK;

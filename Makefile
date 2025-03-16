@@ -1,28 +1,43 @@
 CC = gcc
 AR = ar
-VERSION = 5.43
+LN = ln
+VERSION = 5.44
 MAJOR=5
-LIBFILE=libUseful.so.$(VERSION)
-SONAME=libUseful.so.$(MAJOR)
-CFLAGS = -g -O2  -Wl,-soname,${SONAME}
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	SONAME_SUFFIX = dylib
+	SONAME_VER_SUFFIX = $(MAJOR).$(SONAME_SUFFIX)
+	LIBFILE_SUFFIX = $(VERSION).$(SONAME_SUFFIX)
+	LINKER_SONAME_OPTION = -dylib_install_name
+else
+	SONAME_SUFFIX = so
+	SONAME_VER_SUFFIX = $(SONAME_SUFFIX).$(MAJOR)
+	LIBFILE_SUFFIX = $(SONAME_SUFFIX).$(VERSION)
+	LINKER_SONAME_OPTION = -soname
+endif
+LIBFILE = libUseful.$(LIBFILE_SUFFIX)
+SONAME = libUseful.$(SONAME_VER_SUFFIX)
+
+
+CFLAGS = -g -O2  -Wl,${LINKER_SONAME_OPTION},${SONAME}
 LDFLAGS=
-LIBS = -lc -lz -lssl -lcrypto -lc -lc -lc -lc 
+LIBS = -lz -lssl -lcrypto -lc -lc -lc -lc 
 prefix=/usr/local
 sysconfdir=${prefix}/etc
-FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -D_FILE_OFFSET_BITS=64 -DHAVE_LIBC=1 -DHAVE_GET_CURR_DIR=1 -DHAVE_PTSNAME_R=1 -DHAVE_CLEARENV=1 -DHAVE_SETRESUID=1 -DHAVE_INITGROUPS=1 -DHAVE_POLL=1 -DHAVE_MLOCK=1 -DHAVE_MLOCKALL=1 -DHAVE_MUNLOCKALL=1 -DHAVE_MADVISE=1 -DHAVE_MKOSTEMP=1 -DHAVE_MOUNT=1 -DHAVE_UMOUNT=1 -DHAVE_UMOUNT2=1 -DHAVE_GETENTROPY=1 -DHAVE_PRCTL=1 -DHAVE_STDIO_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_STRINGS_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_UNISTD_H=1 -DSTDC_HEADERS=1 -DHAVE_SENDFILE=1 -DUSE_INET6=1 -DHAVE_LIBC=1 -DHAVE_XATTR=1 -DHAVE_LIBC=1 -DHAVE_UNSHARE=1 -DHAVE_LIBC=1 -DHAVE_SETNS=1 -DHAVE_LIBCRYPTO=1 -DHAVE_LIBSSL=1 -DHAVE_EVP_MD_CTX_CREATE=1 -DHAVE_EVP_MD_CTX_NEW=1 -DHAVE_EVP_MD_CTX_DESTROY=1 -DHAVE_EVP_MD_CTX_FREE=1 -DHAVE_X509_CHECK_HOST=1 -DHAVE_SSL_SET_MIN_PROTO_VERSION=1 -DHAVE_DECL_OPENSSL_ADD_ALL_ALGORITHMS=1 -DHAVE_OPENSSL_ADD_ALL_ALGORITHMS=1 -DHAVE_DECL_SSL_SET_TLSEXT_HOST_NAME=1 -DHAVE_SSL_SET_TLSEXT_HOST_NAME=1 -DHAVE_LIBZ=1 -DHAVE_LIBC=1 -DUSE_SECCOMP=1 -DVERSION=\"$(VERSION)\" -DSYSCONFDIR=\"$(sysconfdir)\"
+FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -D_FILE_OFFSET_BITS=64 -DHAVE_LIBC=1 -DHAVE_GET_CURR_DIR=1 -DHAVE_PTSNAME_R=1 -DHAVE_CLEARENV=1 -DHAVE_SETRESUID=1 -DHAVE_INITGROUPS=1 -DHAVE_POLL=1 -DHAVE_MLOCK=1 -DHAVE_MLOCKALL=1 -DHAVE_MUNLOCKALL=1 -DHAVE_MADVISE=1 -DHAVE_MKOSTEMP=1 -DHAVE_MOUNT=1 -DHAVE_UMOUNT=1 -DHAVE_UMOUNT2=1 -DHAVE_GETENTROPY=1 -DHAVE_PRCTL=1 -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_SENDFILE=1 -DHAVE_SYS_RANDOM=1 -DUSE_INET6=1 -DHAVE_LIBC=1 -DHAVE_XATTR=1 -DHAVE_LIBC=1 -DHAVE_UNSHARE=1 -DHAVE_LIBC=1 -DHAVE_SETNS=1 -DHAVE_LIBCRYPTO=1 -DHAVE_LIBSSL=1 -DHAVE_EVP_MD_CTX_CREATE=1 -DHAVE_EVP_MD_CTX_NEW=1 -DHAVE_EVP_MD_CTX_DESTROY=1 -DHAVE_EVP_MD_CTX_FREE=1 -DHAVE_X509_CHECK_HOST=1 -DHAVE_SSL_SET_MIN_PROTO_VERSION=1 -DHAVE_DECL_OPENSSL_ADD_ALL_ALGORITHMS=1 -DHAVE_OPENSSL_ADD_ALL_ALGORITHMS=1 -DHAVE_DECL_SSL_SET_TLSEXT_HOST_NAME=1 -DHAVE_SSL_SET_TLSEXT_HOST_NAME=1 -DHAVE_LIBZ=1 -DVERSION=\"$(VERSION)\" -DSYSCONFDIR=\"$(sysconfdir)\"
 OBJ=StrLenCache.o String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSocket.o Stream.o StreamAuth.o Errors.o Unicode.o TerminalKeys.o Terminal.o TerminalWidget.o TerminalMenu.o TerminalChoice.o TerminalBar.o TerminalProgress.o TerminalCalendar.o TerminalTheme.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o HttpUtil.o HttpChunkedTransfer.o Http.o Gemini.o Smtp.o Inet.o Expect.o base32.o base64.o  crc32.o md5c.o sha1.o sha2.o whirlpool.o jh_ref.o HashCRC32.o HashMD5.o HashSHA.o HashJH.o HashWhirlpool.o HashOpenSSL.o Hash.o HMAC.o Ssh.o Compression.o Encryption.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o StringList.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Seccomp.o Process.o Container.o Encodings.o RawData.o SecureMem.o CommandLineParser.o SysInfo.o Entropy.o Users.o UnitsOfMeasure.o HttpServer.o WebSocket.o ContentType.o PasswordFile.o OTP.o CGI.o LineEdit.o
 
 
 all: $(OBJ)
 	$(CC) $(FLAGS) -shared -o $(LIBFILE) $(OBJ) $(LIBS) $(LDFLAGS)
-	-ln -s -r -f $(LIBFILE) libUseful-$(VERSION).so
-	-ln -s -r -f $(LIBFILE) libUseful-$(MAJOR).so
-	-ln -s -r -f $(LIBFILE) $(SONAME)
-	-ln -s -r -f $(LIBFILE) libUseful.so
+	-$(LN) -s -r -f $(LIBFILE) libUseful-$(VERSION).$(SONAME_SUFFIX)
+	-$(LN) -s -r -f $(LIBFILE) libUseful-$(MAJOR).$(SONAME_SUFFIX)
+	-$(LN) -s -r -f $(LIBFILE) $(SONAME)
+	-$(LN) -s -r -f $(LIBFILE) libUseful.$(SONAME_SUFFIX)
 	$(AR) rcs libUseful-$(VERSION).a $(OBJ)
-	-ln -s -r -f libUseful-$(VERSION).a libUseful-$(MAJOR).a
-	-ln -s -r -f libUseful-$(VERSION).a libUseful.a
-
+	-$(LN) -s -r -f libUseful-$(VERSION).a libUseful-$(MAJOR).a
+	-$(LN) -s -r -f libUseful-$(VERSION).a libUseful.a
 
 StrLenCache.o: StrLenCache.h StrLenCache.c
 	$(CC) $(FLAGS) -c StrLenCache.c
@@ -278,20 +293,20 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f *.o *.so *.so.* *.a *.orig .*.swp *~
+	-rm -f *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) *.o *.a *.orig .*.swp *~
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples
 
-install: libUseful.so
-	-mkdir -p $(DESTDIR)$(prefix)/lib 
-	cp -P *.so *.so.* *.a $(DESTDIR)$(prefix)/lib  
+install: libUseful.$(SONAME_SUFFIX)
+	-mkdir -p $(DESTDIR)$(prefix)/lib
+	cp -P *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) *.a $(DESTDIR)$(prefix)/lib
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
-	-ln -s -r -f $(DESTDIR)$(prefix)/include/libUseful-$(VERSION) $(DESTDIR)$(prefix)/include/libUseful-5
+	-$(LN) -s -r -f $(DESTDIR)$(prefix)/include/libUseful-$(VERSION) $(DESTDIR)$(prefix)/include/libUseful-5
 	-mkdir -p $(DESTDIR)$(prefix)/etc
 	cp *.conf $(DESTDIR)$(prefix)/etc
 
 
-test: libUseful.so
+test: libUseful.$(SONAME_SUFFIX)
 	-echo "No tests written yet"

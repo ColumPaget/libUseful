@@ -27,11 +27,19 @@
 #include <sys/prctl.h>
 #endif
 
-/*This is code to change the command-line of a program as visible in ps */
 
+
+/*This is code to change the command-line of a program as visible in ps */
+#ifdef __APPLE__
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#else
 extern char **environ;
+#endif
+
 static char *TitleBuffer=NULL;
 static int TitleLen=0;
+
 
 
 
