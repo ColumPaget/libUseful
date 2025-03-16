@@ -1,4 +1,10 @@
-v5.43
+v5.45 (2025-03-16)
+  * Bugfix for file compression autodetection
+
+v5.44 (2025-03-16)
+  * Changes from barracuda156@github.com for compiling on MacOS
+
+v5.43 (2025-03-15)
   * More work on tidying up linked-lists implementation
   * If a variable list/map is declared with 'LIST_FLAG_UNIQ' then assume items are added to the variable list only once, and don't try to look up previous items to replace them (big speed increase)
   * Support using lzip application for compession/decompression of streams

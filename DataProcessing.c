@@ -293,6 +293,9 @@ int STREAMAddStandardDataProcessor(STREAM *S, const char *Class, const char *iNa
         if (strcasecmp(Name, "auto")==0)
         {
             Name=CopyStr(Name, STREAMDetectCompression(S));
+            //if we can't detect compression, assume that this file is 
+            //uncompressed, and so return TRUE to indicate setup went okay
+            if (! StrValid(Name)) RetVal=TRUE;
         }
     }
 
