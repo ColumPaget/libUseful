@@ -1,7 +1,7 @@
 CC = @CC@
 AR = @AR@
 LN = @LN@
-VERSION = 5.45
+VERSION = @PACKAGE_VERSION@
 MAJOR=5
 
 UNAME_S := $(shell uname -s)

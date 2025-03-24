@@ -1,4 +1,4 @@
-AC_INIT
+AC_INIT([libUseful], [5.45], [colums.projects@gmail.com])
 
 m4_ifdef([AC_PROG_AR], [AC_PROG_AR])
 AS_IF([test "$AR" = ""], [
