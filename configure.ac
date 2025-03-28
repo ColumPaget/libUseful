@@ -1,17 +1,15 @@
-AC_INIT
+AC_INIT([libUseful], [5.45], [colums.projects@gmail.com])
 
 m4_ifdef([AC_PROG_AR], [AC_PROG_AR])
-if test "$AR" = ""
-then
-AR=ar
-fi
+AS_IF([test "$AR" = ""], [
+    AR=ar
+])
 AC_SUBST(AR)
 
 m4_ifdef([AC_PROG_LN], [AC_PROG_LN])
-if test "$LN" = ""
-then
-LN=ln
-fi
+AS_IF([test "$LN" = ""], [
+    LN=ln
+])
 AC_SUBST(LN)
 
 echo "CC=$CC AR=$AR LN=$LN"
@@ -36,262 +34,279 @@ cf_use_hashopenssl=auto
 
 
 
-AC_ARG_ENABLE(wall, [  --enable-wall               use -Wall to get maximum compile warnings], cf_use_wall=$enableval, cf_use_wall=no )
-if test "$cf_use_wall" = "yes"
-then
-CFLAGS="$CFLAGS -Wall"
-fi
+AC_ARG_ENABLE([wall],
+    [AS_HELP_STRING([--enable-wall], [use -Wall to get maximum compile warnings])],
+    [cf_use_wall=$enableval],
+    [cf_use_wall=no]
+)
+AS_IF([test "$cf_use_wall" = "yes"], [
+    CFLAGS="$CFLAGS -Wall"
+])
 
 
-AC_ARG_ENABLE(werror, [  --enable-werror             treat compile warnings as errors], cf_use_werror=$enableval, cf_use_werror=no )
-if test "$cf_use_werror" = "yes"
-then
-CFLAGS="$CFLAGS -Werror"
-fi
+AC_ARG_ENABLE([werror],
+    [AS_HELP_STRING([--enable-werror], [treat compile warnings as errors])],
+    [cf_use_werror=$enableval],
+    [cf_use_werror=no]
+)
+AS_IF([test "$cf_use_werror" = "yes"], [
+    CFLAGS="$CFLAGS -Werror"
+])
 
 
-AC_ARG_ENABLE(fortify, [  --enable-fortify            use 'FORTIFY_SOURCE=3' to harden source code], cf_use_fortify=$enableval, cf_use_fortify=no )
-AC_ARG_ENABLE(stack-protect, [  --enable-stack-protect      use '-fstack-protector-strong' to harden source code], cf_use_stackprotect=$enableval, cf_use_stackprotect=no )
-AC_ARG_ENABLE(harden, [  --enable-harden             use 'FORTIFY_SOURCE=3' and stack-protect to harden source code], cf_use_harden=$enableval, cf_use_harden=no )
-AC_ARG_ENABLE(soname, [  --enable-soname             use 'soname' in shared lib. Defaults to 'yes' for gcc 'no' otherwise], cf_use_soname=$enableval, cf_use_soname=gcc )
+AC_ARG_ENABLE([fortify],
+    [AS_HELP_STRING([--enable-fortify], [use 'FORTIFY_SOURCE=3' to harden source code])],
+    [cf_use_fortify=$enableval],
+    [cf_use_fortify=no]
+)
+AC_ARG_ENABLE([stack-protect],
+    [AS_HELP_STRING([--enable-stack-protect], [use '-fstack-protector-strong' to harden source code])],
+    [cf_use_stackprotect=$enableval],
+    [cf_use_stackprotect=no]
+)
+AC_ARG_ENABLE([harden],
+    [AS_HELP_STRING([--enable-harden], [use 'FORTIFY_SOURCE=3' and stack-protect to harden source code])],
+    [cf_use_harden=$enableval],
+    [cf_use_harden=no]
+)
+AC_ARG_ENABLE([soname],
+    [AS_HELP_STRING([--enable-soname], [use 'soname' in shared lib. Defaults to 'yes' for gcc 'no' otherwise])],
+    [cf_use_soname=$enableval],
+    [cf_use_soname=gcc]
+)
 
 AC_SUBST(SONAME_FLAGS,"")
-if test "$cf_use_soname" != "no"
-then
-  if test "$GCC" = "yes"
-  then
+AS_IF([test "$cf_use_soname" != "no"], [
+    AS_IF([test "$GCC" = "yes"], [
         AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
-  else
-      if test "$cf_use_soname" = "yes"
-      then
-				AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
-      fi
-  fi
-fi
+    ], [
+	AS_IF([test "$cf_use_soname" = "yes"], [
+		AC_SUBST([SONAME_FLAGS], ['-Wl,${LINKER_SONAME_OPTION},${SONAME}'])
+        ])
+    ])
+])
 
 
-if test "$cf_use_harden" = "yes"
-then
-cf_use_fortify="yes"
-cf_use_stackprotect="yes"
-fi
+AS_IF([test "$cf_use_harden" = "yes"], [
+    cf_use_fortify="yes"
+    cf_use_stackprotect="yes"
+])
 
 
-if test "$cf_use_fortify" = "yes"
-then
-CFLAGS="$CFLAGS -O2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
-fi
+AS_IF([test "$cf_use_fortify" = "yes"], [
+    CFLAGS="$CFLAGS -O2 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3"
+])
 
-if test "$cf_use_stackprotect" = "yes"
-then
-CFLAGS="$CFLAGS -fstack-protector-strong"
-fi
+AS_IF([test "$cf_use_stackprotect" = "yes"], [
+    CFLAGS="$CFLAGS -fstack-protector-strong"
+])
 
 
 AC_CHECK_LIB(c,get_current_dir_name,,)
 cf_have_get_current_dir_name=$ac_cv_lib_c_get_current_dir_name
-if test "$cf_have_get_current_dir_name" = "yes"
-then
-AC_DEFINE([HAVE_GET_CURR_DIR])
-fi
+AS_IF([test "$cf_have_get_current_dir_name" = "yes"], [
+    AC_DEFINE([HAVE_GET_CURR_DIR])
+])
 
 
 AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
 
 
-AC_ARG_ENABLE(sendfile, [  --enable-sendfile           enable 'fastcopy' sendfile support], cf_use_sendfile=$enableval, cf_use_sendfile=auto )
-if test "$cf_use_sendfile" != "no"
-then
-AC_CHECK_HEADER(sys/sendfile.h,cf_use_sendfile=yes,cf_use_sendfile=no,)
-if test "$cf_use_sendfile" != "no"
-then
-AC_CHECK_FUNC(sendfile, AC_DEFINE([HAVE_SENDFILE]))
-fi
-
-fi 
+AC_ARG_ENABLE([sendfile],
+    [AS_HELP_STRING([--enable-sendfile], [enable 'fastcopy' sendfile support])],
+    [cf_use_sendfile=$enableval],
+    [cf_use_sendfile=auto]
+)
+AS_IF([test "$cf_use_sendfile" != "no"], [
+    AC_CHECK_HEADER(sys/sendfile.h,cf_use_sendfile=yes,cf_use_sendfile=no,)
+    AS_IF([test "$cf_use_sendfile" != "no"], [
+	AC_CHECK_FUNC(sendfile, AC_DEFINE([HAVE_SENDFILE]))
+    ])
+])
 
 
 AC_CHECK_HEADER(sys/random.h,cf_use_sys_random=yes,cf_use_sys_random=no,)
-if test "$cf_use_sys_random" != "no"
-then
-AC_DEFINE([HAVE_SYS_RANDOM])
-fi
+AS_IF([test "$cf_use_sys_random" != "no"], [
+    AC_DEFINE([HAVE_SYS_RANDOM])
+])
 
 
 
-AC_ARG_ENABLE(ip6, [  --enable-ip6                enable IPv6 support], cf_use_ip6=$enableval, cf_use_ip6=yes )
-if test "$cf_use_ip6" = "yes"
-then
-AC_DEFINE([USE_INET6],1)
-fi
+AC_ARG_ENABLE([ip6],
+    [AS_HELP_STRING([--enable-ip6], [enable IPv6 support])],
+    [cf_use_ip6=$enableval],
+    [cf_use_ip6=yes]
+)
+AS_IF([test "$cf_use_ip6" = "yes"], [
+    AC_DEFINE([USE_INET6],1)
+])
 
 
-AC_ARG_ENABLE(xattr, [  --enable-xattr              enable filesystem xattr support], cf_use_xattr=$enableval, cf_use_xattr=yes )
-if test "$cf_use_xattr" = "yes"
-then
-AC_CHECK_LIB(c,getxattr,,)
-cf_have_getxattr=$ac_cv_lib_c_getxattr
-if test "$cf_have_getxattr" = "yes"
-then
-AC_DEFINE([HAVE_XATTR])
-fi
-fi
+AC_ARG_ENABLE([xattr],
+    [AS_HELP_STRING([--enable-xattr], [enable filesystem xattr support])],
+    [cf_use_xattr=$enableval],
+    [cf_use_xattr=yes]
+)
+AS_IF([test "$cf_use_xattr" = "yes"], [
+    AC_CHECK_LIB(c,getxattr,,)
+    cf_have_getxattr=$ac_cv_lib_c_getxattr
+    AS_IF([test "$cf_have_getxattr" = "yes"], [
+	AC_DEFINE([HAVE_XATTR])
+    ])
+])
 
-AC_ARG_ENABLE(fsflags, [  --enable-fsflags              enable support for immutable and append-only files (and use of these in logs) ], cf_use_fsflags=$enableval, cf_use_fsflags=no )
+AC_ARG_ENABLE([fsflags],
+    [AS_HELP_STRING([--enable-fsflags], [enable support for immutable and append-only files (and use of these in logs)])],
+    [cf_use_fsflags=$enableval],
+    [cf_use_fsflags=no]
+)
+AS_IF([test "$cf_use_fsflags" = "yes"], [
+    AC_CHECK_HEADER(linux/fs.h,cf_have_fsflags=yes,,)
+])
 
-if test "$cf_use_fsflags" = "yes"
-then
-AC_CHECK_HEADER(linux/fs.h,cf_have_fsflags=yes,,)
-fi
-
-if test "$cf_have_fsflags" = "yes"
-then
-AC_DEFINE([USE_FSFLAGS])
-fi
-
-
-
-AC_ARG_ENABLE(namespaces, [  --enable-namespaces         enable linux namespace support], cf_use_namespaces=$enableval, cf_use_namespaces=yes )
-if test "$cf_use_namespaces" = "yes"
-then
-        AC_CHECK_LIB(c,unshare,,)
-        cf_have_unshare=$ac_cv_lib_c_unshare
-        if test "$cf_have_unshare" = "yes"
-        then
-                AC_DEFINE([HAVE_UNSHARE])
-        fi
-
-        AC_CHECK_LIB(c,setns,,)
-        cf_have_setns=$ac_cv_lib_c_setns
-        if test "$cf_have_setns" = "yes"
-        then
-                AC_DEFINE([HAVE_SETNS])
-        fi
-fi
+AS_IF([test "$cf_have_fsflags" = "yes"], [
+    AC_DEFINE([USE_FSFLAGS])
+])
 
 
+AC_ARG_ENABLE([namespaces],
+    [AS_HELP_STRING([--enable-namespaces], [enable linux namespace support])],
+    [cf_use_namespaces=$enableval],
+    [cf_use_namespaces=yes]
+)
+AS_IF([test "$cf_use_namespaces" = "yes"], [
+    AC_CHECK_LIB(c,unshare,,)
+    cf_have_unshare=$ac_cv_lib_c_unshare
+    AS_IF([test "$cf_have_unshare" = "yes"], [
+        AC_DEFINE([HAVE_UNSHARE])
+    ])
+    AC_CHECK_LIB(c,setns,,)
+    cf_have_setns=$ac_cv_lib_c_setns
+    AS_IF([test "$cf_have_setns" = "yes"], [
+	AC_DEFINE([HAVE_SETNS])
+    ])
+])
 
-AC_ARG_ENABLE(ssl, [  --enable-ssl                use Secure Sockets Layer], cf_use_ssl=$enableval, cf_use_ssl=yes )
 
-if test "$cf_use_ssl" = "yes"
-then
+AC_ARG_ENABLE([ssl],
+    [AS_HELP_STRING([--enable-ssl], [use Secure Sockets Layer])],
+    [cf_use_ssl=$enableval],
+    [cf_use_ssl=yes]
+)
+AS_IF([test "$cf_use_ssl" = "yes"], [
+    AC_CHECK_HEADER([openssl/crypto.h])
+    AC_CHECK_HEADER([openssl/ssl.h])
+    #include <openssl/crypto.h>
+    #include <openssl/x509.h>
+    #include <openssl/x509v3.h>
+    #include <openssl/pem.h>
+    #include <openssl/err.h>
+    #include <openssl/rand.h>
+    #include <openssl/asn1.h>
 
-AC_CHECK_HEADER([openssl/crypto.h])
-AC_CHECK_HEADER([openssl/ssl.h])
-#include <openssl/crypto.h>
-#include <openssl/x509.h>
-#include <openssl/x509v3.h>
-#include <openssl/pem.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#include <openssl/asn1.h>
 
+    AC_CHECK_LIB(crypto,EVP_CIPHER_CTX_init,,)
+    cf_have_libcrypto=$ac_cv_lib_crypto_EVP_CIPHER_CTX_init
 
-AC_CHECK_LIB(crypto,EVP_CIPHER_CTX_init,,)
-cf_have_libcrypto=$ac_cv_lib_crypto_EVP_CIPHER_CTX_init
-
-dnl New versions of openssl seem to lack EVP_CIPHER_CTX_init, so let's look for another function. I've no idea what's going on with openssl, this is why I use libressl instead.
-if test "$cf_have_libcrypto" != "yes"
-then
+    dnl New versions of openssl seem to lack EVP_CIPHER_CTX_init, so let's look for another function. I've no idea what's going on with openssl, this is why I use libressl instead.
+    AS_IF([test "$cf_have_libcrypto" != "yes"], [
 	AC_CHECK_LIB(crypto,EVP_CIPHER_CTX_new,,)
 	cf_have_libcrypto=$ac_cv_lib_crypto_EVP_CIPHER_CTX_new
-fi
+    ])
 
 
-AC_CHECK_LIB(ssl,SSL_library_init,,)
-cf_have_libssl=$ac_cv_lib_ssl_SSL_library_init
+    AC_CHECK_LIB(ssl,SSL_library_init,,)
+    cf_have_libssl=$ac_cv_lib_ssl_SSL_library_init
 
-dnl New versions of openssl seem to lack SSL_library_init, so let's look for another function. I've no idea what's going on with openssl, this is why I use libressl instead.
-if test "$cf_have_libssl" != "yes"
-then
+    dnl New versions of openssl seem to lack SSL_library_init, so let's look for another function. I've no idea what's going on with openssl, this is why I use libressl instead.
+    AS_IF([test "$cf_have_libssl" != "yes"], [
 	AC_CHECK_LIB(ssl,OPENSSL_init_ssl,,)
 	cf_have_libssl=$ac_cv_lib_ssl_OPENSSL_init_ssl
-fi
+    ])
 
 
+    AS_IF([test "$cf_have_libssl" = "yes"], [
+	cf_use_zlib=yes
 
-if test "$cf_have_libssl" = "yes"
-then
-cf_use_zlib=yes
-
-AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch )
+	AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch )
 
 
-AC_CHECK_DECLS(OpenSSL_add_all_algorithms,AC_DEFINE([HAVE_OPENSSL_ADD_ALL_ALGORITHMS]),[],[[#include <openssl/ssl.h>]])
-AC_CHECK_DECLS(SSL_set_tlsext_host_name,AC_DEFINE([HAVE_SSL_SET_TLSEXT_HOST_NAME]),[],[[#include <openssl/ssl.h>]])
+	AC_CHECK_DECLS(OpenSSL_add_all_algorithms,AC_DEFINE([HAVE_OPENSSL_ADD_ALL_ALGORITHMS]),[],[[#include <openssl/ssl.h>]])
+	AC_CHECK_DECLS(SSL_set_tlsext_host_name,AC_DEFINE([HAVE_SSL_SET_TLSEXT_HOST_NAME]),[],[[#include <openssl/ssl.h>]])
 
- AC_MSG_CHECKING([that OpenSSL Library is at least version 0.9.7])   
- AC_EGREP_CPP(yes,      [
+	AC_MSG_CHECKING([that OpenSSL Library is at least version 0.9.7])
+	AC_EGREP_CPP([yes], [
 		#include <openssl/evp.h>
 		#if SSLEAY_VERSION_NUMBER >= 0x00907000L
-		yes        
+		yes
 		#endif
-	],      
-	[
+	], [
 		AC_MSG_RESULT([yes])
-#    AC_DEFINE(USE_OPENSSL_ADD_ALL_ALGORITHMS, 1, [Use OpenSSL_add_all_algorithms]) 
-	],[AC_MSG_RESULT([no])])
+	# AC_DEFINE(USE_OPENSSL_ADD_ALL_ALGORITHMS, 1, [Use OpenSSL_add_all_algorithms])
+	], [
+	    AC_MSG_RESULT([no])
+	])
+    ])
+])
 
 
 
-
-fi
-
-
-fi
-
-
-
-AC_ARG_ENABLE(zlib, [  --enable-zlib               use ZLib Compression], cf_use_zlib=$enableval, cf_use_zlib=yes)
-
-if test "$cf_use_zlib" = "yes" -o "$cf_use_ssl" = "yes"
-then
-AC_CHECK_LIB(z,deflate,,)
-cf_have_libz=$ac_cv_lib_z_deflate
-fi
+AC_ARG_ENABLE([zlib],
+    [AS_HELP_STRING([--enable-zlib] ,[use ZLib Compression])],
+    [cf_use_zlib=$enableval],
+    [cf_use_zlib=yes]
+)
+AS_IF([test "$cf_use_zlib" = "yes" -o "$cf_use_ssl" = "yes"], [
+    AC_CHECK_LIB(z,deflate,,)
+    cf_have_libz=$ac_cv_lib_z_deflate
+])
 
 
-AC_ARG_ENABLE(simd, [  --enable-simd=<level>       use SIMD cpu extensions, 'level' can be one of mmx, sse, sse2], cf_use_simd=$enableval )
-
-
-case $cf_use_simd in
-mmx) AC_SUBST(SIMD_CFLAGS,"-mmmx");;
-sse) AC_SUBST(SIMD_CFLAGS,"-mmmx -msse");;
-sse2) AC_SUBST(SIMD_CFLAGS,"-mmmx -msse -msse2");;
-esac
+AC_ARG_ENABLE([simd],
+    [AS_HELP_STRING([--enable-simd=<level>], [use SIMD cpu extensions, 'level' can be one of mmx, sse, sse2])],
+    [cf_use_simd=$enableval]
+)
+AS_CASE([$cf_use_simd],
+    [mmx], [AC_SUBST(SIMD_CFLAGS,"-mmmx")],
+    [sse], [AC_SUBST(SIMD_CFLAGS,"-mmmx -msse")],
+    [sse2], [AC_SUBST(SIMD_CFLAGS,"-mmmx -msse -msse2")],
+)
 
 
 cf_have_capabilities=no
-AC_ARG_ENABLE(capabilities, [  --enable-capabilities       enable linux capabilities support (default=no)], cf_use_capabilities=$enableval, cf_use_capabilities=no )
+AC_ARG_ENABLE([capabilities],
+    [AS_HELP_STRING([--enable-capabilities], [enable linux capabilities support (default=no)])],
+    [cf_use_capabilities=$enableval],
+    [cf_use_capabilities=no]
+)
 
-if test "$cf_use_capabilities" = "yes"
-then
-AC_CHECK_HEADER(sys/capability.h,cf_have_capabilities=yes,,)
-AC_CHECK_HEADER(linux/capability.h,cf_have_capabilities=yes,,)
-fi
+AS_IF([test "$cf_use_capabilities" = "yes"], [
+    AC_CHECK_HEADER(sys/capability.h,cf_have_capabilities=yes,,)
+    AC_CHECK_HEADER(linux/capability.h,cf_have_capabilities=yes,,)
+])
 
-if test "$cf_have_capabilities" = "yes"
-then
-AC_CHECK_LIB(cap,cap_init,,)
-AC_DEFINE([USE_CAPABILITIES])
-fi
+AS_IF([test "$cf_have_capabilities" = "yes"], [
+    AC_CHECK_LIB(cap,cap_init,,)
+    AC_DEFINE([USE_CAPABILITIES])
+])
 
 
 
-AC_ARG_ENABLE(seccomp, [  --enable-seccomp           enable seccomp to limit process syscalls], cf_use_seccomp=$enableval, cf_use_seccomp=no)
+AC_ARG_ENABLE([seccomp],
+    [AS_HELP_STRING([--enable-seccomp], [enable seccomp to limit process syscalls])],
+    [cf_use_seccomp=$enableval],
+    [cf_use_seccomp=no]
+)
 
-if test "$cf_use_seccomp" = "yes"
-then
-AC_CHECK_HEADER([linux/seccomp.h],,cf_use_seccomp=no,)
-AC_CHECK_HEADER([linux/filter.h],,cf_use_seccomp=no,)
-AC_CHECK_HEADER([linux/bpf.h],,cf_use_seccomp=no,)
-AC_CHECK_LIB(c,prctl,,cf_use_seccomp=no)
-if test "$cf_use_seccomp" = "yes"
-then
-AC_DEFINE([USE_SECCOMP])
-fi
-
-fi
+AS_IF([test "$cf_use_seccomp" = "yes"], [
+    AC_CHECK_HEADER([linux/seccomp.h],,cf_use_seccomp=no,)
+    AC_CHECK_HEADER([linux/filter.h],,cf_use_seccomp=no,)
+    AC_CHECK_HEADER([linux/bpf.h],,cf_use_seccomp=no,)
+    AC_CHECK_LIB(c,prctl,,cf_use_seccomp=no)
+    AS_IF([test "$cf_use_seccomp" = "yes"], [
+	AC_DEFINE([USE_SECCOMP])
+    ])
+])
 
 
 
@@ -309,75 +324,65 @@ echo "compile with -Werror - $cf_use_werror"
 echo "compile with FORTIFY_SOURCE=3 - $cf_use_fortify"
 echo "compile with -fstack-protector-strong - $cf_use_stackprotect"
 
-if test "$ac_cv_sys_file_offset_bits" = "64"
-then
-echo "Largefiles ( > 2GB ) enabled"
-else
-echo "Largefiles ( > 2GB ) NOT enabled"
-fi
+AS_IF([test "$ac_cv_sys_file_offset_bits" = "64"], [
+    echo "Largefiles ( > 2GB ) enabled"
+], [
+    echo "Largefiles ( > 2GB ) NOT enabled"
+])
 
-if test "$cf_have_getxattr" = "yes"
-then
-echo "Filesystem attribues (xattr) enabled"
-else
-echo "Filesystem attribues (xattr) NOT enabled"
-fi
+AS_IF([test "$cf_have_getxattr" = "yes"], [
+    echo "Filesystem attribues (xattr) enabled"
+], [
+    echo "Filesystem attribues (xattr) NOT enabled"
+])
 
 
-if test "$ac_cv_func_sendfile" = "yes"
-then
-echo "Linux sendfile syscall enabled"
-else
-echo "Linux sendfile syscall NOT enabled"
-fi
+AS_IF([test "$ac_cv_func_sendfile" = "yes"], [
+    echo "Linux sendfile syscall enabled"
+], [
+    echo "Linux sendfile syscall NOT enabled"
+])
 
 
-if test "$cf_use_ip6" = "yes"
-then
-echo "IPv6 enabled"
-else
-echo "IPv6 NOT enabled"
-fi
+AS_IF([test "$cf_use_ip6" = "yes"], [
+    echo "IPv6 enabled"
+], [
+    echo "IPv6 NOT enabled"
+])
 
-if test "$cf_have_libssl" = "yes"
-then
-echo "SSL/TLS enabled"
-else
-echo "SSL/TLS NOT enabled"
-fi
+AS_IF([test "$cf_have_libssl" = "yes"], [
+    echo "SSL/TLS enabled"
+], [
+    echo "SSL/TLS NOT enabled"
+])
 
-if test "$cf_have_libz" = "yes"
-then
-echo "zlib support enabled"
-else
-echo "zlib NOT enabled"
-fi
+AS_IF([test "$cf_have_libz" = "yes"], [
+    echo "zlib support enabled"
+], [
+    echo "zlib NOT enabled"
+])
 
-if test "$cf_have_fsflags" = "yes"
-then
-echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs enabled"
-else
-echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs NOT enabled"
-fi
+AS_IF([test "$cf_have_fsflags" = "yes"], [
+    echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs enabled"
+], [
+    echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs NOT enabled"
+])
 
-if test "$cf_have_unshare" = "yes" -o "$cf_have_setns" = "yes"
-then
-echo "linux namespace support enabled"
-else
-echo "linux namespace support NOT enabled"
-fi
+AS_IF([test "$cf_have_unshare" = "yes" -o "$cf_have_setns" = "yes"], [
+    echo "linux namespace support enabled"
+], [
+    echo "linux namespace support NOT enabled"
+])
 
-if test "$cf_have_capabilities" = "yes"
-then
-echo "linux capabilities support enabled"
-else
-echo "linux capabilities support NOT enabled"
-fi
+AS_IF([test "$cf_have_capabilities" = "yes"], [
+    echo "linux capabilities support enabled"
+], [
+    echo "linux capabilities support NOT enabled"
+])
 
-if test "$cf_use_seccomp" = "yes"
-then
-echo "linux seccomp support enabled"
-else
-echo "linux seccomp support NOT enabled"
-fi
+AS_IF([test "$cf_use_seccomp" = "yes"], [
+    echo "linux seccomp support enabled"
+], [
+    echo "linux seccomp support NOT enabled"
+])
 
