@@ -2708,6 +2708,9 @@ int STREAMCommit(STREAM *S)
 {
     HTTPInfoStruct *Item;
 
+    //Always flush on a stream commit
+    STREAMFlush(S);
+
     if (! (S->Flags & SF_RDONLY) )
     {
         Item=(HTTPInfoStruct *) STREAMGetItem(S, "HTTP:InfoStruct");
@@ -2719,7 +2722,6 @@ int STREAMCommit(STREAM *S)
     // close our stdout
     if (S->Type==STREAM_TYPE_PIPE)
     {
-        STREAMFlush(S);
         close(S->out_fd);
         S->out_fd=-1;
         return(TRUE);

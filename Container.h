@@ -1,11 +1,17 @@
 /*
 Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
-* SPDX-License-Identifier: GPL-3.0
+* SPDX-License-Identifier: LGPL-3.0-or-later
 */
 
 
 #ifndef LIBUSEFUL_CONTAINER_H
 #define LIBUSEFUL_CONTAINER_H
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define _GNU_SOURCE
 #include <sys/types.h>

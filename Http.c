@@ -1050,10 +1050,9 @@ static int HTTPTransactHandleAuthRequest(HTTPInfoStruct *Info, int AuthResult)
         //Set a flag (HTTP_AUTH_RETURN) that means we'll give up if we fail again
         if (Info->AuthFlags & HTTP_AUTH_OAUTH)
         {
-            //if HTTP_AUTH_RETURN is set, then we alread tried getting a refresh
+            //if HTTP_AUTH_RETURN is set, then we already tried getting a refresh
             if (Info->AuthFlags & HTTP_AUTH_RETURN) return(FALSE);
             Info->Authorization=MCopyStr(Info->Authorization, "Bearer ", OAuthLookup(Info->Credentials, TRUE), NULL);
-            return(TRUE);
         }
         //for normal authentication, if we've sent the authentication, or if we have no auth details, then give up
         else if (
@@ -1081,7 +1080,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
     int result=HTTP_NOCONNECT;
     STREAM *S=NULL;
 
-    //we cannot close Info->S within this function, as it may be used by functions outside of this one
+    //we cannot destroy Info->S within this function, as it may be used by functions outside of this one
     //so we map it to 'S' and set 'S' to null if connection fails and return that
     while (1)
     {
@@ -1093,8 +1092,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
 
             if (! (Info->State & HTTP_CLIENTDATA_SENT))
             {
-                //Set this even if no client data to send, so we no we've been
-                //through here once
+                //Set this even if no client data to send, so we know we've been through here once
                 Info->State |= HTTP_CLIENTDATA_SENT;
 
                 if (StrValid(Info->PostData))
@@ -1124,6 +1122,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
             if (result==HTTP_REDIRECT)
             {
                 STREAMShutdown(S);
+                //do not use STREAMDestroy, as S can be used by functions outside this one
                 //STREAMDestroy(S);
                 continue;
             }
@@ -1137,6 +1136,7 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                 if (HTTPTransactHandleAuthRequest(Info, result))
                 {
                     STREAMShutdown(S);
+                    //do not use STREAMDestroy, as S can be used by functions outside this one
                     //STREAMDestroy(S);
                     continue;
                 }

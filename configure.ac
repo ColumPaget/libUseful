@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.45], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.46], [colums.projects@gmail.com])
 
 m4_ifdef([AC_PROG_AR], [AC_PROG_AR])
 AS_IF([test "$AR" = ""], [
@@ -20,7 +20,6 @@ AC_PROG_MAKE_SET
 AC_PROG_EGREP
 AC_SYS_LARGEFILE
 
-
 cf_have_libssl=no
 cf_have_libcrypto=no
 cf_have_libz=no
@@ -31,6 +30,15 @@ cf_use_xattr=no
 
 cf_use_hashopenssl=auto
 
+
+AC_ARG_ENABLE([lgpl],
+    [AS_HELP_STRING([--enable-lgpl], [build code licensed under Lesser Gnu Public License (excludes some features like sha1 hashing)])],
+    [cf_use_lgpl=$enableval],
+    [cf_use_lgpl=no]
+)
+AS_IF([test "$cf_use_lgpl" = "yes"], [
+    AC_DEFINE([USE_LGPL])
+])
 
 
 
@@ -102,14 +110,10 @@ AS_IF([test "$cf_use_stackprotect" = "yes"], [
 ])
 
 
-AC_CHECK_LIB(c,get_current_dir_name,,)
-cf_have_get_current_dir_name=$ac_cv_lib_c_get_current_dir_name
-AS_IF([test "$cf_have_get_current_dir_name" = "yes"], [
-    AC_DEFINE([HAVE_GET_CURR_DIR])
-])
-
-
 AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
+
+AC_CHECK_LIB(c,get_current_dir_name, AC_DEFINE([HAVE_GET_CURR_DIR]),)
+AC_CHECK_FUNCS(getloadavg sysinfo sysconf getpagesize ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
 
 
 AC_ARG_ENABLE([sendfile],
@@ -169,6 +173,83 @@ AS_IF([test "$cf_have_fsflags" = "yes"], [
 ])
 
 
+AC_ARG_ENABLE([crc32],
+    [AS_HELP_STRING([--enable-crc32], [enable internal crc32 hash support (not supported under LGPL)])],
+    [cf_use_crc32=$enableval],
+    [cf_use_crc32=yes]
+)
+
+AS_IF([test "$cf_use_lgpl" = "yes"],[
+	  cf_use_crc32=no
+])
+
+
+AS_IF([test "$cf_use_crc32" = "yes"], [
+    AC_DEFINE([USE_CRC32])
+])
+
+
+
+
+AC_ARG_ENABLE([md5],
+    [AS_HELP_STRING([--enable-md5], [enable internal MD5 hash support])],
+    [cf_use_md5=$enableval],
+    [cf_use_md5=yes]
+)
+AS_IF([test "$cf_use_md5" = "yes"], [
+    AC_DEFINE([USE_MD5])
+])
+
+
+AC_ARG_ENABLE([sha1],
+    [AS_HELP_STRING([--enable-sha1], [enable internal SHA1 hash support (not supported under LGPL)])],
+    [cf_use_sha1=$enableval],
+    [cf_use_sha1=yes]
+)
+
+AS_IF([test "$cf_use_lgpl" = "yes"],[
+	  cf_use_sha1=no
+])
+
+
+AS_IF([test "$cf_use_sha1" = "yes"], [
+    AC_DEFINE([USE_SHA1])
+])
+
+
+AC_ARG_ENABLE([sha2],
+    [AS_HELP_STRING([--enable-sha2], [enable internal SHA2 (sha256, sha512 etc) hash support])],
+    [cf_use_sha2=$enableval],
+    [cf_use_sha2=yes]
+)
+AS_IF([test "$cf_use_sha2" = "yes"], [
+    AC_DEFINE([USE_SHA2])
+])
+
+AC_ARG_ENABLE([whirl],
+    [AS_HELP_STRING([--enable-whirl], [enable internal whirlpool hash support])],
+    [cf_use_whirl=$enableval],
+    [cf_use_whirl=yes]
+)
+AS_IF([test "$cf_use_whirl" = "yes"], [
+    AC_DEFINE([USE_WHIRL])
+])
+
+
+AC_ARG_ENABLE([jh],
+    [AS_HELP_STRING([--enable-jh], [enable internal jh hash support])],
+    [cf_use_jh=$enableval],
+    [cf_use_jh=yes]
+)
+
+
+AS_IF([test "$cf_use_jh" = "yes"], [
+    AC_DEFINE([USE_JH])
+])
+
+
+
+
 AC_ARG_ENABLE([namespaces],
     [AS_HELP_STRING([--enable-namespaces], [enable linux namespace support])],
     [cf_use_namespaces=$enableval],
@@ -196,14 +277,6 @@ AC_ARG_ENABLE([ssl],
 AS_IF([test "$cf_use_ssl" = "yes"], [
     AC_CHECK_HEADER([openssl/crypto.h])
     AC_CHECK_HEADER([openssl/ssl.h])
-    #include <openssl/crypto.h>
-    #include <openssl/x509.h>
-    #include <openssl/x509v3.h>
-    #include <openssl/pem.h>
-    #include <openssl/err.h>
-    #include <openssl/rand.h>
-    #include <openssl/asn1.h>
-
 
     AC_CHECK_LIB(crypto,EVP_CIPHER_CTX_init,,)
     cf_have_libcrypto=$ac_cv_lib_crypto_EVP_CIPHER_CTX_init
@@ -361,6 +434,45 @@ AS_IF([test "$cf_have_libz" = "yes"], [
 ], [
     echo "zlib NOT enabled"
 ])
+
+AS_IF([test "$cf_use_crc32" = "yes"], [
+    echo "crc32 hash support enabled"
+], [
+    echo "crc32 hash NOT enabled"
+])
+
+
+AS_IF([test "$cf_use_md5" = "yes"], [
+    echo "md5 hash support enabled"
+], [
+    echo "md5 hash NOT enabled"
+])
+
+AS_IF([test "$cf_use_sha1" = "yes"], [
+    echo "sha1 hash support enabled"
+], [
+    echo "sha1 hash NOT enabled"
+])
+
+AS_IF([test "$cf_use_sha2" = "yes"], [
+    echo "sha2 hash support enabled"
+], [
+    echo "sha2 hash NOT enabled"
+])
+
+AS_IF([test "$cf_use_whirl" = "yes"], [
+    echo "whirl hash support enabled"
+], [
+    echo "whirl hash NOT enabled"
+])
+
+AS_IF([test "$cf_use_jh" = "yes"], [
+    echo "jh hash support enabled"
+], [
+    echo "jh hash NOT enabled"
+])
+
+
 
 AS_IF([test "$cf_have_fsflags" = "yes"], [
     echo "support for FS_APPEND_FL and FS_IMMUTABLE_FL flags and hardened logs enabled"

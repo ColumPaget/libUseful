@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2025 Colum Paget <colums.projects@googlemail.com>
-* SPDX-License-Identifier: GPL-3.0
+* SPDX-License-Identifier: LGPL-3.0-or-later
 */
 
 /* This implements a terminal-based calendar widget

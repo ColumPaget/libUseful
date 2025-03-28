@@ -31,6 +31,7 @@ all:
 	gcc -oHttpServer.exe HttpServer.c $(LIBS)
 	gcc -oPasswordFile.exe PasswordFile.c $(LIBS)
 	gcc -obase32.exe base32.c $(LIBS)
+	gcc -obase64.exe base64.c $(LIBS)
 	gcc -ouudecode.exe uudecode.c $(LIBS)
 	gcc -ononewprivs.exe nonewprivs.c $(LIBS)
 	gcc -ochroot.exe chroot.c $(LIBS)
