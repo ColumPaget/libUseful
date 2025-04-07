@@ -518,7 +518,6 @@ static int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 //and is called in Websocket.c
 int STREAMPushBytes(STREAM *S, const char *Data, int DataLen)
 {
-
     if (S->State & LU_SS_SSL) return(OpenSSLSTREAMWriteBytes(S, Data, DataLen));
     return(STREAMBasicSendBytes(S, Data, DataLen));
 }
@@ -2583,8 +2582,10 @@ static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
     case STREAM_TYPE_FILE:
     case STREAM_TYPE_PIPE:
     case STREAM_TYPE_TCP:
+    case STREAM_TYPE_TCP_ACCEPT:  //this means 'tcp server accepted connection'
     case STREAM_TYPE_UDP:
     case STREAM_TYPE_UNIX:
+    case STREAM_TYPE_UNIX_ACCEPT:
     case STREAM_TYPE_UNIX_DGRAM:
     case STREAM_TYPE_TTY:
     case STREAM_TYPE_SSH:
@@ -2594,6 +2595,11 @@ static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
 	return(FALSE);
 	break;
     }
+
+
+		//we cannot use sendfile with TLS/SSL
+	  if (In->State & LU_SS_SSL) return(FALSE);
+	  if (Out->State & LU_SS_SSL) return(FALSE);
  
     //we cannot use sendfile if there are any processing modules that modify incoming
     //or outgoing data before/after this sendfile call

@@ -1,4 +1,8 @@
-v5.47 (2025-03-06)
+v5.48 (2025-04-08)
+  * Add STREAM_TCP_ACCEPT and STREAM_UNIX_ACCEPT (server connections) to sendfile support
+  * Prevent use of sendfile on streams that become TLS/SSL via a 'STARTTLS' type method
+
+v5.47 (2025-04-06)
   * Limit types of output stream we can use the 'sendfile' syscall with
   * Reintroduce 'LICENSE' file in the hope that github detects it
 

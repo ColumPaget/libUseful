@@ -295,10 +295,17 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) libUseful.$(SONAME_SUFFIX).* *.o *.a *.orig .*.swp *~
+	-rm -f *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) libUseful.$(SONAME_SUFFIX).* *.o *.a *.orig .*.swp *~ 
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples
+
+distclean:
+	-rm -f *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) libUseful.$(SONAME_SUFFIX).* *.o *.a *.orig .*.swp *~ Makefile
+	-rm config.log config.status 
+	-rm -r autom4te.cache config.cache
+	-$(MAKE) clean -C examples
+
 
 install: libUseful.$(SONAME_SUFFIX)
 	-mkdir -p $(DESTDIR)$(libdir)
