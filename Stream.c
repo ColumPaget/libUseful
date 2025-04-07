@@ -2555,11 +2555,16 @@ int STREAMFind(STREAM *S, const char *Item, const char *Delimiter, char **RetStr
 }
 
 
+//linux supports the 'sendfile' call which implmenents zero-copy transfer of
+//data from one file descriptor to another. This is efficient, but unsuitable
+//for transfer of any data where libUseful has to modify that data in transit
+//e.g. compression, encryption or HTTP 'chunking'
 static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
 {
     if (! (Flags & SENDFILE_KERNEL)) return(FALSE);
     switch (In->Type)
     {
+    //the sendfile manual page states that input cannot be a socket
     case STREAM_TYPE_FILE:
     case STREAM_TYPE_PIPE:
         break;
@@ -2569,9 +2574,33 @@ static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
         break;
     }
 
+    switch (Out->Type)
+    {
+    //the sendfile manual page states that, since linux 2.6.33, the output can be
+    //any file. However, we can't use it for TLS/HTTPS/Websocket or other streams
+    //that require any kind of special processing of the output data.
+    //STREAM_TYPE_SSH is implemented as a pipe to an ssh process, so it should work.
+    case STREAM_TYPE_FILE:
+    case STREAM_TYPE_PIPE:
+    case STREAM_TYPE_TCP:
+    case STREAM_TYPE_UDP:
+    case STREAM_TYPE_UNIX:
+    case STREAM_TYPE_UNIX_DGRAM:
+    case STREAM_TYPE_TTY:
+    case STREAM_TYPE_SSH:
+        break;
+
+    default:
+	return(FALSE);
+	break;
+    }
+ 
+    //we cannot use sendfile if there are any processing modules that modify incoming
+    //or outgoing data before/after this sendfile call
     if  (ListSize(In->ProcessingModules) > 0) return(FALSE);
     if  (ListSize(Out->ProcessingModules) > 0) return(FALSE);
 
+    //if we get here then we've passed all checks and kernel sendfile is safe to use
     return(TRUE);
 }
 
@@ -2629,6 +2658,8 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
         }
 #endif
 
+	//we check 'UseSendFile' again here, because the sendfile attempt can
+        //turn sendfile off if it fails on the first try
         if (! UseSendFile)
         {
             //How much do we have queued in the in-stream?

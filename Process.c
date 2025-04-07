@@ -311,8 +311,8 @@ int ProcessResistPtrace()
 #ifdef HAVE_PRCTL
 //Turn OFF Dumpable flag. This prevents producing coredumps, but has the side-effect of preventing ptrace attach.
 //We normally control coredumps via resources (RLIMIT_CORE) rather than this
-#ifdef PR_SET_DUMPABLE
 #include <sys/prctl.h>
+#ifdef PR_SET_DUMPABLE
 
 //set, then check we have the set. This covers situations where the sat failed, but we've already
 //set the value previously somehow
@@ -333,8 +333,8 @@ int ProcessResistPtrace()
 int ProcessNoNewPrivs()
 {
 #ifdef HAVE_PRCTL
-#ifdef PR_SET_NO_NEW_PRIVS
 #include <sys/prctl.h>
+#ifdef PR_SET_NO_NEW_PRIVS
 
 //set, then check that the set worked. This correctly handles situations where we ask to set more than once
 //as the second attempt may 'fail', but we already have the desired result
