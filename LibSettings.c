@@ -25,11 +25,11 @@ void LibUsefulInitSettings()
     Tempstr=MCopyStr(Tempstr, __LIBUSEFUL_BUILD_DATE__, " ", __LIBUSEFUL_BUILD_TIME__, NULL);
     SetVar(LibUsefulSettings, "LibUseful:BuildTime", Tempstr);
 
-		#ifdef USE_LGPL
+#ifdef USE_LGPL
     SetVar(LibUsefulSettings, "LibUseful:License", "LGPLv3");
-		#else
+#else
     SetVar(LibUsefulSettings, "LibUseful:License", "GPLv3");
-		#endif
+#endif
 
     Tempstr=FormatStr(Tempstr,  "%d",  4096 * 10000);
     SetVar(LibUsefulSettings, "MaxDocumentSize",  Tempstr);

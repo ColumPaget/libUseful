@@ -1,3 +1,8 @@
+v5.49 (2025-04-11)
+  * Fix issue with List/Map overlooking first item in list
+  * Added support to ProcessApplyConfig for "W^X" "memory deny write execute" using prctl on linux
+  * Added StripStartEndChars function in String.c
+
 v5.48 (2025-04-08)
   * Add STREAM_TCP_ACCEPT and STREAM_UNIX_ACCEPT (server connections) to sendfile support
   * Prevent use of sendfile on streams that become TLS/SSL via a 'STARTTLS' type method

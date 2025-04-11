@@ -441,7 +441,14 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
         {
             //if the current item is a match, or we are in an ordered list and it's
             //greater, then insert between it and Prev
-            if (ListConsiderInsertPoint(Head, Curr, Name, LIST_FIND_GREATER)) return(Prev);
+            if (ListConsiderInsertPoint(Head, Curr, Name, LIST_FIND_GREATER))
+            {
+                //as we are looking for an insert point, we'd normally return 'Prev'
+                //but if Prev is a List Head or Chain head, return Curr instead
+                if (Prev->Flags & LIST_FLAG_MAP_CHAIN) return(Curr);
+                if (Prev == Curr->Head) return(Curr);
+                return(Prev);
+            }
 
             //Can only get here if it's not a match, in which
             //case we can safely delete any 'timed out' items

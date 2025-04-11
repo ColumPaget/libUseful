@@ -81,6 +81,10 @@ extern "C" {
 //Quote some standard chars in a string with '\'. 
 #define EnquoteStr(Dest, Src) (QuoteCharsInStr((Dest), (Src), "'\"\r\n"))
 
+
+
+
+
 //allocate or reallocate 'Len' bytes of memory to a resizeable string
 char *SetStrLen(char *Str, size_t Len);
 
@@ -178,7 +182,20 @@ char *StripLeadingWhitespace(char *Str);
 //strip carriage-return and linefeed characters from the end of a string
 char *StripCRLF(char *Str);
 
-//if string stars and ends with either ' or " strip those
+//If a string starts with a char in 'StartChars' then strip both that, and it's companion in 'EndChars'
+//e.g.  StripStartEndChars(Str, "[({", "])}");
+//if the string starts with '(', then the matching ')' is looked up in end chars and removed from the end if present
+//if '(' isn't matched by a ')' at the end, then it's not removed
+//StripStartEndChars returns the changed string, but as the strip is done using memmove there's no need
+//to write:
+//  Str=StripStartEndChars(Str, "(", ")");
+//it's enough to write:
+//  Str=StripStartEndChars(Str, "(", ")");
+char *StripStartEndChars(char *Str, const char *StartChars, const char *EndChars);
+
+//Strip either \" or \' characters surrounding a string. Only strips if the string starts and
+//ends with the same character (either \" or \'). Whitespace at start of string stripped too
+//DOESN'T strip backticks. 
 char *StripQuotes(char *Str);
 
 //for any of the chars listed in 'QuoteChars' quote them using '\' style quotes.

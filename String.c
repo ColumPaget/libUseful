@@ -583,33 +583,58 @@ char *StripCRLF(char *Str)
 }
 
 
-char *StripQuotes(char *Str)
+char *StripStartEndChars(char *Str, const char *StartChars, const char *EndChars)
 {
-    int len;
-    char *ptr, *end, StartQuote='\0';
+    int len, i;
+    char *ptr, *end, StartChar='\0', EndChar='\0';
 
     if (! Str) return(Str);
+
+    //find actual start of string, we don't count whitespace
     ptr=Str;
     while (isspace(*ptr)) ptr++;
 
-    if ((*ptr=='"') || (*ptr=='\''))
+    //look thorugh the list of 'start chars', and if one is found at the start of string
+    //register both it and it's 'EndChars' companion for removal
+    for (i=0; StartChars[i] != '\0'; i++)
     {
-        StartQuote=*ptr;
-        len=StrLenFromCache(ptr);
+        if (StartChars[i] == *ptr)
+        {
+	    //Catch situation where there's no matching item in 'EndChars'
+            if (StrLen(EndChars) > i)
+            {
+                StartChar=*ptr;
+                EndChar=EndChars[i];
+            }
+            else StartChar='\0';
+        }
+    }
 
+    if (StartChar != '\0')
+    {
+        len=StrLenFromCache(ptr);
         end=ptr+len-1;
 
-        if ((len > 0) && (StartQuote != '\0') && (*end==StartQuote))
+        if ((len > 0) && (*end==EndChar))
         {
             *end='\0';
             len--;
+            //note, this memove remotes StartChar and EndChar,
+            //len is 1 byte short, clipping off EndChar,
+            //And we move from ptr+1, which is 1 byte past EndChar
+            //over StartChar
             memmove(Str, ptr+1,len);
-            StrLenCacheAdd(Str, len);
+            StrTrunc(Str, len);
         }
     }
     return(Str);
 }
 
+
+char *StripQuotes(char *Str)
+{
+return(StripStartEndChars(Str, "'\"", "'\""));
+}
 
 
 char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)

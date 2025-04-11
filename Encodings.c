@@ -19,18 +19,18 @@
 void TOBASE64(unsigned char **Out, unsigned char *In, int Len, const char *Encoder, char Pad)
 {
 #ifdef USE_LGPL
-*Out=base64encode(*Out, In, Len, Encoder ,Pad);
+    *Out=base64encode(*Out, In, Len, Encoder,Pad);
 #else
-Radix64frombits(*Out, In, Len, Encoder ,Pad);
+    Radix64frombits(*Out, In, Len, Encoder,Pad);
 #endif
 }
 
 int FROMBASE64(char **Out, unsigned char *In, const char *Encoder, char Pad)
 {
 #ifdef USE_LGPL
-return(base64decode((unsigned char *) *Out, In, Encoder));
+    return(base64decode((unsigned char *) *Out, In, Encoder));
 #else
-return(Radix64tobits(*Out, In, Encoder, Pad));
+    return(Radix64tobits(*Out, In, Encoder, Pad));
 #endif
 }
 

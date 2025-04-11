@@ -17,26 +17,26 @@ a file, if it is one of gzip, bzip2 or lzip
 const char *STREAMDetectCompression(STREAM *S)
 {
     char *Buffer=NULL;
-		const char *Comp="";
+    const char *Comp="";
     int result;
 
-		if (S->Type==STREAM_TYPE_FILE)
-		{
-    Buffer=SetStrLen(Buffer, 20);
-		//using PeekBytes is useless here, because Peek still reads from the file
-		//at the time that the compression Processor isn't loaded into the stream.
-		//This means bytes will be read into the stream buffer, and sit there, which
-		//haven't been decompressed. Thus we have to SEEK back, and flush out the stream
-		//after we have examined the leading bytes.
-    result=STREAMReadBytes(S, Buffer, 10);
-		STREAMSeek(S, 0, SEEK_SET);
-		
+    if (S->Type==STREAM_TYPE_FILE)
+    {
+        Buffer=SetStrLen(Buffer, 20);
+        //using PeekBytes is useless here, because Peek still reads from the file
+        //at the time that the compression Processor isn't loaded into the stream.
+        //This means bytes will be read into the stream buffer, and sit there, which
+        //haven't been decompressed. Thus we have to SEEK back, and flush out the stream
+        //after we have examined the leading bytes.
+        result=STREAMReadBytes(S, Buffer, 10);
+        STREAMSeek(S, 0, SEEK_SET);
 
-    if ((result > 2) && (strncmp(Buffer, "BZh", 3)==0)) Comp="bzip2";
-    else if ((result > 3) && (strncmp(Buffer, "LZIP", 4)==0)) Comp="lzip";
-    else if ((result > 1) && (strncmp(Buffer, "\x1F\x8B", 2)==0)) Comp="gzip";
-    else if ((result > 5) && (strncmp(Buffer, "\xFD\x37\x7A\x58\x5A\x00", 6)==0)) Comp="xz";
-		}
+
+        if ((result > 2) && (strncmp(Buffer, "BZh", 3)==0)) Comp="bzip2";
+        else if ((result > 3) && (strncmp(Buffer, "LZIP", 4)==0)) Comp="lzip";
+        else if ((result > 1) && (strncmp(Buffer, "\x1F\x8B", 2)==0)) Comp="gzip";
+        else if ((result > 5) && (strncmp(Buffer, "\xFD\x37\x7A\x58\x5A\x00", 6)==0)) Comp="xz";
+    }
 
     Destroy(Buffer);
 
@@ -91,7 +91,7 @@ int DeCompressBytes(char **Out, const char *Alg, const char *In, unsigned long L
 
 
 // create a compression module, this will be a Data Processing Module that either
-// uses libraries (currently just zlib) to compress and decompress or 
+// uses libraries (currently just zlib) to compress and decompress or
 // uses compression commands like gzip, bzip2 and xz via a pipe
 TProcessingModule *LU_CompressionModuleCreate(const char *Name, const char *Args)
 {
@@ -154,7 +154,7 @@ TProcessingModule *LU_CompressionModuleCreate(const char *Name, const char *Args
 
 
 // create a decompression module, this will be a Data Processing Module that either
-// uses libraries (currently just zlib) to compress and decompress or 
+// uses libraries (currently just zlib) to compress and decompress or
 // uses compression commands like gzip, bzip2 and xz via a pipe
 TProcessingModule *LU_DeCompressionModuleCreate(const char *Name, const char *Args)
 {
@@ -401,9 +401,9 @@ int zlibProcessorInit(TProcessingModule *ProcMod, const char *Args, unsigned cha
 
     if (Type==COMP_GZIP) result=inflateInit2(&ZData->z_in, 47);
     else result=inflateInit(&ZData->z_in);
-		
-		if (result != Z_OK) RaiseError(0, "zlib init failed: %s", ZData->z_in.msg);
-		
+
+    if (result != Z_OK) RaiseError(0, "zlib init failed: %s", ZData->z_in.msg);
+
     ZData->z_out.avail_in=0;
     ZData->z_out.avail_out=0;
     if (Type==COMP_GZIP) deflateInit2(&ZData->z_out,5,Z_DEFLATED,30,8,Z_DEFAULT_STRATEGY);

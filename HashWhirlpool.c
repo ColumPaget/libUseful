@@ -51,7 +51,7 @@ int HashInitWhirlpool(HASH *Hash, const char *Name, int Len)
     Hash->Clone=HashCloneWhirlpool;
     return(TRUE);
 #else
-return(FALSE);
+    return(FALSE);
 #endif
 }
 

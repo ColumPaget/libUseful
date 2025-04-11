@@ -1,6 +1,6 @@
 /**
 
-This module (whirlpool.h and whirlpool.c) are modified from the reference implementation 
+This module (whirlpool.h and whirlpool.c) are modified from the reference implementation
 published by Paulo S.L.M. Barreto and Vincent Rijmen.
 
 The authors have stated: "WHIRLPOOL is not (and will never be) patented. It may be used free of charge for any purpose. The reference implementations are in the public domain."

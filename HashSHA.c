@@ -163,53 +163,53 @@ HASH *HashCloneSHA512(HASH *Hash)
 
 int HashInitSHA(HASH *Hash, const char *Name, int Len)
 {
-int RetVal=FALSE;
+    int RetVal=FALSE;
 
     switch (Len)
     {
     case 512:
-    #ifdef USE_SHA2
+#ifdef USE_SHA2
         Hash->Ctx=(void *) calloc(1,sizeof(SHA2_SHA512_CTX));
         SHA2_SHA512_Init((SHA2_SHA512_CTX *) Hash->Ctx);
         Hash->Update=HashUpdateSHA512;
         Hash->Finish=HashFinishSHA512;
         Hash->Clone=HashCloneSHA512;
-				RetVal=TRUE;
-    #endif
+        RetVal=TRUE;
+#endif
         break;
 
     case 384:
-    #ifdef USE_SHA2
+#ifdef USE_SHA2
         Hash->Ctx=(void *) calloc(1,sizeof(SHA2_SHA384_CTX));
         SHA2_SHA384_Init((SHA2_SHA384_CTX *) Hash->Ctx);
         Hash->Update=HashUpdateSHA384;
         Hash->Finish=HashFinishSHA384;
         Hash->Clone=HashCloneSHA384;
-				RetVal=TRUE;
-    #endif
+        RetVal=TRUE;
+#endif
         break;
 
 
     case 256:
-    #ifdef USE_SHA2
+#ifdef USE_SHA2
         Hash->Ctx=(void *) calloc(1,sizeof(SHA2_SHA256_CTX));
         SHA2_SHA256_Init((SHA2_SHA256_CTX *) Hash->Ctx);
         Hash->Update=HashUpdateSHA256;
         Hash->Finish=HashFinishSHA256;
         Hash->Clone=HashCloneSHA256;
-				RetVal=TRUE;
-    #endif
+        RetVal=TRUE;
+#endif
         break;
 
     default:
-    #ifdef USE_SHA1
+#ifdef USE_SHA1
         Hash->Ctx=(void *) calloc(1,sizeof(struct sha1_ctx));
         sha1_init_ctx((struct sha1_ctx *) Hash->Ctx);
         Hash->Update=HashUpdateSHA1;
         Hash->Finish=HashFinishSHA1;
         Hash->Clone=HashCloneSHA1;
-				RetVal=TRUE;
-    #endif
+        RetVal=TRUE;
+#endif
         break;
     }
 
@@ -219,18 +219,18 @@ int RetVal=FALSE;
 
 void HashRegisterSHA()
 {
-    #ifdef USE_SHA1
+#ifdef USE_SHA1
     HashRegister("sha", 1, HashInitSHA);
     HashRegister("sha1", 1, HashInitSHA);
-    #endif
+#endif
 
 
-    #ifdef USE_SHA2
+#ifdef USE_SHA2
     HashRegister("sha256", 256, HashInitSHA);
     HashRegister("sha384", 384, HashInitSHA);
     HashRegister("sha512", 512, HashInitSHA);
     HashRegister("sha-256", 256, HashInitSHA);
     HashRegister("sha-384", 384, HashInitSHA);
     HashRegister("sha-512", 512, HashInitSHA);
-    #endif
+#endif
 }

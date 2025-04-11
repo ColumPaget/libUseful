@@ -2592,15 +2592,15 @@ static int UseKernelSendFile(STREAM *In, STREAM *Out, int Flags)
         break;
 
     default:
-	return(FALSE);
-	break;
+        return(FALSE);
+        break;
     }
 
 
-		//we cannot use sendfile with TLS/SSL
-	  if (In->State & LU_SS_SSL) return(FALSE);
-	  if (Out->State & LU_SS_SSL) return(FALSE);
- 
+    //we cannot use sendfile with TLS/SSL
+    if (In->State & LU_SS_SSL) return(FALSE);
+    if (Out->State & LU_SS_SSL) return(FALSE);
+
     //we cannot use sendfile if there are any processing modules that modify incoming
     //or outgoing data before/after this sendfile call
     if  (ListSize(In->ProcessingModules) > 0) return(FALSE);
@@ -2664,7 +2664,7 @@ unsigned long STREAMSendFile(STREAM *In, STREAM *Out, unsigned long Max, int Fla
         }
 #endif
 
-	//we check 'UseSendFile' again here, because the sendfile attempt can
+        //we check 'UseSendFile' again here, because the sendfile attempt can
         //turn sendfile off if it fails on the first try
         if (! UseSendFile)
         {

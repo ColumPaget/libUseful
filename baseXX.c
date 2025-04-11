@@ -3,7 +3,7 @@
 
 
 /* This is surely not the fastest baseXX decoder, it is written for understanding/legiblity, not speed.
- * first we convert baseXX into binary, as a string of '1' and '0' characters 
+ * first we convert baseXX into binary, as a string of '1' and '0' characters
  * Then we work through this string converting it into eight-bit values.
  * The reason it's done this way is that it's tough to handle 'overlapping bits' when dealing with characters
  * that represent 5-bit or 6-bit chunks of a string of 8-bit values, and the resulting code of trying to do it all

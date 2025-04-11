@@ -76,6 +76,12 @@ int ProcessResistPtrace();
 //set 'no new privs' to process cannot switch user/priviledges by any means (no su, sudo or setuid)
 int ProcessNoNewPrivs();
 
+//set the 'Memory Deny Write Execute' (W^X) flag. This only works in linux, and kernel 6.6 and above.
+//it will tell the kernel to disallow existing non-executable mappings to be writable
+//or future mappings to be writable and executable. This will prevent loading new
+//libraries or execing new programs
+int ProcessNoWriteExec(int Inherit);
+
 
 /*
 ProcessApplyConfig()  changes aspects of a running process. This function is not normally used in C programming, and is instead either called from the Spawn or fork functions in SpawnCommands.c or is used when binding libUseful functionality to scripting languages that have limited types, and where structures cannot easily be used to pass data.
@@ -124,6 +130,10 @@ ns=<path>       linux namespace to join. <path> is either a path to a namespace 
 nosu            set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
 nopriv          set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
 noprivs         set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
+mdwe            set 'memory deny write execute' protection for process
+mdwe:inherit    set 'memory deny write execute' protection for process and inherit to child processes
+m^x             set 'memory deny write execute' protection for process
+m^x:inherit     set 'memory deny write execute' protection for process and inherit to child processes
 nice=<value>      'nice' value of new process
 prio=<value>       scheduling priority of new process (equivalent to 0 - nice value)
 priority=<value>   scheduling priority of new process (equivalent to 0 - nice value)

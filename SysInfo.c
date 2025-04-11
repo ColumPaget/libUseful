@@ -171,8 +171,8 @@ const char *OSSysInfoString(int Info)
 //lua that have an 'os' object that returns information
 size_t OSSysInfoLong(int Info)
 {
-int result;
-double loadavg[3];
+    int result;
+    double loadavg[3];
 
 #ifdef HAVE_SYSINFO
     struct sysinfo SysInfo;
@@ -224,8 +224,8 @@ double loadavg[3];
 #endif
 
 
-switch (Info)
-{
+    switch (Info)
+    {
 #ifdef HAVE_GETLOADAVG
 
     case OSINFO_LOAD1MIN:
@@ -245,25 +245,29 @@ switch (Info)
 
 #endif
 
-case OSINFO_PAGESIZE:
- #ifdef HAVE_GETPAGESIZE
- return((size_t) getpagesize());
- #endif
-
- #ifdef HAVE_SYSCONF
- return((size_t) sysconf(_SC_PAGESIZE)); 
- #endif
-
- #ifdef PAGE_SIZE
- return((size_t) PAGE_SIZE);
- #endif
-break;
+    case OSINFO_PAGESIZE:
+#ifdef HAVE_GETPAGESIZE
+        return((size_t) getpagesize());
+#endif
 
 #ifdef HAVE_SYSCONF
-case OSINFO_OPENMAX: return((size_t) sysconf(_SC_OPEN_MAX)); break;
-case OSINFO_CLOCKTICK: return((size_t) sysconf(_SC_CLK_TCK)); break;
+        return((size_t) sysconf(_SC_PAGESIZE));
 #endif
-}
+
+#ifdef PAGE_SIZE
+        return((size_t) PAGE_SIZE);
+#endif
+        break;
+
+#ifdef HAVE_SYSCONF
+    case OSINFO_OPENMAX:
+        return((size_t) sysconf(_SC_OPEN_MAX));
+        break;
+    case OSINFO_CLOCKTICK:
+        return((size_t) sysconf(_SC_CLK_TCK));
+        break;
+#endif
+    }
 
 
     return(0);

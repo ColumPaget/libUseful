@@ -22,11 +22,12 @@
 //needed for 'flock' used by CreatePidFile and CreateLockFile
 #include <sys/file.h>
 
+#ifdef __linux__
 #ifdef HAVE_PRCTL
 #include <linux/prctl.h>  /* Definition of PR_* constants */
 #include <sys/prctl.h>
 #endif
-
+#endif
 
 
 /*This is code to change the command-line of a program as visible in ps */
@@ -308,6 +309,7 @@ void ProcessSetRLimit(int Type, const char *Value)
 int ProcessResistPtrace()
 {
 
+#ifdef __linux__
 #ifdef HAVE_PRCTL
 //Turn OFF Dumpable flag. This prevents producing coredumps, but has the side-effect of preventing ptrace attach.
 //We normally control coredumps via resources (RLIMIT_CORE) rather than this
@@ -325,13 +327,14 @@ int ProcessResistPtrace()
 #endif
     RaiseError(0, "ProcessResistPtrace", "This platform doesn't seem to support the 'resist ptrace' (PR_SET_DUMPABLE) option (no prctl)");
 #endif
-
+#endif
     return(FALSE);
 }
 
 
 int ProcessNoNewPrivs()
 {
+#ifdef __linux__
 #ifdef HAVE_PRCTL
 #include <sys/prctl.h>
 #ifdef PR_SET_NO_NEW_PRIVS
@@ -343,10 +346,38 @@ int ProcessNoNewPrivs()
 
     RaiseError(ERRFLAG_ERRNO, "ProcessNoNewPrivs", "Failed to set 'no new privs'");
 #else
-    RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option");
+    RaiseError(ERRFLAG_DEBUG, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option");
 #endif
 #else
-    RaiseError(0, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option (no prctl)");
+    RaiseError(ERRFLAG_DEBUG, "ProcessNoNewPrivs", "This platform doesn't seem to support the 'no new privs' option (no prctl)");
+#endif
+#endif
+
+    return(FALSE);
+}
+
+int ProcessNoWriteExec(int Inherit)
+{
+    int Flags=0;
+#ifdef __linux__
+#ifdef HAVE_PRCTL
+#include <sys/prctl.h>
+#ifdef PR_SET_MDWE
+
+    Flags |= PR_MDWE_REFUSE_EXEC_GAIN;
+    if (! Inherit) Flags |= PR_MDWE_NO_INHERIT;
+//set, then check that the set worked. This correctly handles situations where we ask to set more than once
+//as the second attempt may 'fail', but we already have the desired result
+    prctl(PR_SET_MDWE, Flags, 0, 0, 0);
+    if (prctl(PR_GET_MDWE, 0, 0, 0, 0) != 0) return(TRUE);
+
+    RaiseError(ERRFLAG_ERRNO, "ProcessNoWriteExec", "Failed to set 'NoWriteExec' (W^X) memory protections");
+#else
+    RaiseError(ERRFLAG_DEBUG, "ProcessNoWriteExec", "This platform doesn't seem to support 'NoWriteExec' (W^X) memory protections");
+#endif
+#else
+    RaiseError(ERRFLAG_DEBUG, "ProcessNoWriteExec", "This platform doesn't seem to support 'NoWriteExec' (W^X) memory protections (no prctl)");
+#endif
 #endif
 
     return(FALSE);
@@ -492,6 +523,10 @@ static int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER_FS;
         else if (strcasecmp(Name,"mlock")==0) ProcessMemLockAdd();
         else if (strcasecmp(Name,"memlock")==0) ProcessMemLockAdd();
+        else if (strcasecmp(Name,"mdwe")==0) ProcessNoWriteExec(FALSE);
+        else if (strcasecmp(Name,"mdwe:inherit")==0) ProcessNoWriteExec(TRUE);
+        else if (strcasecmp(Name,"w^x")==0) ProcessNoWriteExec(FALSE);
+        else if (strcasecmp(Name,"w^x:inherit")==0) ProcessNoWriteExec(TRUE);
         else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);
         else if (strcasecmp(Name,"mlockmax")==0) ProcessSetRLimit(RLIMIT_MEMLOCK, Value);
         else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);

@@ -1,6 +1,6 @@
 #include "HashMD5.h"
 
-#ifdef USE_MD5 
+#ifdef USE_MD5
 #include "md5.h"
 #define MD5LEN 16
 
@@ -56,7 +56,7 @@ int HashInitMD5(HASH *Hash, const char *Name, int Len)
 
     return(TRUE);
 #else
-return(FALSE);
+    return(FALSE);
 #endif
 }
 

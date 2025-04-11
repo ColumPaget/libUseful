@@ -57,7 +57,7 @@ int HashInitJH(HASH *Hash, const char *Name, int Length)
         Hash->Update=HashUpdateJH;
         Hash->Finish=HashFinishJH;
         Hash->Clone=HashCloneJH;
-    	return(TRUE);
+        return(TRUE);
         break;
 
     }
