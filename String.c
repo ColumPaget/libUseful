@@ -86,6 +86,19 @@ char *strmrep(char *str, char *oldchars, char newchar)
 }
 
 
+int strcount(const char *Str, char Char)
+{
+const char *ptr;
+int count=0;
+
+for (ptr=Str; *ptr !='\0'; ptr++)
+{
+if (*ptr==Char) count++;
+}
+return(count);
+}
+
+
 
 inline int CompareStr(const char *S1, const char *S2)
 {

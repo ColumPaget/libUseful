@@ -84,6 +84,32 @@ extern "C" {
 
 
 
+//uppercase a string
+char *strupr(char *Str);
+
+//lowercase a string
+char *strlwr(char *Str);
+
+//replace every instance of character 'c1' with character 'c2'
+char *strrep(char *Str, char c1, char c2);
+
+//replace any character in the list 'oldchars' with the charcter 'newchar
+char *strmrep(char *str, char *oldchars, char newchar);
+
+//strtol, except only considering the first 'len' bytes
+int strntol(const char **ptr, int len, int radix, long *value);
+
+//returns 'true' if 'str' is 'true' or 'y' (case insensitive) or any non-zero number
+int strtobool(const char *str);
+
+// returns true if string only contains alphabetic characters
+int istext(const char *Str);
+
+//returns true if string only contains digits
+int isnum(const char *Str);
+
+int strcount(const char *Str, char Char);
+
 
 //allocate or reallocate 'Len' bytes of memory to a resizeable string
 char *SetStrLen(char *Str, size_t Len);
@@ -130,32 +156,6 @@ char *AddCharToBuffer(char *Buffer, size_t Len, char Char);
 
 //add 'Len' Bytes to a string already containing 'DestLen' characters
 char *AddBytesToBuffer(char *Dest, size_t DestLen, char *Bytes, size_t Len);
-
-//uppercase a string
-char *strupr(char *Str);
-
-//lowercase a string
-char *strlwr(char *Str);
-
-//replace every instance of character 'c1' with character 'c2'
-char *strrep(char *Str, char c1, char c2);
-
-//replace any character in the list 'oldchars' with the charcter 'newchar
-char *strmrep(char *str, char *oldchars, char newchar);
-
-//strtol, except only considering the first 'len' bytes
-int strntol(const char **ptr, int len, int radix, long *value);
-
-
-//returns 'true' if 'str' is 'true' or 'y' (case insensitive) or any non-zero number
-int strtobool(const char *str);
-
-// returns true if string only contains alphabetic characters
-int istext(const char *Str);
-
-//returns true if string only contains digits
-int isnum(const char *Str);
-
 //Truncate a string to so many chars, WITHOUT CHECKING IT'S GOT THAT MANY
 //this saves a strlen and is mostly for internal use. 
 //It does at least check that the string is not NULL

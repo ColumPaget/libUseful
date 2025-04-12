@@ -16,17 +16,16 @@ void TerminalCalendarSetMonthYear(TERMCALENDAR *TC, int Month, int Year)
 
 
 
-void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year, const char *State, const char *Attribs)
+void TerminalCalendarSetDateStrState(TERMCALENDAR *TC, const char *DateStr, const char *State, const char *Attribs)
 {
     char *Tempstr=NULL, *Key=NULL;
-    const char *ptr;
 
-    Key=FormatStr(Key, "datestate:%04d-%02d-%02d", Year, Month, Day);
+    Key=MCopyStr(Key, "datestate:", DateStr, NULL);
     SetVar(TC->Options, Key, State);
 
-    if (StrValid(ptr))
+    if (StrValid(Attribs))
     {
-        Tempstr=FormatStr(Tempstr, "stateattribs:%s", Key);
+        Tempstr=MCopyStr(Tempstr, "stateattribs:", State, NULL);
         SetVar(TC->Options, Tempstr, Attribs);
     }
 
@@ -34,6 +33,15 @@ void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year
     Destroy(Key);
 }
 
+void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year, const char *State, const char *Attribs)
+{
+char *Tempstr=NULL;
+
+Tempstr=FormatStr(Tempstr, "%04d-%02d-%02d", Year, Month, Day);
+TerminalCalendarSetDateStrState(TC, Tempstr, State, Attribs);
+
+Destroy(Tempstr);
+}
 
 
 //Lookup TerminalAttributes (colors, bold, etc) for a day in the calendar.

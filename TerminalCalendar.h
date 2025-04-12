@@ -89,6 +89,7 @@ char *TerminalCalendarReturnDate(char *RetStr, TERMCALENDAR *TC);
 void TerminalCalendarSetMonthYear(TERMCALENDAR *TC, int Month, int Year);
 
 // set a 'state' and attributes for that state against a day/month/year 
+void TerminalCalendarSetDateStrState(TERMCALENDAR *TC, const char *DateStr, const char *State, const char *Attribs);
 void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year, const char *State, const char *Attribs);
 
 #ifdef __cplusplus
