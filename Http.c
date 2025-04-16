@@ -11,6 +11,7 @@
 #include "SecureMem.h"
 #include "Errors.h"
 #include "Entropy.h"
+#include "HttpUtil.h"
 
 /* These functions relate to CLIENT SIDE http/https */
 
@@ -133,16 +134,16 @@ HTTPInfoStruct *HTTPInfoCreate(const char *Protocol, const char *Host, int Port,
 }
 
 
-char *HTTPInfoToURL(char *RetBuff, HTTPInfoStruct *Info)
+char *HTTPInfoToURL(char *RetStr, HTTPInfoStruct *Info)
 {
     char *p_proto;
-    char *Doc=NULL, *RetStr=NULL;
+    char *Doc=NULL;
 
     if (Info->Flags & HTTP_SSL) p_proto="https";
     else p_proto="http";
 
     Doc=HTTPQuoteChars(Doc,Info->Doc," ");
-    RetStr=FormatStr(RetBuff,"%s://%s:%d%s",p_proto,Info->Host,Info->Port,Info->Doc);
+    RetStr=FormatStr(RetStr, "%s://%s:%d%s",p_proto,Info->Host,Info->Port,Info->Doc);
 
     DestroyString(Doc);
     return(RetStr);

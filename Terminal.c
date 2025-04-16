@@ -863,6 +863,7 @@ void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix
     Cmd=MCopyStr(Cmd, Prefix, Str, Postfix, NULL);
     Tempstr=TerminalFormatStr(Tempstr, Cmd, S);
     STREAMWriteLine(Tempstr, S);
+
     Destroy(Tempstr);
     Destroy(Cmd);
 }

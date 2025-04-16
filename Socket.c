@@ -454,6 +454,7 @@ char *GetInterfaceDetails(char *RetStr, const char *Interface)
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd==-1) return(RetStr);
 
+    memset(&ifr, 0, sizeof(struct ifreq));
     ifr.ifr_addr.sa_family = AF_INET;
     strncpy(ifr.ifr_name, Interface, IFNAMSIZ-1);
 

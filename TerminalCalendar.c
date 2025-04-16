@@ -35,12 +35,12 @@ void TerminalCalendarSetDateStrState(TERMCALENDAR *TC, const char *DateStr, cons
 
 void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year, const char *State, const char *Attribs)
 {
-char *Tempstr=NULL;
+    char *Tempstr=NULL;
 
-Tempstr=FormatStr(Tempstr, "%04d-%02d-%02d", Year, Month, Day);
-TerminalCalendarSetDateStrState(TC, Tempstr, State, Attribs);
+    Tempstr=FormatStr(Tempstr, "%04d-%02d-%02d", Year, Month, Day);
+    TerminalCalendarSetDateStrState(TC, Tempstr, State, Attribs);
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 }
 
 

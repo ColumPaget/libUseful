@@ -295,8 +295,8 @@ void STREAMReAllocBuffer(STREAM *S, int size, int Flags)
     }
     else
     {
-        if (! (RW & SF_WRONLY)) S->InputBuff =(unsigned char *) realloc(S->InputBuff,size);
-        if (! (RW & SF_RDONLY)) S->OutputBuff=(unsigned char *) realloc(S->OutputBuff,size);
+        if (! (RW & SF_WRONLY)) S->InputBuff =(unsigned char *) realloc(S->InputBuff, size);
+        if (! (RW & SF_RDONLY)) S->OutputBuff=(unsigned char *) realloc(S->OutputBuff, size);
     }
 
     if (ibuf)
@@ -2151,21 +2151,20 @@ int STREAMReadBytesToTerm(STREAM *S, char *Buffer, int BuffSize,unsigned char Te
 }
 
 
-char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
+char *STREAMReadToTerminator(char *RetStr, STREAM *S, unsigned char Term)
 {
     int result, len=0, avail=0, bytes_read=0;
-    char *RetStr=NULL;
     const unsigned char *p_Term;
     int IsClosed=FALSE;
 
     if (! S)
     {
         RaiseError(0, "STREAMReadToTerminator", "NULL stream object passed to function");
-        Destroy(Buffer);
+        Destroy(RetStr);
         return(NULL);
     }
 
-    RetStr=CopyStr(Buffer,"");
+    RetStr=CopyStr(RetStr,"");
     while (1)
     {
         len=0;
@@ -2238,12 +2237,11 @@ char *STREAMReadToTerminator(char *Buffer, STREAM *S, unsigned char Term)
 
 
 
-char *STREAMReadToMultiTerminator(char *Buffer, STREAM *S, char *Terms)
+char *STREAMReadToMultiTerminator(char *RetStr, STREAM *S, char *Terms)
 {
     int inchar, len=0;
-    char *Tempptr;
 
-    Tempptr=CopyStr(Buffer,"");
+    RetStr=CopyStr(RetStr, "");
 
     inchar=STREAMReadChar(S);
 
@@ -2254,7 +2252,7 @@ char *STREAMReadToMultiTerminator(char *Buffer, STREAM *S, char *Terms)
     {
         if (inchar > 0)
         {
-            Tempptr=AddCharToBuffer(Tempptr,len,(char) inchar);
+            RetStr=AddCharToBuffer(RetStr,len,(char) inchar);
             len++;
 
             if (strchr(Terms,inchar)) break;
@@ -2263,20 +2261,20 @@ char *STREAMReadToMultiTerminator(char *Buffer, STREAM *S, char *Terms)
     }
 
 
-    *(Tempptr+len)='\0';
+    *(RetStr+len)='\0';
 
-//if ((inchar==STREAM_CLOSED) && (errno==ECONNREFUSED)) return(Tempptr);
+//if ((inchar==STREAM_CLOSED) && (errno==ECONNREFUSED)) return(RetStr);
     if (
         ((inchar==STREAM_CLOSED) || (inchar==STREAM_DATA_ERROR))
         &&
-        (StrEnd(Tempptr))
+        (StrEnd(RetStr))
     )
     {
-        free(Tempptr);
+        free(RetStr);
         return(NULL);
     }
 
-    return(Tempptr);
+    return(RetStr);
 }
 
 
@@ -2412,11 +2410,11 @@ char *STREAMGetValue(STREAM *S, const char *Name)
 }
 
 
-void STREAMSetValue(STREAM *S, const char *Name, const char *Value)
+ListNode *STREAMSetValue(STREAM *S, const char *Name, const char *Value)
 {
-    if (! S) return;
+    if (! S) return(NULL);
     if (! S->Values) S->Values=ListCreate();
-    SetVar(S->Values,Name,Value);
+    return(SetVar(S->Values,Name,Value));
 }
 
 void *STREAMGetItem(STREAM *S, const char *Name)

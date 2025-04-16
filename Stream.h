@@ -528,7 +528,7 @@ int STREAMLock(STREAM *S, int flags);
 int STREAMFind(STREAM *S, const char *Item, const char *Delimiter, char **RetStr);
 
 //set and get string properties on a STREAM object.
-void STREAMSetValue(STREAM *S, const char *Name, const char *Value);
+ListNode *STREAMSetValue(STREAM *S, const char *Name, const char *Value);
 char *STREAMGetValue(STREAM *S, const char *Name);
 
 //book any type of object against a STREAM object. 

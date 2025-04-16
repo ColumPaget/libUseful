@@ -88,14 +88,14 @@ char *strmrep(char *str, char *oldchars, char newchar)
 
 int strcount(const char *Str, char Char)
 {
-const char *ptr;
-int count=0;
+    const char *ptr;
+    int count=0;
 
-for (ptr=Str; *ptr !='\0'; ptr++)
-{
-if (*ptr==Char) count++;
-}
-return(count);
+    for (ptr=Str; *ptr !='\0'; ptr++)
+    {
+        if (*ptr==Char) count++;
+    }
+    return(count);
 }
 
 
@@ -613,7 +613,7 @@ char *StripStartEndChars(char *Str, const char *StartChars, const char *EndChars
     {
         if (StartChars[i] == *ptr)
         {
-	    //Catch situation where there's no matching item in 'EndChars'
+            //Catch situation where there's no matching item in 'EndChars'
             if (StrLen(EndChars) > i)
             {
                 StartChar=*ptr;
@@ -646,17 +646,16 @@ char *StripStartEndChars(char *Str, const char *StartChars, const char *EndChars
 
 char *StripQuotes(char *Str)
 {
-return(StripStartEndChars(Str, "'\"", "'\""));
+    return(StripStartEndChars(Str, "'\"", "'\""));
 }
 
 
-char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars)
+char *QuoteCharsInStr(char *RetStr, const char *String, const char *QuoteChars)
 {
-    char *RetStr=NULL;
     const char *sptr;
     size_t olen=0;
 
-    RetStr=CopyStr(Buffer,"");
+    RetStr=CopyStr(RetStr, "");
     if (! String) return(RetStr);
 
     for (sptr=String; *sptr !='\0'; sptr++)
@@ -741,14 +740,14 @@ int MatchTokenFromList(const char *Token,const char **List, int Flags)
 
 #define ESC 0x1B
 
-char *UnQuoteStr(char *Buffer, const char *Line)
+char *UnQuoteStr(char *RetStr, const char *Line)
 {
-    char *out, *in;
+    char *in;
     size_t olen=0;
     char hex[10];
 
     if (Line==NULL) return(NULL);
-    out=CopyStr(Buffer,"");
+    RetStr=CopyStr(RetStr, "");
     in=(char *) Line;
 
     while(in && (*in != '\0') )
@@ -759,23 +758,23 @@ char *UnQuoteStr(char *Buffer, const char *Line)
             switch (*in)
             {
             case 'e':
-                out=AddCharToBuffer(out,olen,ESC);
+                RetStr=AddCharToBuffer(RetStr,olen,ESC);
                 olen++;
                 break;
 
 
             case 'n':
-                out=AddCharToBuffer(out,olen,'\n');
+                RetStr=AddCharToBuffer(RetStr,olen,'\n');
                 olen++;
                 break;
 
             case 'r':
-                out=AddCharToBuffer(out,olen,'\r');
+                RetStr=AddCharToBuffer(RetStr,olen,'\r');
                 olen++;
                 break;
 
             case 't':
-                out=AddCharToBuffer(out,olen,'\t');
+                RetStr=AddCharToBuffer(RetStr,olen,'\t');
                 olen++;
                 break;
 
@@ -786,7 +785,7 @@ char *UnQuoteStr(char *Buffer, const char *Line)
                 ptr_incr((const char **) &in, 1);
                 hex[1]=*in;
                 hex[2]='\0';
-                out=AddCharToBuffer(out,olen,strtol(hex,NULL,16) & 0xFF);
+                RetStr=AddCharToBuffer(RetStr,olen,strtol(hex,NULL,16) & 0xFF);
                 olen++;
                 break;
 
@@ -796,13 +795,13 @@ char *UnQuoteStr(char *Buffer, const char *Line)
                 strncpy(hex, in, 4);
                 hex[4]='\0';
                 ptr_incr((const char **) &in, 3);
-                out=StrAddUnicodeChar(out, strtol(hex,NULL,16));
+                RetStr=StrAddUnicodeChar(RetStr, strtol(hex,NULL,16));
                 olen++;
                 break;
 
             case '\\':
             default:
-                out=AddCharToBuffer(out,olen,*in);
+                RetStr=AddCharToBuffer(RetStr,olen,*in);
                 olen++;
                 break;
 
@@ -810,13 +809,13 @@ char *UnQuoteStr(char *Buffer, const char *Line)
         }
         else
         {
-            out=AddCharToBuffer(out,olen,*in);
+            RetStr=AddCharToBuffer(RetStr,olen,*in);
             olen++;
         }
         in++;
     }
 
-    return(out);
+    return(RetStr);
 }
 
 

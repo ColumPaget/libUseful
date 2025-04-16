@@ -55,6 +55,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "Pty.h"
 #include "Log.h"
 #include "Http.h"
+#include "HttpUtil.h"
 #include "Gemini.h"
 #include "OAuth.h"
 #include "Ssh.h"

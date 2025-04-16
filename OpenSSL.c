@@ -121,12 +121,17 @@ static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
     unsigned len;
 
     RetStr=CopyStr(RetStr, "");
+
+    //digest is a const , and does not need to be freed I THINK.
     digest = EVP_sha1();
-    Buffer=SetStrLen(Buffer, 255); //this will hold raw sha1 fingerprint
-    len=255;
-    if (X509_digest(cert, digest, (unsigned char*) Buffer, &len) > 0)
+    if (digest)
     {
-        RetStr=EncodeBytes(RetStr, Buffer, len, ENCODE_HEX);
+        Buffer=SetStrLen(Buffer, 255); //this will hold raw sha1 fingerprint
+        len=255;
+        if (X509_digest(cert, digest, (unsigned char*) Buffer, &len) > 0)
+        {
+            RetStr=EncodeBytes(RetStr, Buffer, len, ENCODE_HEX);
+        }
     }
 
     Destroy(Buffer);
@@ -263,6 +268,22 @@ char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
 }
 
 
+static const char *OpenSSLGetCertificateValue(STREAM *S, const char *ValName, X509_NAME *X509name)
+{
+    char *Value=NULL;
+    const char *ptr;
+    ListNode *Node;
+
+//Value is dynamically allocated by X509_NAME_oneline
+    Value=X509_NAME_oneline( X509name, NULL, 0);
+    Node=STREAMSetValue(S, ValName, Value);
+
+    Destroy(Value);
+
+    if (Node) return((const char *) Node->Item);
+    return(NULL);
+}
+
 
 int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 {
@@ -283,15 +304,15 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
     cert=SSL_get_peer_certificate(ssl);
     if (cert)
     {
-        STREAMSetValue(S,"SSL:CertificateIssuer",X509_NAME_oneline( X509_get_issuer_name(cert),NULL, 0));
-        ptr=X509_NAME_oneline( X509_get_subject_name(cert),NULL, 0);
-        STREAMSetValue(S,"SSL:CertificateSubject", ptr);
+        OpenSSLGetCertificateValue(S, "SSL:CertificateIssuer", X509_get_issuer_name(cert));
+        ptr=OpenSSLGetCertificateValue(S, "SSL:CertificateSubject", X509_get_subject_name(cert));
         Value=OpenSSLCertDetailsGetCommonName(Value, ptr);
         if (StrValid(Value)) STREAMSetValue(S, "SSL:CertificateCommonName", Value);
 
-        Value=OpenSSLConvertTime(Value, X509_get_notBefore(cert));
+        //values out of X509_get_notBefore etc are returned as internal pointers and must not be freed
+        Value=OpenSSLConvertTime(Value, X509_get0_notBefore(cert));
         STREAMSetValue(S,"SSL:CertificateNotBefore", Value);
-        Value=OpenSSLConvertTime(Value, X509_get_notAfter(cert));
+        Value=OpenSSLConvertTime(Value, X509_get0_notAfter(cert));
         STREAMSetValue(S,"SSL:CertificateNotAfter", Value);
         Value=OpenSSLGetCertFingerprint(Value, cert);
         STREAMSetValue(S,"SSL:CertificateFingerprint", Value);

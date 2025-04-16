@@ -197,13 +197,13 @@ int FindFilesInPath(const char *File, const char *Path, ListNode *Files)
 
 
 
-char *FindFileInPath(char *InBuff, const char *File, const char *Path)
+char *FindFileInPath(char *RetStr, const char *File, const char *Path)
 {
-    char *Tempstr=NULL, *CurrPath=NULL, *RetStr=NULL, *Link=NULL;
+    char *Tempstr=NULL, *CurrPath=NULL, *Link=NULL;
     struct stat Stat;
     const char *ptr;
 
-    RetStr=CopyStr(InBuff,"");
+    RetStr=CopyStr(RetStr, "");
 
     if (*File=='/')
     {
