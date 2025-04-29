@@ -3,7 +3,7 @@
 #include "Hash.h"
 #include <sys/utsname.h>
 
-#ifdef HAVE_SYS_RANDOM_H
+#ifdef HAVE_SYS_RANDOM
 #include <sys/random.h>
 #endif
 
