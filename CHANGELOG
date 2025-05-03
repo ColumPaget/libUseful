@@ -1,4 +1,10 @@
-v5.50 (2025-04012)
+v5.51 (2025-05-03)
+  * Support 'inner text' within terminal progress bars
+  * Add more compiler-hardening options for ./configure --enable-harden 
+  * Make sure non-lgpl licensed parts are not compiled in, rahter than just not called, if compiled with --enable-lgpl
+  * More changes from barracuda156@github.com for compiling on MacOS
+
+v5.50 (2025-04-12)
   * Add TerminalCalendarSetDateStrState
   * Add strcount
 

@@ -42,6 +42,7 @@ TerminalReset(Term);
  *  progress-attrib=   Set attributes of PROGRESS part of the bar
  *  left-contain=      A string to be the left 'container' of the bar, defaults to ' ['
  *  right-contain=     A string to be the right 'container' of the bar, defaults to '] '
+ *  innertext=         Text displayed in (or 'over') the progress bar, can contain $(percent) to be updated with percentage done
  *
  *  attrib and progress-attrib can be used to create bars based only around colored blocks, like so
 

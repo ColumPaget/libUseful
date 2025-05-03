@@ -47,7 +47,10 @@ char *SlashTerminateDirectoryPath(char *DirPath);
 char *StripDirectorySlash(char *DirPath);
 
 //clearer than '(access(File, F_OK)==0)'. returns TRUE if file exists, FALSE otherwise
-int FileExists(const char *);
+int FileExists(const char *Path);
+
+//return Size of file at Path
+size_t FileSize(const char *Path);
 
 //Make an entire directory path. This is similar to the command-line 'mkdir -p'.
 //Note, that this function will only make directories up to the last '/'. Thus you can pass it a

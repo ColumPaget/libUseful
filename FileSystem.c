@@ -256,6 +256,14 @@ int FileExists(const char *FileName)
     else return(0);
 }
 
+size_t FileSize(const char *FileName)
+{
+    struct stat StatData;
+
+    if (stat(FileName,&StatData) == 0) return(StatData.st_size);
+    else return(-1);
+}
+
 
 int FileChOwner(const char *FileName, const char *Owner)
 {
