@@ -627,7 +627,7 @@ static char *HTTPHeadersAppendAuth(char *RetStr, const char *AuthHeader, HTTPInf
             //We should now have Logon:Password
             Nonce=SetStrLen(Nonce,len * 2);
 
-						Nonce=EncodeBytes(Nonce, Tempstr, len, ENCODE_BASE64);
+            Nonce=EncodeBytes(Nonce, Tempstr, len, ENCODE_BASE64);
             SendStr=MCatStr(SendStr,AuthHeader,": Basic ",Nonce,"\r\n",NULL);
 
             //wipe Tempstr, because it held password for a while

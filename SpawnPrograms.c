@@ -72,9 +72,9 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
 
         for (; i < max_arg; i++)
         {
-            ptr=GetToken(ptr,"\\S",&Token,GETTOKEN_QUOTES);
+            ptr=GetToken(ptr, "\\S", &Token, GETTOKEN_QUOTES);
             if (! ptr) break;
-            argv[i]=CopyStr(argv[i],Token);
+            argv[i]=CopyStr(argv[i], Token);
         }
 
         result=execv(ExecPath, argv);

@@ -67,9 +67,9 @@ void TerminalWidgetParseConfig(TERMWIDGET *TW, const char *Config)
             if (strcasecmp(Name, "height")==0) TW->high=atoi(Value);
             break;
 
-				case 'i':
+        case 'i':
             if (strcasecmp(Name, "innertext")==0) SetVar(TW->Options, "innertext", Value);
-				break;
+            break;
 
         case 'o':
             if (strcasecmp(Name, "options")==0) TerminalWidgetSetOptions(TW, Value);

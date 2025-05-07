@@ -26,7 +26,7 @@ HASH *HashCloneCRC(HASH *Hash)
 
 int HashFinishCRC(HASH *Hash, char **HashStr)
 {
-int len=0;
+    int len=0;
 
 #ifndef USE_LGPL
     unsigned long crc;
@@ -48,17 +48,17 @@ int HashInitCRC(HASH *Hash, const char *Name, int Len)
 {
 #ifndef USE_LGPL
     Hash->Ctx=(void *) calloc(1,sizeof(unsigned long));
-		if (Hash->Ctx) 
-		{
-    crc32Init((unsigned long *) Hash->Ctx);
-    Hash->Update=HashUpdateCRC;
-    Hash->Finish=HashFinishCRC;
-    Hash->Clone=HashCloneCRC;
-    return(TRUE);
-		}
+    if (Hash->Ctx)
+    {
+        crc32Init((unsigned long *) Hash->Ctx);
+        Hash->Update=HashUpdateCRC;
+        Hash->Finish=HashFinishCRC;
+        Hash->Clone=HashCloneCRC;
+        return(TRUE);
+    }
 #endif
 
-return(FALSE);
+    return(FALSE);
 }
 
 void HashRegisterCRC32()

@@ -15,18 +15,18 @@ TERMPROGRESS *TerminalProgressCreate(STREAM *Term, const char *Config)
 //variable is intended for text displayed 'above' the progress bar
 //with the progress bar being supplied by colors changing 'under' it.
 //The 'progress' and 'remain' variables supply characters to be used as
-//the 'bar' and 'remainder' parts of the progress bar. 
+//the 'bar' and 'remainder' parts of the progress bar.
 //These two systems are at odds with each other, so best to use one
 //or the other.
 static char *TerminalProgressBuildInnerText(char *Bar, TERMPROGRESS *TP, float Fract, int used, int wide)
 {
-int blen, len, pos;
-char *Tempstr=NULL;
-ListNode *Vars;
-const char *ptr;
+    int blen, len, pos;
+    char *Tempstr=NULL;
+    ListNode *Vars;
+    const char *ptr;
 
-		//use the "progress" variable to specify the character used to
-		//pad out the 'used' part of the progress bar. If no character
+    //use the "progress" variable to specify the character used to
+    //pad out the 'used' part of the progress bar. If no character
     //is specified, then use space.
     len=(int) used;
     ptr=GetVar(TP->Options, "progress");
@@ -34,8 +34,8 @@ const char *ptr;
     Tempstr=PadStr(Tempstr, *ptr, len);
 
     //Bar=CatStr(Bar, Tempstr);
-		//use the "remain" variable to specify the character used to
-		//pad out the 'unused' part of the progress bar. If no character
+    //use the "remain" variable to specify the character used to
+    //pad out the 'unused' part of the progress bar. If no character
     //is specified, then use space.
 
     ptr=GetVar(TP->Options, "remain");
@@ -44,35 +44,35 @@ const char *ptr;
 
     Bar=CatStr(Bar, Tempstr);
 
-		//now, if 'innertext' is supplied, splat that over the bar
+    //now, if 'innertext' is supplied, splat that over the bar
     //we have created
 
-	  ptr=GetVar(TP->Options, "innertext");
+    ptr=GetVar(TP->Options, "innertext");
     if (StrValid(ptr))
-		{
-		Vars=ListCreate();
-		SetNumericVar(Vars, "percent",(int) (100 * Fract));
-		Tempstr=SubstituteVarsInString(Tempstr, ptr, Vars, 0);
-		ListDestroy(Vars, Destroy);
+    {
+        Vars=ListCreate();
+        SetNumericVar(Vars, "percent",(int) (100 * Fract));
+        Tempstr=SubstituteVarsInString(Tempstr, ptr, Vars, 0);
+        ListDestroy(Vars, Destroy);
 
-		blen=StrLen(Bar);
-		len=StrLen(Tempstr);
-		if (len >= blen) 
-		{
-			len=blen;
-			pos=0;
-		}
-		else
-		{
-			pos=blen / 2 - len / 2;
-		}
-		
-		strncpy(Bar+pos, Tempstr, len);
-		}
+        blen=StrLen(Bar);
+        len=StrLen(Tempstr);
+        if (len >= blen)
+        {
+            len=blen;
+            pos=0;
+        }
+        else
+        {
+            pos=blen / 2 - len / 2;
+        }
 
-Destroy(Tempstr);
+        strncpy(Bar+pos, Tempstr, len);
+    }
 
-return(Bar);
+    Destroy(Tempstr);
+
+    return(Bar);
 }
 
 
@@ -93,28 +93,28 @@ void TerminalProgressDraw(TERMPROGRESS *TP, float Fract, const char *Info)
     if (TP->Flags & TERMMENU_POSITIONED) TerminalCommand(TERM_CURSOR_MOVE, TP->x, TP->y, TP->Term);
     else Tempstr=CopyStr(Tempstr, "\r");
 
-		//if there's a 'prompt' or title to the bar, then add that
+    //if there's a 'prompt' or title to the bar, then add that
     if (StrValid(TP->Text)) Tempstr=CatStr(Tempstr, TP->Text);
 
-		//now we add  any 'left' container text to the bar and
-    //the escape-sequences for the initial color of the bar. 
-		//'SelectedAttribs' here is the color values for the 
-		//'used' part of the progress bar
+    //now we add  any 'left' container text to the bar and
+    //the escape-sequences for the initial color of the bar.
+    //'SelectedAttribs' here is the color values for the
+    //'used' part of the progress bar
     Tempstr=MCatStr(Tempstr, TP->CursorLeft, TP->SelectedAttribs, NULL);
 
-		//now we add text for the used part of the bar
-		Bar=TerminalProgressBuildInnerText(Bar, TP, Fract, used, wide);
-		Tempstr=CatStrLen(Tempstr, Bar, used);
+    //now we add text for the used part of the bar
+    Bar=TerminalProgressBuildInnerText(Bar, TP, Fract, used, wide);
+    Tempstr=CatStrLen(Tempstr, Bar, used);
 
-		//now we add color attributes for the unused part of the bar
+    //now we add color attributes for the unused part of the bar
     if (StrValid(TP->Attribs)) Tempstr=CatStr(Tempstr, TP->Attribs);
     else if (StrValid(TP->SelectedAttribs)) Tempstr=CatStr(Tempstr, "~0");
 
 
-		//now we add text for the unused part of the bar
-		Tempstr=CatStr(Tempstr, Bar+used);
+    //now we add text for the unused part of the bar
+    Tempstr=CatStr(Tempstr, Bar+used);
 
-		//now we end the bar and add any 'container' text on the right side
+    //now we end the bar and add any 'container' text on the right side
     if (StrValid(TP->Attribs)) Tempstr=CatStr(Tempstr, "~0");
     Tempstr=CatStr(Tempstr, TP->CursorRight);
 

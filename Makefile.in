@@ -1,9 +1,13 @@
+MAJOR=5
 CC = @CC@
 AR = @AR@
 LN = @LN@
 VERSION = @PACKAGE_VERSION@
 LICENSE = @LICENSE@
-MAJOR=5
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+sysconfdir = @sysconfdir@
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -11,7 +15,7 @@ ifeq ($(UNAME_S),Darwin)
 	SONAME_VER_SUFFIX = $(MAJOR).$(SONAME_SUFFIX)
 	LIBFILE_SUFFIX = $(VERSION).$(SONAME_SUFFIX)
 	LINKER_SONAME_OPTION = -dylib_install_name
-  SONAME = @rpath/libUseful.$(SONAME_VER_SUFFIX)
+  SONAME = $(prefix)/lib/libUseful.$(SONAME_VER_SUFFIX)
 else
 	SONAME_SUFFIX = so
 	SONAME_VER_SUFFIX = $(SONAME_SUFFIX).$(MAJOR)
@@ -21,14 +25,9 @@ else
 endif
 
 LIBFILE = libUseful.$(LIBFILE_SUFFIX)
-
 CFLAGS = @CFLAGS@ @SIMD_CFLAGS@ @SONAME_FLAGS@
-LDFLAGS=@LDFLAGS@
+LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-libdir=@libdir@
-sysconfdir=@sysconfdir@
 FLAGS=$(LDFLAGS) $(CPPFLAGS) $(CFLAGS) -fPIC @DEFS@ -DVERSION=\"$(VERSION)\" -DSYSCONFDIR=\"$(sysconfdir)\"
 OBJ=StrLenCache.o String.o Array.o List.o IPAddress.o Socket.o Server.o UnixSocket.o Stream.o StreamAuth.o Errors.o Unicode.o TerminalKeys.o Terminal.o TerminalWidget.o TerminalMenu.o TerminalChoice.o TerminalBar.o TerminalProgress.o TerminalCalendar.o TerminalTheme.o FileSystem.o GeneralFunctions.o DataProcessing.o Pty.o Log.o HttpUtil.o HttpChunkedTransfer.o Http.o Gemini.o Smtp.o Inet.o Expect.o baseXX.o md5c.o sha2.o whirlpool.o jh_ref.o HashCRC32.o HashMD5.o HashSHA.o HashJH.o HashWhirlpool.o HashOpenSSL.o Hash.o HMAC.o Ssh.o Compression.o Encryption.o OAuth.o LibSettings.o Vars.o Time.o Markup.o SpawnPrograms.o Tokenizer.o StringList.o PatternMatch.o URL.o DataParser.o ConnectionChain.o OpenSSL.o Seccomp.o Process.o Container.o Encodings.o RawData.o SecureMem.o CommandLineParser.o SysInfo.o Entropy.o Users.o UnitsOfMeasure.o HttpServer.o WebSocket.o ContentType.o PasswordFile.o OTP.o CGI.o LineEdit.o
 
