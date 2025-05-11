@@ -12,19 +12,23 @@ sysconfdir = @sysconfdir@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	SONAME_SUFFIX = dylib
-	SONAME_VER_SUFFIX = $(MAJOR).$(SONAME_SUFFIX)
-	LIBFILE_SUFFIX = $(VERSION).$(SONAME_SUFFIX)
+	SONAME_MAJOR_SUFFIX = $(MAJOR).$(SONAME_SUFFIX)
+	SONAME_VERSION_SUFFIX = $(VERSION).$(SONAME_SUFFIX)
 	LINKER_SONAME_OPTION = -dylib_install_name
-  SONAME = $(prefix)/lib/libUseful.$(SONAME_VER_SUFFIX)
+  SONAME = $(prefix)/lib/libUseful.$(SONAME_MAJOR_SUFFIX)
+	LIBFILE = libUseful.$(SONAME_VERSION_SUFFIX)
+	LIBFILES = $(LIBFILE) libUseful.$(SONAME_SUFFIX) libUseful-$(MAJOR).$(SONAME_SUFFIX) libUseful-$(VERSION).$(SONAME_SUFFIX) *.a
 else
 	SONAME_SUFFIX = so
-	SONAME_VER_SUFFIX = $(SONAME_SUFFIX).$(MAJOR)
-	LIBFILE_SUFFIX = $(SONAME_SUFFIX).$(VERSION)
+	SONAME_MAJOR_SUFFIX = $(SONAME_SUFFIX).$(MAJOR)
+	SONAME_VERSION_SUFFIX = $(SONAME_SUFFIX).$(VERSION)
 	LINKER_SONAME_OPTION = -soname
-  SONAME = libUseful.$(SONAME_VER_SUFFIX)
+  SONAME = libUseful.$(SONAME_MAJOR_SUFFIX)
+	LIBFILE = libUseful.$(SONAME_VERSION_SUFFIX)
+	LIBFILES = $(LIBFILE) libUseful.$(SONAME_SUFFIX) libUseful-$(MAJOR).$(SONAME_SUFFIX) libUseful-$(VERSION).$(SONAME_SUFFIX) libUseful.$(SONAME_MAJOR_SUFFIX) *.a
 endif
 
-LIBFILE = libUseful.$(LIBFILE_SUFFIX)
+
 CFLAGS = @CFLAGS@ @SIMD_CFLAGS@ @SONAME_FLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
@@ -300,13 +304,13 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) libUseful.$(SONAME_SUFFIX).* *.o *.a *.orig .*.swp *~ 
+	-rm -f $(LIBFILES).* *.o *.orig .*.swp *~ 
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples
 
 distclean:
-	-rm -f *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) libUseful.$(SONAME_SUFFIX).* *.o *.a *.orig .*.swp *~ Makefile
+	-rm -f $(LIBFILES) *.o *.orig .*.swp *~ Makefile
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples
@@ -314,7 +318,7 @@ distclean:
 
 install: libUseful.$(SONAME_SUFFIX)
 	-mkdir -p $(DESTDIR)$(libdir)
-	cp -P *.$(SONAME_SUFFIX) *.$(SONAME_VER_SUFFIX) *.$(LIBFILE_SUFFIX) *.a $(DESTDIR)$(libdir)
+	cp -P $(LIBFILES) $(DESTDIR)$(libdir)
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	-$(LN) -s -r -f $(DESTDIR)$(prefix)/include/libUseful-$(VERSION) $(DESTDIR)$(prefix)/include/libUseful-5

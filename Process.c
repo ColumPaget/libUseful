@@ -429,7 +429,7 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
         //break; //fall through to LU_SEC_UNTRUSTED
 
         case LU_SEC_UNTRUSTED:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;setsid;acct ");
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;acct ");
         //break; //fall through to LU_SEC_CLENT
 
         case LU_SEC_CLIENT:
