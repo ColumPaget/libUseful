@@ -571,7 +571,7 @@ const char *SyscallGroupLookup(const char *Name)
     else if (strcmp(Name, "group:keyring")==0) return("add_key;request_key;keyctl");
     else if (strcmp(Name, "group:shm")==0) return("shmat;shmdt;shmget;shmctl");
     else if (strcmp(Name, "group:fsrm")==0) return("unlink;rmdir");
-    else if (strcmp(Name, "group:filesystem")==0) return("unlink;rmdir;rename;mkdir;mknod;chmod;chown;truncate");
+    else if (strcmp(Name, "group:filesystem")==0) return("link;symlink;unlink;rmdir;rename;mkdir;mknod;chmod;chown;truncate");
     else if (strcmp(Name, "group:ptrace")==0) return("ptrace;process_vm_readv;process_vm_writev;kcmp");
     else if (strcmp(Name, "group:kern_mod")==0) return("create_module;delete_module;init_module;finit_module;query_module");
     else if (strcmp(Name, "group:exec")==0) return("exec_with_loader;execv;execve;execveat");
