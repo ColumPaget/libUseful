@@ -406,34 +406,68 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
     char *Token=NULL;
     const char *ptr;
     int Flags=0, val;
-    const char *Levels[]= {"minimal", "basic", "user", "guest", "client", "untrusted", "local", "constrained", "high", NULL};
-    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_CLIENT, LU_SEC_UNTRUSTED, LU_SEC_LOCAL, LU_SEC_CONSTRAINED, LU_SEC_HIGH} TSecLevel;
+    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "client", "local", "nonet", "killnet", NULL};
+    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_CLIENT, LU_SEC_SERVER, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET} TSecLevel;
 
-    ptr=GetToken(Config, " ", &Token, 0);
+    ptr=GetToken(Config, " |+", &Token, GETTOKEN_MULTI_SEP);
     while (ptr)
     {
         val=MatchTokenFromList(Token, Levels, 0);
 
+        //these values arent 'levels' but rather things we can turn on or off at every level
+        //these are mostly about network access
         switch (val)
         {
-        case LU_SEC_HIGH:
+        case LU_SEC_CLIENT:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=bind(0) syscall_deny=group:server;bind ");
+            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+
+        case LU_SEC_LOCAL:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix);socketpair(unix) syscall_deny=socket;socketpair ");
+            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+
+        case LU_SEC_NONET:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:net ");
+            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+
+        case LU_SEC_KILLNET:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net ");
+            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+        }
+
+
+        //these are 'levels', so each falls through to the ones below it
+        switch (val)
+        {
+        //ignore any of the about 'non-level' switches
+        case LU_SEC_CLIENT:
+        case LU_SEC_SERVER:
+        case LU_SEC_LOCAL:
+        case LU_SEC_NONET:
+            break;
+
+        case LU_SEC_MEMWORKER:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:open;group:filesystem:pipe ");
+        //break; //fall through to LU_SEC_WORKER
+
+        case LU_SEC_WORKER:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:filesystem ");
+        //break; //fall through to LU_SEC_HIGH
+
+        case LU_SEC_HIGH:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:kill;utimes ");
         //break; //fall through to LU_SEC_CONSTRAINED
 
         case LU_SEC_CONSTRAINED:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=ioctl(termget);ioctl(termset) syscall_deny=group:net syscall_kill=group:exec;mprotect(exec);mmap(exec);ioctl;group:ptrace ");
-        //break; //fall through to LU_SEC_LOCAL
-
-        case LU_SEC_LOCAL:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix) syscall_deny=socket ");
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=ioctl(termget);ioctl(termset) syscall_kill=group:exec;mprotect(exec);mmap(exec);ioctl;group:ptrace ");
         //break; //fall through to LU_SEC_UNTRUSTED
 
         case LU_SEC_UNTRUSTED:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;acct ");
-        //break; //fall through to LU_SEC_CLENT
-
-        case LU_SEC_CLIENT:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=listen;accept ");
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;acct;pidfd_open syscall_deny=utimes ");
         //break; //fall through to LU_SEC_GUEST
 
         case LU_SEC_GUEST:
@@ -441,11 +475,11 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
         //break; //fall through to LU_SEC_USER
 
         case LU_SEC_USER:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=chown;chmod(exec) syscall_kill=group:sysadmin;bpf ");
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=chown;chmod(exec) syscall_kill=group:sysadmin;bpf;capset ");
         //break; //fall through to LU_SEC_BASIC
 
         case LU_SEC_BASIC:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=acct ");
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=acct;capset ");
         //break; //fall through to LU_SEC_MINIMAL
 
         case LU_SEC_MINIMAL:
@@ -455,6 +489,8 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
             Flags |= PROC_NO_NEW_PRIVS;
             break;
 
+
+        //'default' handles 'syscall_allow=', 'syscall_deny=' and 'syscall_kill=' values supplied by the user
         default:
             if (strncmp(Token, "syscall_allow=", 14)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
             else if (strncmp(Token, "syscall_kill=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
@@ -462,8 +498,11 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
             Flags |= PROC_NO_NEW_PRIVS;
             break;
         }
-        ptr=GetToken(ptr, " ", &Token, 0);
+        ptr=GetToken(ptr, " |+", &Token, GETTOKEN_MULTI_SEP);
     }
+
+    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: Security setup: %s\n", *SeccompSetup);
+
 
     Destroy(Token);
 

@@ -152,15 +152,26 @@ pidfile=<path>     create pidfile for this process at 'path'
 lockfile=<path>    create lockfile at 'path'
 
 security=<level>   set security levels for seccomp. These are intended to mostly kill processess that are trying to use suspicious/dangerous or inappropriate syscalls.
-									 Any level includes the 'nosu' setting as seccomp requires setting 'prctrl(PR_NO_NEW_PRIVS)
-                   Levels are 'minimal', 'basic', 'user', 'untrusted', 'constrained' and 'high'. Each level includes the level below it, so 'untrsted' gives you everything in 'minimal', 'basic' and 'user'.
+   Any level includes the 'nosu' setting as seccomp requires setting 'prctrl(PR_NO_NEW_PRIVS)
+   Levels are 'minimal', 'basic', 'user', 'guest', 'untrusted', 'constrained', 'high', 'worker' and 'memworker'. Each level includes the level below it, so 'untrusted' gives you everything in 'minimal', 'basic' and 'user'.
+	 In addition to levels there are also the modifiers 'client', 'local', 'nonet' and 'killnet'. These can be combined with a level using the '+' sign as in 'security=guest+local'.
 
-                   minimal: disable ptrace and kill apps that try to use: personality, uselib, userfaultfd, perf_event_open, kexec_load, get_kernel_syms, lookup_dcookie, vm86, vm86old, mbind, move_pages, nfsservctl, and anything involving kernel modules
-									 basic: everything in 'minimal' but also disable the 'acct' syscall
-									 user: everything in 'basic' but also kill processes that try to use bpf, or any 'sysadmin' calls: settimeofday, clocksettime, clockadjtime, quotactl, reboot, swapon, swapoff, mount, umount, umount2, mknod, quotactl
-                   untrusted: everyting in 'user' but kill apps that try to use: chroot, access the keyring, unshare or change namespaces group:ns or all acct
-                   constrained: everything in 'untrusted' but kill apps that try to use: socket/network syscalls, exec syscalls, mprotect, ioctl or ptrace
-									 high: kill apps that try to use networking
+	Levels:
+        minimal: disable ptrace and kill apps that try to use: personality, uselib, userfaultfd, perf_event_open, kexec_load, get_kernel_syms, lookup_dcookie, vm86, vm86old, mbind, move_pages, nfsservctl, and anything involving kernel modules
+        basic: everything in 'minimal' but also disable the 'acct' and 'capset' syscalls
+        user: everything in 'basic' but also kill processes that try to use bpf, or any 'sysadmin' calls: settimeofday, clocksettime, clockadjtime, quotactl, reboot, swapon, swapoff, mount, umount, umount2, mknod, quotactl capset
+        guest: everything in 'user' but also deny 'chown' and 'chmod' and kill attempts use 'sysadmin' calls like mount, reboot or settimeofday, and kill attempts to use bpf
+        untrusted: everyting in 'user' but kill apps that try to: chroot, acct syscall, pidfd_open syscall, access the keyring, unshare or change namespaces
+        constrained: everything in 'untrusted' but kill apps that try to use: exec syscalls, mprotect, ioctl or ptrace. Only TGETS and TSETS ioctls are allowed for getting setting terminal attributes.
+        high: everything in 'constrained' plus kill apps that try send signals with 'kill' or change file timestamps
+        worker: everything in 'high' plus deny making filesystem changes. Intended for processes that just do calculations and write them to a file
+        memworker: everything in 'worker' plus kill attempted use of 'open' or other filesystem calls. Intended for processes that just do calculations and write them to an existing file descriptor (e.g. stdout).
+
+	Modifiers:
+				local: only allow UNIX sockets/networking. WARNING: this modifier only works on x86_64, not on x86 due to issues with socketcall syscall
+        client: deny syscalls: listen and accept, preventing 'server' activity
+        nonet: deny networking syscalls like socket,bind and connect
+        killnet: kill processes that attempt to use networking syscalls like socket,bind and connect
 */
 
 

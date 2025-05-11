@@ -42,13 +42,13 @@ endif
 
 all: $(OBJ)
 	$(CC) $(FLAGS) -shared -o $(LIBFILE) $(OBJ) $(LIBS) $(LDFLAGS)
-	-$(LN) -s -r -f $(LIBFILE) libUseful-$(VERSION).$(SONAME_SUFFIX)
-	-$(LN) -s -r -f $(LIBFILE) libUseful-$(MAJOR).$(SONAME_SUFFIX)
-	-$(LN) -s -r -f $(LIBFILE) $(SONAME)
-	-$(LN) -s -r -f $(LIBFILE) libUseful.$(SONAME_SUFFIX)
+	-$(LN) -s -f $(LIBFILE) libUseful-$(VERSION).$(SONAME_SUFFIX)
+	-$(LN) -s -f $(LIBFILE) libUseful-$(MAJOR).$(SONAME_SUFFIX)
+	-$(LN) -s -f $(LIBFILE) $(SONAME)
+	-$(LN) -s -f $(LIBFILE) libUseful.$(SONAME_SUFFIX)
 	$(AR) rcs libUseful-$(VERSION).a $(OBJ)
-	-$(LN) -s -r -f libUseful-$(VERSION).a libUseful-$(MAJOR).a
-	-$(LN) -s -r -f libUseful-$(VERSION).a libUseful.a
+	-$(LN) -s -f libUseful-$(VERSION).a libUseful-$(MAJOR).a
+	-$(LN) -s -f libUseful-$(VERSION).a libUseful.a
 
 StrLenCache.o: StrLenCache.h StrLenCache.c
 	$(CC) $(FLAGS) -c StrLenCache.c
