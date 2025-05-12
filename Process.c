@@ -419,12 +419,14 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
         switch (val)
         {
         case LU_SEC_CLIENT:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=bind(0) syscall_deny=group:server;bind ");
+            //do not attempt to add bind to this list, it's needed for client sockets and
+            //accepts a sockaddr object that seccomp cannot parse.
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:server ");
             Flags |= PROC_NO_NEW_PRIVS;
             break;
 
         case LU_SEC_LOCAL:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix);socketpair(unix) syscall_deny=socket;socketpair ");
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
             Flags |= PROC_NO_NEW_PRIVS;
             break;
 

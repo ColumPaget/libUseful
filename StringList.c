@@ -81,7 +81,7 @@ char *StringListToUnique(char *RetStr, const char *Input, const char *Sep)
     ptr=GetToken(Input, Sep, &Token, 0);
     while (ptr)
     {
-				RetStr=StringListAddUnique(RetStr, Token, Sep);
+        RetStr=StringListAddUnique(RetStr, Token, Sep);
         ptr=GetToken(ptr, Sep, &Token, 0);
     }
 

@@ -15,7 +15,7 @@ ifeq ($(UNAME_S),Darwin)
 	SONAME_MAJOR_SUFFIX = $(MAJOR).$(SONAME_SUFFIX)
 	SONAME_VERSION_SUFFIX = $(VERSION).$(SONAME_SUFFIX)
 	LINKER_SONAME_OPTION = -dylib_install_name
-  SONAME = $(prefix)/lib/libUseful.$(SONAME_MAJOR_SUFFIX)
+	SONAME = $(prefix)/lib/libUseful-$(SONAME_MAJOR_SUFFIX)
 	LIBFILE = libUseful.$(SONAME_VERSION_SUFFIX)
 	LIBFILES = $(LIBFILE) libUseful.$(SONAME_SUFFIX) libUseful-$(MAJOR).$(SONAME_SUFFIX) libUseful-$(VERSION).$(SONAME_SUFFIX) *.a
 else
@@ -23,7 +23,7 @@ else
 	SONAME_MAJOR_SUFFIX = $(SONAME_SUFFIX).$(MAJOR)
 	SONAME_VERSION_SUFFIX = $(SONAME_SUFFIX).$(VERSION)
 	LINKER_SONAME_OPTION = -soname
-  SONAME = libUseful.$(SONAME_MAJOR_SUFFIX)
+	SONAME = libUseful.$(SONAME_MAJOR_SUFFIX)
 	LIBFILE = libUseful.$(SONAME_VERSION_SUFFIX)
 	LIBFILES = $(LIBFILE) libUseful.$(SONAME_SUFFIX) libUseful-$(MAJOR).$(SONAME_SUFFIX) libUseful-$(VERSION).$(SONAME_SUFFIX) libUseful.$(SONAME_MAJOR_SUFFIX) *.a
 endif
@@ -304,7 +304,7 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f $(LIBFILES).* *.o *.orig .*.swp *~ 
+	-rm -f $(LIBFILES) *.o *.orig .*.swp *~ 
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples

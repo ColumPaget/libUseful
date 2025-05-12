@@ -719,8 +719,8 @@ int SeccompFilterAddSyscall(struct sock_filter **Filt, int SysCall, const char *
         if (type > 0)
         {
             SeccompFilterAddSTMT(Filt, BPF_LD | BPF_W | BPF_ABS, (uint32_t) (offsetof(struct seccomp_data, args[pos])));
-						//each arg check is two statments, if it fails then we jump to the end of this block
-						//but we have to take those two statments off the distance to the end of th block
+            //each arg check is two statments, if it fails then we jump to the end of this block
+            //but we have to take those two statments off the distance to the end of th block
             jump -= 2;
             switch (type)
             {
@@ -980,17 +980,17 @@ static int SeccompParseArg1(int SyscallID, int Arg0, const char *Name, char **Ar
         else
         {
 
-	/* we cannot add further arguments to socket call, because arguments of socketcall
-	   are passed as an array, and seccomp only has access to immediate values
-            switch (SyscallID)
-            {
-#ifdef __NR_socketcall
-            case __NR_socketcall:
-                SeccompAddCheck(Args, "1=%d", LookupSocketFamily(Name));
-                break;
-#endif
-            }
-	*/
+            /* we cannot add further arguments to socket call, because arguments of socketcall
+               are passed as an array, and seccomp only has access to immediate values
+                    switch (SyscallID)
+                    {
+            #ifdef __NR_socketcall
+                    case __NR_socketcall:
+                        SeccompAddCheck(Args, "1=%d", LookupSocketFamily(Name));
+                        break;
+            #endif
+                    }
+            */
 
 
         }
@@ -1027,14 +1027,22 @@ void SeccompParseName(const char *Token, int *SyscallID, char **Args)
 
 static const char *SeccompLookupActionName(int action)
 {
-switch(action)
-{
-case SECCOMP_RET_ALLOW: return("allow"); break;
-case SECCOMP_RET_KILL: return("kill"); break;
-case SECCOMP_RET_ERRNO: return("deny"); break;
-case SECCOMP_RET_LOG: return("log"); break;
-}
-return("unknown");
+    switch(action)
+    {
+    case SECCOMP_RET_ALLOW:
+        return("allow");
+        break;
+    case SECCOMP_RET_KILL:
+        return("kill");
+        break;
+    case SECCOMP_RET_ERRNO:
+        return("deny");
+        break;
+    case SECCOMP_RET_LOG:
+        return("log");
+        break;
+    }
+    return("unknown");
 }
 
 
@@ -1065,7 +1073,7 @@ char *SeccompExpandOnce(char *RetStr, const char *NameList)
     char *Name=NULL;
     const char *ptr;
 
-		RetStr=CopyStr(RetStr, "");
+    RetStr=CopyStr(RetStr, "");
     ptr=GetToken(NameList, ";", &Name, 0);
     while (ptr)
     {
@@ -1081,15 +1089,15 @@ char *SeccompExpandOnce(char *RetStr, const char *NameList)
 
 char *SeccompExpand(char *RetStr, const char *NameList)
 {
-char *Tempstr=NULL;
+    char *Tempstr=NULL;
 
-RetStr=SeccompExpandOnce(RetStr, NameList);
-Tempstr=SeccompExpandOnce(Tempstr, RetStr);
-RetStr=StringListToUnique(RetStr, Tempstr, ";");
+    RetStr=SeccompExpandOnce(RetStr, NameList);
+    Tempstr=SeccompExpandOnce(Tempstr, RetStr);
+    RetStr=StringListToUnique(RetStr, Tempstr, ";");
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 
-return(RetStr);
+    return(RetStr);
 }
 
 
@@ -1099,7 +1107,7 @@ int SeccompFilterAddSyscallGroup(struct sock_filter **Filt, const char *NameList
     char *Name=NULL, *Tempstr=NULL;
     const char *ptr;
 
-		Tempstr=SeccompExpand(Tempstr, NameList);
+    Tempstr=SeccompExpand(Tempstr, NameList);
     if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: Seccomp %s: %s\n", SeccompLookupActionName(Action), Tempstr);
     ptr=GetToken(Tempstr, ";", &Name, 0);
     while (ptr)

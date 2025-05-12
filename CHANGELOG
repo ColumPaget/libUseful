@@ -1,3 +1,14 @@
+v5.53 (2025-05-12)
+  * fix 'GetCertificateValue' function that's preventing compilation without openssl
+  * do not include 'bind' in 'server functions' in seccomp: binding to port 0 is needed in client mode and seccomp cannot see into a sockaddr object
+  * ongoing saga of MacOS support continues
+  
+
+v5.52 (2025-05-11)
+  * Yet more work on MacOS compilation
+  * More work on seccomp, new seccomp 'levels' and 'modifiers' added
+  * added StringListToUnique function
+
 v5.51 (2025-05-03)
   * Support 'inner text' within terminal progress bars
   * Add more compiler-hardening options for ./configure --enable-harden 

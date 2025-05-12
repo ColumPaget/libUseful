@@ -237,6 +237,23 @@ static int INTERNAL_SSL_INIT()
 }
 
 
+static const char *OpenSSLGetCertificateValue(STREAM *S, const char *ValName, X509_NAME *X509name)
+{
+    char *Value=NULL;
+    const char *ptr;
+    ListNode *Node;
+
+//Value is dynamically allocated by X509_NAME_oneline
+    Value=X509_NAME_oneline( X509name, NULL, 0);
+    Node=STREAMSetValue(S, ValName, Value);
+
+    Destroy(Value);
+
+    if (Node) return((const char *) Node->Item);
+    return(NULL);
+}
+
+
 
 #endif
 //end of static functions that only exist if we have libssl
@@ -265,23 +282,6 @@ char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
     Destroy(Value);
 
     return(RetStr);
-}
-
-
-static const char *OpenSSLGetCertificateValue(STREAM *S, const char *ValName, X509_NAME *X509name)
-{
-    char *Value=NULL;
-    const char *ptr;
-    ListNode *Node;
-
-//Value is dynamically allocated by X509_NAME_oneline
-    Value=X509_NAME_oneline( X509name, NULL, 0);
-    Node=STREAMSetValue(S, ValName, Value);
-
-    Destroy(Value);
-
-    if (Node) return((const char *) Node->Item);
-    return(NULL);
 }
 
 
