@@ -321,7 +321,7 @@ install: libUseful.$(SONAME_SUFFIX)
 	cp -P $(LIBFILES) $(DESTDIR)$(libdir)
 	-mkdir -p $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
 	cp *.h $(DESTDIR)$(prefix)/include/libUseful-$(VERSION)
-	-$(LN) -s -r -f $(DESTDIR)$(prefix)/include/libUseful-$(VERSION) $(DESTDIR)$(prefix)/include/libUseful-5
+	-$(LN) -s -f $(DESTDIR)$(prefix)/include/libUseful-$(VERSION) $(DESTDIR)$(prefix)/include/libUseful-5
 	-mkdir -p $(DESTDIR)$(sysconfdir)
 	cp *.conf $(DESTDIR)$(sysconfdir)
 

@@ -1,13 +1,14 @@
-AC_INIT([libUseful], [5.53], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.54], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag
 dnl is supported by the compiler
 AC_DEFUN([CHECK_COMPILER_OPT],
 [
-	  AC_MSG_CHECKING([checking if compiler supports $1])
+		COMP_OPT="$@"
+	  AC_MSG_CHECKING(["checking if compiler supports $COMP_OPT"])
  		OLD_CFLAGS="$CFLAGS"
-		CFLAGS="$CFLAGS $1"
+		CFLAGS="$CFLAGS $COMP_OPT"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(test(){return 1;})], [COMP_OPT_SUPPORT="yes"], [COMP_OPT_SUPPORT="no"])
     AC_MSG_RESULT([$COMP_OPT_SUPPORT])
 		AS_IF([test "$COMP_OPT_SUPPORT" != "yes"], [CFLAGS="$OLD_CFLAGS"])
@@ -124,6 +125,7 @@ AS_IF([test "$cf_use_harden" = "yes"],
 		CHECK_COMPILER_OPT("-fno-strict-aliasing")
 		CHECK_COMPILER_OPT("-fno-delete-null-pointer-checks")
 		CHECK_COMPILER_OPT("-fcf-protection=full")
+		CHECK_COMPILER_OPT("-mmitigate-rop")
 ])
 
 
