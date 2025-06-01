@@ -146,6 +146,7 @@ int FileSetXAttr(const char *Path, const char *Name, const char *Value);
 int FileSystemCopyDir(const char *Src, const char *Dest);
 
 
+//recursive remove directory and everything in it
 int FileSystemRmDir(const char *Dir);
 
 
@@ -162,6 +163,9 @@ int FileSetFlags(const char *Path, int Set, int Unset);
 //a file append-only or immutable
 int FileSystemSetSTREAMFlags(int fd, int Set, int Unset);
 int FileSetSTREAMFlags(const char *Path, int Set, int Unset);
+
+
+int FileWrite(const char *Path, const char *Data);
 
 #ifdef __cplusplus
 }

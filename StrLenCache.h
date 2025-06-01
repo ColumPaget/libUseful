@@ -53,6 +53,18 @@ extern "C" {
 #endif
 
 
+//this function allows you to set the number of rows in the string-len cache, and the minimum
+//length of a string to be included in the cache. The defaults are '10' rows in the cache and
+//'100' characters minimum in a string to be included. 
+
+//If all is well, function returns TRUE
+//If StrLenCaching is disabled at libUseful compile time function returns FALSE and errno is set to ENOTSUP
+//if memory for the cache cannot be allocated then the function returns FALSE and errno is set to ENOMEM
+//Note: if caching is turned off with LibUsefulSetValue then this function still returns true, as you
+//can change the settings for the cache even when you're not currently using the feature
+int StrLenCacheInit(int Size, int MinStrLen);
+
+
 //thse are used internally, you'll not normally use any of these functions
 int StrLenFromCache(const char *Str);
 void StrLenCacheDel(const char *Str);

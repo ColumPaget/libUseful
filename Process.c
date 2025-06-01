@@ -406,8 +406,12 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
     char *Token=NULL;
     const char *ptr;
     int Flags=0, val;
-    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "local", "nonet", "killnet","noexec", "killexec", NULL};
-    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC} TSecLevel;
+    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "local", "nonet", "killnet","noexec", "killexec", "nopid", "noshm", "nomsgq", "noipc", NULL};
+    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC} TSecLevel;
+
+
+		//if the user asks for ANY security then we set 'no new privs'
+    if (StrValid(Config)) Flags |= PROC_NO_NEW_PRIVS;
 
     ptr=GetToken(Config, " |+", &Token, GETTOKEN_MULTI_SEP);
     while (ptr)
@@ -422,32 +426,46 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
             //do not attempt to add bind to this list, it's needed for client sockets and
             //accepts a sockaddr object that seccomp cannot parse.
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:server ");
-            Flags |= PROC_NO_NEW_PRIVS;
             break;
 
         case LU_SEC_LOCAL:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
-            Flags |= PROC_NO_NEW_PRIVS;
+            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
             break;
 
         case LU_SEC_NONET:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:net ");
-            Flags |= PROC_NO_NEW_PRIVS;
+            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
             break;
 
         case LU_SEC_KILLNET:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net ");
-            Flags |= PROC_NO_NEW_PRIVS;
+            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
             break;
 
         case LU_SEC_NOEXEC:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:exec ");
-            Flags |= PROC_NO_NEW_PRIVS;
             break;
 
         case LU_SEC_KILLEXEC:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:exec ");
-            Flags |= PROC_NO_NEW_PRIVS;
+            break;
+
+        case LU_SEC_NOPID:
+            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_PID;
+            break;
+
+        case LU_SEC_NOSHM:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:shm");
+            break;
+
+        case LU_SEC_NOMSGQ:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:msgq");
+            break;
+
+        case LU_SEC_NOIPC:
+            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:ipc ");
+            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_IPC;
             break;
         }
 
@@ -459,7 +477,12 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
         case LU_SEC_CLIENT:
         case LU_SEC_LOCAL:
         case LU_SEC_NONET:
+        case LU_SEC_KILLNET:
         case LU_SEC_KILLEXEC:
+        case LU_SEC_NOPID:
+        case LU_SEC_NOSHM:
+        case LU_SEC_NOMSGQ:
+        case LU_SEC_NOIPC:
             break;
 
         case LU_SEC_MEMWORKER:
@@ -502,7 +525,6 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
             //sadly, things like wine use ptrace, so we'd rather deny it than kill them.
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=ptrace syscall_kill=group:kexec;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages ");
 
-            Flags |= PROC_NO_NEW_PRIVS;
             break;
 
 
@@ -511,11 +533,11 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
             if (strncmp(Token, "syscall_allow=", 14)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
             else if (strncmp(Token, "syscall_kill=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
             else if (strncmp(Token, "syscall_deny=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
-            Flags |= PROC_NO_NEW_PRIVS;
             break;
         }
         ptr=GetToken(ptr, " |+", &Token, GETTOKEN_MULTI_SEP);
     }
+
 
     if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: Security setup: %s\n", *SeccompSetup);
 
@@ -531,16 +553,19 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
 //do all things that we can do 'early' (i.e. before chroot and demonize)
 static int ProcessApplyEarlyConfig(const char *Config)
 {
-    char *Name=NULL, *Value=NULL;
+    char *Name=NULL, *Value=NULL, *Tempstr=NULL;
     const char *ptr;
     int Flags=0;
+
 
     ptr=Config;
     while (isspace(*ptr)) ptr++;
     ptr=GetNameValuePair(ptr,"\\S", "=", &Name, &Value);
     while (ptr)
     {
-        if (strcasecmp(Name,"nice")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
+				//we parse 'security' here purely to get flags like PROC_CONTAINER_NET
+				if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &Tempstr);
+        else if (strcasecmp(Name,"nice")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"prio")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"priority")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"openlog")==0) openlog(Value, LOG_PID, LOG_USER);
@@ -609,6 +634,7 @@ static int ProcessApplyEarlyConfig(const char *Config)
 
     Destroy(Name);
     Destroy(Value);
+    Destroy(Tempstr);
 
     return(Flags);
 }
@@ -669,7 +695,7 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
 
     if (Flags & PROC_CONTAINER)
     {
-        if (! ContainerApplyConfig(Config)) Flags |= PROC_SETUP_FAIL;
+        if (! ContainerApplyConfig(Flags, Config)) Flags |= PROC_SETUP_FAIL;
     }
 
     if (Flags & PROC_CTRL_TTY) ProcessSetControlTTY(ctty_fd);

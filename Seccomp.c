@@ -274,6 +274,31 @@ int SysCallGetID(const char *Name)
     if (strcmp(Name, "shmctl")==0) return(__NR_shmctl);
 #endif
 
+//semaphore syscalls, again usually benign
+#ifdef __NR_semop
+    if (strcmp(Name, "semop")==0) return(__NR_semop);
+#endif
+#ifdef __NR_semget
+    if (strcmp(Name, "semget")==0) return(__NR_semget);
+#endif
+#ifdef __NR_semctl
+    if (strcmp(Name, "semctl")==0) return(__NR_semctl);
+#endif
+
+//message queue syscalls, again usually benign
+#ifdef __NR_msgrcv
+    if (strcmp(Name, "msgrcv")==0) return(__NR_msgrcv);
+#endif
+#ifdef __NR_msgsnd
+    if (strcmp(Name, "msgsnd")==0) return(__NR_msgsnd);
+#endif
+#ifdef __NR_msgget
+    if (strcmp(Name, "msgget")==0) return(__NR_msgget);
+#endif
+#ifdef __NR_msgctl
+    if (strcmp(Name, "msgctl")==0) return(__NR_msgctl);
+#endif
+
 
 //switch filesystem root. A certain number of user processes would be using these validly
 //but where possible we should deny them, especially as they can be used to break out of
@@ -576,6 +601,11 @@ const char *SyscallGroupLookup(const char *Name)
     else if (strcmp(Name, "group:kern_mod")==0) return("create_module;delete_module;init_module;finit_module;query_module");
     else if (strcmp(Name, "group:exec")==0) return("exec_with_loader;execv;execve;execveat");
     else if (strcmp(Name, "group:kexec")==0) return("kexec_load;kexec_file_load");
+    else if (strcmp(Name, "group:shm")==0) return("shmat;shmdt;shmget;shmctl");
+    else if (strcmp(Name, "group:sem")==0) return("semop;semget;semctl");
+    else if (strcmp(Name, "group:msgq")==0) return("msgrcv;msgsnd;msgget;msgctl");
+    else if (strcmp(Name, "group:ipc")==0) return("shmat;shmdt;shmget;shmctl;semop;semget;semctl;msgrcv;msgsnd;msgget;msgctl");
+
 
     return(Name);
 }

@@ -267,7 +267,11 @@ static void HTTPParseServerCookie(const char *Str)
     const char *ptr;
 
 
-    if (! Cookies) Cookies=ListCreate(LIST_FLAG_TIMEOUT);
+    if (! Cookies) 
+		{
+			Cookies=ListCreate(LIST_FLAG_TIMEOUT);
+			ListSetDestroyer(Cookies, Destroy);
+		}
 
     ptr=GetNameValuePair(Str, ";", "=", &Name, &Value);
     StripTrailingWhitespace(Name);

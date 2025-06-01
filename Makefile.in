@@ -304,7 +304,7 @@ LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
 clean:
-	-rm -f $(LIBFILES) *.o *.orig .*.swp *~ 
+	-rm -f $(LIBFILES) *.$(SONAME_SUFFIX) *.$(SONAME_SUFFIX).* *.o *.orig .*.swp *~ 
 	-rm config.log config.status 
 	-rm -r autom4te.cache config.cache
 	-$(MAKE) clean -C examples

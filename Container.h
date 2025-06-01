@@ -20,7 +20,7 @@ extern "C" {
 //this module relates to namespaces/containers. Much of this is pretty linux specific, and would be called
 //via 'ProcessApplyConfig' rather than calling this function directly.
 
-int ContainerApplyConfig(const char *Config);
+int ContainerApplyConfig(int Flags, const char *Config);
 
 #ifdef __cplusplus
 }

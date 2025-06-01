@@ -81,7 +81,7 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
     char *Name=NULL, *Value=NULL;
 
     Settings->Flags=0;
-    Settings->QueueLen=0;
+    Settings->QueueLen=128; //this is only used by server sockets
     Settings->Perms=-1;
     ptr=LibUsefulGetValue("TCP:Keepalives");
     if ( StrValid(ptr) &&  (! strtobool(ptr)) ) Settings->Flags |= SOCK_NOKEEPALIVE;
@@ -353,7 +353,7 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
     //No reason to pass server/listen fdets across an exec
     if (Flags & BIND_CLOEXEC) fcntl(fd, F_SETFD, FD_CLOEXEC);
 
-    if (Flags & BIND_LISTEN) result=listen(fd,10);
+    if (Flags & BIND_LISTEN) result=listen(fd, 10);
 
 
     return(fd);

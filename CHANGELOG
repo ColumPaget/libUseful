@@ -1,4 +1,15 @@
-v5.53 (2025-05-12)
+v5.55 (2025-05-28)
+	* use 'listen' on all server sockets. We've been getting away without it all these years.
+  * honor both 'TodayAttribs' and any 'StateAttribs' for a day in TerminalCalendar, so current day is always highlighted
+  * ListStats now stores 'AccessTime' if LIST_FLAG_TIMEOUT is not set
+  * ListSetMaxItems function added
+  * ListSetDestroyer function added
+  * ContainersApplyConfig now automatically switches to a 'user namespace' is current uid is not 0 (user is not root)
+  * ProcessApplyConfig 'security=nonet' now uses namespaces in addition to seccomp in order to limit network acccess
+  * externalize StrLenCacheInit function
+  
+
+v5.54 (2025-05-13)
   * better debugging/error display for OpenSSL operations
   * add more '--enable-harden' compiler flags
 
@@ -15,7 +26,7 @@ v5.52 (2025-05-11)
 v5.51 (2025-05-03)
   * Support 'inner text' within terminal progress bars
   * Add more compiler-hardening options for ./configure --enable-harden 
-  * Make sure non-lgpl licensed parts are not compiled in, rahter than just not called, if compiled with --enable-lgpl
+  * Make sure non-lgpl licensed parts are not compiled in, rather than just not called, if compiled with --enable-lgpl
   * More changes from barracuda156@github.com for compiling on MacOS
 
 v5.50 (2025-04-12)

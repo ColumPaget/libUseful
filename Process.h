@@ -22,6 +22,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define PROC_CONTAINER_FS    512  
 #define PROC_CONTAINER_NET  1024     // unshare network namespace for this process
 #define PROC_CONTAINER_PID  2048     // unshare pids namespace
+#define PROC_CONTAINER_IPC  4096     // unshare ipc (shared memory, message queues, semaphors) namespace
 
 //these must be compatible with PROC_ defines
 #define SPAWN_NOSHELL        8192    // run the command directly using exec, not from a shell using system
@@ -36,7 +37,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define PROC_ISOCUBE      1048576    // chroot into a tmpfs filesystem. Any files process writes will be lost when it exits
 
 
-#define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID)
+#define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID | PROC_CONTAINER_IPC)
 
 #ifdef __cplusplus
 extern "C" {

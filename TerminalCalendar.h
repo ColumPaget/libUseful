@@ -73,6 +73,9 @@ char *TerminalCalendar(char *RetStr, STREAM *Term, int x, int y, const char *Con
 //create a calendar object
 TERMCALENDAR *TerminalCalendarCreate(STREAM *Term, int x, int y, const char *Config);
 
+void TerminalCalendarParseConfig(TERMCALENDAR *TC, const char *Config);
+
+
 //draw a calendar
 void TerminalCalendarDraw(TERMCALENDAR *TC);
 

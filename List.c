@@ -2,6 +2,21 @@
 #include "List.h"
 #include "Time.h"
 
+
+
+//get the root of a list or map. For a list this will return the same
+//as ListGetHead, but for a map it will return the very top level item
+//instead of the head of current list
+ListNode *ListGetRoot(ListNode *Node)
+{
+    ListNode *Head;
+
+    Head=ListGetHead(Node);
+		if (Head->Flags & LIST_FLAG_MAP_CHAIN) Head=Head->Head;
+
+		return(Head);
+}
+
 unsigned long ListSize(ListNode *Node)
 {
     ListNode *Head;
@@ -89,11 +104,34 @@ void ListSetFlags(ListNode *List, int Flags)
     Head->Flags=Flags & 0xFFFF;
 }
 
+void ListSetDestroyer(ListNode *List, LIST_ITEM_DESTROY_FUNC Destroyer)
+{
+    ListNode *Head;
+
+    Head=ListGetRoot(List);
+    if (! Head->Stats) Head->Stats=(ListStats *) calloc(1,sizeof(ListStats));
+		Head->Stats->Destroyer=Destroyer;
+}
+
+
+void ListSetMaxItems(ListNode *List, unsigned long val, LIST_ITEM_DESTROY_FUNC Destroyer)
+{
+    ListNode *Head;
+
+    Head=ListGetRoot(List);
+    if (! Head->Stats) Head->Stats=(ListStats *) calloc(1,sizeof(ListStats));
+    Head->Stats->Max=val;
+		Head->Stats->Destroyer=Destroyer;
+}
+
+
 void ListNodeSetHits(ListNode *Node, int val)
 {
     if (! Node->Stats) Node->Stats=(ListStats *) calloc(1,sizeof(ListStats));
     Node->Stats->Hits=val;
 }
+
+
 
 
 int ListNodeAddHits(ListNode *Node, int val)
@@ -108,9 +146,6 @@ void ListNodeSetTime(ListNode *Node, time_t When)
     if (! Node->Stats) Node->Stats=(ListStats *) calloc(1,sizeof(ListStats));
     Node->Stats->Time=When;
 }
-
-
-
 
 
 
@@ -168,16 +203,21 @@ unsigned long ListIncrNoOfItems(ListNode *List)
 {
     ListNode *Head;
 
-    if (List->Flags & LIST_FLAG_MAP_CHAIN) List->Stats->Hits++;
+		//get the head of the list, if we've been passed a map chain
+		//then it's the 'Head' at this stage, otherwise get List->Head
+		Head=ListGetHead(List);
 
-    Head=List->Head;
+		//if the Head is the head of a map chain, then we need to update
+		//it's count, but we also need to update the count for the whole map
     if (Head->Flags & LIST_FLAG_MAP_CHAIN)
     {
         Head->Stats->Hits++;
 
-        //get map head, rather than chain head
+        //get map head, head of whole map,  rather than chain head
         Head=Head->Head;
     }
+
+		//okay, for plain lists, and map heads, update Hits
     Head->Stats->Hits++;
 
     return(Head->Stats->Hits);
@@ -189,8 +229,10 @@ unsigned long ListDecrNoOfItems(ListNode *List)
 {
     ListNode *Head;
 
-    if (List->Flags & LIST_FLAG_MAP_CHAIN) List->Stats->Hits--;
-    Head=List->Head;
+		//get the head of the list, if we've been passed a map chain
+		//then it's the 'Head' at this stage, otherwise get List->Head
+		Head=ListGetHead(List);
+
     if (Head->Flags & LIST_FLAG_MAP_CHAIN)
     {
         Head->Stats->Hits--;
@@ -198,6 +240,7 @@ unsigned long ListDecrNoOfItems(ListNode *List)
         Head=Head->Head;
     }
 
+		//okay, for plain lists, and map heads, update Hits
     Head->Stats->Hits--;
 
     return(Head->Stats->Hits);
@@ -340,20 +383,54 @@ ListNode *ListClone(ListNode *ListStart, LIST_ITEM_CLONE_FUNC ItemCloner)
 }
 
 
+//this function handled the 'maximum items in list' feature
+static void ListHandleMaxSize(ListNode *Node, ListNode *Head)
+{
+ListNode *ChainHead, *Curr;
+int i;
+
+			//In maps ChainHead will be the head of the current subchain in the map
+			//in lists it will be the same as 'Head'
+			ChainHead=ListGetHead(Node);
+
+			//we delete up to 3 items, as we're only adding 1, then even if somehow the
+			//list has grown over 'Max' it will gradually shrink back
+			for (i=0; (i < 3) && (ChainHead->Stats->Hits > Head->Stats->Max); i++)
+			{
+				Curr=ListGetNext(ChainHead);
+				if (! Curr) break;
+
+				if (Head->Stats->Destroyer) Head->Stats->Destroyer(Curr->Item);
+				ListDeleteNode(Curr);
+			}
+}
+
 
 ListNode *ListInsertTypedItem(ListNode *InsertNode, uint16_t Type, const char *Name, void *Item)
 {
-    ListNode *NewNode;
+    ListNode *NewNode, *Head, *Curr;
+		int i;
 
     if (! InsertNode) return(NULL);
+	
+		Head=ListGetRoot(InsertNode);
+
+		if (Head->Stats->Max > 0) ListHandleMaxSize(InsertNode, Head);
+
     NewNode=(ListNode *) calloc(1,sizeof(ListNode));
     ListThreadNode(InsertNode, NewNode);
     NewNode->Item=Item;
     NewNode->ItemType=Type;
     if (StrValid(Name)) NewNode->Tag=CopyStr(NewNode->Tag,Name);
-    if (InsertNode->Head->Flags & LIST_FLAG_STATS)
+
+    if (Head->Flags & LIST_FLAG_STATS)
     {
         NewNode->Stats=(ListStats *) calloc(1,sizeof(ListStats));
+
+
+				//If list is being used with LIST_FLAG_TIMEOUT then user will
+				//call 'ListSetTime' after inserting the item, and overwrite
+				//this time val, so it does no harm to set it here.
         NewNode->Stats->Time=GetTime(TIME_CACHED);
     }
 
@@ -457,7 +534,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
                 val=ListNodeGetTime(Curr);
                 if ((val > 0) && (val < GetTime(TIME_CACHED)))
                 {
-                    Destroy(Curr->Item);
+										if (Root->Stats && Root->Stats->Destroyer) Root->Stats->Destroyer(Curr->Item);
                     ListDeleteNode(Curr);
                 }
             }
@@ -509,10 +586,17 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
             if (result==0)
             {
-                if  ( (Type==ANYTYPE) || (Type==Node->ItemType) )
+                if  ( (Type==LIST_ITEM_ANYTYPE) || (Type==Node->ItemType) )
                 {
                     if (Head->Flags & LIST_FLAG_CACHE) Head->Side=Node;
-                    if (Node->Stats) Node->Stats->Hits++;
+                    if (Node->Stats) 
+										{
+											Node->Stats->Hits++;
+
+											//if this list is being used with LIST_FLAG_TIMEOUT then the Time field in ListStats
+											//will be an expiry time, so we can't update it with a 'last accessed' time
+											if (! (Head->Flags & LIST_FLAG_TIMEOUT)) Node->Stats->Time=GetTime(TIME_CACHED);
+										}
 
                     if (
                         (Node != Head) &&
@@ -543,7 +627,7 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 
 ListNode *ListFindNamedItem(ListNode *Head, const char *Name)
 {
-    return(ListFindTypedItem(Head, ANYTYPE, Name));
+    return(ListFindTypedItem(Head, LIST_ITEM_ANYTYPE, Name));
 }
 
 

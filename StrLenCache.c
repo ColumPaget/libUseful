@@ -12,13 +12,6 @@ static int StrLenCacheMinLen=100;
 static TStrLenCacheEntry *StrLenCache=NULL;
 
 
-static void StrLenCacheInit(int Size, int MinStrLen)
-{
-    StrLenCache=(TStrLenCacheEntry *) calloc(Size, sizeof(TStrLenCacheEntry));
-    StrLenCacheSize=Size;
-    StrLenCacheMinLen=MinStrLen;
-}
-
 
 
 static TStrLenCacheEntry *StrLenCacheFind(const char *Str)
@@ -38,6 +31,26 @@ static TStrLenCacheEntry *StrLenCacheFind(const char *Str)
     return(NULL);
 }
 #endif
+
+
+int StrLenCacheInit(int Size, int MinStrLen)
+{
+#ifdef USE_STRLEN_CACHE
+    StrLenCache=(TStrLenCacheEntry *) calloc(Size, sizeof(TStrLenCacheEntry));
+		if (StrLenCache == NULL) 
+		{
+			errno=ENOMEM;
+			return(FALSE);
+		}
+    StrLenCacheSize=Size;
+    StrLenCacheMinLen=MinStrLen;
+		return(TRUE);
+#endif
+
+errno=ENOTSUP;
+return(FALSE);
+}
+
 
 
 void StrLenCacheDel(const char *Str)

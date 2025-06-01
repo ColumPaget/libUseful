@@ -62,6 +62,8 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
         ptr=FinalCommand;
         ptr=GetToken(FinalCommand,"\\S",&Token,GETTOKEN_QUOTES);
         ExecPath=FindFileInPath(ExecPath,Token,getenv("PATH"));
+				if (StrValid(ExecPath))
+				{
         i=0;
 
         if (! (Flags & SPAWN_ARG0))
@@ -78,6 +80,8 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
         }
 
         result=execv(ExecPath, argv);
+				}
+    		else RaiseError(ERRFLAG_ERRNO, "Spawn", "Failed to execute '%s', can't find executable",Command);
     }
     else result=execl("/bin/sh","/bin/sh","-c",(char *) Command,NULL);
 
