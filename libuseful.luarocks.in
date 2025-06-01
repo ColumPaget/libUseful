@@ -1,0 +1,21 @@
+package="libUseful"
+ version="@PACKAGE_VERSION@-1"
+ source = {
+   url = "https://github.com/ColumPaget/libUseful",
+   tag= "v@PACKAGE_VERSION@"
+ }
+ description = {
+   summary = "libUseful - utility library underlying libUseful-lua",
+   detailed = [[
+       libUseful is a C library of useful functions. It is a dependancy of libUseful-lua which provides lua bindings for libUseful
+   ]],
+   homepage = "https://github.com/ColumPaget/libUseful",
+   license = "GPLv3"
+ }
+ dependencies = {
+ }
+ build = {
+   type = "command",
+   build_command = "./configure --prefix=$(PREFIX) --enable-ssl --enable-harden --enable-seccomp --enable-namespaces --enable-sendfile  && make clean && make",
+   install_command = "make install"
+ }

@@ -5138,7 +5138,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile"
+ac_config_files="$ac_config_files Makefile libuseful.luarocks"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5846,6 +5846,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "libuseful.luarocks") CONFIG_FILES="$CONFIG_FILES libuseful.luarocks" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
