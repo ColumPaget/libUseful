@@ -430,7 +430,7 @@ AS_IF([test "$cf_use_seccomp" = "yes"], [
 
 
 dnl read Makefile.in and write Makefile 
-AC_CONFIG_FILES([Makefile libuseful.luarocks])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
 echo

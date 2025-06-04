@@ -1,5 +1,10 @@
+v5.56
+  * ditch attempted 'luarocks' support
+  * set STREAM->Size for http streams from Content-Length
+
+
 v5.55 (2025-05-28)
-	* use 'listen' on all server sockets. We've been getting away without it all these years.
+  * use 'listen' on all server sockets. We've been getting away without it all these years.
   * honor both 'TodayAttribs' and any 'StateAttribs' for a day in TerminalCalendar, so current day is always highlighted
   * ListStats now stores 'AccessTime' if LIST_FLAG_TIMEOUT is not set
   * ListSetMaxItems function added

@@ -303,12 +303,6 @@ LineEdit.o: LineEdit.c LineEdit.h
 LibSettings.o: LibSettings.h LibSettings.c
 	$(CC) $(FLAGS) -c LibSettings.c
 
-rockspec: libuseful-$(VERSION)-1.luarocks
-
-libuseful-$(VERSION)-1.luarocks: libuseful.luarocks
-	-rm -f libuseful-$(VERSION)-1.rockspec
-	ln -s libuseful.luarocks libuseful-$(VERSION)-1.rockspec
-
 
 clean:
 	-rm -f $(LIBFILES) *.$(SONAME_SUFFIX) *.$(SONAME_SUFFIX).* *.o *.orig .*.swp *~ 
