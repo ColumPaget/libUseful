@@ -97,7 +97,7 @@ static int TCPServerNew(const char *Host, int Port, int Flags, TSockSettings *Se
 
     if (fd > -1)
     {
-    listen(fd, Settings->QueueLen);
+        listen(fd, Settings->QueueLen);
 
 #ifdef TCP_FASTOPEN
         if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", 1);

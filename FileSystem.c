@@ -805,15 +805,15 @@ int FileSetSTREAMFlags(const char *Path, int Set, int Unset)
 
 int FileWrite(const char *Path, const char *Data)
 {
-STREAM *S;
-int len=0;
+    STREAM *S;
+    int len=0;
 
-S=STREAMOpen(Path, "wc");
-if (S)
-{
-len=STREAMWriteBytes(S, Data, StrLen(Data));
-STREAMClose(S);
-}
+    S=STREAMOpen(Path, "wc");
+    if (S)
+    {
+        len=STREAMWriteBytes(S, Data, StrLen(Data));
+        STREAMClose(S);
+    }
 
-return(len);
+    return(len);
 }

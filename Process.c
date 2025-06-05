@@ -410,7 +410,7 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
     typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC} TSecLevel;
 
 
-		//if the user asks for ANY security then we set 'no new privs'
+    //if the user asks for ANY security then we set 'no new privs'
     if (StrValid(Config)) Flags |= PROC_NO_NEW_PRIVS;
 
     ptr=GetToken(Config, " |+", &Token, GETTOKEN_MULTI_SEP);
@@ -563,8 +563,8 @@ static int ProcessApplyEarlyConfig(const char *Config)
     ptr=GetNameValuePair(ptr,"\\S", "=", &Name, &Value);
     while (ptr)
     {
-				//we parse 'security' here purely to get flags like PROC_CONTAINER_NET
-				if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &Tempstr);
+        //we parse 'security' here purely to get flags like PROC_CONTAINER_NET
+        if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &Tempstr);
         else if (strcasecmp(Name,"nice")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"prio")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));
         else if (strcasecmp(Name,"priority")==0) setpriority(PRIO_PROCESS, 0, atoi(Value));

@@ -1,6 +1,8 @@
 v5.56
   * ditch attempted 'luarocks' support
   * set STREAM->Size for http streams from Content-Length
+  * Fix unguarded 'unshare' in Containers.c preventing compile on systems that don't have that call (thanks again to barracuda156@github.com)
+  * Fix possible underflow in 'memset' in TerminalReadTextWithPrefix if typed string is zero length
 
 
 v5.55 (2025-05-28)

@@ -28,8 +28,8 @@ static void ContainerInitProcess(int tunfd, int linkfd, pid_t Child, int RemoveR
     //if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
     ProcessSetTitle("init");
 
-		close(0);
-		close(1);
+    close(0);
+    close(1);
 
     memset(&sa,0,sizeof(sa));
     sa.sa_handler=InitSigHandler;
@@ -312,47 +312,52 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
 
 
 
+#ifdef HAVE_UNSHARE
+#ifdef CLONE_NEWUSER
+
 static void ContainerNewUserNamespace(pid_t myPid, uid_t myUid, gid_t myGid)
 {
-char *Path=NULL, *Tempstr=NULL;
+    char *Path=NULL, *Tempstr=NULL;
 
-unshare(CLONE_NEWUSER);
+    unshare(CLONE_NEWUSER);
 
 
 //map our user number (0) in the namespace to our real user id outside it
-Path=FormatStr(Path, "/proc/%d/uid_map", myPid);
-Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myUid, myUid);
-FileWrite(Path, Tempstr);
+    Path=FormatStr(Path, "/proc/%d/uid_map", myPid);
+    Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myUid, myUid);
+    FileWrite(Path, Tempstr);
 
 
 //map our group number (0) in the namespace to our real gid outside it
-Path=FormatStr(Path, "/proc/%d/setgroups", myPid);
-FileWrite(Path, "deny");
+    Path=FormatStr(Path, "/proc/%d/setgroups", myPid);
+    FileWrite(Path, "deny");
 
 //map our user number (0) in the namespace to our real user id outside it
-Path=FormatStr(Path, "/proc/%d/gid_map", myPid);
-Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myGid, myGid);
-FileWrite(Path, Tempstr);
+    Path=FormatStr(Path, "/proc/%d/gid_map", myPid);
+    Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myGid, myGid);
+    FileWrite(Path, Tempstr);
 
 
-Destroy(Tempstr);
-Destroy(Path);
+    Destroy(Tempstr);
+    Destroy(Path);
 }
 
+#endif
+#endif
 
 //uid and gid here are the EXTERNAL uid and gid outside of the container
 static void ContainerNamespace(const char *Namespace, const char *HostName, const char *Dir, int Flags, uid_t uid, gid_t gid)
 {
 #ifdef HAVE_UNSHARE
 
-int val, result;
+    int val, result;
 
 
 //if we're not root, then we'll have to set up a user namespace
-if (uid !=0) ContainerNewUserNamespace(getpid(), uid, gid);
+    if (uid !=0) ContainerNewUserNamespace(getpid(), uid, gid);
 
-if (Flags & PROC_CONTAINER_FS)
-{
+    if (Flags & PROC_CONTAINER_FS)
+    {
 #ifdef CLONE_NEWNS
         if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWNS);
         else unshare(CLONE_NEWNS);
@@ -360,7 +365,7 @@ if (Flags & PROC_CONTAINER_FS)
 //make container invisble to outside processes, apparently
 //  mount("none", "/", 0, MS_PRIVATE | MS_REC, NULL);
 #endif
-}
+    }
 
 #ifdef CLONE_NEWNET
     if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWNET);
@@ -369,12 +374,12 @@ if (Flags & PROC_CONTAINER_FS)
 
 
 #ifdef CLONE_NEWIPC
-        if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWIPC);
-        else if (Flags & PROC_CONTAINER_IPC) unshare(CLONE_NEWIPC);
+    if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWIPC);
+    else if (Flags & PROC_CONTAINER_IPC) unshare(CLONE_NEWIPC);
 #endif
 
-if (Flags & PROC_CONTAINER_PID) ContainerUnsharePID(Flags, Namespace, Dir);
-if (StrValid(HostName)) ContainerSetHostname(Namespace, HostName);
+    if (Flags & PROC_CONTAINER_PID) ContainerUnsharePID(Flags, Namespace, Dir);
+    if (StrValid(HostName)) ContainerSetHostname(Namespace, HostName);
 
 
 
@@ -451,12 +456,12 @@ int ContainerApplyConfig(int Flags, const char *Config)
     const char *ptr;
     int result=TRUE;
     pid_t child;
-		uid_t external_uid;
+    uid_t external_uid;
     gid_t external_gid;
 
 
-		external_uid=getuid();
-		external_gid=getgid();
+    external_uid=getuid();
+    external_gid=getgid();
 
 
     Flags |= ContainerParseConfig(Config, &HostName, &Dir, &Namespace, &ChRoot, &Envs);
@@ -483,9 +488,9 @@ int ContainerApplyConfig(int Flags, const char *Config)
             }
         }
 
-				mkdir("proc", 0755);
-				if (external_uid==0) mount("", "proc", "proc", 0, NULL);
-				else mount("/proc", "proc", NULL, MS_REC | MS_BIND, NULL);
+        mkdir("proc", 0755);
+        if (external_uid==0) mount("", "proc", "proc", 0, NULL);
+        else mount("/proc", "proc", NULL, MS_REC | MS_BIND, NULL);
 
 
         //ContainerSetEnvs(Envs);
@@ -511,8 +516,8 @@ int ContainerApplyConfig(int Flags, const char *Config)
             }
         }
 
-				setuid(external_uid);
-				setgid(external_gid);
+        if ( setuid(external_uid) != 0) RaiseError(ERRFLAG_ERRNO, "ContainerApplyConfig", "failed to switch user to %d", external_uid);
+        if ( setgid(external_gid) != 0) RaiseError(ERRFLAG_ERRNO, "ContainerApplyConfig", "failed to switch group to %d", external_gid);
     }
 
     Destroy(Tempstr);

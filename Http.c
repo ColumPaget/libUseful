@@ -267,11 +267,11 @@ static void HTTPParseServerCookie(const char *Str)
     const char *ptr;
 
 
-    if (! Cookies) 
-		{
-			Cookies=ListCreate(LIST_FLAG_TIMEOUT);
-			ListSetDestroyer(Cookies, Destroy);
-		}
+    if (! Cookies)
+    {
+        Cookies=ListCreate(LIST_FLAG_TIMEOUT);
+        ListSetDestroyer(Cookies, Destroy);
+    }
 
     ptr=GetNameValuePair(Str, ";", "=", &Name, &Value);
     StripTrailingWhitespace(Name);
@@ -440,7 +440,7 @@ static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
             if (strcasecmp(Token,"Content-length")==0)
             {
                 Info->ContentLength=atoi(ptr);
-		if (S->Size ==0) S->Size=strtoul(ptr, NULL, 10);
+                if (S->Size ==0) S->Size=strtoul(ptr, NULL, 10);
             }
             else if (strcasecmp(Token,"Content-type")==0)
             {

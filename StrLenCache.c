@@ -37,18 +37,18 @@ int StrLenCacheInit(int Size, int MinStrLen)
 {
 #ifdef USE_STRLEN_CACHE
     StrLenCache=(TStrLenCacheEntry *) calloc(Size, sizeof(TStrLenCacheEntry));
-		if (StrLenCache == NULL) 
-		{
-			errno=ENOMEM;
-			return(FALSE);
-		}
+    if (StrLenCache == NULL)
+    {
+        errno=ENOMEM;
+        return(FALSE);
+    }
     StrLenCacheSize=Size;
     StrLenCacheMinLen=MinStrLen;
-		return(TRUE);
+    return(TRUE);
 #endif
 
-errno=ENOTSUP;
-return(FALSE);
+    errno=ENOTSUP;
+    return(FALSE);
 }
 
 
