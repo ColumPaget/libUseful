@@ -1,3 +1,10 @@
+v5.57 (2025-06-16)
+  * Fix unguarded 'mount' in Container.c that prevents compile on non-linux platforms
+  * Add FindFileInPathSubDirectory, FindFilesInPathSubDirectory and FindFileInPrefixSubDirectory search functions to FileSystem.c
+  * Search harder for unicode-names.conf file using FindFileInPrefixSubDirectory 
+  * Optimise unicode names lookup support so we don't scan through unicode-names.conf for every character we lookup
+  * Add nerdfonts support using nerdfont.csv downloaded from  https://github.com/8bitmcu/NerdFont-Cheat-Sheet
+
 v5.56
   * ditch attempted 'luarocks' support
   * set STREAM->Size for http streams from Content-Length

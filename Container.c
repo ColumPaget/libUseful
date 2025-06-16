@@ -362,7 +362,7 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, cons
         if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWNS);
         else unshare(CLONE_NEWNS);
 
-//make container invisble to outside processes, apparently
+//make container invisible to outside processes, apparently
 //  mount("none", "/", 0, MS_PRIVATE | MS_REC, NULL);
 #endif
     }
@@ -454,7 +454,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
     char *Name=NULL, *Value=NULL;
     char *Tempstr=NULL;
     const char *ptr;
-    int result=TRUE;
+    int RetVal=TRUE, result;
     pid_t child;
     uid_t external_uid;
     gid_t external_gid;
@@ -488,10 +488,13 @@ int ContainerApplyConfig(int Flags, const char *Config)
             }
         }
 
+#ifdef __linux__
+#ifdef MS_BIND
         mkdir("proc", 0755);
-        if (external_uid==0) mount("", "proc", "proc", 0, NULL);
-        else mount("/proc", "proc", NULL, MS_REC | MS_BIND, NULL);
-
+        if (external_uid==0) result=mount("", "proc", "proc", 0, NULL);
+        else result=mount("/proc", "proc", NULL, MS_REC | MS_BIND, NULL);
+#endif
+#endif
 
         //ContainerSetEnvs(Envs);
 
@@ -500,12 +503,13 @@ int ContainerApplyConfig(int Flags, const char *Config)
             if (chroot(".") == -1)
             {
                 RaiseError(ERRFLAG_ERRNO, "ContainerApplyConfig", "failed to chroot to curr directory");
-                result=FALSE;
+                RetVal=FALSE;
             }
         }
 
 
-        if (result)
+        //'RetVal' is our 'so far so good' value
+        if (RetVal)
         {
             LibUsefulSetupAtExit();
             LibUsefulFlags |= LU_CONTAINER;
@@ -529,6 +533,6 @@ int ContainerApplyConfig(int Flags, const char *Config)
     Destroy(ChRoot);
     Destroy(Dir);
 
-    return(result);
+    return(RetVal);
 }
 

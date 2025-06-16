@@ -768,6 +768,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term)
 
 char *TerminalFormatStr(char *RetStr, const char *Str, STREAM *Term)
 {
+    UnicodeNameCachePreloadFromTerminalStr(Str);
     TerminalFormatSubStr(Str, &RetStr, Term);
     return(RetStr);
 }
@@ -1030,14 +1031,14 @@ char *TerminalReadTextWithPrefix(char *RetStr, int Flags, const char *Prefix, Li
         {
             if (Flags & TERM_SHOWTEXTSTARS)
             {
-	        len=StrLen(Text);
-		if (len > 0)
-		{
-                //if the user has hit enter, then star out all the text
-                if (result==LINE_EDIT_ENTER) memset(Text, '*', len);
-                //otherwise allow last typed character to be seen
-                else memset(Text, '*', len-1);
-		}
+                len=StrLen(Text);
+                if (len > 0)
+                {
+                    //if the user has hit enter, then star out all the text
+                    if (result==LINE_EDIT_ENTER) memset(Text, '*', len);
+                    //otherwise allow last typed character to be seen
+                    else memset(Text, '*', len-1);
+                }
             }
             else if (Flags & TERM_SHOWSTARS) memset(Text, '*', StrLen(Text));
 
