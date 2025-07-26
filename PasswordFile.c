@@ -7,37 +7,37 @@
 
 void PasswordEntryDestroy(void *p_Entry)
 {
-TPasswordEntry *Entry;
+    TPasswordEntry *Entry;
 
-if (! p_Entry) return;
+    if (! p_Entry) return;
 
-Entry=(TPasswordEntry *) p_Entry;
-Destroy(Entry->User);
-Destroy(Entry->Type);
-Destroy(Entry->Salt);
-Destroy(Entry->Cred);
-Destroy(Entry->Extra);
+    Entry=(TPasswordEntry *) p_Entry;
+    Destroy(Entry->User);
+    Destroy(Entry->Type);
+    Destroy(Entry->Salt);
+    Destroy(Entry->Cred);
+    Destroy(Entry->Extra);
 
-Destroy(Entry);
+    Destroy(Entry);
 }
 
 
 TPasswordEntry *PasswordFileParse(const char *Line)
 {
-const char *ptr;
-TPasswordEntry *Entry;
-char *Token=NULL;
+    const char *ptr;
+    TPasswordEntry *Entry;
+    char *Token=NULL;
 
-Entry=(TPasswordEntry *) calloc(1, sizeof(TPasswordEntry));
+    Entry=(TPasswordEntry *) calloc(1, sizeof(TPasswordEntry));
 
-ptr=GetToken(Line, ":", &(Entry->User), GETTOKEN_QUOTES);
+    ptr=GetToken(Line, ":", &(Entry->User), GETTOKEN_QUOTES);
 //Entry->User=UnQuoteStr(Entry->User, Token);
-ptr=GetToken(ptr, ":", &(Entry->Type), 0);
-ptr=GetToken(ptr, ":", &(Entry->Salt), 0);
-ptr=GetToken(ptr, ":", &(Entry->Cred), GETTOKEN_QUOTES);
-ptr=GetToken(ptr, ":", &(Entry->Extra), GETTOKEN_QUOTES);
+    ptr=GetToken(ptr, ":", &(Entry->Type), 0);
+    ptr=GetToken(ptr, ":", &(Entry->Salt), 0);
+    ptr=GetToken(ptr, ":", &(Entry->Cred), GETTOKEN_QUOTES);
+    ptr=GetToken(ptr, ":", &(Entry->Extra), GETTOKEN_QUOTES);
 
-return(Entry);
+    return(Entry);
 }
 
 
@@ -48,15 +48,15 @@ char *PasswordFileGenerateEntry(char *RetStr, const char *User, const char *Pass
     if (StrEnd(PassType) || (strcasecmp(PassType, "plain")==0) )
     {
         Salt=CopyStr(Salt, "");
-	//in plain text passwords it's not really a hash, just the plain password
-	//and we have to quote it because ppl could include :'\"\r or \n in the password
+        //in plain text passwords it's not really a hash, just the plain password
+        //and we have to quote it because ppl could include :'\"\r or \n in the password
         Hash=QuoteCharsInStr(Hash, Password, ":'\"\r\n");
     }
     else
     {
         Salt=GetRandomAlphabetStr(Salt, 20);
         Tempstr=MCatStr(Tempstr, Salt, Password, NULL);
-	//a base64 encoded hash won't contain any problem characters, so we don't need to encode it
+        //a base64 encoded hash won't contain any problem characters, so we don't need to encode it
         HashBytes(&Hash, PassType, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
     }
 
@@ -77,9 +77,9 @@ char *PasswordFileGenerateEntry(char *RetStr, const char *User, const char *Pass
 
 int PasswordFileDelete(const char *Path, const char *User)
 {
-STREAM *Old, *New;
-int RetVal=FALSE;
-char *Tempstr=NULL, *Token=NULL;
+    STREAM *Old, *New;
+    int RetVal=FALSE;
+    char *Tempstr=NULL, *Token=NULL;
 
     Old=STREAMOpen(Path, "rL");
 
@@ -88,40 +88,40 @@ char *Tempstr=NULL, *Token=NULL;
 
     if (New && Old)
     {
+        Tempstr=STREAMReadLine(Tempstr, Old);
+        while (Tempstr)
+        {
+            GetToken(Tempstr, ":", &Token, GETTOKEN_QUOTES);
+            if (strcmp(User, Token) == 0) RetVal=TRUE;
+            else STREAMWriteLine(Tempstr, New);
             Tempstr=STREAMReadLine(Tempstr, Old);
-            while (Tempstr)
-            {
-                GetToken(Tempstr, ":", &Token, GETTOKEN_QUOTES);
-                if (strcmp(User, Token) == 0) RetVal=TRUE;
-		else STREAMWriteLine(Tempstr, New);
-                Tempstr=STREAMReadLine(Tempstr, Old);
-            }
-            STREAMClose(Old);
+        }
+        STREAMClose(Old);
 
         if (RetVal==TRUE)
-	{
-	  if (rename(New->Path, Path) != 0) 
-	  {
-		RetVal=FALSE;
-		RaiseError(ERRFLAG_DEBUG, "PasswordFileDelete", "can't rename [%s] to [%s]", New->Path, Path);
-	  }
-	}
-	else unlink(New->Path);
+        {
+            if (rename(New->Path, Path) != 0)
+            {
+                RetVal=FALSE;
+                RaiseError(ERRFLAG_DEBUG, "PasswordFileDelete", "can't rename [%s] to [%s]", New->Path, Path);
+            }
+        }
+        else unlink(New->Path);
 
         STREAMClose(New);
     }
     else
     {
-     if (Old) STREAMClose(Old);
-     else RaiseError(ERRFLAG_DEBUG, "PasswordFileDelete", "failed to open: [%s]", Path);
-     if (New) STREAMClose(New);
-     else RaiseError(ERRFLAG_DEBUG, "PasswordFileDelete", "failed to open: [%s]", Tempstr);
+        if (Old) STREAMClose(Old);
+        else RaiseError(ERRFLAG_DEBUG, "PasswordFileDelete", "failed to open: [%s]", Path);
+        if (New) STREAMClose(New);
+        else RaiseError(ERRFLAG_DEBUG, "PasswordFileDelete", "failed to open: [%s]", Tempstr);
     }
 
-Destroy(Tempstr);
-Destroy(Token);
+    Destroy(Tempstr);
+    Destroy(Token);
 
-return(RetVal);
+    return(RetVal);
 }
 
 
@@ -148,7 +148,7 @@ int PasswordFileAppend(const char *Path, const char *PassType, const char *User,
 
 int PasswordFileAdd(const char *Path, const char *PassType, const char *User, const char *Password, const char *Extra)
 {
-int RetVal;
+    int RetVal;
 
     PasswordFileDelete(Path, User);
     RetVal=PasswordFileAppend(Path, PassType, User, Password, Extra);
@@ -160,19 +160,19 @@ int RetVal;
 
 TPasswordEntry *PasswordFileReadEntry(STREAM *S)
 {
-char *Tempstr=NULL;
-TPasswordEntry *Entry=NULL;
+    char *Tempstr=NULL;
+    TPasswordEntry *Entry=NULL;
 
-        Tempstr=STREAMReadLine(Tempstr, S);
-        if (Tempstr)
-        {
-            StripTrailingWhitespace(Tempstr);
-	    Entry=PasswordFileParse(Tempstr);
-        }
+    Tempstr=STREAMReadLine(Tempstr, S);
+    if (Tempstr)
+    {
+        StripTrailingWhitespace(Tempstr);
+        Entry=PasswordFileParse(Tempstr);
+    }
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 
-return(Entry);
+    return(Entry);
 }
 
 
@@ -188,15 +188,15 @@ TPasswordEntry *PasswordFileGet(const char *Path, const char *User)
     S=STREAMOpen(Path, "rl");
     if (S)
     {
-	Entry=PasswordFileReadEntry(S);
+        Entry=PasswordFileReadEntry(S);
         while (Entry)
         {
-	    if (strcmp(Entry->User, User) == 0) break;
+            if (strcmp(Entry->User, User) == 0) break;
 
-	    //if it matches we won't get here
-	    PasswordEntryDestroy(Entry);
-            Entry=NULL;  	
-	    Entry=PasswordFileReadEntry(S);
+            //if it matches we won't get here
+            PasswordEntryDestroy(Entry);
+            Entry=NULL;
+            Entry=PasswordFileReadEntry(S);
         }
 
         STREAMClose(S);
@@ -219,12 +219,12 @@ static int PasswordFileMatchItem(const char *Data, const char *User, const char 
 
     if (strcmp(Entry->User, User)==0)
     {
-	//for 'plain' password type we're going to compare against the  raw password
+        //for 'plain' password type we're going to compare against the  raw password
         if ( (! StrValid(Entry->Type)) || (strcmp(Entry->Type, "plain")==0) ) ProvidedCred=CopyStr(ProvidedCred, Password);
         else
         {
-	    //for other password types, we salt the password with the salt from the creds file,
-	    //then when we hash it we should get the same password as stored in the creds file
+            //for other password types, we salt the password with the salt from the creds file,
+            //then when we hash it we should get the same password as stored in the creds file
             Tempstr=MCopyStr(Tempstr, Entry->Salt, Password, NULL);
             HashBytes(&ProvidedCred, Entry->Type, Tempstr, StrLen(Tempstr), ENCODE_BASE64);
         }

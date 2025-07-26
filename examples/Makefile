@@ -44,6 +44,7 @@ all:
 	gcc -oLineEdit.exe LineEdit.c $(LIBS)
 	gcc -ocontainer.exe container.c $(LIBS)
 	gcc -oListLimits.exe ListLimits.c $(LIBS)
+	gcc -oipmask.exe ipmask.c $(LIBS)
 
 seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)

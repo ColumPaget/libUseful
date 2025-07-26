@@ -76,9 +76,9 @@ ListNode *List;
 
 if (access("majestic_million.csv",F_OK) !=0) DownloadTestFile();
 
-List=ListCreate();
+//List=ListCreate();
 //Test(List, "LIST");
-ListDestroy(List, Destroy);
+//ListDestroy(List, Destroy);
 
 List=MapCreate(1000, 0);
 Test(List, "MAP");

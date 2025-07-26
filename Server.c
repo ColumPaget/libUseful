@@ -6,7 +6,7 @@
 #include "WebSocket.h"
 #include "StreamAuth.h"
 
-int IPServerNew(int iType, const char *Address, int Port, int Flags)
+int IPServerNewWithSettings(int iType, const char *Address, int Port, TSockSettings *Settings)
 {
     int sock, val, Type;
     int BindFlags=0;
@@ -41,11 +41,11 @@ int IPServerNew(int iType, const char *Address, int Port, int Flags)
         break;
     }
 
-    BindFlags=BIND_CLOEXEC | BIND_LISTEN;
-    if (Flags & SOCK_REUSEPORT) BindFlags |= BIND_REUSEPORT;
-    sock=BindSock(Type, p_Addr, Port, BindFlags);
 
-    if (sock > -1) SockSetOptions(sock, Flags, 0);
+    //BindSock always opens with REUSEADDR, other options must be set explicitly
+    if (Settings) Settings->Flags=BIND_CLOEXEC | BIND_LISTEN;
+    sock=BindSockWithSettings(Type, p_Addr, Port, Settings);
+
 
 #ifdef IP_TRANSPARENT
     if (iType==SOCK_TPROXY)
@@ -62,6 +62,17 @@ int IPServerNew(int iType, const char *Address, int Port, int Flags)
 
 
     return(sock);
+}
+
+
+int IPServerNew(int iType, const char *Address, int Port, int Flags)
+{
+    TSockSettings Settings;
+
+    memset(&Settings, 0, sizeof(TSockSettings));
+    Settings.Flags=Flags;
+
+    return(IPServerNewWithSettings(iType, Address, Port, &Settings));
 }
 
 
@@ -93,12 +104,12 @@ static int TCPServerNew(const char *Host, int Port, int Flags, TSockSettings *Se
 {
     int fd;
 
-    fd=IPServerNew(SOCK_STREAM, Host, Port, Flags);
+    Settings->Flags |= Flags;
+    fd=IPServerNewWithSettings(SOCK_STREAM, Host, Port, Settings);
 
     if (fd > -1)
     {
-        listen(fd, Settings->QueueLen);
-
+	//this option seems to usually be set after bind, so we're putting it here.
 #ifdef TCP_FASTOPEN
         if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", 1);
 #endif

@@ -190,3 +190,80 @@ char *IP6toStr(char *RetStr, struct in6_addr *IP)
 
     return(RetStr);
 }
+
+
+uint32_t IP4GenMask(int len)
+{
+    uint32_t mask=0;
+    int i;
+
+    for (i=0; i < len; i++)
+    {
+//we shift before adding value, because on the
+//last bit we don't want to shift
+        mask=mask << 1;
+        mask |= 1;
+    }
+
+    for (; i < 32; i++)
+    {
+//we shift before adding value, because on the
+//last bit we don't want to shift
+        mask=mask << 1;
+        mask |= 0;
+    }
+
+//IP addresses are held internally in
+//network byte order, so we must convert mask
+//to that
+    mask=htonl(mask);
+    return(mask);
+}
+
+
+
+uint32_t IP4MaskIP(uint32_t IP, int len)
+{
+    uint32_t mask;
+
+    mask=IP4GenMask(len);
+    return(IP & mask);
+}
+
+int IP4MatchesMask(uint32_t IP, uint32_t Compare, int len)
+{
+    uint32_t maskedIP, maskedCompare;
+
+    maskedIP=IP4MaskIP(IP, len);
+    maskedCompare=IP4MaskIP(Compare, len);
+    if (maskedIP == maskedCompare) return(TRUE);
+
+    return(FALSE);
+}
+
+
+int IP4MatchesMaskStr(uint32_t IP, const char *MaskStr)
+{
+    int len;
+    int RetVal=FALSE;
+    char *Tempstr=NULL;
+    const char *ptr;
+
+    ptr=strchr(MaskStr, '/');
+    if (! ptr) return(FALSE);
+
+    Tempstr=CopyStrLen(Tempstr, MaskStr, ptr-MaskStr);
+    len=atoi(ptr+1);
+
+    if (IP4MatchesMask(IP, StrtoIP(Tempstr), len)) RetVal=TRUE;
+
+    Destroy(Tempstr);
+
+    return(RetVal);
+}
+
+
+int IP4StrMatchesMaskStr(const char *IP, const char *MaskStr)
+{
+    return(IP4MatchesMaskStr(StrtoIP(IP), MaskStr));
+}

@@ -182,7 +182,7 @@ typedef struct
 //In the 'head' item 'Hits' is used to hold the count of items in the list
     unsigned long Hits;
     unsigned long Max;
-		LIST_ITEM_DESTROY_FUNC Destroyer;
+    LIST_ITEM_DESTROY_FUNC Destroyer;
 } ListStats;
 
 
@@ -216,12 +216,14 @@ typedef struct lnode
 //if L isn't NULL then return L->Head, it's fine if L->Head is null
 #define ListGetHead(Node) ((Node) ? MapChainGetHead(Node) : NULL)
 
+//this is the main function for traversing lists and maps
+#define ListGetNext(Node) ((Node) ? MapGetNext(Node) : NULL)
+
+//these functions return listnode metadata
 #define ListNodeGetHits(node) ((node)->Stats ? (node)->Stats->Hits : 0)
 #define ListNodeGetTime(node) ((node)->Stats ? (node)->Stats->Time : 0)
 
 
-//#define ListGetNext(Node) (Node ? (((Node)->Head->Flags & (LIST_FLAG_MAP|LIST_FLAG_MAP_CHAIN)) ? MapGetNext(Node) : (Node)->Next) : NULL)
-#define ListGetNext(Node) ((Node) ? MapGetNext(Node) : NULL)
 
 //listDeleteNode handles ListFindItem returning NULL, so no problems here
 #define ListDeleteItem(list, item) (ListDeleteNode(ListFindItem((list), (item))))

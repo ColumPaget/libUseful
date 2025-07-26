@@ -46,7 +46,7 @@ static void OpenSSLRaiseError(STREAM *S)
     result=ERR_get_error();
     ptr=ERR_error_string(result,NULL);
     STREAMSetValue(S, "SSL:Error", ptr);
-    RaiseError(0, "SSL:ERROR %s", ptr);
+    RaiseError(0, "OpenSSLRaiseError", "SSL:ERROR %s", ptr);
 }
 
 
@@ -66,36 +66,35 @@ static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(STREAM *S, SSL_CTX *ctx, Li
             {
                 if (strcasecmp(Curr->Tag,"SSL:CertFile")==0)
                 {
-                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL: Certificate File '%s' not readable", p_Value);
+                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Certificate File '%s' not readable", p_Value);
                     SSL_CTX_use_certificate_chain_file(ctx, p_Value);
                 }
                 else if (strcasecmp(Curr->Tag,"SSL:KeyFile")==0)
                 {
-                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL: Private Key File '%s' not readable", p_Value);
+                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Private Key File '%s' not readable", p_Value);
                     SSL_CTX_use_PrivateKey_file(ctx, p_Value, SSL_FILETYPE_PEM);
                 }
                 else if (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0)
                 {
-                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL: Certificate Verify Directory '%s' not readable", p_Value);
+                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Certificate Verify Directory '%s' not readable", p_Value);
                     *VerifyPath=CopyStr(*VerifyPath,(char *) Curr->Item);
                 }
                 else if (strncasecmp(Curr->Tag,"SSL:VerifyCertFile",19)==0)
                 {
-                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL: Certificate Verify File '%s' not readable", p_Value);
+                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Certificate Verify File '%s' not readable", p_Value);
                     *VerifyFile=CopyStr(*VerifyFile, p_Value);
                 }
                 else if (strncasecmp(Curr->Tag,"SSL:VerifyDir",18)==0)
                 {
-                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL: Certificate Verify Directory '%s' not readable", p_Value);
+                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Certificate Verify Directory '%s' not readable", p_Value);
                     *VerifyPath=CopyStr(*VerifyPath, p_Value);
                 }
                 else if (strncasecmp(Curr->Tag,"SSL:VerifyFile",19)==0)
                 {
-                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL: Certificate Verify File '%s' not readable", p_Value);
+                    if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Certificate Verify File '%s' not readable", p_Value);
                     *VerifyFile=CopyStr(*VerifyFile, p_Value);
                 }
             }
-            else RaiseError(0, "SSL: value %s exits, but is set blank", Curr->Tag);
         }
 
         Curr=ListGetNext(Curr);
@@ -275,7 +274,9 @@ static int INTERNAL_SSL_INIT()
     Tempstr=MCopyStr(Tempstr,"openssl:",SSLeay_version(SSLEAY_VERSION)," : ", SSLeay_version(SSLEAY_BUILT_ON), " : ",SSLeay_version(SSLEAY_CFLAGS),NULL);
     LibUsefulSetValue("SSL:Library", Tempstr);
     if (! StrValid(LibUsefulGetValue("SSL:Level"))) LibUsefulSetValue("SSL:Level", "tls");
+
     DestroyString(Tempstr);
+
     InitDone=TRUE;
     return(TRUE);
 }
@@ -686,7 +687,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
         //  SSL_load_ciphers();
         Method=SSLv23_client_method();
         ctx=SSL_CTX_new(Method);
-        if (! ctx) RaiseError(0, "Failed to create SSL_CTX: %s\n",ERR_error_string(ERR_get_error(), NULL));
+        if (! ctx) RaiseError(0, "DoSSLClientNegotiation", "Failed to create SSL_CTX: %s\n",ERR_error_string(ERR_get_error(), NULL));
         else
         {
             STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(S,ctx);

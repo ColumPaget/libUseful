@@ -113,6 +113,9 @@ STREAM *STREAMFromSock(int sock, int Type, const char *Peer, const char *DestIP,
 //port to bind to (not connect to, bind as in a server or the local end of an outgoing connection)
 int BindSock(int Type, const char *Address, int Port, int Flags);
 
+//Bind a scoket, with a TSockSettings structure that supports values like QueueLen, TTL, ToS and Mark
+int BindSockWithSettings(int Type, const char *Address, int Port, TSockSettings *Settings);
+
 //return the primary IP bound to an interface (e.g. 127.0.0.1 for lo). Currently only returns IP4 addresses
 const char *GetInterfaceIP(const char *Interface);
 

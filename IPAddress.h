@@ -42,6 +42,16 @@ char *IP4toStr(char *RetStr, unsigned long IP);
 
 char *IP6toStr(char *RetStr, struct in6_addr *IP);
 
+uint32_t IP4GenMask(int len);
+
+uint32_t IP4MaskIP(uint32_t IP, int len);
+
+int IP4MatchesMask(uint32_t IP, uint32_t Compare, int len);
+
+int IP4MatchesMaskStr(uint32_t IP, const char *MaskStr);
+
+int IP4StrMatchesMaskStr(const char *IP, const char *MaskStr);
+
 
 #ifdef __cplusplus
 }

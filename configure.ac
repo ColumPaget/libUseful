@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.58], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.59], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag

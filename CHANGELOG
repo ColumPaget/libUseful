@@ -1,3 +1,8 @@
+v5.59 (2025-07-26) 
+  * Honor ttl and tos settings for server sockets
+  * Added IP4Mask/IP4MatchesMask etc functions in IPAddress.c
+  * Fix some openssl logging issues
+
 v5.58 (2025-07-02)
   * Fix unguarded PR_MDWE_NO_INHERIT in Process.c. Not all linux kernels/headers have this flag.
   * Added TERM_NEWLINE flag so TerminalReadPrompt can go to a newline after entry if desired

@@ -20,129 +20,6 @@
 #endif
 
 
-
-static void SocketParseConfigFlags(const char *Config, TSockSettings *Settings)
-{
-    const char *ptr;
-
-    for (ptr=Config; *ptr !='\0'; ptr++)
-    {
-        if (isspace(*ptr))
-        {
-            ptr++;
-            break;
-        }
-
-        switch (*ptr)
-        {
-        case 'A':
-            Settings->Flags |= SOCK_TLS_AUTO;
-            break;
-        case 'B':
-            Settings->Flags |= SOCK_BROADCAST;
-            break;
-        case 'E':
-            Settings->Flags |= CONNECT_ERROR;
-            break;
-        case 'f':
-            Settings->Flags |= SOCK_TCP_FULL_FLUSH;
-            break;
-        case 'F':
-            Settings->Flags |= SOCK_TCP_FASTOPEN;
-            break;
-        case 'k':
-            Settings->Flags |= SOCK_NOKEEPALIVE;
-            break;
-        case 'n':
-            Settings->Flags |= CONNECT_NONBLOCK;
-            break;
-        case 'N':
-            Settings->Flags |= SOCK_TCP_NODELAY;
-            break;
-        case 'P':
-            Settings->Flags |= SOCK_REUSEPORT;
-            break;
-        case 'q':
-            Settings->Flags |= SOCK_TCP_QUICKACK;
-            break;
-        case 'R':
-            Settings->Flags |= SOCK_DONTROUTE;
-            break;
-        }
-    }
-
-}
-
-
-
-int SocketParseConfig(const char *Config, TSockSettings *Settings)
-{
-    const char *ptr;
-    char *Name=NULL, *Value=NULL;
-
-    Settings->Flags=0;
-    Settings->QueueLen=128; //this is only used by server sockets
-    Settings->Perms=-1;
-    ptr=LibUsefulGetValue("TCP:Keepalives");
-    if ( StrValid(ptr) &&  (! strtobool(ptr)) ) Settings->Flags |= SOCK_NOKEEPALIVE;
-
-
-    if (! StrValid(Config)) return(0);
-
-    ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
-
-    //if first item has no value, assume it is a list of setting flags
-    //rather than a name=value pair setting
-    if (! StrValid(Value))
-    {
-        SocketParseConfigFlags(Name, Settings);
-        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
-    }
-
-    while (ptr)
-    {
-        if (CompareStrNoCase(Name, "listen")==0) Settings->QueueLen=atoi(Value);
-        else if (CompareStrNoCase(Name, "ttl")==0) Settings->TTL=atoi(Value);
-        else if (CompareStrNoCase(Name, "tos")==0) Settings->ToS=atoi(Value);
-        else if (CompareStrNoCase(Name, "mark")==0) Settings->Mark=atoi(Value);
-        else if (CompareStrNoCase(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        else if (CompareStrNoCase(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        else if (CompareStrNoCase(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
-        else if (CompareStrNoCase(Name,"keepalive")==0)
-        {
-            if (StrValid(Value) && (strncasecmp(Value, "n",1)==0)) Settings->Flags |= SOCK_NOKEEPALIVE;
-        }
-        else if (CompareStrNoCase(Name,"timeout")==0)
-        {
-            Settings->Timeout=atoi(Value);
-        }
-
-        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
-    }
-
-    Destroy(Name);
-    Destroy(Value);
-
-    return(Settings->Flags);
-}
-
-
-
-int IsSockConnected(int sock)
-{
-    struct sockaddr_in sa;
-    socklen_t salen;
-    int result;
-
-    if (sock==-1) return(FALSE);
-    salen=sizeof(sa);
-    result=getpeername(sock,(struct sockaddr *) &sa, &salen);
-    if (result==0) return(TRUE);
-    if (errno==ENOTCONN) return(SOCK_CONNECTING);
-    return(FALSE);
-}
-
-
 int SockSetOpt(int sock, int Opt, const char *Name, int OnOrOff)
 {
     int val=OnOrOff, level;
@@ -241,6 +118,167 @@ void SockSetOptions(int sock, int SetFlags, int UnsetFlags)
 
 
 
+static void SocketParseConfigFlags(const char *Config, TSockSettings *Settings)
+{
+    const char *ptr;
+
+    for (ptr=Config; *ptr !='\0'; ptr++)
+    {
+        if (isspace(*ptr))
+        {
+            ptr++;
+            break;
+        }
+
+        switch (*ptr)
+        {
+        case 'A':
+            Settings->Flags |= SOCK_TLS_AUTO;
+            break;
+        case 'B':
+            Settings->Flags |= SOCK_BROADCAST;
+            break;
+        case 'E':
+            Settings->Flags |= CONNECT_ERROR;
+            break;
+        case 'f':
+            Settings->Flags |= SOCK_TCP_FULL_FLUSH;
+            break;
+        case 'F':
+            Settings->Flags |= SOCK_TCP_FASTOPEN;
+            break;
+        case 'k':
+            Settings->Flags |= SOCK_NOKEEPALIVE;
+            break;
+        case 'n':
+            Settings->Flags |= CONNECT_NONBLOCK;
+            break;
+        case 'N':
+            Settings->Flags |= SOCK_TCP_NODELAY;
+            break;
+        case 'P':
+            Settings->Flags |= SOCK_REUSEPORT;
+            break;
+        case 'q':
+            Settings->Flags |= SOCK_TCP_QUICKACK;
+            break;
+        case 'R':
+            Settings->Flags |= SOCK_DONTROUTE;
+            break;
+        }
+    }
+
+}
+
+
+
+int SocketParseConfig(const char *Config, TSockSettings *Settings)
+{
+    const char *ptr;
+    char *Name=NULL, *Value=NULL;
+
+    //always clear down config before parsing
+    memset(Settings, 0, sizeof(TSockSettings));
+
+    Settings->Flags=0;
+    Settings->QueueLen=128; //this is only used by server sockets
+    Settings->Perms=-1;
+    ptr=LibUsefulGetValue("TCP:Keepalives");
+    if ( StrValid(ptr) &&  (! strtobool(ptr)) ) Settings->Flags |= SOCK_NOKEEPALIVE;
+
+
+    if (! StrValid(Config)) return(0);
+
+    ptr=GetNameValuePair(Config, "\\S", "=", &Name, &Value);
+
+    //if first item has no value, assume it is a list of setting flags
+    //rather than a name=value pair setting
+    if (! StrValid(Value))
+    {
+        SocketParseConfigFlags(Name, Settings);
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    }
+
+    while (ptr)
+    {
+        if (CompareStrNoCase(Name, "listen")==0) Settings->QueueLen=atoi(Value);
+        else if (CompareStrNoCase(Name, "ttl")==0) Settings->TTL=atoi(Value);
+        else if (CompareStrNoCase(Name, "tos")==0) Settings->ToS=atoi(Value);
+        else if (CompareStrNoCase(Name, "mark")==0) Settings->Mark=atoi(Value);
+        else if (CompareStrNoCase(Name, "mode")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (CompareStrNoCase(Name, "perms")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (CompareStrNoCase(Name, "permissions")==0) Settings->Perms=FileSystemParsePermissions(Value);
+        else if (CompareStrNoCase(Name,"keepalive")==0)
+        {
+            if (StrValid(Value) && (strncasecmp(Value, "n",1)==0)) Settings->Flags |= SOCK_NOKEEPALIVE;
+        }
+        else if (CompareStrNoCase(Name,"timeout")==0)
+        {
+            Settings->Timeout=atoi(Value);
+        }
+        else if (CompareStrNoCase(Name,"local")==0)
+	{
+		if ( (! StrValid(Value)) ||  strtobool(Value) ) 
+		{
+			Settings->Flags |= SOCK_DONTROUTE;
+			Settings->TTL=1;
+		}
+	}
+
+        ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
+    }
+
+    Destroy(Name);
+    Destroy(Value);
+
+    return(Settings->Flags);
+}
+
+
+
+void SocketApplyConfig(int sock, TSockSettings *Settings)
+{
+    if (Settings)
+    {
+        SockSetOptions(sock, Settings->Flags, 0);
+
+//set some options that are values rather than flags, SockSetOptions (called within IPReconnect) only handles flags
+
+// IP_TTL lets us set the time-to-live of packets leaving a socket
+#ifdef IP_TTL
+        if (Settings->TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings->TTL), sizeof(int));
+#endif
+
+// IP_TTL lets us set the type-of-service of packets leaving a socket
+#ifdef IP_TOS
+        if (Settings->ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings->ToS), sizeof(int));
+#endif
+
+// IP_TTL lets us mark packets leaving a socket with an ID value
+#ifdef SO_MARK
+        if (Settings->Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings->Mark), sizeof(int));
+#endif
+    }
+
+}
+
+
+int IsSockConnected(int sock)
+{
+    struct sockaddr_in sa;
+    socklen_t salen;
+    int result;
+
+    if (sock==-1) return(FALSE);
+    salen=sizeof(sa);
+    result=getpeername(sock,(struct sockaddr *) &sa, &salen);
+    if (result==0) return(TRUE);
+    if (errno==ENOTCONN) return(SOCK_CONNECTING);
+    return(FALSE);
+}
+
+
+
 
 int IP6SockAddrCreate(struct sockaddr **ret_sa, const char *Addr, int Port)
 {
@@ -310,7 +348,8 @@ int SockAddrCreate(struct sockaddr **ret_sa, const char *Host, int Port)
 
 
 
-int BindSock(int Type, const char *Address, int Port, int Flags)
+//Create and bind a socket. Beware that Settings could be NULL
+int BindSockWithSettings(int Type, const char *Address, int Port, TSockSettings *Settings)
 {
     struct sockaddr *sa;
     socklen_t salen;
@@ -319,7 +358,8 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
 
     salen=SockAddrCreate(&sa, Address, Port);
     if (salen==0) return(-1);
-    if (Flags & BIND_RAW)
+
+    if (Settings && (Settings->Flags & BIND_RAW))
     {
         if (Type==SOCK_STREAM) fd=socket(sa->sa_family, SOCK_RAW, IPPROTO_TCP);
         else if (Type==SOCK_DGRAM) fd=socket(sa->sa_family, SOCK_RAW, IPPROTO_UDP);
@@ -329,15 +369,12 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
 
     if (fd > -1)
     {
-        //REUSEADDR and REUSEPORT must be set BEFORE bind
+        //We always REUSEADDR. It, and many other Socket options, must be set before bind
         result=1;
 #ifdef SO_REUSEADDR
         setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &result, sizeof(result));
 #endif
-
-#ifdef SO_REUSEPORT
-        if (Flags & BIND_REUSEPORT) setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &result, sizeof(result));
-#endif
+        SocketApplyConfig(fd, Settings);
 
         result=bind(fd, sa, salen);
     }
@@ -350,13 +387,29 @@ int BindSock(int Type, const char *Address, int Port, int Flags)
         return(-1);
     }
 
-    //No reason to pass server/listen fdets across an exec
-    if (Flags & BIND_CLOEXEC) fcntl(fd, F_SETFD, FD_CLOEXEC);
+    if (Settings)
+    {
+        //No reason to pass server/listen fdets across an exec
+        if (Settings->Flags & BIND_CLOEXEC) fcntl(fd, F_SETFD, FD_CLOEXEC);
 
-    if (Flags & BIND_LISTEN) result=listen(fd, 10);
-
+        if (Settings->Flags & BIND_LISTEN)
+        {
+            if (Settings->QueueLen > 0) listen(fd, Settings->QueueLen);
+            else result=listen(fd, 20);
+        }
+    }
 
     return(fd);
+}
+
+
+int BindSock(int Type, const char *Address, int Port, int Flags)
+{
+    TSockSettings Settings;
+
+    memset(&Settings, 0, sizeof(TSockSettings));
+    Settings.Flags=Flags;
+    return(BindSockWithSettings(Type, Address, Port, &Settings));
 }
 
 
@@ -792,20 +845,13 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
 
 
     if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
+
     if ((CompareStrNoCase(Proto,"udp")==0) || (CompareStrNoCase(Proto,"bcast")==0))
     {
-        sock=BindSock(SOCK_DGRAM, p_LocalHost, 0, 0);
         if (CompareStrNoCase(Proto,"bcast")==0) Settings->Flags |= SOCK_BROADCAST;
+        sock=BindSockWithSettings(SOCK_DGRAM, p_LocalHost, 0, Settings);
     }
-    else sock=BindSock(SOCK_STREAM, p_LocalHost, 0, 0);
-
-//set some options that are values rather than flags, SockSetOptions (called within IPReconnect) only handles flags
-    if (Settings->TTL > 0) setsockopt(sock, IPPROTO_IP, IP_TTL, &(Settings->TTL), sizeof(int));
-    if (Settings->ToS > 0) setsockopt(sock, IPPROTO_IP, IP_TOS, &(Settings->ToS), sizeof(int));
-
-#ifdef SO_MARK
-    if (Settings->Mark > 0) setsockopt(sock, SOL_SOCKET, SO_MARK, &(Settings->Mark), sizeof(int));
-#endif
+    else sock=BindSockWithSettings(SOCK_STREAM, p_LocalHost, 0, Settings);
 
     //if a timeout is specified at connection time, then we apply it to the connection step
     //if it's added later with STREAMAddTimeout, then it will only apply to read
@@ -829,7 +875,6 @@ int NetConnectWithAttributes(const char *Proto, const char *LocalHost, const cha
 {
     TSockSettings Settings;
 
-    memset(&Settings, 0, sizeof(TSockSettings));
     SocketParseConfig(Config, &Settings);
 
     return(NetConnectWithSettings(Proto, LocalHost, Host, Port, &Settings));
@@ -952,7 +997,6 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
     char *Name=NULL, *Value=NULL;
     const char *ptr;
 
-    memset(&Settings, 0, sizeof(TSockSettings));
     SocketParseConfig(Config, &Settings);
 
     ptr=GetToken(Config, "\\S", &Value, 0); //throw away flags that will already have been parsed by SocketParseConfig

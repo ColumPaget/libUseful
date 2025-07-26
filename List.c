@@ -420,7 +420,10 @@ ListNode *ListInsertTypedItem(ListNode *InsertNode, uint16_t Type, const char *N
     NewNode=(ListNode *) calloc(1,sizeof(ListNode));
     ListThreadNode(InsertNode, NewNode);
     NewNode->Item=Item;
-    NewNode->ItemType=Type;
+
+    if (Head->Flags & LIST_FLAG_DELETE) NewNode->ItemType=StrLen(Name);
+    else NewNode->ItemType=Type;
+
     if (StrValid(Name)) NewNode->Tag=CopyStr(NewNode->Tag,Name);
 
     if (Head->Flags & LIST_FLAG_STATS)
@@ -455,12 +458,14 @@ ListNode *ListAddTypedItem(ListNode *ListStart, uint16_t Type, const char *Name,
 #define LIST_FIND_LESSER  1
 #define LIST_FIND_GREATER 2
 
-static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name, int FindType)
+static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const char *Name, int NameLen, int FindType)
 {
     int result;
 
     if (Prev && (Prev != Head) && Prev->Tag)
     {
+        if ( (Head->Flags & LIST_FLAG_DELETE) && (NameLen != Prev->ItemType) ) return(FALSE);
+	
         if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag,Name);
         else result=strcasecmp(Prev->Tag,Name);
 
@@ -479,18 +484,20 @@ static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const 
 ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 {
     ListNode *Prev=NULL, *Curr, *Next, *Head;
-    int result=0;
-    unsigned long long val;
+    int result=0, len;
+    unsigned long long val; 
 
     if (! Root) return(Root);
     if (! StrValid(Name)) return(Root);
+
+    len=StrLen(Name);
 
     if (Root->Flags & LIST_FLAG_MAP_HEAD) Head=MapGetChain(Root, Name);
     else Head=Root;
 
     //Check last item in list, it it's a match or we're an ordered list and it's lesser,
     //then jump to it
-    if (ListConsiderInsertPoint(Head, Head->Prev, Name, LIST_FIND_LESSER)) return(Head->Prev);
+    if (ListConsiderInsertPoint(Head, Head->Prev, Name, len, LIST_FIND_LESSER)) return(Head->Prev);
 
     Prev=Head;
     Curr=Head->Next;
@@ -499,7 +506,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
     //if it's a match we can jump there, if an ordered list and it's less, we might as well jump to it too
     if ((Root->Flags & LIST_FLAG_CACHE) && Head->Side && Head->Side->Tag)
     {
-        if (ListConsiderInsertPoint(Head, Head->Side, Name, LIST_FIND_LESSER))
+        if (ListConsiderInsertPoint(Head, Head->Side, Name, len, LIST_FIND_LESSER))
         {
             Curr=Head->Side;
             //we will actually return Prev rather than Curr, because of how the
@@ -518,7 +525,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
         {
             //if the current item is a match, or we are in an ordered list and it's
             //greater, then insert between it and Prev
-            if (ListConsiderInsertPoint(Head, Curr, Name, LIST_FIND_GREATER))
+            if (ListConsiderInsertPoint(Head, Curr, Name, len, LIST_FIND_GREATER))
             {
                 //as we are looking for an insert point, we'd normally return 'Prev'
                 //but if Prev is a List Head or Chain head, return Curr instead
@@ -551,7 +558,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
 {
     ListNode *Node, *Head;
-    int result;
+    int result, len;
 
     if (! Root) return(NULL);
     Node=ListFindNamedItemInsert(Root, Name);
@@ -567,6 +574,7 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
     //insert chain
 
+    len=StrLen(Name);
 
     if (Head)
     {
@@ -575,13 +583,14 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
         while (Node)
         {
             if (Node->Prev==Head) break;
-            if (! ListConsiderInsertPoint(Head, Node->Prev, Name, 0)) break;
+            if (! ListConsiderInsertPoint(Head, Node->Prev, Name, len, 0)) break;
             Node=Node->Prev;
         }
 
         while (Node)
         {
-            if (Head->Flags & LIST_FLAG_CASE) result=CompareStr(Node->Tag,Name);
+            if ( (Head->Flags & LIST_FLAG_DELETE) && (len != Node->ItemType) ) result=-1;
+            else if (Head->Flags & LIST_FLAG_CASE) result=CompareStr(Node->Tag,Name);
             else result=CompareStrNoCase(Node->Tag,Name);
 
             if (result==0)
@@ -647,13 +656,22 @@ ListNode *InsertItemIntoSortedList(ListNode *List, void *Item, int (*LessThanFun
     return(ListInsertItem(Prev,Item));
 }
 
-//list get next is just a macro that either calls this for maps, or returns Node->next
+//this function returns the next item in a chain. You are probablly looking for MapGetNext below 
+//If this is called on the top node of a map it returns the 'top' node of the first chain in the map
+//otherwise it returns the next node in the chain. Thus, starting from any place in a map, list or a sub-chain
+//we can traverse that chain/list
 ListNode *MapChainGetNext(ListNode *CurrItem)
 {
     if (! CurrItem) return(NULL);
 
     if (CurrItem->Next)
     {
+      if (CurrItem->Next->Next)
+      {
+            __builtin_prefetch (CurrItem->Next->Next, 0, 0);
+            if (CurrItem->Next->Next->Tag) __builtin_prefetch (CurrItem->Next->Next->Tag, 0, 0);
+      }
+
         return(CurrItem->Next);
     }
 
@@ -667,6 +685,10 @@ ListNode *MapChainGetNext(ListNode *CurrItem)
 }
 
 
+//this is the function that actually traverses maps and lists. It handles the situation
+//of traversing a chain in a map, and needing to traverse the NEXT chain when we encounter
+//the end of the current one.
+//list get next is just a macro that either calls this for maps, or returns Node->next
 ListNode *MapGetNext(ListNode *CurrItem)
 {
     ListNode *SubNode, *ChainHead;
