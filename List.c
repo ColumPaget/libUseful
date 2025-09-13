@@ -567,15 +567,13 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
     if (Node == Head) Node=Node->Next;
 
 
-    //item must have a name, and can't be the 'head' of the list
-    //if ((! Node) || (Node==Node->Head) || (! Node->Tag)) return(NULL);
-    if ((! Node) || (! Node->Tag)) return(NULL);
+		//beware, we might get retured a null item in lists where some items have null names
+    if (! Node) return(NULL);
 
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
     //insert chain
 
     len=StrLen(Name);
-
     if (Head)
     {
         //rewind, as it's possible that we've found a node mid way through a load of

@@ -1,3 +1,7 @@
+v5.60 (2025-09-13)
+  * keep searching for named item in list, even after encountering items with null names
+  * hopefully compile against old versions of openssl/libressl that lack X509_get0_notBefore
+
 v5.59 (2025-07-26) 
   * Honor ttl and tos settings for server sockets
   * Added IP4Mask/IP4MatchesMask etc functions in IPAddress.c

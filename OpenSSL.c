@@ -330,6 +330,8 @@ char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
 }
 
 
+
+
 int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 {
     int RetVal=FALSE;
@@ -339,6 +341,7 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 
 #ifdef HAVE_LIBSSL
     X509 *cert=NULL;
+    const ASN1_TIME *Time;
     SSL *ssl;
 
     ptr=STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
@@ -354,12 +357,35 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
         Value=OpenSSLCertDetailsGetCommonName(Value, ptr);
         if (StrValid(Value)) STREAMSetValue(S, "SSL:CertificateCommonName", Value);
 
-        //values out of X509_get_notBefore etc are returned as internal pointers and must not be freed
-        Value=OpenSSLConvertTime(Value, X509_get0_notBefore(cert));
+
+    //values out of X509_get_notBefore etc are returned as internal pointers and must not be freed
+        #ifdef HAVE_X509_GET0_NOTBEFORE
+        Time=X509_get0_notBefore(cert);
+        #else
+        Time=X509_get_notBefore(cert);
+        #endif
+
+        if (Time)
+        {
+        Value=OpenSSLConvertTime(Value, Time);
         STREAMSetValue(S,"SSL:CertificateNotBefore", Value);
-        Value=OpenSSLConvertTime(Value, X509_get0_notAfter(cert));
+        }
+
+
+        #ifdef HAVE_X509_GET0_NOTAFTER
+        Time=X509_get0_notAfter(cert);
+        #else
+        Time=X509_get_notAfter(cert);
+        #endif
+
+        if (Time)
+        {
+        Value=OpenSSLConvertTime(Value, Time);
         STREAMSetValue(S,"SSL:CertificateNotAfter", Value);
-        Value=OpenSSLGetCertFingerprint(Value, cert);
+        }
+
+
+
         STREAMSetValue(S,"SSL:CertificateFingerprint", Value);
 
 #ifdef HAVE_X509_CHECK_HOST
