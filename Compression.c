@@ -178,7 +178,7 @@ TProcessingModule *LU_DeCompressionModuleCreate(const char *Name, const char *Ar
 
 #else
         Mod=PipeCommandProcessorCreate(Name, Args);
-        Mod->Args=MCopyStr(Mod->Args,"Command='bzip2 -d --stdout -' ", Args, NULL);
+        Mod->Args=MCopyStr(Mod->Args,"Command='gzip -d --stdout -' ", Args, NULL);
         Mod->Flags |= DPM_COMPRESS;
 #endif
     }
