@@ -1,3 +1,10 @@
+v5.61
+  * stop trying to use external bzip to decode gzip files when libgzip not compiled in
+  * add more unicode symbols
+  * Add 'ListRotate' function
+  * Use ip-lookup.conf config file rather than hard-coded list of sites to get external ip
+  * add .gitignore file
+
 v5.60 (2025-09-13)
   * keep searching for named item in list, even after encountering items with null names
   * hopefully compile against old versions of openssl/libressl that lack X509_get0_notBefore

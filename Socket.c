@@ -15,8 +15,10 @@
 #include <unistd.h>
 
 
-#ifdef linux
-#include <linux/netfilter_ipv4.h>
+#ifdef __linux__
+#ifdef HAVE_LINUX_NETFILTER_IPV4_H
+#include <linux/netfilter_ipv4.h> //needed for SO_ORIGINAL_DEST
+#endif
 #endif
 
 

@@ -899,3 +899,19 @@ void *ListDeleteNode(ListNode *Node)
     return(Contents);
 }
 
+
+void ListRotate(ListNode *List, int RotateCount)
+{
+ListNode *Curr;
+int i;
+
+for (i=0; i < RotateCount; i++)
+{
+Curr=ListGetNext(List);
+if (! Curr) break;
+ListUnThreadNode(Curr);
+ListThreadNode(ListGetLast(List), Curr);
+}
+
+
+}

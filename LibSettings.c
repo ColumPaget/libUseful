@@ -99,6 +99,25 @@ int LibUsefulDebugActive()
 }
 
 
+STREAM *LibUsefulConfigFileOpen(const char *FName, const char *EnvVarName, const char *LibUsefulVar)
+{
+    char *Tempstr=NULL;
+    STREAM *S=NULL;
+
+    if (StrValid(LibUsefulVar)) Tempstr=CopyStr(Tempstr, LibUsefulGetValue(LibUsefulVar));
+    if ( (! StrValid(Tempstr)) && (StrValid(EnvVarName)) ) Tempstr=CopyStr(Tempstr, getenv(EnvVarName));
+
+    if (! StrValid(Tempstr)) Tempstr=MCopyStr(Tempstr, SYSCONFDIR,  "/", FName, NULL);
+    if (access(Tempstr, R_OK) !=0) Tempstr=FindFileInPrefixSubDirectory(Tempstr, getenv("PATH"), "/etc/", FName);
+
+    S=STREAMOpen(Tempstr, "r");
+
+    Destroy(Tempstr);
+    return(S);
+}
+
+
+
 void LibUsefulAtExit()
 {
 #ifdef HAVE_MUNLOCKALL

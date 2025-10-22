@@ -49,32 +49,40 @@ char *ExtractFromWebpage(char *RetStr, const char *URL, const char *ExtractStr, 
 
 char *GetExternalIP(char *RetStr)
 {
-    const char *Services[]= {"https://api.my-ip.io/ip.txt", "http://api.ipify.org", "http://myexternalip.com/raw", "http://checkip.dyndns.org,*Current IP Address: $(extract_item)</body>", "https://ip.seeip.org/", "https://ipapi.co/ip", "https://ifconfig.me/ip", "http://extreme-ip-lookup.com/,\"query\" : \"$(extract_item)\"", "https://duckduckgo.com/?q=what%27s+my+ip&ia=answer,*\"Answer\":\"Your IP address is $(extract_item) ","https://www.ionos.co.uk/tools/ip-address,*Your IP is:</h2><div class=\"text-md-center text-lg-center heading-1 ml-md-0 ml-lg-0 mw-lg-10 mw-md-10 mx-md-auto mx-lg-auto pt-12\">$(extract_item)<", "http://my-ip-is.appspot.com/plain", NULL};
-
-    unsigned int i, max, start;
+    ListNode *Services, *Curr;
     char *Token=NULL;
     const char *ptr;
+    STREAM *S;
 
     RetStr=CopyStr(RetStr,"");
-
-    //count items in array. avoid sizeof as it's not consistent c/c++
-    for (max=0; Services[max] !=NULL; max++);
+    Services=ListCreate();
+    S=LibUsefulConfigFileOpen("ip-lookup.conf", "LIBUSEFUL_IPLOOKUP_FILE", "IPLookupFile");
+    if (S)
+    {
+      Token=STREAMReadLine(Token, S);
+      while (Token)
+      {
+      if (StrValid(Token)) ListAddItem(Services, CopyStr(NULL, Token));
+      Token=STREAMReadLine(Token, S);
+      }
+      STREAMClose(S);
+    }
 
     //pick a random start position, and to through all servers from that start
-    start=(time(NULL) + rand()) % max;
-    for (i=start; (i < max) && (! IsIPAddress(RetStr)); i++)
+    ListRotate(Services, (time(NULL) + rand()) % ListSize(Services));
+
+    Curr=ListGetNext(Services);
+    while (Curr)
     {
-        ptr=GetToken(Services[i], ",", &Token, 0);
+        ptr=GetToken(Curr->Item, ",", &Token, 0);
         RetStr=ExtractFromWebpage(RetStr, Token, ptr, 4);
+        if (StrValid(RetStr)) break;
+        Curr=ListGetNext(Curr);
     }
 
-    for (i=0; (i < start) && (! IsIPAddress(RetStr)); i++)
-    {
-        ptr=GetToken(Services[i], ",", &Token, 0);
-        RetStr=ExtractFromWebpage(RetStr, Token, ptr, 4);
-    }
-
+    ListDestroy(Services, Destroy);
     Destroy(Token);
+
     return(RetStr);
 }
 
@@ -82,7 +90,7 @@ char *GetExternalIP(char *RetStr)
 
 #define IPInfo_API_KEY "1261fcbf647ea02c165aa3bfa66810f0be453d8a1c2e7f653c0666d4e7e205f0"
 
-int IPInfoDBGeoLocate(char *IP, ListNode *Vars)
+static int IPInfoDBGeoLocate(const char *IP, ListNode *Vars)
 {
     STREAM *S=NULL;
     char *TagType=NULL, *TagData=NULL, *Tempstr=NULL, *Token=NULL;
@@ -136,6 +144,7 @@ int IPGeoLocate(const char *IP, ListNode *Vars)
     int result=FALSE;
 
     if (! StrValid(IP)) return(FALSE);
+		if (IPInfoDBGeoLocate(IP, Vars)) return(TRUE);
 
     if (! IsIPAddress(IP)) Token=CopyStr(Token, LookupHostIP(IP));
     else Token=CopyStr(Token,IP);

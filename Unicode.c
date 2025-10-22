@@ -1,6 +1,7 @@
 #include "Unicode.h"
 #include "FileSystem.h"
 #include "StringList.h"
+#include "LibSettings.h"
 
 static int GlobalUnicodeLevel=0;
 static ListNode *UnicodeNamesCache=NULL;
@@ -181,23 +182,6 @@ int UnicodeStrFromCache(char **RetStr, const char *Name)
     return(FALSE);
 }
 
-static STREAM *UnicodeNamesFileOpen(const char *FName, const char *EnvVarName, const char *LibUsefulVar)
-{
-    char *Tempstr=NULL;
-    STREAM *S=NULL;
-
-    if (StrValid(LibUsefulVar)) Tempstr=CopyStr(Tempstr, LibUsefulGetValue(LibUsefulVar));
-    if ( (! StrValid(Tempstr)) && (StrValid(EnvVarName)) ) Tempstr=CopyStr(Tempstr, getenv(EnvVarName));
-
-    if (! StrValid(Tempstr)) Tempstr=MCopyStr(Tempstr, SYSCONFDIR,  "/", FName, NULL);
-    if (access(Tempstr, R_OK) !=0) Tempstr=FindFileInPrefixSubDirectory(Tempstr, getenv("PATH"), "/etc/", FName);
-
-    S=STREAMOpen(Tempstr, "r");
-
-    Destroy(Tempstr);
-    return(S);
-}
-
 
 int UnicodeNamesInCache(const char *Names)
 {
@@ -231,7 +215,7 @@ int UnicodeNameCachePreloadFromFile(const char *FName, const char *EnvVarName, c
     STREAM *S;
 
 
-    S=UnicodeNamesFileOpen(FName, EnvVarName, LibUsefulVar);
+    S=LibUsefulConfigFileOpen(FName, EnvVarName, LibUsefulVar);
     if (S)
     {
         Tempstr=STREAMReadLine(Tempstr, S);

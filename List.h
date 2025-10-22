@@ -358,6 +358,7 @@ void *ListDeleteNode(ListNode *);
 //swap to items/listnodes in a list
 void ListSwapItems(ListNode *Item1, ListNode *Item2);
 
+void ListRotate(ListNode *List, int RotateCount);
 
 #ifdef __cplusplus
 }

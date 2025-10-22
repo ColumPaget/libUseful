@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.60], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.61], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag
@@ -174,6 +174,11 @@ AS_IF([test "$cf_use_sendfile" != "no"], [
 AC_CHECK_HEADER(sys/random.h,cf_use_sys_random=yes,cf_use_sys_random=no,)
 AS_IF([test "$cf_use_sys_random" != "no"], [
     AC_DEFINE([HAVE_SYS_RANDOM])
+])
+
+AC_CHECK_HEADER(linux/netfilter_ipv4.h,cf_have_netfilter_ipv4=yes,cf_have_netfilter_ipv4=no,)
+AS_IF([test "$have_netfilter_ipv4" = "yes"], [
+    AC_DEFINE([HAVE_LINUX_NETFILTER_IPV4_H])
 ])
 
 

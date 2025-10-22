@@ -122,6 +122,7 @@ int LibUsefulGetBool(const char *Name);
 
 int LibUsefulGetInteger(const char *Name);
 
+STREAM *LibUsefulConfigFileOpen(const char *FName, const char *EnvVarName, const char *LibUsefulVar);
 
 //returns TRUE if libUseful Debug is active, FALSE otehrwise
 int LibUsefulDebugActive();

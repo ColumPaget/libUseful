@@ -3,7 +3,7 @@
 
 #include <sys/utsname.h>
 
-#ifdef linux
+#ifdef __linux__
 #include <sys/sysinfo.h>
 #endif
 

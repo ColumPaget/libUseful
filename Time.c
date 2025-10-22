@@ -14,6 +14,23 @@ static time_t LU_CachedTime=0;
 static uint64_t LU_CachedMillisecs=0;
 
 
+uint64_t GetTime(int Flags)
+{
+    struct timeval tv;
+
+    if ((! (Flags & TIME_CACHED)) || (LU_CachedTime==0) )
+    {
+        gettimeofday(&tv, NULL);
+        LU_CachedTime=tv.tv_sec;
+        LU_CachedMillisecs=(tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+    }
+
+    if (Flags & TIME_MILLISECS) return(LU_CachedMillisecs);
+    else if (Flags & TIME_CENTISECS) return(LU_CachedMillisecs / 10);
+
+    return((uint64_t) LU_CachedTime);
+}
+
 
 
 int IsToday(int Day, int Month, int Year)
@@ -61,23 +78,6 @@ void TimeZoneSet(const char *TimeZone)
     else unsetenv("TZ");
 }
 
-
-uint64_t GetTime(int Flags)
-{
-    struct timeval tv;
-
-    if ((! (Flags & TIME_CACHED)) || (LU_CachedTime==0) )
-    {
-        gettimeofday(&tv, NULL);
-        LU_CachedTime=tv.tv_sec;
-        LU_CachedMillisecs=(tv.tv_sec * 1000) + (tv.tv_usec / 1000);
-    }
-
-    if (Flags & TIME_MILLISECS) return(LU_CachedMillisecs);
-    else if (Flags & TIME_CENTISECS) return(LU_CachedMillisecs / 10);
-
-    return((uint64_t) LU_CachedTime);
-}
 
 
 char *GetDateStrFromSecs(const char *DateFormat, time_t Secs, const char *TimeZone)
@@ -298,7 +298,7 @@ long TimezoneOffset(const char *TimeZone)
     TimeZoneSet(TimeZone);
 
 //TO DO: portable offset calculation
-#ifdef linux
+#ifdef __linux__
     Secs=timezone;
 #endif
 

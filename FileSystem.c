@@ -522,7 +522,7 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
     }
 #endif
 
-#ifdef linux
+#ifdef __linux__
     result=mount(Dev,p_MountPoint,p_Type,Flags,NULL);
 #else
 //assume BSD if not linux
