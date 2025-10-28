@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.61], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.62], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag
@@ -351,7 +351,7 @@ AS_IF([test "$cf_use_ssl" = "yes"], [
     AS_IF([test "$cf_have_libssl" = "yes"], [
 	cf_use_zlib=yes
 
-	AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch X509_get0_notBefore X509_get0_notAfter)
+	AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch X509_get0_notBefore X509_get0_notAfter EC_KEY_new_by_curve_name DH_generate_parameters_ex DH_new PEM_read_DHparams)
 
 
 	AC_CHECK_DECLS(OpenSSL_add_all_algorithms,AC_DEFINE([HAVE_OPENSSL_ADD_ALL_ALGORITHMS]),[],[[#include <openssl/ssl.h>]])

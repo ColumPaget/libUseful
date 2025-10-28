@@ -366,6 +366,7 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
         Tempstr=FormatStr(Tempstr,"%d",pid);
         STREAMSetValue(S,"PeerPID",Tempstr);
         S->Type=STREAM_TYPE_PIPE;
+        S->Path=MCopyStr(S->Path, "fork:", Tempstr, NULL);
     }
 
     DestroyString(Tempstr);
@@ -395,6 +396,7 @@ STREAM *STREAMSpawnCommand(const char *Command, const char *Config)
     //take a copy of this as it's going to be passed to another process and
     Token=CopyStr(Token, Command);
     if (UseShell || StrValid(ExecPath)) S=STREAMSpawnFunction(BASIC_FUNC_EXEC_COMMAND, (void *) Token, Config);
+    if (S) S->Path=MCopyStr(S->Path, "exec:", Command, NULL);
 
     Destroy(ExecPath);
     Destroy(Token);

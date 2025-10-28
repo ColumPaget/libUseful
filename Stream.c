@@ -902,6 +902,7 @@ STREAM *STREAMFileOpen(const char *Path, int Flags)
     struct stat myStat;
     char *Tempstr=NULL, *NewPath=NULL;
 
+    if (! StrValid(Path)) return(NULL);
     if (Flags & SF_WRONLY) Mode=O_WRONLY;
     else if (Flags & SF_RDONLY) Mode=O_RDONLY;
     else Mode=O_RDWR;
@@ -1253,7 +1254,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
     case 's':
     case 'u':
     case 'b': //b for 'bcast'
-        if ( (CompareStr(URL,"-")==0) || (strcasecmp(URL,"stdio:")==0) ) S=STREAMFromDualFD(dup(0), dup(1));
+        if ( (strcmp(URL, "-")==0) || (strcasecmp(URL, "stdio:")==0) ) S=STREAMFromDualFD(dup(0), dup(1));
         else if (strcasecmp(URL,"stdin:")==0) S=STREAMFromFD(dup(0));
         else if (strcasecmp(URL,"stdout:")==0) S=STREAMFromFD(dup(1));
         else if (strcasecmp(Proto,"ssh")==0) S=SSHOpen(Host, Port, User, Pass, Path, Config);
@@ -1269,7 +1270,7 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
         else
         {
             S=STREAMCreate();
-            S->Path=CopyStr(S->Path,URL);
+            S->Path=CopyStr(S->Path, URL);
             if (! STREAMConnect(S, URL, Config))
             {
                 STREAMClose(S);
@@ -1476,7 +1477,7 @@ void STREAMShutdown(STREAM *S)
     Curr=ListGetNext(S->Values);
     while (Curr)
     {
-        if (strncmp(Curr->Tag, "HelperPID", 9)==0)
+        if (CompareStrLen(Curr->Tag, "HelperPID", 9)==0)
         {
             val=atoi(Curr->Item);
             if (val > 1) kill(0-val, SIGKILL);

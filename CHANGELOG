@@ -1,4 +1,10 @@
-v5.61
+v5.62 (2025-10-28)
+  * add CompareStrLen and CompareStrLenNoCase functions
+  * add ReadFile function
+  * Protect some unprotected strcmp and strncmp calls
+  * fix or at least handle openssl deprecations around ECHD and DH curves
+
+v5.61 (2025-10-22)
   * stop trying to use external bzip to decode gzip files when libgzip not compiled in
   * add more unicode symbols
   * Add 'ListRotate' function

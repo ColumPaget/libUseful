@@ -78,7 +78,7 @@ int ConnectHopHTTPSProxy(STREAM *S, const char *Proxy, const char *Destination)
     }
 
     ptr=Destination;
-    if (strncmp(ptr,"tcp:",4)==0) ptr+=4;
+    if (CompareStrLen(ptr,"tcp:",4)==0) ptr+=4;
     Tempstr=FormatStr(Tempstr,"CONNECT %s HTTP/1.1\r\n\r\n",ptr);
 
     STREAMWriteLine(Tempstr,S);
@@ -355,7 +355,7 @@ int ConnectHopSocks(STREAM *S, int SocksLevel, const char *ProxyURL, const char 
 
 //Sort out destination now
     tptr=Destination;
-    if (strncmp(tptr,"tcp:",4)==0) tptr+=4;
+    if (CompareStrLen(tptr,"tcp:",4)==0) tptr+=4;
     tptr=GetToken(tptr,":",&Token,0);
     if (IsIP4Address(Token)) HostType=HT_IP4;
     else if (IsIP6Address(Token)) HostType=HT_IP6;
@@ -487,7 +487,7 @@ static STREAM *ConnectHopSSHSpawnHelper(const char *ProxyURL, const char *Fmt, c
     {
         //pick a random port above port 9000
         LocalPort=(rand() % (0xFFFF - 9000)) +9000;
-        if (strncmp(Fmt,"stdin:",6)==0) Tempstr=FormatStr(Tempstr, Fmt, RemoteHost, RemotePort);
+        if (CompareStrLen(Fmt,"stdin:",6)==0) Tempstr=FormatStr(Tempstr, Fmt, RemoteHost, RemotePort);
         else Tempstr=FormatStr(Tempstr, Fmt, LocalPort, RemoteHost, RemotePort);
         tmpS=SSHConnect(SshHost, SshPort, SshUser, SshPassword, Tempstr, "");
         if (tmpS)
@@ -659,7 +659,7 @@ int STREAMProcessConnectHops(STREAM *S, const char *HopList)
     if (StrValid(HopURL))
     {
         if (! StrValid(S->Path)) S->Path=CopyStr(S->Path,HopURL);
-        if (strncmp(HopURL,"ssl:",4)==0) DoSSLClientNegotiation(S,0);
+        if (CompareStrLen(HopURL,"ssl:",4)==0) DoSSLClientNegotiation(S,0);
     }
 
     DestroyString(HopURL);

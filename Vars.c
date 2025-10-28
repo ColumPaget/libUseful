@@ -390,7 +390,7 @@ int ExtractVarsFromString(const char *Data, const char *FormatStr, ListNode *Var
             len=StrLen(Token);
             while (
                 (*MsgPtr != '\0') &&
-                (strncmp(MsgPtr,Token,len) !=0)
+                (CompareStrLen(MsgPtr, Token, len) !=0)
             ) MsgPtr++;
             break;
 

@@ -73,7 +73,7 @@ char *StripDirectorySlash(char *DirPath)
 
 //don't strip '/' (root dir)
     if (! StrValid(DirPath)) return(DirPath);
-    if (strcmp(DirPath,"/")==0) return(DirPath);
+    if (strcmp(DirPath, "/")==0) return(DirPath);
     ptr=DirPath+StrLen(DirPath)-1;
 
     if (*ptr == '/') *ptr='\0';
@@ -462,7 +462,7 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
 
     if (! StrValid(p_MountPoint)) return(FALSE);
 
-    if (strcmp(Type,"bind")==0)
+    if (CompareStr(Type, "bind")==0)
     {
 #ifdef MS_BIND
         p_Type="";
@@ -563,9 +563,9 @@ int FileSystemUnMountFlagsDepth(const char *MountPoint, int UnmountFlags, int Ex
     struct stat FStat;
     glob_t Glob;
 
-    if (strcmp(MountPoint,"/proc")==0) MaxDepth=10;
-    if (strcmp(MountPoint,"/sys")==0) MaxDepth=10;
-    if (strcmp(MountPoint,"/dev")==0) MaxDepth=10;
+    if (CompareStr(MountPoint, "/proc")==0) MaxDepth=10;
+    if (CompareStr(MountPoint, "/sys")==0) MaxDepth=10;
+    if (CompareStr(MountPoint, "/dev")==0) MaxDepth=10;
 
 
 
@@ -670,7 +670,7 @@ int FileSystemCopyDir(const char *Src, const char *Dest)
     {
         ptr=GetBasename(Glob.gl_pathv[i]);
 
-        if ((strcmp(ptr,".") !=0) && (strcmp(ptr, "..") !=0) )
+        if (ptr && (strcmp(ptr,".") !=0) && (strcmp(ptr, "..") !=0) )
         {
             ptr=Glob.gl_pathv[i];
             if (lstat(ptr, &Stat) == 0)
@@ -846,6 +846,27 @@ int FileSetSTREAMFlags(const char *Path, int Set, int Unset)
 #endif
 
     return(RetVal);
+}
+
+
+char *FileRead(char *RetStr, const char *Path)
+{
+STREAM *S;
+
+S=STREAMOpen(Path, "r");
+if (S)
+{
+RetStr=STREAMReadDocument(RetStr, S);
+STREAMClose(S);
+errno=0;
+}
+else 
+{
+RetStr=CopyStr(RetStr, "");
+}
+
+
+return(RetStr);
 }
 
 

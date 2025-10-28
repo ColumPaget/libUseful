@@ -568,7 +568,7 @@ static const char *ParserRSSItems(int ParserType, const char *Doc, ListNode *Par
 
             //this is another case where we don't want to clear prev token out at the start of this
             case '!':
-                if (strncmp(ptr,"[CDATA[",7)==0)
+                if (CompareStrLen(ptr,"[CDATA[",7)==0)
                 {
                     ptr=GetToken(ptr+7, "]]", &Token,0);
                     PrevToken=CatStr(PrevToken, Token);
@@ -674,7 +674,7 @@ static const char *ParserXMLItems(int ParserType, const char *Doc, ListNode *Par
                 break;
 
             case '!':
-                if (strncmp(ptr,"[CDATA[",7)==0)
+                if (CompareStrLen(ptr,"[CDATA[",7)==0)
                 {
                     ptr=GetToken(ptr+7, "]]", &Token,0);
                     PrevToken=CatStr(PrevToken, Token);

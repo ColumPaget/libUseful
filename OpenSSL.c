@@ -185,20 +185,72 @@ static char *OpenSSLGetCertFingerprint(char *RetStr, X509 *cert)
 
 
 
+//setup ECDH keys/keytypes for Perfect Forward Secrecy.
 static void OpenSSLSetupECDH(SSL_CTX *ctx)
 {
     EC_KEY* ecdh;
+    int val;
 
-    ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-//ecdh = EC_KEY_new_by_curve_name( NID_secp384r1);
+    //SSL_CTX_set1_groups_list and SSL_CTS_set1_groups are macros, not functions, so we have to check if they are defined
+    #if defined (SSL_CTX_set1_groups_list)
+    SSL_CTX_set1_groups_list(ctx, "secp256r1:secp384r1:x25519:GC256A:GC256B:GC256C:GC256D");
+    #elif defined (SSL_CTX_set1_groups)
+    val=NID_X9_62_prime256v1;
+    SSL_CTX_set1_groups(ctx, &val, 1);
+    #else
 
-    if (ecdh)
+	    //this old, old method works by generating a key, and then setting it against
+            //the CTX. It's unclear to me if the CTX then uses the key, or just uses it as a
+            //template to set the keytype of subsequently generated keys	
+	    #ifdef HAVE_EC_KEY_NEW_BY_CURVE_NAME
+	    ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+	    if (ecdh)
+	    {
+	        SSL_CTX_set_tmp_ecdh(ctx, ecdh); //add key to our ctx
+	        EC_KEY_free(ecdh);
+	    }
+	    #endif
+    #endif
+}
+
+
+
+
+//setup Diffie Helman parameters for Perfect Forward Secrecy.
+static void OpenSSLSetupDH(SSL_CTX *ctx)
+{
+    char *Tempstr=NULL;
+    const char *ptr;
+    DH *dh=NULL;
+    FILE *paramfile;
+
+    if (CachedDH) dh=CachedDH;
+    else
     {
-        SSL_CTX_set_tmp_ecdh(ctx, ecdh);
-        EC_KEY_free(ecdh);
+        Tempstr=CopyStr(Tempstr, LibUsefulGetValue("SSL:DHParams-File"));
+        if (StrValid(Tempstr))
+        {
+
+            paramfile = fopen(Tempstr, "r");
+            if (paramfile)
+            {
+	    #ifdef HAVE_PEM_READ_DHPARAMS
+                CachedDH = PEM_read_DHparams(paramfile, NULL, NULL, NULL);
+                dh=CachedDH;
+            #endif
+                fclose(paramfile);
+            }
+        }
     }
 
+    if (dh) SSL_CTX_set_tmp_dh(ctx, dh);
+
+//Don't free these parameters, as they are cached
+//DH_KEY_free(dh);
+
+    DestroyString(Tempstr);
 }
+
 
 
 static void OpenSSLReseedRandom()
@@ -215,43 +267,6 @@ static void OpenSSLReseedRandom()
 }
 
 
-
-
-
-
-
-static void OpenSSLSetupDH(SSL_CTX *ctx)
-{
-    char *Tempstr=NULL;
-    const char *ptr;
-    DH *dh=NULL;
-    FILE *paramfile;
-
-    if (CachedDH) dh=CachedDH;
-    else
-    {
-        ptr=LibUsefulGetValue("SSL:DHParams-File");
-        if (StrValid(ptr))
-        {
-            Tempstr=CopyStr(Tempstr,ptr);
-
-            paramfile = fopen(Tempstr, "r");
-            if (paramfile)
-            {
-                CachedDH = PEM_read_DHparams(paramfile, NULL, NULL, NULL);
-                dh=CachedDH;
-                fclose(paramfile);
-            }
-        }
-    }
-
-    if (dh) SSL_CTX_set_tmp_dh(ctx, dh);
-
-//Don't free these parameters, as they are cached
-//DH_KEY_free(dh);
-
-    DestroyString(Tempstr);
-}
 
 
 
@@ -319,7 +334,7 @@ char *OpenSSLCertDetailsGetCommonName(char *RetStr, const char *CertDetails)
     ptr=GetNameValuePair(CertDetails, "/", "=", &Name, &Value);
     while (ptr)
     {
-        if (StrValid(Name) && (strcmp(Name, "CN")==0)) RetStr=CopyStr(RetStr, Value);
+        if (CompareStr(Name, "CN")==0) RetStr=CopyStr(RetStr, Value);
         ptr=GetNameValuePair(ptr, "/", "=", &Name, &Value);
     }
 
@@ -682,7 +697,7 @@ const char *OpenSSLQueryCipher(STREAM *S)
 //save the resulting params
 void OpenSSLGenerateDHParams()
 {
-#ifdef HAVE_LIBSSL
+#if defined(HAVE_LIBSSL) && defined(HAVE_DH_NEW) && defined(HAVE_DH_GENERATE_PARAMETERS_EX)
     CachedDH = DH_new();
     if(CachedDH)
     {

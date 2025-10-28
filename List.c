@@ -466,8 +466,8 @@ static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const 
     {
         if ( (Head->Flags & LIST_FLAG_DELETE) && (NameLen != Prev->ItemType) ) return(FALSE);
 	
-        if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag,Name);
-        else result=strcasecmp(Prev->Tag,Name);
+        if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag, Name);
+        else result=strcasecmp(Prev->Tag, Name);
 
         if (result == 0) return(TRUE);
         if (Head->Flags & LIST_FLAG_ORDERED)

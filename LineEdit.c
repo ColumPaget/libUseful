@@ -71,7 +71,7 @@ void LineEditAddToHistory(TLineEdit *LE, const char *Text)
 
         if (Node && Node->Tag)
         {
-            if (strcmp(Node->Tag, Text) !=0) ListAddNamedItem(LE->History, Text, NULL);
+            if (CompareStr(Node->Tag, Text) !=0) ListAddNamedItem(LE->History, Text, NULL);
         }
         else ListAddNamedItem(LE->History, Text, NULL);
     }

@@ -114,11 +114,18 @@ int strcount(const char *Str, char Char);
 //allocate or reallocate 'Len' bytes of memory to a resizeable string
 char *SetStrLen(char *Str, size_t Len);
 
-//strcmp that won't creash if str is null
+//strcmp that won't crash if str is null
 int CompareStr(const char *S1, const char *S2);
+
+//strncmp that won't crash if str is null
+int CompareStrLen(const char *S1, const char *S2, size_t len);
 
 //strcasecmp that won't creash if str is null
 int CompareStrNoCase(const char *S1, const char *S2);
+
+//strncasecmp that won't creash if str is null
+int CompareStrLenNoCase(const char *S1, const char *S2, size_t len);
+
 
 //copy Len bytes from Src to Dest, resizing Dest if needed and return Dest
 char *CopyStrLen(char *Dest, const char *Src, size_t Len);

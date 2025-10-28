@@ -203,7 +203,7 @@ void TerminalBarsInit(STREAM *S)
     Curr=ListGetNext(S->Items);
     while (Curr)
     {
-        if (strcmp(Curr->Tag, "termbar")==0)
+        if (CompareStr(Curr->Tag, "termbar")==0)
         {
             TB=(TERMBAR *) Curr->Item;
             if (TB->Flags & TERMBAR_UPPER) top=1;

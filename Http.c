@@ -123,8 +123,8 @@ HTTPInfoStruct *HTTPInfoCreate(const char *Protocol, const char *Host, int Port,
     {
         Info->Proxy=CopyStr(Info->Proxy,ptr);
         strlwr(Info->Proxy);
-        if (strncmp(Info->Proxy,"http:",5)==0) Info->Flags |= HTTP_PROXY;
-        else if (strncmp(Info->Proxy,"https:",6)==0) Info->Flags |= HTTP_PROXY;
+        if (CompareStrLen(Info->Proxy,"http:",5)==0) Info->Flags |= HTTP_PROXY;
+        else if (CompareStrLen(Info->Proxy,"https:",6)==0) Info->Flags |= HTTP_PROXY;
         else Info->Flags=HTTP_TUNNEL;
     }
 
@@ -677,7 +677,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
     }
 
     //probably need to find some other way of detecting need for sending ContentLength other than whitelisting methods
-    if ((Info->PostContentLength > 0) &&
+    if ((Info->PostContentLength > 0) && StrValid(Info->Method) &&
             (
                 (strcasecmp(Info->Method,"POST")==0) ||
                 (strcasecmp(Info->Method,"PUT")==0) ||
@@ -733,7 +733,7 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
         SendStr=MCatStr(SendStr,"If-Modified-Since: ",Tempstr, "\r\n",NULL);
     }
 
-    if (
+    if ( StrValid(Info->Method) &&
         (strcasecmp(Info->Method,"DELETE") !=0) &&
         (strcasecmp(Info->Method,"HEAD") !=0) &&
         (strcasecmp(Info->Method,"PUT") !=0)
@@ -968,7 +968,7 @@ STREAM *HTTPSetupConnection(HTTPInfoStruct *Info, int ForceHTTPS)
 
 
     //there's no data to send in a GET, so turn on quickack with 'q'
-    if (strcasecmp(Info->Method,"GET")==0) Tempstr=FormatStr(Tempstr, "rwq timeout=%d", Info->Timeout);
+    if (CompareStrNoCase(Info->Method,"GET")==0) Tempstr=FormatStr(Tempstr, "rwq timeout=%d", Info->Timeout);
     else Tempstr=FormatStr(Tempstr, "rw timeout=%d", Info->Timeout);
 
     //we cannot create Info->S if there is one, but we can't free/destroy it
@@ -1108,11 +1108,14 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                 }
                 else
                 {
+		    if (StrValid(Info->Method))
+                    {	
                     if (strcasecmp(Info->Method,"POST")==0) break;
                     if (strcasecmp(Info->Method,"PUT")==0) break;
                     if (strcasecmp(Info->Method,"PATCH")==0) break;
                     if (strcasecmp(Info->Method,"PROPFIND")==0) break;
                     if (strcasecmp(Info->Method,"PROPPATCH")==0) break;
+                    }
                 }
             }
 

@@ -183,6 +183,15 @@ int FileSystemSetSTREAMFlags(int fd, int Set, int Unset);
 int FileSetSTREAMFlags(const char *Path, int Set, int Unset);
 
 
+//these are utility functions to save writing 'STREAMOpen(); ReadString(); STREAMClose()' all the time
+//file paths can be http or ssh URLs etc, as STREAM objects support many protocols.
+//these are particularly intended to support '1 line' data files like those in /proc and /sys on linux
+//they are also useful for reading json and other structured data that is then passed to 'dataparser' functions
+//FileRead returns "" if it can't read the file, or the file is actually empty. This approach has been 
+//chosen to prevent crashes if FileRead unexpectedly returns NULL. If it's desired to distinguish between
+//empty files and files that can't be opened, errno can be consulted. If the file was opened, but was empty
+//errno will have the value of 0.
+char *FileRead(char *RetStr, const char *Path);
 int FileWrite(const char *Path, const char *Data);
 
 #ifdef __cplusplus

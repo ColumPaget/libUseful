@@ -113,6 +113,19 @@ inline int CompareStr(const char *S1, const char *S2)
     return(strcmp(S1,S2));
 }
 
+inline int CompareStrLen(const char *S1, const char *S2, size_t len)
+{
+    if (
+        (! StrValid(S1)) &&
+        (! StrValid(S2))
+    ) return(0);
+
+    if (! StrValid(S1)) return(-1);
+    if (! StrValid(S2)) return(1);
+
+    return(strncmp(S1, S2, len));
+}
+
 
 inline int CompareStrNoCase(const char *S1, const char *S2)
 {
@@ -127,6 +140,19 @@ inline int CompareStrNoCase(const char *S1, const char *S2)
     return(strcasecmp(S1,S2));
 }
 
+
+inline int CompareStrLenNoCase(const char *S1, const char *S2, size_t len)
+{
+    if (
+        (! StrValid(S1)) &&
+        (! StrValid(S2))
+    ) return(0);
+
+    if (! StrValid(S1)) return(-1);
+    if (! StrValid(S2)) return(1);
+
+    return(strncasecmp(S1, S2, len));
+}
 
 
 
