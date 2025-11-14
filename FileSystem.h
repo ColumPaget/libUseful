@@ -59,6 +59,9 @@ size_t FileSize(const char *Path);
 //of the path.
 int MakeDirPath(const char *Path, int DirMask);
 
+
+
+
 //searches a ':' separated path (as in the PATH environment variable) for a file. If found, the full
 //file path is copied into InBuff and returned. InBuff might be resized, so it should be a libUseful
 //style string (see String.h). If the file cannot be found an empty string will be returned.
@@ -87,6 +90,16 @@ int FindFilesInPathSubDirectory(const char *File, const char *Path, const char *
 //then append a subdirectory to this 'prefix'. Then search for 'File' in the resulting directories.
 //The first file found is returned.
 char *FindFileInPrefixSubDirectory(char *RetStr, const char *File, const char *SubDirectory, const char *Path);
+
+
+//RECURSIVELY find files matching 'Pattern' under 'Dir'
+int RecursiveFindFilesInDir(const char *Pattern, const char *Dir, ListNode *Files);
+
+
+//Take a ':' seperated list of paths (as per the $PATH environment variable) and 
+//RECURSIVELY find files matching 'Pattern' under each of these paths
+int RecursiveFindFilesInPath(const char *Pattern, const char *Path, ListNode *Files);
+
 
 //If a file ends with an extension like .tmp or .exe, then change it to NewExt. If it doesn't have
 //an extension then add NewExt

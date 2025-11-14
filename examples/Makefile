@@ -1,4 +1,4 @@
-LIBS=../libUseful.a -lssl -lcrypto -lz #-lcap
+LIBS=../libUseful.a -lssl -lcrypto #-lz #-lcap
 
 all:
 	gcc -oJSON.exe JSON.c $(LIBS)
@@ -44,8 +44,9 @@ all:
 	gcc -oLineEdit.exe LineEdit.c $(LIBS)
 	gcc -ocontainer.exe container.c $(LIBS)
 	gcc -oListLimits.exe ListLimits.c $(LIBS)
-	gcc -oipmask.exe ipmask.c $(LIBS)
 	gcc -oexternalip.exe externalip.c $(LIBS)
+	gcc -oipmask.exe ipmask.c $(LIBS)
+	gcc -orecurse.exe recurse.c $(LIBS)
 
 seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)

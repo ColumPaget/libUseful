@@ -554,7 +554,7 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
 int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
 {
     const char *ptr;
-    int level=LEVEL_SSL3, val;
+    int level=LEVEL_TLS1_2, val;
 
 
     //set Permitted ciphers
@@ -577,15 +577,20 @@ int OpenSSLSetOptions(STREAM *S, SSL *ssl, int Options)
     if (! StrValid(ptr)) ptr=LibUsefulGetValue("SSL:Level");
     if (StrValid(ptr))
     {
+        if (strcasecmp(ptr, "ssl3") !=0) level=LEVEL_SSL3;
         if (strcasecmp(ptr, "ssl") !=0) level=LEVEL_TLS1;
 
+        if (strcasecmp(ptr, "tls") == 0) level=LEVEL_TLS1_2;
+
+        if (strcasecmp(ptr, "tls1.0") == 0) level=LEVEL_TLS1;
         if (strcasecmp(ptr, "tls1.1") == 0) level=LEVEL_TLS1_1;
         if (strcasecmp(ptr, "tls1.2") == 0) level=LEVEL_TLS1_2;
         if (strcasecmp(ptr, "tls1.3") == 0) level=LEVEL_TLS1_3;
     }
 
 #ifdef HAVE_SSL_SET_MIN_PROTO_VERSION
-    val=SSL3_VERSION;
+    val=TLS1_2_VERSION; //default if level not set or not recognized
+
     switch (level)
     {
     case LEVEL_TLS1:
