@@ -59,13 +59,13 @@ char *GetExternalIP(char *RetStr)
     S=LibUsefulConfigFileOpen("ip-lookup.conf", "LIBUSEFUL_IPLOOKUP_FILE", "IPLookupFile");
     if (S)
     {
-      Token=STREAMReadLine(Token, S);
-      while (Token)
-      {
-      if (StrValid(Token)) ListAddItem(Services, CopyStr(NULL, Token));
-      Token=STREAMReadLine(Token, S);
-      }
-      STREAMClose(S);
+        Token=STREAMReadLine(Token, S);
+        while (Token)
+        {
+            if (StrValid(Token)) ListAddItem(Services, CopyStr(NULL, Token));
+            Token=STREAMReadLine(Token, S);
+        }
+        STREAMClose(S);
     }
 
     //pick a random start position, and to through all servers from that start
@@ -144,7 +144,7 @@ int IPGeoLocate(const char *IP, ListNode *Vars)
     int result=FALSE;
 
     if (! StrValid(IP)) return(FALSE);
-		if (IPInfoDBGeoLocate(IP, Vars)) return(TRUE);
+    if (IPInfoDBGeoLocate(IP, Vars)) return(TRUE);
 
     if (! IsIPAddress(IP)) Token=CopyStr(Token, LookupHostIP(IP));
     else Token=CopyStr(Token,IP);

@@ -219,13 +219,13 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
             Settings->Timeout=atoi(Value);
         }
         else if (CompareStrNoCase(Name,"local")==0)
-	{
-		if ( (! StrValid(Value)) ||  strtobool(Value) ) 
-		{
-			Settings->Flags |= SOCK_DONTROUTE;
-			Settings->TTL=1;
-		}
-	}
+        {
+            if ( (! StrValid(Value)) ||  strtobool(Value) )
+            {
+                Settings->Flags |= SOCK_DONTROUTE;
+                Settings->TTL=1;
+            }
+        }
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }

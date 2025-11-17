@@ -19,6 +19,7 @@ void ParserItemsDestroy(ListNode *Items)
     {
         if (Curr->ItemType==ITEM_ARRAY) ParserItemsDestroy((ListNode *) Curr->Item);
         else if (Curr->ItemType==ITEM_ENTITY) ParserItemsDestroy((ListNode *) Curr->Item);
+        else if (Curr->ItemType==ITEM_ENTITY_LINE) ParserItemsDestroy((ListNode *) Curr->Item);
         else DestroyString(Curr->Item);
         Curr=ListGetNext(Curr);
     }
@@ -48,6 +49,39 @@ int ParserIdentifyDocType(const char *TypeStr)
 }
 
 
+//check if an item is one level deep
+int ParserEntityIsSimple(ListNode *Entity)
+{
+    ListNode *Curr;
+    if (! Entity) return(FALSE);
+
+    switch (Entity->ItemType)
+    {
+    case ITEM_ENTITY:
+        Curr=ListGetNext((ListNode *) Entity->Item);
+        while (Curr)
+        {
+            if (Curr->ItemType == ITEM_ARRAY) return(FALSE);
+            if (Curr->ItemType == ITEM_ENTITY) return(FALSE);
+            if (Curr->ItemType == ITEM_ENTITY_LINE) return(FALSE);
+            Curr=ListGetNext(Curr);
+        }
+
+        return(TRUE);
+        break;
+
+    case ITEM_ENTITY_LINE:
+        return(TRUE);
+        break;
+
+    default:
+        return(FALSE);
+    }
+
+    return(FALSE);
+}
+
+
 
 ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name)
 {
@@ -55,7 +89,7 @@ ListNode *ParserNewObject(ListNode *Parent, int Type, const char *Name)
     char *Token=NULL;
 
     Item=ListCreate();
-    Item->ItemType=ITEM_INTERNAL_LIST;
+    Item->ItemType=Type;
     Item->Tag=CopyStr(Item->Tag,Name);
     if (StrValid(Name))
     {
@@ -1087,6 +1121,7 @@ char *ParserExportJSON(char *RetStr, int Type,  ListNode *Item)
         else RetStr=CatStr(RetStr, (const char *) Item->Item);
         break;
     case ITEM_ENTITY:
+    case ITEM_ENTITY_LINE:
         RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n{\n", NULL);
         RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
         RetStr=MCatStr(RetStr, "\n}\n", NULL);
@@ -1115,6 +1150,7 @@ char *ParserExportXML(char *RetStr, int Type, ListNode *Item)
         break;
 
     case ITEM_ENTITY:
+    case ITEM_ENTITY_LINE:
         RetStr=MCatStr(RetStr, "<", Item->Tag, ">\n", NULL);
         RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
         RetStr=MCatStr(RetStr, "</", Item->Tag, ">\n", NULL);
@@ -1153,6 +1189,7 @@ char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
         break;
 
     case ITEM_ENTITY:
+    case ITEM_ENTITY_LINE:
         RetStr=MCatStr(RetStr, Item->Tag, ":\n", NULL);
         RetStr=ParserExportItems(RetStr, Type, Indent+2, (PARSER *) Item->Item);
         break;
@@ -1189,18 +1226,24 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
         break;
 
     case ITEM_ENTITY:
-        if (Indent==0)
-        {
-            RetStr=MCatStr(RetStr, "'", Item->Tag, "': ", NULL);
-            RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
-            RetStr=CatStr(RetStr, "\n");
-        }
+        if (ParserEntityIsSimple(Item))
+				{
+        RetStr=MCatStr(RetStr, "'", Item->Tag, "': ", NULL);
+        RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
+        RetStr=CatStr(RetStr, "\n");
+				}
         else
         {
-            RetStr=MCatStr(RetStr, Item->Tag, " { ", NULL);
+            RetStr=MCatStr(RetStr, Item->Tag, " {\n", NULL);
             RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
-            RetStr=CatStr(RetStr, " }");
+            RetStr=CatStr(RetStr, " }\n");
         }
+        break;
+
+    case ITEM_ENTITY_LINE:
+        RetStr=MCatStr(RetStr, "'", Item->Tag, "': ", NULL);
+        RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
+        RetStr=CatStr(RetStr, "\n");
         break;
     }
 

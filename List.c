@@ -465,7 +465,7 @@ static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const 
     if (Prev && (Prev != Head) && Prev->Tag)
     {
         if ( (Head->Flags & LIST_FLAG_DELETE) && (NameLen != Prev->ItemType) ) return(FALSE);
-	
+
         if (Head->Flags & LIST_FLAG_CASE) result=strcmp(Prev->Tag, Name);
         else result=strcasecmp(Prev->Tag, Name);
 
@@ -485,7 +485,7 @@ ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 {
     ListNode *Prev=NULL, *Curr, *Next, *Head;
     int result=0, len;
-    unsigned long long val; 
+    unsigned long long val;
 
     if (! Root) return(Root);
     if (! StrValid(Name)) return(Root);
@@ -567,7 +567,7 @@ ListNode *ListFindTypedItem(ListNode *Root, int Type, const char *Name)
     if (Node == Head) Node=Node->Next;
 
 
-		//beware, we might get retured a null item in lists where some items have null names
+    //beware, we might get retured a null item in lists where some items have null names
     if (! Node) return(NULL);
 
     //'Root' can be a Map head, rather than a list head, so we call 'ListFindNamedItemInsert' to get the correct
@@ -654,7 +654,7 @@ ListNode *InsertItemIntoSortedList(ListNode *List, void *Item, int (*LessThanFun
     return(ListInsertItem(Prev,Item));
 }
 
-//this function returns the next item in a chain. You are probablly looking for MapGetNext below 
+//this function returns the next item in a chain. You are probablly looking for MapGetNext below
 //If this is called on the top node of a map it returns the 'top' node of the first chain in the map
 //otherwise it returns the next node in the chain. Thus, starting from any place in a map, list or a sub-chain
 //we can traverse that chain/list
@@ -664,11 +664,11 @@ ListNode *MapChainGetNext(ListNode *CurrItem)
 
     if (CurrItem->Next)
     {
-      if (CurrItem->Next->Next)
-      {
+        if (CurrItem->Next->Next)
+        {
             __builtin_prefetch (CurrItem->Next->Next, 0, 0);
             if (CurrItem->Next->Next->Tag) __builtin_prefetch (CurrItem->Next->Next->Tag, 0, 0);
-      }
+        }
 
         return(CurrItem->Next);
     }
@@ -902,16 +902,16 @@ void *ListDeleteNode(ListNode *Node)
 
 void ListRotate(ListNode *List, int RotateCount)
 {
-ListNode *Curr;
-int i;
+    ListNode *Curr;
+    int i;
 
-for (i=0; i < RotateCount; i++)
-{
-Curr=ListGetNext(List);
-if (! Curr) break;
-ListUnThreadNode(Curr);
-ListThreadNode(ListGetLast(List), Curr);
-}
+    for (i=0; i < RotateCount; i++)
+    {
+        Curr=ListGetNext(List);
+        if (! Curr) break;
+        ListUnThreadNode(Curr);
+        ListThreadNode(ListGetLast(List), Curr);
+    }
 
 
 }

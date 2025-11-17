@@ -1,4 +1,4 @@
-LIBS=../libUseful.a -lssl -lcrypto #-lz #-lcap
+LIBS=../libUseful.a -lssl -lcrypto -lz #-lcap
 
 all:
 	gcc -oJSON.exe JSON.c $(LIBS)

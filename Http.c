@@ -734,10 +734,10 @@ void HTTPSendHeaders(STREAM *S, HTTPInfoStruct *Info)
     }
 
     if ( StrValid(Info->Method) &&
-        (strcasecmp(Info->Method,"DELETE") !=0) &&
-        (strcasecmp(Info->Method,"HEAD") !=0) &&
-        (strcasecmp(Info->Method,"PUT") !=0)
-    )
+            (strcasecmp(Info->Method,"DELETE") !=0) &&
+            (strcasecmp(Info->Method,"HEAD") !=0) &&
+            (strcasecmp(Info->Method,"PUT") !=0)
+       )
     {
 
         Tempstr=CopyStr(Tempstr,"");
@@ -1108,13 +1108,13 @@ STREAM *HTTPTransact(HTTPInfoStruct *Info)
                 }
                 else
                 {
-		    if (StrValid(Info->Method))
-                    {	
-                    if (strcasecmp(Info->Method,"POST")==0) break;
-                    if (strcasecmp(Info->Method,"PUT")==0) break;
-                    if (strcasecmp(Info->Method,"PATCH")==0) break;
-                    if (strcasecmp(Info->Method,"PROPFIND")==0) break;
-                    if (strcasecmp(Info->Method,"PROPPATCH")==0) break;
+                    if (StrValid(Info->Method))
+                    {
+                        if (strcasecmp(Info->Method,"POST")==0) break;
+                        if (strcasecmp(Info->Method,"PUT")==0) break;
+                        if (strcasecmp(Info->Method,"PATCH")==0) break;
+                        if (strcasecmp(Info->Method,"PROPFIND")==0) break;
+                        if (strcasecmp(Info->Method,"PROPPATCH")==0) break;
                     }
                 }
             }

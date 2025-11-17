@@ -109,7 +109,7 @@ static int TCPServerNew(const char *Host, int Port, int Flags, TSockSettings *Se
 
     if (fd > -1)
     {
-	//this option seems to usually be set after bind, so we're putting it here.
+        //this option seems to usually be set after bind, so we're putting it here.
 #ifdef TCP_FASTOPEN
         if (Flags & SOCK_TCP_FASTOPEN) SockSetOpt(fd, TCP_FASTOPEN, "TCP_FASTOPEN", 1);
 #endif

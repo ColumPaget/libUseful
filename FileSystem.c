@@ -179,47 +179,47 @@ int FileMoveToDir(const char *FilePath, const char *Dir)
 
 int RecursiveFindFilesInDir(const char *Pattern, const char *Dir, ListNode *Files)
 {
-char *Tempstr=NULL;
-glob_t Glob;
-struct stat Stat;
-int i, count=0;
+    char *Tempstr=NULL;
+    glob_t Glob;
+    struct stat Stat;
+    int i, count=0;
 
-Tempstr=MCopyStr(Tempstr, Dir, "/*", NULL);
-glob(Tempstr, 0, 0, &Glob);
-for (i=0; i < Glob.gl_pathc; i++)
-{
-  stat(Glob.gl_pathv[i], &Stat);
-  if (S_ISDIR(Stat.st_mode)) count += RecursiveFindFilesInDir(Pattern, Glob.gl_pathv[i],  Files);
-	if (fnmatch(Pattern, GetBasename(Glob.gl_pathv[i]), 0) == 0)
-	{
-		ListAddItem(Files, CopyStr(NULL, Glob.gl_pathv[i]));
-		count++;
-	}
-}
-globfree(&Glob);
+    Tempstr=MCopyStr(Tempstr, Dir, "/*", NULL);
+    glob(Tempstr, 0, 0, &Glob);
+    for (i=0; i < Glob.gl_pathc; i++)
+    {
+        stat(Glob.gl_pathv[i], &Stat);
+        if (S_ISDIR(Stat.st_mode)) count += RecursiveFindFilesInDir(Pattern, Glob.gl_pathv[i],  Files);
+        if (fnmatch(Pattern, GetBasename(Glob.gl_pathv[i]), 0) == 0)
+        {
+            ListAddItem(Files, CopyStr(NULL, Glob.gl_pathv[i]));
+            count++;
+        }
+    }
+    globfree(&Glob);
 
-Destroy(Tempstr);
+    Destroy(Tempstr);
 
-return(count);
+    return(count);
 }
 
 
 
 int RecursiveFindFilesInPath(const char *Pattern, const char *Path, ListNode *Files)
 {
-char *Dir=NULL;
-const char *ptr;
+    char *Dir=NULL;
+    const char *ptr;
 
-ptr=GetToken(Path, ":", &Dir, NULL);
-while (ptr)
-{
-RecursiveFindFilesInDir(Pattern, Dir, Files);
-ptr=GetToken(ptr, ":", &Dir, NULL);
-}
+    ptr=GetToken(Path, ":", &Dir, NULL);
+    while (ptr)
+    {
+        RecursiveFindFilesInDir(Pattern, Dir, Files);
+        ptr=GetToken(ptr, ":", &Dir, NULL);
+    }
 
-Destroy(Dir);
+    Destroy(Dir);
 
-return(ListSize(Files));
+    return(ListSize(Files));
 }
 
 
@@ -896,22 +896,22 @@ int FileSetSTREAMFlags(const char *Path, int Set, int Unset)
 
 char *FileRead(char *RetStr, const char *Path)
 {
-STREAM *S;
+    STREAM *S;
 
-S=STREAMOpen(Path, "r");
-if (S)
-{
-RetStr=STREAMReadDocument(RetStr, S);
-STREAMClose(S);
-errno=0;
-}
-else 
-{
-RetStr=CopyStr(RetStr, "");
-}
+    S=STREAMOpen(Path, "r");
+    if (S)
+    {
+        RetStr=STREAMReadDocument(RetStr, S);
+        STREAMClose(S);
+        errno=0;
+    }
+    else
+    {
+        RetStr=CopyStr(RetStr, "");
+    }
 
 
-return(RetStr);
+    return(RetStr);
 }
 
 

@@ -192,25 +192,25 @@ static void OpenSSLSetupECDH(SSL_CTX *ctx)
     int val;
 
     //SSL_CTX_set1_groups_list and SSL_CTS_set1_groups are macros, not functions, so we have to check if they are defined
-    #if defined (SSL_CTX_set1_groups_list)
+#if defined (SSL_CTX_set1_groups_list)
     SSL_CTX_set1_groups_list(ctx, "secp256r1:secp384r1:x25519:GC256A:GC256B:GC256C:GC256D");
-    #elif defined (SSL_CTX_set1_groups)
+#elif defined (SSL_CTX_set1_groups)
     val=NID_X9_62_prime256v1;
     SSL_CTX_set1_groups(ctx, &val, 1);
-    #else
+#else
 
-	    //this old, old method works by generating a key, and then setting it against
-            //the CTX. It's unclear to me if the CTX then uses the key, or just uses it as a
-            //template to set the keytype of subsequently generated keys	
-	    #ifdef HAVE_EC_KEY_NEW_BY_CURVE_NAME
-	    ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-	    if (ecdh)
-	    {
-	        SSL_CTX_set_tmp_ecdh(ctx, ecdh); //add key to our ctx
-	        EC_KEY_free(ecdh);
-	    }
-	    #endif
-    #endif
+    //this old, old method works by generating a key, and then setting it against
+    //the CTX. It's unclear to me if the CTX then uses the key, or just uses it as a
+    //template to set the keytype of subsequently generated keys
+#ifdef HAVE_EC_KEY_NEW_BY_CURVE_NAME
+    ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+    if (ecdh)
+    {
+        SSL_CTX_set_tmp_ecdh(ctx, ecdh); //add key to our ctx
+        EC_KEY_free(ecdh);
+    }
+#endif
+#endif
 }
 
 
@@ -234,10 +234,10 @@ static void OpenSSLSetupDH(SSL_CTX *ctx)
             paramfile = fopen(Tempstr, "r");
             if (paramfile)
             {
-	    #ifdef HAVE_PEM_READ_DHPARAMS
+#ifdef HAVE_PEM_READ_DHPARAMS
                 CachedDH = PEM_read_DHparams(paramfile, NULL, NULL, NULL);
                 dh=CachedDH;
-            #endif
+#endif
                 fclose(paramfile);
             }
         }
@@ -373,30 +373,30 @@ int OpenSSLVerifyCertificate(STREAM *S, int Flags)
         if (StrValid(Value)) STREAMSetValue(S, "SSL:CertificateCommonName", Value);
 
 
-    //values out of X509_get_notBefore etc are returned as internal pointers and must not be freed
-        #ifdef HAVE_X509_GET0_NOTBEFORE
+        //values out of X509_get_notBefore etc are returned as internal pointers and must not be freed
+#ifdef HAVE_X509_GET0_NOTBEFORE
         Time=X509_get0_notBefore(cert);
-        #else
+#else
         Time=X509_get_notBefore(cert);
-        #endif
+#endif
 
         if (Time)
         {
-        Value=OpenSSLConvertTime(Value, Time);
-        STREAMSetValue(S,"SSL:CertificateNotBefore", Value);
+            Value=OpenSSLConvertTime(Value, Time);
+            STREAMSetValue(S,"SSL:CertificateNotBefore", Value);
         }
 
 
-        #ifdef HAVE_X509_GET0_NOTAFTER
+#ifdef HAVE_X509_GET0_NOTAFTER
         Time=X509_get0_notAfter(cert);
-        #else
+#else
         Time=X509_get_notAfter(cert);
-        #endif
+#endif
 
         if (Time)
         {
-        Value=OpenSSLConvertTime(Value, Time);
-        STREAMSetValue(S,"SSL:CertificateNotAfter", Value);
+            Value=OpenSSLConvertTime(Value, Time);
+            STREAMSetValue(S,"SSL:CertificateNotAfter", Value);
         }
 
 
