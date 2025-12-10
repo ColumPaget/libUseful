@@ -598,6 +598,13 @@ char *StripLeadingWhitespace(char *Str)
 }
 
 
+char *StrTrim(char *Str)
+{
+    StripTrailingWhitespace(Str);
+    StripLeadingWhitespace(Str);
+    return(Str);
+}
+
 
 char *StripCRLF(char *Str)
 {
@@ -629,6 +636,7 @@ char *StripStartEndChars(char *Str, const char *StartChars, const char *EndChars
 
     if (! Str) return(Str);
 
+    StripTrailingWhitespace(Str);
     //find actual start of string, we don't count whitespace
     ptr=Str;
     while (isspace(*ptr)) ptr++;

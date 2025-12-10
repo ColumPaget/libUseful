@@ -1,9 +1,12 @@
 #include "DataParser.h"
 
 
+#define DATAPARSER_EXPAND   1
+#define DATAPARSER_COLLAPSE 2
+
 //Gets recursively called
 const char *ParserParseItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel);
-char *ParserExportItems(char *RetStr, int Type, int Indent, PARSER *P);
+static char *ParserExportItems(char *RetStr, int Format, int Flags, int ParentType, int Indent, PARSER *P);
 
 PARSER *ParserCreate()
 {
@@ -27,7 +30,7 @@ void ParserItemsDestroy(ListNode *Items)
 }
 
 
-int ParserIdentifyDocType(const char *TypeStr)
+static int ParserIdentifyDocType(const char *TypeStr)
 {
     const char *Types[]= {"json","xml","rss","yaml","config","ini","url","cmon",NULL};
     int Type;
@@ -50,7 +53,7 @@ int ParserIdentifyDocType(const char *TypeStr)
 
 
 //check if an item is one level deep
-int ParserEntityIsSimple(ListNode *Entity)
+static int ParserEntityIsSimple(ListNode *Entity)
 {
     ListNode *Curr;
     if (! Entity) return(FALSE);
@@ -58,6 +61,7 @@ int ParserEntityIsSimple(ListNode *Entity)
     switch (Entity->ItemType)
     {
     case ITEM_ENTITY:
+    case ITEM_ARRAY:
         Curr=ListGetNext((ListNode *) Entity->Item);
         while (Curr)
         {
@@ -136,7 +140,7 @@ ListNode *ParserAddValue(ListNode *Parent, const char *Name, const char *Value)
 {
     ListNode *Node=NULL;
     int ItemType=ITEM_STRING;
-    char *NewItem=NULL;
+    char *ID=NULL, *NewItem=NULL;
 
     if (StrValid(Name) || StrValid(Value))
     {
@@ -163,12 +167,16 @@ ListNode *ParserAddValue(ListNode *Parent, const char *Name, const char *Value)
         }
 
         NewItem=CopyStr(NULL, Value);
-        Node=ListAddNamedItem(Parent, Name, NewItem);
+        if (StrValid(Name)) ID=CopyStr(ID, Name);
+        else ID=FormatStr(ID, "item:%d", ListSize(Parent));
+        Node=ListAddNamedItem(Parent, ID, NewItem);
         Node->ItemType=ItemType;
     }
 
 //never do this. NewItem is now in the Parser List
 //Destroy(NewItem);
+
+    Destroy(ID);
 
     return(Node);
 }
@@ -251,7 +259,7 @@ static const char *ParserJSONItems(int ParserType, const char *Doc, ListNode *Pa
 }
 
 
-const char *ParserYAMLFoldedText(const char *Doc, char **RetStr)
+static const char *ParserYAMLFoldedText(const char *Doc, char **RetStr)
 {
     const char *ptr, *tptr;
     char *Token=NULL;
@@ -279,7 +287,7 @@ const char *ParserYAMLFoldedText(const char *Doc, char **RetStr)
 
 
 
-const char *ParserYAMLBlockText(const char *Doc, char **RetStr)
+static const char *ParserYAMLBlockText(const char *Doc, char **RetStr)
 {
     const char *ptr, *tptr;
     char *Token=NULL;
@@ -762,7 +770,7 @@ static const char *ParserXMLItems(int ParserType, const char *Doc, ListNode *Par
 
 
 
-#define CMON_TOKENS " |	|#|=|:|;|{|}|[|]|\r|\n"
+#define CMON_TOKENS " |	|#|=|:|;|,|{|}|[|]|\r|\n"
 
 static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Parent, int IndentLevel)
 {
@@ -781,58 +789,71 @@ static const char *ParserCMONItems(int ParserType, const char *Doc, ListNode *Pa
         {
         case '#':
             ptr=GetToken(ptr,"\n",&Token,0);
-            Token=CopyStr(Token,"");
             break;
 
         case ':':
             StripQuotes(PrevToken);
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY_LINE, PrevToken, IndentLevel+1);
-            Token=CopyStr(Token,"");
+            PrevToken=CopyStr(PrevToken,"");
             break;
 
         case '{':
             StripQuotes(PrevToken);
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ENTITY, PrevToken, IndentLevel+1);
-            Token=CopyStr(Token,"");
+            PrevToken=CopyStr(PrevToken,"");
             break;
 
         case '[':
             StripQuotes(PrevToken);
             ptr=ParserAddNewStructure(ptr, ParserType, Parent, ITEM_ARRAY, PrevToken, IndentLevel+1);
-            Token=CopyStr(Token,"");
+            PrevToken=CopyStr(PrevToken,"");
             break;
 
         case '=':
             if (Parent->ItemType==ITEM_ENTITY_LINE) ptr=GetToken(ptr, "\\S|\n", &Token, GETTOKEN_MULTI_SEP|GETTOKEN_INCLUDE_SEP|GETTOKEN_HONOR_QUOTES);
             else ptr=GetToken(ptr, "\n", &Token, GETTOKEN_QUOTES);
-            StripLeadingWhitespace(Token);
-            StripTrailingWhitespace(Token);
             StripQuotes(PrevToken);
             StripQuotes(Token);
             ParserAddValue(Parent, PrevToken, Token);
+            PrevToken=CopyStr(PrevToken,"");
             break;
 
-        case '\n':
-            if (Parent->ItemType==ITEM_ENTITY_LINE) BreakOut=TRUE;
-            break;
-
-        case ';':
         case '}':
         case ']':
             BreakOut=TRUE;
+        //break; //fall through to ','
+
+        case '\n':
+            //check for special case that we are writing an object or array over multiple lines
+            //note, ptr is the next char, not the current '\n', so we do not need to do an initial ptr++
+            while (isspace(*ptr)) ptr++;
+            if ((*ptr=='{') || (*ptr=='[')) break;
+
+            //if the special case above is not met, then treat this as an 'end of data value' line
+            if (Parent->ItemType==ITEM_ENTITY_LINE) BreakOut=TRUE;
+        //break; //fall through to ','
+
+        case ';':
+            StripQuotes(PrevToken);
+            if (StrValid(PrevToken)) ParserAddValue(Parent, NULL, PrevToken);
+            PrevToken=CopyStr(PrevToken,"");
+            break;
+
+
+        case '\r':
             break;
 
         case ' ':
         case '	':
-        case '\r':
+            //never start a token with whitespace
+            if (StrValid(PrevToken)) PrevToken=CatStr(PrevToken, Token);
             break;
 
         default:
-            PrevToken=CopyStr(PrevToken, Token);
-            StripTrailingWhitespace(PrevToken);
-            StripLeadingWhitespace(PrevToken);
+            PrevToken=CatStr(PrevToken, Token);
             break;
         }
+
     }
 
     DestroyString(PrevToken);
@@ -1108,27 +1129,29 @@ const char *ParserGetValue(ListNode *Items, const char *Name)
 
 
 
-char *ParserExportJSON(char *RetStr, int Type,  ListNode *Item)
+static char *ParserExportJSON(char *RetStr, int Format, int Flags, int ParentType,  ListNode *Item)
 {
     switch (Item->ItemType)
     {
     case ITEM_STRING:
-        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": \"", (const char *) Item->Item, "\"", NULL);
+        //arrays cannot have named items
+        if ((ParentType != ITEM_ARRAY) && StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": \"", (const char *) Item->Item, "\"", NULL);
         else RetStr=MCatStr(RetStr, "\"", (const char *) Item->Item, "\"", NULL);
         break;
     case ITEM_INTEGER:
-        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": ", (const char *) Item->Item, NULL);
+        //arrays cannot have named items
+        if ((ParentType != ITEM_ARRAY) && StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "\"", Item->Tag, "\": ", (const char *) Item->Item, NULL);
         else RetStr=CatStr(RetStr, (const char *) Item->Item);
         break;
     case ITEM_ENTITY:
     case ITEM_ENTITY_LINE:
         RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n{\n", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
+        RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ENTITY, 0, (PARSER *) Item->Item);
         RetStr=MCatStr(RetStr, "\n}\n", NULL);
         break;
     case ITEM_ARRAY:
         RetStr=MCatStr(RetStr, "\"", Item->Tag, "\":\n[\n", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
+        RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ARRAY, 0, (PARSER *) Item->Item);
         RetStr=MCatStr(RetStr, "\n]\n", NULL);
         break;
 
@@ -1140,10 +1163,11 @@ char *ParserExportJSON(char *RetStr, int Type,  ListNode *Item)
 }
 
 
-char *ParserExportXML(char *RetStr, int Type, ListNode *Item)
+static char *ParserExportXML(char *RetStr, int Format, int Flags,  int ParentType, ListNode *Item)
 {
     switch (Item->ItemType)
     {
+
     case ITEM_STRING:
     case ITEM_INTEGER:
         if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "<", Item->Tag, ">", (const char *) Item->Item, "</", Item->Tag, ">\n", NULL);
@@ -1151,8 +1175,9 @@ char *ParserExportXML(char *RetStr, int Type, ListNode *Item)
 
     case ITEM_ENTITY:
     case ITEM_ENTITY_LINE:
+    case ITEM_ARRAY:
         RetStr=MCatStr(RetStr, "<", Item->Tag, ">\n", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
+        RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ENTITY, 0, (PARSER *) Item->Item);
         RetStr=MCatStr(RetStr, "</", Item->Tag, ">\n", NULL);
         break;
     }
@@ -1161,7 +1186,7 @@ char *ParserExportXML(char *RetStr, int Type, ListNode *Item)
 }
 
 
-char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
+static char *ParserExportYAML(char *RetStr, int Format, int Flags, int ParentType, int Indent, ListNode *Item)
 {
     char *Token=NULL;
     const char *ptr;
@@ -1191,7 +1216,7 @@ char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
     case ITEM_ENTITY:
     case ITEM_ENTITY_LINE:
         RetStr=MCatStr(RetStr, Item->Tag, ":\n", NULL);
-        RetStr=ParserExportItems(RetStr, Type, Indent+2, (PARSER *) Item->Item);
+        RetStr=ParserExportItems(RetStr, Format, Flags, ParentType, Indent+2, (PARSER *) Item->Item);
         break;
     }
 
@@ -1201,11 +1226,84 @@ char *ParserExportYAML(char *RetStr, int Type, int Indent, ListNode *Item)
 }
 
 
-
-
-char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
+static char *ParserExportWriteName(char *RetStr, const char *Name, char *QuoteChars, const char *Suffix)
 {
-    char *Token=NULL;
+    char *Quoted=NULL;
+
+    Quoted=QuoteCharsInStr(Quoted,  Name, QuoteChars);
+    RetStr=MCatStr(RetStr, Quoted, Suffix, NULL);
+
+    Destroy(Quoted);
+
+    return(RetStr);
+}
+
+
+static char *ParserExportCMONSingleLineObject(char *RetStr, int Format, int Flags, int Indent, PARSER *Item)
+{
+    RetStr=ParserExportWriteName(RetStr, Item->Tag, "=;[]{}\r\n", ": ");
+    RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ENTITY_LINE, Indent+1, (PARSER *) Item->Item);
+    RetStr=CatStr(RetStr, "\n");
+
+    return(RetStr);
+}
+
+
+static char *ParserExportCMONMultiLineObject(char *RetStr, int Format, int Flags, int Indent, PARSER *Item)
+{
+    RetStr=ParserExportWriteName(RetStr, Item->Tag, "=;[]{}\r\n", "{\n");
+    RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ENTITY, Indent+1, (PARSER *) Item->Item);
+    RetStr=CatStr(RetStr, " }\n");
+
+    return(RetStr);
+}
+
+static char *ParserExportCMONSingleLineArray(char *RetStr, int Format, int Flags, int Indent, PARSER *Item)
+{
+    RetStr=ParserExportWriteName(RetStr, Item->Tag, "=;[]{}\r\n", "[ ");
+    RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ARRAY_LINE, 0, (PARSER *) Item->Item);
+    RetStr=CatStr(RetStr, "]\n");
+
+    return(RetStr);
+}
+
+static char *ParserExportCMONMultiLineArray(char *RetStr, int Format, int Flags, int Indent, PARSER *Item)
+{
+    RetStr=ParserExportWriteName(RetStr, Item->Tag, "=;[]{}\r\n", "[\n");
+    RetStr=ParserExportItems(RetStr, Format, Flags, ITEM_ARRAY, 0, (PARSER *) Item->Item);
+    RetStr=CatStr(RetStr, "]\n");
+
+    return(RetStr);
+}
+
+
+static int ParserCollapseItem(int ParentType, int Flags)
+{
+    switch (ParentType)
+    {
+    case ITEM_ENTITY:
+        return(FALSE);
+        break;
+    case ITEM_ENTITY_LINE:
+        return(TRUE);
+        break;
+
+    case ITEM_ARRAY:
+        return(FALSE);
+        break;
+    case ITEM_ARRAY_LINE:
+        return(TRUE);
+        break;
+        break;
+    }
+
+    return(FALSE);
+}
+
+
+static char *ParserExportCMON(char *RetStr, int Format, int Flags, int ParentType, int Indent, ListNode *Item)
+{
+    char *Token=NULL, *Name=NULL;
 
     if (Indent > 0) RetStr=PadStr(RetStr, ' ', Indent);
     switch (Item->ItemType)
@@ -1213,67 +1311,71 @@ char *ParserExportCMON(char *RetStr, int Type, int Indent, ListNode *Item)
     case ITEM_STRING:
     case ITEM_INTEGER:
         Token=QuoteCharsInStr(Token, (const char *) Item->Item, "\r\n");
-        if (StrValid(Item->Tag)) RetStr=MCatStr(RetStr, "'", Item->Tag, "'='", Token, "' ", NULL);
-        else RetStr=MCatStr(RetStr, "'", Token, "' ", NULL);
-        if (Indent==1) RetStr=CatStr(RetStr, " ");
+        //arrays cannot have named items
+        if ((ParentType == ITEM_ARRAY) || (ParentType==ITEM_ARRAY_LINE))
+        {
+            if (ParserCollapseItem(ParentType, Flags)) RetStr=MCatStr(RetStr, Token, ";", NULL);
+            else RetStr=CatStr(RetStr, Token);
+        }
+        else
+        {
+            if (StrValid(Item->Tag)) RetStr=ParserExportWriteName(RetStr, Item->Tag, "=;[]{}\r\n", "=");
+            RetStr=MCatStr(RetStr, "'", Token, "' ", NULL);
+        }
+
+        if (ParserCollapseItem(ParentType, Flags)) RetStr=CatStr(RetStr, " ");
         else RetStr=CatStr(RetStr, "\n");
         break;
 
     case ITEM_ARRAY:
-        RetStr=MCatStr(RetStr, Item->Tag, " [\n", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
-        RetStr=CatStr(RetStr, "]\n");
+        if (! ParserEntityIsSimple(Item)) RetStr=ParserExportCMONMultiLineArray(RetStr, Format, Flags, Indent, Item);
+        else if (Flags & DATAPARSER_EXPAND) RetStr=ParserExportCMONMultiLineArray(RetStr, Format, Flags, Indent, Item);
+        else if (Flags & DATAPARSER_COLLAPSE) RetStr=ParserExportCMONSingleLineArray(RetStr, Format, Flags, Indent, Item);
+        else RetStr=ParserExportCMONSingleLineArray(RetStr, Format, Flags, Indent, Item);
         break;
 
     case ITEM_ENTITY:
-        if (ParserEntityIsSimple(Item))
-				{
-        RetStr=MCatStr(RetStr, "'", Item->Tag, "': ", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
-        RetStr=CatStr(RetStr, "\n");
-				}
-        else
-        {
-            RetStr=MCatStr(RetStr, Item->Tag, " {\n", NULL);
-            RetStr=ParserExportItems(RetStr, Type, 0, (PARSER *) Item->Item);
-            RetStr=CatStr(RetStr, " }\n");
-        }
+        if (! ParserEntityIsSimple(Item)) RetStr=ParserExportCMONMultiLineObject(RetStr, Format, Flags, Indent, Item);
+        else if (Flags & DATAPARSER_COLLAPSE) RetStr=ParserExportCMONSingleLineObject(RetStr, Format, Flags, Indent, Item);
+        else if (Flags & DATAPARSER_EXPAND) RetStr=ParserExportCMONMultiLineObject(RetStr, Format, Flags, Indent, Item);
+        else RetStr=ParserExportCMONSingleLineObject(RetStr, Format, Flags, Indent, Item);
         break;
 
     case ITEM_ENTITY_LINE:
-        RetStr=MCatStr(RetStr, "'", Item->Tag, "': ", NULL);
-        RetStr=ParserExportItems(RetStr, Type, 1, (PARSER *) Item->Item);
-        RetStr=CatStr(RetStr, "\n");
+        if (! ParserEntityIsSimple(Item)) RetStr=ParserExportCMONMultiLineObject(RetStr, Format, Flags, Indent, Item);
+        else if (Flags & DATAPARSER_EXPAND) RetStr=ParserExportCMONMultiLineObject(RetStr, Format, Flags, Indent, Item);
+        else RetStr=ParserExportCMONSingleLineObject(RetStr, Format, Flags, Indent, Item);
         break;
     }
 
     Destroy(Token);
+    Destroy(Name);
 
     return(RetStr);
 }
 
 
 
-char *ParserExportItems(char *RetStr, int Type, int Indent, PARSER *P)
+static char *ParserExportItems(char *RetStr, int Format, int Flags, int ParentType, int Indent, PARSER *P)
 {
     ListNode *Curr;
 
     Curr=ListGetNext(P);
     while (Curr)
     {
-        switch (Type)
+        switch (Format)
         {
         case PARSER_JSON:
-            RetStr=ParserExportJSON(RetStr, Type, Curr);
+            RetStr=ParserExportJSON(RetStr, Format, Flags, ParentType, Curr);
             break;
         case PARSER_XML:
-            RetStr=ParserExportXML(RetStr, Type, Curr);
+            RetStr=ParserExportXML(RetStr, Format, Flags, ParentType, Curr);
             break;
         case PARSER_YAML:
-            RetStr=ParserExportYAML(RetStr, Type, Indent, Curr);
+            RetStr=ParserExportYAML(RetStr, Format, Flags, ParentType, Indent, Curr);
             break;
         case PARSER_CMON:
-            RetStr=ParserExportCMON(RetStr, Type, Indent, Curr);
+            RetStr=ParserExportCMON(RetStr, Format, Flags, ParentType, Indent, Curr);
             break;
         }
         Curr=ListGetNext(Curr);
@@ -1284,18 +1386,30 @@ char *ParserExportItems(char *RetStr, int Type, int Indent, PARSER *P)
 
 char *ParserExport(char *RetStr, const char *Format, PARSER *P)
 {
-    int Type;
+    int DocType, Flags=0;
+    char *Token=NULL;
+    const char *ptr;
 
-    Type=ParserIdentifyDocType(Format);
-    if (Type==-1)
+    ptr=GetToken(Format, "+|-", &Token, GETTOKEN_MULTI_SEP);
+    DocType=ParserIdentifyDocType(Token);
+
+    ptr=GetToken(ptr, "+|-", &Token, GETTOKEN_MULTI_SEP);
+    if (strcasecmp(Token, "expand")==0) Flags |= DATAPARSER_EXPAND;
+    if (strcasecmp(Token, "collapse")==0) Flags |= DATAPARSER_COLLAPSE;
+
+
+    if (DocType==-1)
     {
         RaiseError(0, "ParserExport", "Unknown Document Type: %s", Format);
         return(RetStr);
     }
 
-    if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "{\n");
-    RetStr=ParserExportItems(RetStr, Type, 0, P);
-    if (Type==PARSER_JSON) RetStr=CatStr(RetStr, "}");
+    if (DocType==PARSER_XML) RetStr=CatStr(RetStr, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    if (DocType==PARSER_JSON) RetStr=CatStr(RetStr, "{\n");
+    RetStr=ParserExportItems(RetStr, DocType, Flags, ITEM_ROOT, 0, P);
+    if (DocType==PARSER_JSON) RetStr=CatStr(RetStr, "}");
+
+    Destroy(Token);
 
     return(RetStr);
 }

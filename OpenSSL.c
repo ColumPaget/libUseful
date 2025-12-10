@@ -818,6 +818,12 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 
     if (S)
     {
+        if (STREAMWaitForBytes(S) < 0)
+        {
+            RaiseError(ERRFLAG_DEBUG, "DoSSLServerNegotiation", "Timeout waiting for SSL negotiation on %s", S->Path);
+            return(FALSE);
+        }
+
         INTERNAL_SSL_INIT();
         Method=SSLv23_server_method();
         if (Method)

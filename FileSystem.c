@@ -20,6 +20,8 @@
 #include <linux/fs.h>
 #endif
 
+#include <fnmatch.h>
+
 #ifndef HAVE_GET_CURR_DIR
 char *get_current_dir_name()
 {
@@ -210,11 +212,11 @@ int RecursiveFindFilesInPath(const char *Pattern, const char *Path, ListNode *Fi
     char *Dir=NULL;
     const char *ptr;
 
-    ptr=GetToken(Path, ":", &Dir, NULL);
+    ptr=GetToken(Path, ":", &Dir, 0);
     while (ptr)
     {
         RecursiveFindFilesInDir(Pattern, Dir, Files);
-        ptr=GetToken(ptr, ":", &Dir, NULL);
+        ptr=GetToken(ptr, ":", &Dir, 0);
     }
 
     Destroy(Dir);

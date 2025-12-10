@@ -134,6 +134,123 @@ FirstName=Bill
 LastName=Blogs
 Age=immortal
 }
+
+
+
+
+
+## CMON - Colum's Minimal Object Notation
+
+CMON is an experimental untyped 'lazy' object notation. It's mostly intended as a quick-and-dirty notation to compactly store and load data into programs which know the datatypes in advance. Thus everything is stored as strings and the program does any conversion to 'int' or 'bool' because it knows what data it's using. It's aimed at simple use cases where even typing JSON, and getting all the " and , lined up is too much bother.
+
+CMON's main use cases are 
+  1) 'quick and dirty' config files consisting of lines of key-value pairs, 
+  2) 'record files', a kind of database made up of single-line entities/objects 
+  3) debugging output: CMON is intended to be 'viewable' and has 'collapse' mode when exporting, which tries to write data as succinctly as possible. This is sometimes useful when importing formats like JSON to get an overview of what was imported.
+
+CMON supports comments starting with #:
+
+  # this is a comment
+
+it supports single-line values
+
+  name=value
+
+CMON tries to handle names and values that contain spaces. Everything is treated as a string until one of the characters ={}[];\n is encountered. '=' indicats that preceeding text is the name of a name-value pair. Semi-colon or newline will end the value part of a name-value pair, (but note extra rules for 'single-line objects' below). Both " and ' can be used as quoting characters, so if these occur in string they must be quoted bash-style, using \ or by using the other type of quotes in the outer. e.g.:
+
+  value1="multi word value"
+  value2='another multi word value'
+  value3=a value that is ended by newline
+  value4=two values in one line; value5=via use of semi-colon
+  value number 6 = a value that has spaces in the name
+  quoted value=this is a value with an apostrophe in it\'s data
+  quoted value2="this is also value with an apostrophe in it's data"
+  unquoted value=this value will go wrong because it's got an unquoted apostrophe
+  
+CMON supports 'single line objects' like so:
+
+  my_object: value1=this value2=that value3="the other"
+
+single line objects are a special case where whitespacespace will break members up as shown above. You should likely always quote members of single-line objects. They are the only use-case where whitespace has this effect.
+
+CMON also supports multi-line objects like so:
+
+  my_object {
+  value1=this
+  value2=that
+  }
+
+or like so:
+
+  my_object 
+  {
+  value1=this
+  value2=that
+  }
+
+
+or if you want to use this syntax in a single-line form ';' can be used as an end character, like so:
+
+  my_object { value1=this; value2=that; value3=the other; value4=whatever }
+
+This is because objects created using the {} syntax do not break up their members using whitespace.
+
+
+You can nest objects
+
+  outer_object {
+   inner1: value1=this value2=that
+   inner2: value1=something value2=something
+   inner3 {
+     value1=whatever
+     value2=again
+   }
+   inner_array [this; that; the other]
+  }
+
+
+Arrays have the form:
+
+  myarray [this; that; "the other"]
+
+or
+
+  myarray [
+  this
+  that
+  "the other"
+  ]
+
+or
+
+  myarray 
+  [
+  this
+  that
+  "the other"
+  ]
+
+
+Arrays cannot contain named items. Note the use of semi-colon to divide up array items. This was chosen as comma occurs too often in text to be used for this purpose without quoting commas.
+
+
+
+CMON is parsed similarly to any other format: 
+  Root=ParserParseDocument("cmon", Document);
+  Student=ParserOpenItem(Root, "/School/Class/Students/BillBlogs");
+  printf("Grade Average: %s\n",ParserGetValue(Student, "grade_avg"));
+  printf("Days Sick: %s\n",ParserGetValue(Student, "sickdays"));
+
+
+When exporting CMON there's three possible 'export modes',
+
+Tempstr=ParserExport(Tempstr, "cmon", P);
+
+Tempstr=ParserExport(Tempstr, "cmon+expand", P);
+
+Tempstr=ParserExport(Tempstr, "cmon+collapse", P);
+
+These modes control how CMON expands or collapses arrays and objects. "cmon+expand" will always produce output where arrays and objects are multi-line. "cmon+collapse" will, where possible, produce output with 'one line' objects and arrays. Just plain 'cmon' will try to produce a sensible mix of these two.
 */
 
 
@@ -154,6 +271,7 @@ typedef struct lnode PARSER;
 #define ITEM_INTEGER 4          //integer value (actually number rather than integer)
 #define ITEM_INTERNAL_LIST 100  //list of items that is internal to an entity or array
 #define ITEM_ENTITY_LINE   102  //an entity that should be expressed as a single line when output
+#define ITEM_ARRAY_LINE    103  //array that syhould be expressd as a single line when output
 
 
 ListNode *ParserParseDocument(const char *DocType, const char *Doc);
