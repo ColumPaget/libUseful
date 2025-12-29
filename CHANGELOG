@@ -1,3 +1,6 @@
+v5.65 (2025-12-29)
+  * Minor fix for IP6 connections
+
 v5.64 (2025-12-10)
   * Guard ssl_accept with 'STREAMWaitForBytes' to prevent eternally waiting for client that doesn't do SSL handshake
   * Fixes for CMON object notation, document it's details in DataParser.h
