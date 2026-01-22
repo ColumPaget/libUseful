@@ -156,7 +156,7 @@ void StrtoIP6(const char *Str, struct in6_addr *dest)
 
     if (StrValid(Str))
     {
-				Token=CopyStr(Token, "");
+        Token=CopyStr(Token, "");
         //if they pass in an IP4, we have to prefix it with ::ffff: as this is a range
         //set aside to easy allocation of IP6 addresses to servers with existing IP4
         if (IsIP4Address(Str)) Token=MCopyStr(Token,"::ffff:",Str,NULL);
@@ -167,7 +167,7 @@ void StrtoIP6(const char *Str, struct in6_addr *dest)
             {
                 GetToken(ptr+1, "]", &Token, 0);
             }
-						else Token=CopyStr(Token, Str);
+            else Token=CopyStr(Token, Str);
         }
 
         inet_pton(AF_INET6, Token, dest);

@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.65], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.66], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag
@@ -26,7 +26,6 @@ AS_IF([test "$LN" = ""], [
 ])
 AC_SUBST(LN)
 
-echo "CC=$CC AR=$AR LN=$LN"
 
 AC_PROG_CC
 AC_LANG([C])
@@ -61,7 +60,7 @@ AS_IF([test "$cf_use_lgpl" = "yes"], [
 
 
 AC_ARG_ENABLE([wall],
-    [AS_HELP_STRING([--enable-wall], [use -Wall to get maximum compile warnings])],
+    [AS_HELP_STRING([--enable-wall], [use -Wall to get maximum compile warnings (default=no)])],
     [cf_use_wall=$enableval],
     [cf_use_wall=no]
 )
@@ -71,7 +70,7 @@ AS_IF([test "$cf_use_wall" = "yes"], [
 
 
 AC_ARG_ENABLE([werror],
-    [AS_HELP_STRING([--enable-werror], [treat compile warnings as errors])],
+    [AS_HELP_STRING([--enable-werror], [treat compile warnings as errors (default=no)])],
     [cf_use_werror=$enableval],
     [cf_use_werror=no]
 )
@@ -81,17 +80,17 @@ AS_IF([test "$cf_use_werror" = "yes"], [
 
 
 AC_ARG_ENABLE([fortify],
-    [AS_HELP_STRING([--enable-fortify], [use 'FORTIFY_SOURCE=3' to harden source code])],
+    [AS_HELP_STRING([--enable-fortify], [use 'FORTIFY_SOURCE=3' to harden source code (default=no)])],
     [cf_use_fortify=$enableval],
     [cf_use_fortify=no]
 )
 AC_ARG_ENABLE([stack-protect],
-    [AS_HELP_STRING([--enable-stack-protect], [use '-fstack-protector-strong' to harden source code])],
+    [AS_HELP_STRING([--enable-stack-protect], [use '-fstack-protector-strong' to harden source code (default=no)])],
     [cf_use_stackprotect=$enableval],
     [cf_use_stackprotect=no]
 )
 AC_ARG_ENABLE([harden],
-    [AS_HELP_STRING([--enable-harden], [use 'FORTIFY_SOURCE=3' and stack-protect to harden source code])],
+    [AS_HELP_STRING([--enable-harden], [use 'FORTIFY_SOURCE=3' and stack-protect to harden source code (default=no)])],
     [cf_use_harden=$enableval],
     [cf_use_harden=no]
 )
@@ -146,7 +145,7 @@ AC_CHECK_FUNCS(getloadavg sysinfo sysconf getpagesize ptsname_r clearenv setresu
 
 
 AC_ARG_ENABLE([strlen-cache],
-    [AS_HELP_STRING([--enable-strlen-cache], [use 'strlen cache' feature. This can improve performance with large strings (documents) on old systems without AVX strlen instructions.])],
+    [AS_HELP_STRING([--enable-strlen-cache], [use 'strlen cache' feature. This can improve performance with large strings (documents) on old systems without AVX strlen instructions.]) (default=yes)],
     [cf_use_strlen_cache=$enableval],
     [cf_use_strlen_cache=yes]
 )
@@ -155,7 +154,7 @@ AS_IF([test "$cf_use_strlen_cache" != "no"], AC_DEFINE([USE_STRLEN_CACHE]))
 
 
 AC_ARG_ENABLE([sendfile],
-    [AS_HELP_STRING([--enable-sendfile], [enable 'fastcopy' sendfile support])],
+    [AS_HELP_STRING([--enable-sendfile], [enable 'fastcopy' sendfile support] (default=yes))],
     [cf_use_sendfile=$enableval],
     [cf_use_sendfile=auto]
 )
@@ -184,7 +183,7 @@ AS_IF([test "$have_netfilter_ipv4" = "yes"], [
 
 
 AC_ARG_ENABLE([ip6],
-    [AS_HELP_STRING([--enable-ip6], [enable IPv6 support])],
+    [AS_HELP_STRING([--enable-ip6], [enable IPv6 support (default=yes)])],
     [cf_use_ip6=$enableval],
     [cf_use_ip6=yes]
 )
@@ -194,9 +193,9 @@ AS_IF([test "$cf_use_ip6" = "yes"], [
 
 
 AC_ARG_ENABLE([xattr],
-    [AS_HELP_STRING([--enable-xattr], [enable filesystem xattr support])],
+    [AS_HELP_STRING([--enable-xattr], [enable filesystem xattr support (default=no)])],
     [cf_use_xattr=$enableval],
-    [cf_use_xattr=yes]
+    [cf_use_xattr=no]
 )
 AS_IF([test "$cf_use_xattr" = "yes"], [
     AC_CHECK_LIB(c,getxattr,,)
@@ -207,7 +206,7 @@ AS_IF([test "$cf_use_xattr" = "yes"], [
 ])
 
 AC_ARG_ENABLE([fsflags],
-    [AS_HELP_STRING([--enable-fsflags], [enable support for immutable and append-only files (and use of these in logs)])],
+    [AS_HELP_STRING([--enable-fsflags], [enable support for immutable and append-only files and use of these in logs (default=no)])],
     [cf_use_fsflags=$enableval],
     [cf_use_fsflags=no]
 )
@@ -221,7 +220,7 @@ AS_IF([test "$cf_have_fsflags" = "yes"], [
 
 
 AC_ARG_ENABLE([crc32],
-    [AS_HELP_STRING([--enable-crc32], [enable internal crc32 hash support (not supported under LGPL)])],
+    [AS_HELP_STRING([--enable-crc32], [enable internal crc32 hash support (default=yes, but not under LGPL)])],
     [cf_use_crc32=$enableval],
     [cf_use_crc32=yes]
 )
@@ -240,7 +239,7 @@ AS_IF([test "$cf_use_crc32" = "yes"], [
 
 
 AC_ARG_ENABLE([md5],
-    [AS_HELP_STRING([--enable-md5], [enable internal MD5 hash support])],
+    [AS_HELP_STRING([--enable-md5], [enable internal MD5 hash support (default=yes)])],
     [cf_use_md5=$enableval],
     [cf_use_md5=yes]
 )
@@ -250,7 +249,7 @@ AS_IF([test "$cf_use_md5" = "yes"], [
 
 
 AC_ARG_ENABLE([sha1],
-    [AS_HELP_STRING([--enable-sha1], [enable internal SHA1 hash support (not supported under LGPL)])],
+    [AS_HELP_STRING([--enable-sha1], [enable internal SHA1 hash support  (default=yes but not under LGPL)])],
     [cf_use_sha1=$enableval],
     [cf_use_sha1=yes]
 )
@@ -268,7 +267,7 @@ AS_IF([test "$cf_use_sha1" = "yes"], [
 
 
 AC_ARG_ENABLE([sha2],
-    [AS_HELP_STRING([--enable-sha2], [enable internal SHA2 (sha256, sha512 etc) hash support])],
+    [AS_HELP_STRING([--enable-sha2], [enable internal SHA2 (sha256, sha512 etc) hash support (default=yes)])],
     [cf_use_sha2=$enableval],
     [cf_use_sha2=yes]
 )
@@ -277,7 +276,7 @@ AS_IF([test "$cf_use_sha2" = "yes"], [
 ])
 
 AC_ARG_ENABLE([whirl],
-    [AS_HELP_STRING([--enable-whirl], [enable internal whirlpool hash support])],
+    [AS_HELP_STRING([--enable-whirl], [enable internal whirlpool hash support (default=yes)])],
     [cf_use_whirl=$enableval],
     [cf_use_whirl=yes]
 )
@@ -287,7 +286,7 @@ AS_IF([test "$cf_use_whirl" = "yes"], [
 
 
 AC_ARG_ENABLE([jh],
-    [AS_HELP_STRING([--enable-jh], [enable internal jh hash support])],
+    [AS_HELP_STRING([--enable-jh], [enable internal jh hash support (default=yes)])],
     [cf_use_jh=$enableval],
     [cf_use_jh=yes]
 )
@@ -301,7 +300,7 @@ AS_IF([test "$cf_use_jh" = "yes"], [
 
 
 AC_ARG_ENABLE([namespaces],
-    [AS_HELP_STRING([--enable-namespaces], [enable linux namespace support])],
+    [AS_HELP_STRING([--enable-namespaces], [enable linux namespace support (default=yes)])],
     [cf_use_namespaces=$enableval],
     [cf_use_namespaces=yes]
 )
@@ -320,7 +319,7 @@ AS_IF([test "$cf_use_namespaces" = "yes"], [
 
 
 AC_ARG_ENABLE([ssl],
-    [AS_HELP_STRING([--enable-ssl], [use Secure Sockets Layer])],
+    [AS_HELP_STRING([--enable-ssl], [use Secure Sockets Layer (default=yes)])],
     [cf_use_ssl=$enableval],
     [cf_use_ssl=yes]
 )
@@ -375,7 +374,7 @@ AS_IF([test "$cf_use_ssl" = "yes"], [
 
 
 AC_ARG_ENABLE([zlib],
-    [AS_HELP_STRING([--enable-zlib] ,[use ZLib Compression])],
+    [AS_HELP_STRING([--enable-zlib] ,[use ZLib Compression (default=yes)])],
     [cf_use_zlib=$enableval],
     [cf_use_zlib=yes]
 )
@@ -386,7 +385,7 @@ AS_IF([test "$cf_use_zlib" = "yes" -o "$cf_use_ssl" = "yes"], [
 
 
 AC_ARG_ENABLE([simd],
-    [AS_HELP_STRING([--enable-simd=<level>], [use SIMD cpu extensions, 'level' can be one of mmx, sse, sse2])],
+    [AS_HELP_STRING([--enable-simd=<level>], [use SIMD cpu extensions, 'level' can be one of mmx, sse, sse2 (default=no)])],
     [cf_use_simd=$enableval]
 )
 AS_CASE([$cf_use_simd],
@@ -416,7 +415,7 @@ AS_IF([test "$cf_have_capabilities" = "yes"], [
 
 
 AC_ARG_ENABLE([seccomp],
-    [AS_HELP_STRING([--enable-seccomp], [enable seccomp to limit process syscalls])],
+    [AS_HELP_STRING([--enable-seccomp], [enable seccomp to limit process syscalls (default=no)])],
     [cf_use_seccomp=$enableval],
     [cf_use_seccomp=no]
 )

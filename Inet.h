@@ -13,8 +13,13 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 extern "C" {
 #endif
 
+
 char *ExtractFromWebpage(char *RetStr, const char *URL, const char *ExtractStr, int MinLength);
+
+//returns the external IP of the current machine
 char *GetExternalIP(char *RetStr);
+
+//for a given IP return a list of values looked up for it
 int IPGeoLocate(const char *IP, ListNode *Vars);
 
 #ifdef __cplusplus

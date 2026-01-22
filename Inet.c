@@ -3,17 +3,37 @@
 #include "GeneralFunctions.h"
 #include "Markup.h"
 #include "IPAddress.h"
+#include "DataParser.h"
+
+static STREAM *GeoLocateOpenURL(const char *URL, const char *LookupIP)
+{
+    ListNode *Config;
+    char *Tempstr=NULL;
+    STREAM *S;
+
+    Config=ListCreate();
+    SetVar(Config, "ip", LookupIP);
+    Tempstr=SubstituteVarsInString(Tempstr, URL, Config, 0);
+
+    S=HTTPGet(Tempstr);
+
+    ListDestroy(Config, Destroy);
+    Destroy(Tempstr);
+
+    return(S);
+}
+
 
 char *ExtractFromWebpage(char *RetStr, const char *URL, const char *ExtractStr, int MinLength)
 {
-    STREAM *S;
     char *Tempstr=NULL;
     const char *ptr;
     ListNode *Vars;
+    STREAM *S;
 
     Vars=ListCreate();
 
-    S=HTTPGet(URL);
+    S=GeoLocateOpenURL(URL, "");
     if (S)
     {
         Tempstr=STREAMReadLine(Tempstr,S);
@@ -47,6 +67,146 @@ char *ExtractFromWebpage(char *RetStr, const char *URL, const char *ExtractStr, 
 }
 
 
+
+static ListNode *IPInfoLookupGetServices(const char *Type)
+{
+    char *Tempstr=NULL, *Token=NULL, *URL=NULL;
+    const char *ptr;
+    ListNode *Services=NULL;
+    int len;
+    STREAM *S;
+
+    Services=ListCreate();
+    S=LibUsefulConfigFileOpen("ip-lookup.conf", "LIBUSEFUL_IPLOOKUP_FILE", "IPLookupFile");
+    if (S)
+    {
+        Tempstr=STREAMReadLine(Tempstr, S);
+        while (Tempstr)
+        {
+            if (StrValid(Tempstr))
+            {
+                StripTrailingWhitespace(Tempstr);
+                ptr=GetToken(Tempstr, " ", &URL, 0);
+                if (CompareStrNoCase(Type, "geolocate")==0)
+                {
+                    if (strstr(Tempstr, " geolocate=y")) SetVar(Services, URL, ptr);
+                }
+                else SetVar(Services, URL, ptr);
+
+                Tempstr=STREAMReadLine(Tempstr, S);
+            }
+        }
+        STREAMClose(S);
+
+        //pick a random start position, and to through all servers from that start
+        len=ListSize(Services);
+	if (len > 1) ListRotate(Services, (time(NULL) + rand()) % len);
+    }
+    else RaiseError(0, "IPInfoLookupGetServices", "Cannot find/open ip-lookup.conf config file");
+
+    Destroy(Tempstr);
+    Destroy(Token);
+    Destroy(URL);
+
+    return(Services);
+}
+
+
+
+
+
+
+int ProcessIPGeolocateService(const char *IP, const char *URL, const char *Settings, ListNode *Vars)
+{
+    ListNode *Config;
+    PARSER *P;
+    char *Tempstr=NULL;
+    const char *ptr;
+    const char *Fields[]= {"ip", "latitude", "longitude", "country", "countrycode", "region", "city", "isp", "asn", "timezone", NULL};
+    STREAM *S;
+    int RetVal=FALSE;
+    int i;
+
+    S=GeoLocateOpenURL(URL, IP);
+    if (S != NULL)
+    {
+        Tempstr=STREAMReadDocument(Tempstr, S);
+        STREAMClose(S);
+
+        Config=VarsFromNameValueList(Settings, "\\S", "=");
+        ptr=GetVar(Config, "format");
+
+        if (StrValid(ptr))
+        {
+            P=ParserParseDocument(ptr, Tempstr);
+            for (i=0; Fields[i] !=NULL; i++)
+            {
+                ptr=GetVar(Config, Fields[i]);
+                if (! StrValid(ptr)) ptr=Fields[i];
+
+                SetVar(Vars, Fields[i], ParserGetValue(P, ptr));
+            }
+            if ( StrValid(GetVar(Vars, "country")) ) RetVal=TRUE;
+	    ParserItemsDestroy(P);
+        }
+    }
+
+    ListDestroy(Config, Destroy);
+    Destroy(Tempstr);
+
+    return(RetVal);
+}
+
+
+int IPGeoLocate(const char *Host, ListNode *Vars)
+{
+    STREAM *S=NULL;
+    char *Tempstr=NULL, *IP=NULL;
+    ListNode *Services, *Curr;
+    const char *ptr;
+    int result=FALSE;
+
+    if (! StrValid(Host)) return(FALSE);
+
+    if (! IsIPAddress(Host)) IP=CopyStr(IP, LookupHostIP(Host));
+    else IP=CopyStr(IP, Host);
+
+
+    Services=IPInfoLookupGetServices("geolocate");
+    Curr=ListGetNext(Services);
+    while (Curr)
+    {
+        result=ProcessIPGeolocateService(IP, Curr->Tag, Curr->Item, Vars);
+        if (result) break;
+        Curr=ListGetNext(Curr);
+    }
+
+    ListDestroy(Services, Destroy);
+    DestroyString(Tempstr);
+
+    return(result);
+}
+
+
+
+
+static char *IPFromGeoLocate(char *RetStr, const char *URL, const char *Settings)
+{
+ListNode *Vars;
+
+Vars=ListCreate();
+if (ProcessIPGeolocateService("", URL, Settings, Vars))
+{
+	RetStr=CopyStr(RetStr, GetVar(Vars, "ip"));
+}
+
+ListDestroy(Vars, Destroy);
+
+return(RetStr);
+}
+
+
+
 char *GetExternalIP(char *RetStr)
 {
     ListNode *Services, *Curr;
@@ -55,27 +215,14 @@ char *GetExternalIP(char *RetStr)
     STREAM *S;
 
     RetStr=CopyStr(RetStr,"");
-    Services=ListCreate();
-    S=LibUsefulConfigFileOpen("ip-lookup.conf", "LIBUSEFUL_IPLOOKUP_FILE", "IPLookupFile");
-    if (S)
-    {
-        Token=STREAMReadLine(Token, S);
-        while (Token)
-        {
-            if (StrValid(Token)) ListAddItem(Services, CopyStr(NULL, Token));
-            Token=STREAMReadLine(Token, S);
-        }
-        STREAMClose(S);
-    }
 
-    //pick a random start position, and to through all servers from that start
-    ListRotate(Services, (time(NULL) + rand()) % ListSize(Services));
-
+    Services=IPInfoLookupGetServices("");
     Curr=ListGetNext(Services);
     while (Curr)
     {
-        ptr=GetToken(Curr->Item, ",", &Token, 0);
-        RetStr=ExtractFromWebpage(RetStr, Token, ptr, 4);
+        ptr=GetToken(Curr->Tag, ",", &Token, 0);
+	if (strstr((const char *) Curr->Item, "format=json")) RetStr=IPFromGeoLocate(RetStr, Curr->Tag, Curr->Item);
+        else RetStr=ExtractFromWebpage(RetStr, Token, ptr, 4);
         if (StrValid(RetStr)) break;
         Curr=ListGetNext(Curr);
     }
@@ -88,92 +235,3 @@ char *GetExternalIP(char *RetStr)
 
 
 
-#define IPInfo_API_KEY "1261fcbf647ea02c165aa3bfa66810f0be453d8a1c2e7f653c0666d4e7e205f0"
-
-static int IPInfoDBGeoLocate(const char *IP, ListNode *Vars)
-{
-    STREAM *S=NULL;
-    char *TagType=NULL, *TagData=NULL, *Tempstr=NULL, *Token=NULL;
-    const char *DesiredTags[]= {"CountryCode","CountryName","City","RegionName","Latitude","Longitude","TimeZone",NULL};
-    const char *ptr;
-    int result=FALSE;
-
-    if (! IsIPAddress(IP)) Token=CopyStr(Token,LookupHostIP(IP));
-    else Token=CopyStr(Token,IP);
-
-    Tempstr=MCopyStr(Tempstr,"http://api.ipinfodb.com/v2/ip_query.php?key=",IPInfo_API_KEY,"&ip=",Token,"&timezone=true",NULL);
-
-    S=HTTPGet(Tempstr);
-    if (S)
-    {
-        Tempstr=STREAMReadLine(Tempstr,S);
-        while (Tempstr)
-        {
-            ptr=XMLGetTag(Tempstr,NULL,&TagType,&TagData);
-            while (ptr)
-            {
-                if (MatchTokenFromList(TagType,DesiredTags,0) > -1)
-                {
-                    //we can't re-use 'TagType', we still need it
-                    ptr=XMLGetTag(ptr,NULL,&Token,&TagData);
-                    SetVar(Vars,TagType,TagData);
-                    result=TRUE;
-                }
-                ptr=XMLGetTag(ptr,NULL,&TagType,&TagData);
-            }
-            Tempstr=STREAMReadLine(Tempstr,S);
-        }
-    }
-
-    STREAMClose(S);
-
-    DestroyString(Tempstr);
-    DestroyString(Token);
-    DestroyString(TagType);
-    DestroyString(TagData);
-
-    return(result);
-}
-
-
-int IPGeoLocate(const char *IP, ListNode *Vars)
-{
-    STREAM *S=NULL;
-    char *Tempstr=NULL, *Token=NULL;
-    const char *ptr;
-    int result=FALSE;
-
-    if (! StrValid(IP)) return(FALSE);
-    if (IPInfoDBGeoLocate(IP, Vars)) return(TRUE);
-
-    if (! IsIPAddress(IP)) Token=CopyStr(Token, LookupHostIP(IP));
-    else Token=CopyStr(Token,IP);
-
-    Tempstr=MCopyStr(Tempstr,"http://freegeoip.net/csv/",Token,NULL);
-
-    S=HTTPGet(Tempstr);
-    if (S)
-    {
-        STREAMSetTimeout(S,100);
-        Tempstr=STREAMReadDocument(Tempstr,S);
-        ptr=GetToken(Tempstr, ",", &Token,0); //IP
-        ptr=GetToken(ptr, ",", &Token,0); //CountryCode
-        strlwr(Token);
-        SetVar(Vars,"CountryCode",Token);
-        ptr=GetToken(ptr, ",", &Token,0); //Country name
-        SetVar(Vars,"CountryName",Token);
-        ptr=GetToken(ptr, ",", &Token,0); //Region Code
-        ptr=GetToken(ptr, ",", &Token,0); //Region Name
-        SetVar(Vars,"RegionName",Token);
-        ptr=GetToken(ptr, ",", &Token,0); //City
-        SetVar(Vars,"City",Token);
-        STREAMClose(S);
-        result=TRUE;
-    }
-
-
-    DestroyString(Tempstr);
-    DestroyString(Token);
-
-    return(result);
-}

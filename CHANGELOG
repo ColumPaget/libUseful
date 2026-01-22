@@ -1,3 +1,8 @@
+v5.66 (2026-01-22)
+  * Add XtermStringBase64Command to Terminal.h, as this prevents libUseful-lua from building
+  * GeoIP and ExternalIP systems reworked, now all sources are specified in ip-lookup.conf
+  * Dequote any quoted strings before adding them to a TerminalMenu
+
 v5.65 (2025-12-29)
   * Minor fix for IP6 connections
 

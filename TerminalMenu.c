@@ -71,8 +71,11 @@ static char *TerminalMenuFormatItem(char *Output, TERMMENU *Menu, ListNode *Curr
     if (Menu->y == -1) SingleLineCR=CopyStr(SingleLineCR, "\r");
     else SingleLineCR=CopyStr(SingleLineCR, "");
 
-    if (StrValid(p_Attribs)) Contents=ReplaceStr(Contents, Curr->Tag, "~0", p_Attribs);
-    else Contents=CopyStr(Contents, Curr->Tag);
+
+		//do not send quoted strings to the terminal
+    Tempstr=UnQuoteStr(Tempstr, Curr->Tag);
+    if (StrValid(p_Attribs)) Contents=ReplaceStr(Contents, Tempstr, "~0", p_Attribs);
+    else Contents=CopyStr(Contents, Tempstr);
 
     wide=Menu->wid;
     if (wide < 0) wide=TermWidth + wide;
@@ -271,7 +274,7 @@ ListNode *TerminalMenuOnKey(TERMMENU *Menu, int key)
 
 ListNode *TerminalMenuProcess(TERMMENU *Menu)
 {
-    ListNode *Node;
+    ListNode *Node=NULL;
     int key;
 
     TerminalMenuDraw(Menu);
@@ -297,7 +300,7 @@ ListNode *TerminalMenuProcess(TERMMENU *Menu)
 ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, int high)
 {
     TERMMENU *Menu;
-    ListNode *Node;
+    ListNode *Node=NULL;
 
     Menu=TerminalMenuCreate(Term, x, y, wid, high);
     Menu->Options = Options;

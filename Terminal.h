@@ -297,6 +297,10 @@ void XtermSetTerminalSize(STREAM *S, int wide, int high);
 //generic function for building xterm query escape sequences
 void XtermStringCommand(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);
 
+//generic function for building xterm query escape sequences where 'Str' gets base64 encoded in the query
+void XtermStringBase64Command(const char *Prefix, const char *Str, const char *Postfix, STREAM *S);
+
+
 void XtermSetDefaultColors(STREAM *S, const char *Colors);
 
 //put a character. Char can be a value outside the ANSI range which will result in an xterm unicode character string being output

@@ -904,7 +904,9 @@ void ListRotate(ListNode *List, int RotateCount)
 {
     ListNode *Curr;
     int i;
-
+    
+    if (ListSize(List) > 1)
+    {
     for (i=0; i < RotateCount; i++)
     {
         Curr=ListGetNext(List);
@@ -912,6 +914,6 @@ void ListRotate(ListNode *List, int RotateCount)
         ListUnThreadNode(Curr);
         ListThreadNode(ListGetLast(List), Curr);
     }
-
+    }
 
 }

@@ -45,6 +45,7 @@ all:
 	gcc -ocontainer.exe container.c $(LIBS)
 	gcc -oListLimits.exe ListLimits.c $(LIBS)
 	gcc -oexternalip.exe externalip.c $(LIBS)
+	gcc -ogeolocate.exe geolocate.c $(LIBS)
 	gcc -oipmask.exe ipmask.c $(LIBS)
 	gcc -orecurse.exe recurse.c $(LIBS)
 
