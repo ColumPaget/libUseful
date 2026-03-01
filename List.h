@@ -210,8 +210,8 @@ typedef struct lnode
 #define ListCreate(F) (ListInit(F + 0))
 
 
-//Get first item in a list, or in a map chain
-#define MapChainGetHead(Node) (((Node)->Flags & LIST_FLAG_MAP_CHAIN) ? (Node) : Node->Head)
+//Get head item in a list, or in a map chain
+#define MapChainGetHead(Node) (((Node)->Flags & LIST_FLAG_MAP_CHAIN) ? (Node) : (Node)->Head)
 
 //if L isn't NULL then return L->Head, it's fine if L->Head is null
 #define ListGetHead(Node) ((Node) ? MapChainGetHead(Node) : NULL)
@@ -219,9 +219,9 @@ typedef struct lnode
 //this is the main function for traversing lists and maps
 #define ListGetNext(Node) ((Node) ? MapGetNext(Node) : NULL)
 
-//these functions return listnode metadata
-#define ListNodeGetHits(node) ((node)->Stats ? (node)->Stats->Hits : 0)
-#define ListNodeGetTime(node) ((node)->Stats ? (node)->Stats->Time : 0)
+//these functions return listNode metadata
+#define ListNodeGetHits(Node) ((Node)->Stats ? (Node)->Stats->Hits : 0)
+#define ListNodeGetTime(Node) ((Node)->Stats ? (Node)->Stats->Time : 0)
 
 
 
@@ -358,6 +358,15 @@ void *ListDeleteNode(ListNode *);
 //swap to items/listnodes in a list
 void ListSwapItems(ListNode *Item1, ListNode *Item2);
 
+
+//move list node 'Curr' to the start of it's list
+void ListMoveStart(ListNode *Curr);
+
+//move list node 'Curr' to the end of it's list
+void ListMoveEnd(ListNode *Curr);
+
+//pop the first 'RotateCount' items off the top of the list
+//and append them to the end of the list
 void ListRotate(ListNode *List, int RotateCount);
 
 #ifdef __cplusplus

@@ -33,6 +33,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "List.h"
 #include "Array.h"
 #include "Stream.h"
+#include "IOPoll.h"
 #include "Inet.h"
 #include "base64.h"
 #include "Tokenizer.h"

@@ -1,3 +1,13 @@
+v5.67 (2026-02-26)
+  * Fix build issues on linux systems lacking MS_REC mount option
+  * Fix some issues with timeouts when using linux 'poll' syscall
+	* STREAMSelect now supports epoll 
+  * STREAMSelect now removes STREAMS from lists when stream is closed
+	* Fix bug in STREAMSelect when using 'select' with more than 1024 file descriptors
+	* Added 'ListMoveEnd' and 'ListMoveStart' functions
+  * Make sure STREAMIsConnected can only return 'TRUE' or 'FALSE', not 'SOCK_CONNECTING' etc
+  
+  
 v5.66 (2026-01-22)
   * Add XtermStringBase64Command to Terminal.h, as this prevents libUseful-lua from building
   * GeoIP and ExternalIP systems reworked, now all sources are specified in ip-lookup.conf

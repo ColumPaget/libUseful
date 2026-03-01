@@ -72,7 +72,7 @@ static char *TerminalMenuFormatItem(char *Output, TERMMENU *Menu, ListNode *Curr
     else SingleLineCR=CopyStr(SingleLineCR, "");
 
 
-		//do not send quoted strings to the terminal
+    //do not send quoted strings to the terminal
     Tempstr=UnQuoteStr(Tempstr, Curr->Tag);
     if (StrValid(p_Attribs)) Contents=ReplaceStr(Contents, Tempstr, "~0", p_Attribs);
     else Contents=CopyStr(Contents, Tempstr);

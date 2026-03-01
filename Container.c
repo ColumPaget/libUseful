@@ -354,7 +354,9 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, cons
 
 
 //if we're not root, then we'll have to set up a user namespace
+#ifdef CLONE_NEWUSER
     if (uid !=0) ContainerNewUserNamespace(getpid(), uid, gid);
+#endif
 
     if (Flags & PROC_CONTAINER_FS)
     {
@@ -447,6 +449,35 @@ static int ContainerParseConfig(const char *Config, char **HostName, char **Dir,
 }
 
 
+static int ContainerApplyChRoot(uid_t external_uid)
+{
+    int result;
+
+#ifdef __linux__
+    //if we are root, then we can mount a fresh 'proc'
+    mkdir("proc", 0755);
+    if (external_uid==0) result=mount("", "proc", "proc", 0, NULL);
+
+#ifdef MS_BIND
+#ifdef MS_REC
+    //if we are not root, we must rebind the existing proc
+    else result=mount("/proc", "proc", NULL, MS_REC | MS_BIND, NULL);
+#endif
+#endif
+
+#endif
+
+
+    if (chroot(".") == -1)
+    {
+        RaiseError(ERRFLAG_ERRNO, "ContainerApplyChroot", "failed to chroot to curr directory");
+        return(FALSE);
+    }
+
+    return(TRUE);
+}
+
+
 int ContainerApplyConfig(int Flags, const char *Config)
 {
     char *HostName=NULL, *SetupScript=NULL, *Namespace=NULL, *Envs=NULL;
@@ -454,7 +485,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
     char *Name=NULL, *Value=NULL;
     char *Tempstr=NULL;
     const char *ptr;
-    int RetVal=TRUE, result;
+    int RetVal=TRUE;
     pid_t child;
     uid_t external_uid;
     gid_t external_gid;
@@ -488,25 +519,9 @@ int ContainerApplyConfig(int Flags, const char *Config)
             }
         }
 
-#ifdef __linux__
-#ifdef MS_BIND
-        mkdir("proc", 0755);
-        if (external_uid==0) result=mount("", "proc", "proc", 0, NULL);
-        else result=mount("/proc", "proc", NULL, MS_REC | MS_BIND, NULL);
-#endif
-#endif
-
         //ContainerSetEnvs(Envs);
 
-        if (Flags & PROC_CONTAINER_FS)
-        {
-            if (chroot(".") == -1)
-            {
-                RaiseError(ERRFLAG_ERRNO, "ContainerApplyConfig", "failed to chroot to curr directory");
-                RetVal=FALSE;
-            }
-        }
-
+        if (Flags & PROC_CONTAINER_FS) RetVal=ContainerApplyChRoot(external_uid);
 
         //'RetVal' is our 'so far so good' value
         if (RetVal)

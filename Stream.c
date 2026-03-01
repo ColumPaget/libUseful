@@ -1,5 +1,6 @@
 #include "includes.h"
 #include "GeneralFunctions.h"
+#include "IOPoll.h"
 #include "DataProcessing.h"
 #include "SpawnPrograms.h"
 #include "Pty.h"
@@ -18,191 +19,13 @@
 #include "SecureMem.h"
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <limits.h>
 
 
 
 //A difficult function to fit in order
 int STREAMReadCharsToBuffer(STREAM *S);
 
-
-typedef struct
-{
-    int size;
-    int high;
-    void *items;
-    void *witems;
-} TSelectSet;
-
-#ifdef HAVE_POLL
-
-#include <poll.h>
-#include <math.h>
-
-static void SelectAddFD(TSelectSet *Set, int type, int fd)
-{
-    struct pollfd *items;
-
-    Set->size++;
-    Set->items=realloc(Set->items, sizeof(struct pollfd) * Set->size);
-
-    items=(struct pollfd *) Set->items;
-    items[Set->size-1].fd=fd;
-    items[Set->size-1].events=0;
-    items[Set->size-1].revents=0;
-    if (type & SELECT_READ) items[Set->size-1].events |= POLLIN;
-    if (type & SELECT_WRITE) items[Set->size-1].events |= POLLOUT;
-}
-
-
-
-
-static int SelectWait(TSelectSet *Set, struct timeval *tv)
-{
-    long long timeout;
-    uint64_t start, diff;
-    int result;
-
-
-    if (tv)
-    {
-        //convert to millisecs
-        timeout=(tv->tv_sec * 1000) + (tv->tv_usec / 1000);
-        start=GetTime(TIME_MILLISECS);
-    }
-    else timeout=-1;
-
-    result=poll((struct pollfd *) Set->items, Set->size, timeout);
-
-    if (tv)
-    {
-        diff=GetTime(TIME_MILLISECS) - start;
-        if (diff > 0)
-        {
-            timeout-=diff;
-            if (timeout > 0)
-            {
-                tv->tv_sec=(int) (timeout / 1000.0);
-                tv->tv_usec=(timeout - (tv->tv_sec * 1000.0)) * 1000;
-            }
-            else
-            {
-                tv->tv_sec=0;
-                tv->tv_usec=0;
-            }
-        }
-    }
-
-    return(result);
-}
-
-static int SelectCheck(TSelectSet *Set, int fd)
-{
-    int i, RetVal=0;
-    struct pollfd *items;
-
-    items=(struct pollfd *) Set->items;
-    for (i=0; i < Set->size; i++)
-    {
-        if (items[i].fd==fd)
-        {
-            if (items[i].revents & (POLLIN | POLLHUP)) RetVal |= SELECT_READ;
-            if (items[i].revents & POLLOUT) RetVal |= SELECT_WRITE;
-            break;
-        }
-    }
-
-    return(RetVal);
-}
-#else
-
-static void SelectAddFD(TSelectSet *Set, int type, int fd)
-{
-    if (fd < FD_SETSIZE)
-    {
-        if (! Set->items) Set->items=calloc(1, sizeof(fd_set));
-
-        if (type & SELECT_WRITE)
-        {
-            if (! Set->witems) Set->witems=calloc(1, sizeof(fd_set));
-        }
-
-        if (type & SELECT_READ) FD_SET(fd, (fd_set *) Set->items);
-        if (type & SELECT_WRITE) FD_SET(fd, (fd_set *) Set->witems);
-        Set->size++;
-        if (fd > Set->high) Set->high=fd;
-    }
-    else RaiseError(ERRFLAG_ERRNO, "SelectAddFD", "File Descriptor '%d' is higher than FD_SETSIZE limit. Cannot add to select.", fd);
-}
-
-static int SelectWait(TSelectSet *Set, struct timeval *tv)
-{
-    return(select(Set->high+1, Set->items, Set->witems,NULL,tv));
-}
-
-static int SelectCheck(TSelectSet *Set, int fd)
-{
-    int RetVal=0;
-
-    if (Set->items  && FD_ISSET(fd, (fd_set *) Set->items )) RetVal |= SELECT_READ;
-    if (Set->witems && FD_ISSET(fd, (fd_set *) Set->witems)) RetVal |= SELECT_WRITE;
-
-    return(RetVal);
-}
-
-#endif
-
-
-static void SelectSetDestroy(TSelectSet *Set)
-{
-    Destroy(Set->items);
-    Destroy(Set->witems);
-    Destroy(Set);
-}
-
-
-int FDSelect(int fd, int Flags, struct timeval *tv)
-{
-    TSelectSet *Set;
-    int result, RetVal=0;
-
-    Set=(TSelectSet *) calloc(1,sizeof(TSelectSet));
-    SelectAddFD(Set, Flags, fd);
-    result=SelectWait(Set, tv);
-
-    if ((result==-1) && (errno==EBADF)) RetVal=0;
-    else if (result  > 0) RetVal=SelectCheck(Set, fd);
-
-    SelectSetDestroy(Set);
-
-    return(RetVal);
-}
-
-
-int FDIsWritable(int fd)
-{
-    struct timeval tv;
-
-    tv.tv_sec=0;
-    tv.tv_usec=0;
-    if (FDSelect(fd, SELECT_WRITE, &tv) & SELECT_WRITE) return(TRUE);
-    return(FALSE);
-}
-
-
-
-int FDCheckForBytes(int fd)
-{
-    struct timeval tv;
-
-    tv.tv_sec=0;
-    tv.tv_usec=0;
-    if (FDSelect(fd, SELECT_READ, &tv) & SELECT_READ) return(TRUE);
-    return(FALSE);
-}
-
-
-
-/*STREAM Functions */
 
 void STREAMSetFlags(STREAM *S, int Set, int UnSet)
 {
@@ -365,71 +188,6 @@ int STREAMCountWaitingBytes(STREAM *S)
 
 
 
-
-
-STREAM *STREAMSelect(ListNode *Streams, struct timeval *tv)
-{
-    TSelectSet *Set;
-    STREAM *S;
-    ListNode *Curr, *Last;
-    int result;
-
-    Set=(TSelectSet *) calloc(1,sizeof(TSelectSet));
-    Curr=ListGetNext(Streams);
-    while (Curr)
-    {
-        S=(STREAM *) Curr->Item;
-        if (S && (! (S->State & LU_SS_EMBARGOED)))
-        {
-            //server type streams don't have buffers
-            if ( (S->Type != STREAM_TYPE_UNIX_SERVER) && (S->Type != STREAM_TYPE_TCP_SERVER) )
-            {
-                //Pump any data in the stream
-                STREAMFlush(S);
-
-                //if there's stuff in buffer, then we don't need to select the file descriptor
-                if (S->InEnd > S->InStart)
-                {
-                    SelectSetDestroy(Set);
-                    return(S);
-                }
-            }
-
-            SelectAddFD(Set, SELECT_READ, S->in_fd);
-        }
-
-        Curr=ListGetNext(Curr);
-    }
-
-    result=SelectWait(Set, tv);
-
-    if (result > 0)
-    {
-        Curr=ListGetNext(Streams);
-        while (Curr)
-        {
-            S=(STREAM *) Curr->Item;
-            if (S && SelectCheck(Set, S->in_fd))
-            {
-                //this stream has had it's turn, move it to the bottom of the list
-                //so it can't lock others out
-                if (Curr->Next !=NULL)
-                {
-                    ListUnThreadNode(Curr);
-                    Last=ListGetLast(Streams);
-                    if (! Last) Last=Streams;
-                    ListThreadNode(Last, Curr);
-                }
-                SelectSetDestroy(Set);
-                return(S);
-            }
-            Curr=ListGetNext(Curr);
-        }
-    }
-
-    SelectSetDestroy(Set);
-    return(NULL);
-}
 
 
 
@@ -1453,6 +1211,8 @@ void STREAMShutdown(STREAM *S)
     STREAMReadThroughProcessors(S, NULL, -1);
     STREAMWriteBytes(S, NULL, 0); //means flush any processors
     STREAMFlush(S);
+
+    STREAMSelectsRemoveStream(S);
 
     switch (S->Type)
     {

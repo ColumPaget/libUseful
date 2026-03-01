@@ -4,6 +4,7 @@
 #include "UnixSocket.h"
 #include "FileSystem.h"
 #include "IPAddress.h"
+#include "IOPoll.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -922,9 +923,12 @@ int STREAMIsConnected(STREAM *S)
             S->State |= LU_SS_CONNECTED;
             S->State &= (~LU_SS_CONNECTING);
         }
+		return(TRUE);
     }
-    if ((result==SOCK_CONNECTING) && (! (S->State & LU_SS_CONNECTING))) result=FALSE;
-    return(result);
+
+		//result can be SOCK_CONNECTING, or maybe other things
+		//return false for those
+    return(FALSE);
 }
 
 

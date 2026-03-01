@@ -4,6 +4,7 @@
 #include "Time.h"
 #include "Encodings.h"
 #include "Entropy.h"
+#include "IOPoll.h"
 
 #include <arpa/inet.h>
 #include <net/if.h>

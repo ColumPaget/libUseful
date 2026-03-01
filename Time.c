@@ -14,6 +14,37 @@ static time_t LU_CachedTime=0;
 static uint64_t LU_CachedMillisecs=0;
 
 
+//this is an odd looking function, it converts a timeval structure into
+//both unsigned 64bit and signed 32bit millisecond values
+//32bit signed is a value used for timeouts in fuctions like poll and epoll
+//and for them -1 means 'forever'.
+//So this function is intended to cater both to situations where we want a
+//full 64bit millisecond value, and to situations where we want the timeval
+//converted to an int, and clamped if it goes over INT_MAX.
+//the 32bit value is the return value, and the 64bit value can be optionally
+//returned in an argument passed in.
+int TimevalToMillisecs(struct timeval *tv, uint64_t *timeout_u64)
+{
+    uint64_t timeout;
+
+    if (timeout_u64) *timeout_u64=0;
+    if (tv)
+    {
+        //convert to millisecs. For 'poll' millisecs is an int, so if
+        //we've been passed a value bigger than INT_MAX clamp it to INT_MAX
+        timeout=(uint64_t) ((tv->tv_sec * 1000) + (tv->tv_usec / 1000));
+        if (timeout_u64) *timeout_u64=timeout;
+        if (timeout > INT_MAX) timeout=INT_MAX;
+        return((int) timeout);
+    }
+
+    //in poll/epoll etc -1 means 'forever'
+    return(-1);
+}
+
+
+
+
 uint64_t GetTime(int Flags)
 {
     struct timeval tv;
@@ -22,7 +53,7 @@ uint64_t GetTime(int Flags)
     {
         gettimeofday(&tv, NULL);
         LU_CachedTime=tv.tv_sec;
-        LU_CachedMillisecs=(tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+        TimevalToMillisecs(&tv, &LU_CachedMillisecs);
     }
 
     if (Flags & TIME_MILLISECS) return(LU_CachedMillisecs);

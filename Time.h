@@ -22,6 +22,17 @@ extern "C" {
 #define TIME_CENTISECS 2  //return number of centiseconds
 #define TIME_CACHED 1024  //used cached time
 
+
+//convert a timeval structure into a milliseconds value. This is intended to
+//service both 64bit millisecond values, and 32bit signed ones.
+//32bit signed millisecond values are used by poll, epoll etc for timeouts
+//this function returns a 32bit value that is clamped to INT_MAX should the 
+//value be more than 32bits can store.
+//If 'timeout_u64' is not NULL then the full 64bit value will be stored in that.
+//If timeval is NULL -1 is returned, which means 'forever' to poll and epoll.
+int TimevalToMillisecs(struct timeval *tv, uint64_t *timeout_u64);
+
+
 // Get current time. By default returns seconds since 1970. Passing the above flags can change that to milliseconds or centiseconds.
 // Passing TIME_CACHED causes it to return a cached value for the time (you'd use this in time-critical applications where you're
 // looking the time up a lot

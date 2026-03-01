@@ -1,7 +1,7 @@
 #include "includes.h"
 #include "List.h"
 #include "Time.h"
-
+#include "IOPoll.h"
 
 
 //get the root of a list or map. For a list this will return the same
@@ -342,13 +342,14 @@ void ListClear(ListNode *ListStart, LIST_ITEM_DESTROY_FUNC ItemDestroyer)
 }
 
 
-void ListDestroy(ListNode *ListStart, LIST_ITEM_DESTROY_FUNC ItemDestroyer)
+void ListDestroy(ListNode *List, LIST_ITEM_DESTROY_FUNC ItemDestroyer)
 {
-    if (! ListStart) return;
-    ListClear(ListStart, ItemDestroyer);
-    if (ListStart->Item) free(ListStart->Item);
-    if (ListStart->Stats) free(ListStart->Stats);
-    free(ListStart);
+    if (! List) return;
+    STREAMSelectUnregister(List);
+    ListClear(List, ItemDestroyer);
+    if (List->Item) free(List->Item);
+    if (List->Stats) free(List->Stats);
+    free(List);
 }
 
 
@@ -900,20 +901,58 @@ void *ListDeleteNode(ListNode *Node)
 }
 
 
+void ListMoveStart(ListNode *Curr)
+{
+    ListNode *Head;
+		
+		if (! Curr) return;
+
+		Head=ListGetHead(Curr);
+		if (! Head) return;
+
+		//if it's already first, don't bother
+    if (Curr->Prev != Head)
+    {
+        ListUnThreadNode(Curr);
+        ListThreadNode(Head, Curr);
+    }
+}
+
+void ListMoveEnd(ListNode *Curr)
+{
+    ListNode *Head, *Last;
+		
+		if (! Curr) return;
+
+		Head=ListGetHead(Curr);
+		if (! Head) return;
+
+		//if it's already last, don't bother
+    if (Curr->Next != NULL)
+    {
+        ListUnThreadNode(Curr);
+        Last=ListGetLast(Head);
+        if (! Last) Last=Head;
+        ListThreadNode(Last, Curr);
+    }
+}
+
+
+
 void ListRotate(ListNode *List, int RotateCount)
 {
     ListNode *Curr;
     int i;
-    
+
     if (ListSize(List) > 1)
     {
-    for (i=0; i < RotateCount; i++)
-    {
-        Curr=ListGetNext(List);
-        if (! Curr) break;
-        ListUnThreadNode(Curr);
-        ListThreadNode(ListGetLast(List), Curr);
-    }
+        for (i=0; i < RotateCount; i++)
+        {
+            Curr=ListGetNext(List);
+            if (! Curr) break;
+            ListUnThreadNode(Curr);
+            ListThreadNode(ListGetLast(List), Curr);
+        }
     }
 
 }

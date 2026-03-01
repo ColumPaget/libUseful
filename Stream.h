@@ -280,11 +280,6 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 #define O_LOCK O_NOCTTY
 
 
-//These flage are used to tell FDSelect whether to watch a stream for read, write, or both
-#define SELECT_READ 1
-#define SELECT_WRITE 2
-
-
 //These flags are used to alter behavior of STREAMSendFile. 
 #define SENDFILE_KERNEL 1   //enables use of the 'sendfile' kernel syscall
 #define SENDFILE_LOOP   2   //keep copying bytes until required number transfered
@@ -322,17 +317,6 @@ typedef struct
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//some functions that work on basic file descriptors
-
-//watch a file descriptor for activity. 'Flags' can be SELECT_READ, and/or SELECT_WRITE depending on what is being watched for
-int FDSelect(int fd, int Flags, struct timeval *tv);
-
-//is file ready to recieve bytes?
-int FDIsWritable(int fd);
-
-//are bytes available to be read? 
-int FDCheckForBytes(int fd);
 
 
 //From here on in it's all functions that effect STREAM objects

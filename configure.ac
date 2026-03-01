@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.66], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.67], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag
@@ -138,10 +138,9 @@ AS_IF([test "$cf_use_stackprotect" = "yes"], [
 ])
 
 
-AC_CHECK_FUNCS(ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
 
 AC_CHECK_LIB(c,get_current_dir_name, AC_DEFINE([HAVE_GET_CURR_DIR]),)
-AC_CHECK_FUNCS(getloadavg sysinfo sysconf getpagesize ptsname_r clearenv setresuid initgroups poll mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
+AC_CHECK_FUNCS(getloadavg sysinfo sysconf getpagesize ptsname_r clearenv setresuid initgroups mlock mlockall munlockall madvise htonll ntohll mkostemp mount umount umount2 getentropy prctl)
 
 
 AC_ARG_ENABLE([strlen-cache],
@@ -153,6 +152,33 @@ AC_ARG_ENABLE([strlen-cache],
 AS_IF([test "$cf_use_strlen_cache" != "no"], AC_DEFINE([USE_STRLEN_CACHE]))
 
 
+AC_ARG_ENABLE([poll],
+    [AS_HELP_STRING([--enable-poll], [use 'poll' instead of 'select'] (default=auto))],
+    [cf_use_poll=$enableval],
+    [cf_use_poll=auto]
+)
+
+
+AS_IF([test "$cf_use_poll" != "no"], [
+	AC_CHECK_FUNC(poll, AC_DEFINE([HAVE_POLL]))
+])
+
+AC_ARG_ENABLE([epoll],
+    [AS_HELP_STRING([--enable-epoll], [use 'epoll' instead of 'select' or 'poll'] (default=auto))],
+    [cf_use_epoll=$enableval],
+    [cf_use_epoll=auto]
+)
+
+
+AS_IF([test "$cf_use_epoll" != "no"], [
+  AC_CHECK_HEADER(sys/epoll.h,cf_use_epoll=yes,cf_use_epoll=no,)
+    AS_IF([test "$cf_use_epoll" == "yes"], [
+			AC_CHECK_FUNC(epoll_create1, AC_DEFINE([HAVE_EPOLL]))
+    ])
+])
+
+
+
 AC_ARG_ENABLE([sendfile],
     [AS_HELP_STRING([--enable-sendfile], [enable 'fastcopy' sendfile support] (default=yes))],
     [cf_use_sendfile=$enableval],
@@ -161,8 +187,8 @@ AC_ARG_ENABLE([sendfile],
 
 AS_IF([test "$cf_use_sendfile" != "no"], [
     AC_CHECK_HEADER(sys/sendfile.h,cf_use_sendfile=yes,cf_use_sendfile=no,)
-    AS_IF([test "$cf_use_sendfile" != "no"], [
-	AC_CHECK_FUNC(sendfile, AC_DEFINE([HAVE_SENDFILE]))
+    AS_IF([test "$cf_use_sendfile" == "yes"], [
+			AC_CHECK_FUNC(sendfile, AC_DEFINE([HAVE_SENDFILE]))
     ])
 ])
 
@@ -466,6 +492,18 @@ AS_IF([test "$ac_cv_func_sendfile" = "yes"], [
     echo "Linux sendfile syscall NOT enabled"
 ])
 
+AS_IF([test "$ac_cv_func_poll" = "yes"], [
+    echo "Using 'poll' rather than 'select' for IO polling"
+], [
+    echo "using 'select' for IO polling"
+])
+
+AS_IF([test "$cf_use_epoll" == "yes"], [
+    echo "Using 'epoll' in STREAMSelect"
+], [
+    echo "not using 'epoll'"
+])
+
 
 AS_IF([test "$cf_use_ip6" = "yes"], [
     echo "IPv6 enabled"
@@ -521,7 +559,6 @@ AS_IF([test "$cf_use_jh" = "yes"], [
 ], [
     echo "jh hash NOT enabled"
 ])
-
 
 
 AS_IF([test "$cf_have_fsflags" = "yes"], [

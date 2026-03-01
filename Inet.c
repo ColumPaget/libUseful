@@ -100,7 +100,7 @@ static ListNode *IPInfoLookupGetServices(const char *Type)
 
         //pick a random start position, and to through all servers from that start
         len=ListSize(Services);
-	if (len > 1) ListRotate(Services, (time(NULL) + rand()) % len);
+        if (len > 1) ListRotate(Services, (time(NULL) + rand()) % len);
     }
     else RaiseError(0, "IPInfoLookupGetServices", "Cannot find/open ip-lookup.conf config file");
 
@@ -147,7 +147,7 @@ int ProcessIPGeolocateService(const char *IP, const char *URL, const char *Setti
                 SetVar(Vars, Fields[i], ParserGetValue(P, ptr));
             }
             if ( StrValid(GetVar(Vars, "country")) ) RetVal=TRUE;
-	    ParserItemsDestroy(P);
+            ParserItemsDestroy(P);
         }
     }
 
@@ -192,17 +192,17 @@ int IPGeoLocate(const char *Host, ListNode *Vars)
 
 static char *IPFromGeoLocate(char *RetStr, const char *URL, const char *Settings)
 {
-ListNode *Vars;
+    ListNode *Vars;
 
-Vars=ListCreate();
-if (ProcessIPGeolocateService("", URL, Settings, Vars))
-{
-	RetStr=CopyStr(RetStr, GetVar(Vars, "ip"));
-}
+    Vars=ListCreate();
+    if (ProcessIPGeolocateService("", URL, Settings, Vars))
+    {
+        RetStr=CopyStr(RetStr, GetVar(Vars, "ip"));
+    }
 
-ListDestroy(Vars, Destroy);
+    ListDestroy(Vars, Destroy);
 
-return(RetStr);
+    return(RetStr);
 }
 
 
@@ -221,7 +221,7 @@ char *GetExternalIP(char *RetStr)
     while (Curr)
     {
         ptr=GetToken(Curr->Tag, ",", &Token, 0);
-	if (strstr((const char *) Curr->Item, "format=json")) RetStr=IPFromGeoLocate(RetStr, Curr->Tag, Curr->Item);
+        if (strstr((const char *) Curr->Item, "format=json")) RetStr=IPFromGeoLocate(RetStr, Curr->Tag, Curr->Item);
         else RetStr=ExtractFromWebpage(RetStr, Token, ptr, 4);
         if (StrValid(RetStr)) break;
         Curr=ListGetNext(Curr);

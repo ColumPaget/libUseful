@@ -7,6 +7,7 @@
 #include "Users.h"
 #include "Entropy.h"
 #include "URL.h"
+#include "IOPoll.h"
 
 static ListNode *OAuthTypes=NULL;
 static ListNode *OAuthKeyChain=NULL;
