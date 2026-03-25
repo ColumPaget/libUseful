@@ -48,6 +48,7 @@ all:
 	gcc -ogeolocate.exe geolocate.c $(LIBS)
 	gcc -oipmask.exe ipmask.c $(LIBS)
 	gcc -orecurse.exe recurse.c $(LIBS)
+	gcc -g -opattest2.exe pattest2.c $(LIBS)
 
 seccomp.exe: seccomp.c
 	gcc -oseccomp.exe seccomp.c $(LIBS)

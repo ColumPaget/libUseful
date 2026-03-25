@@ -297,6 +297,7 @@ static int pmatch_repeat(const char **P_PtrPtr, const char **S_PtrPtr, const cha
     if (*Prev=='+') return (MATCH_FAIL);
     if (**P_PtrPtr == '{')
     {
+	(*P_PtrPtr)++;
         ptr=*P_PtrPtr;
         while ( ((**P_PtrPtr) != '}') && ((**P_PtrPtr) != '\0') ) (*P_PtrPtr)++;
         if ((**P_PtrPtr)=='\0') return(MATCH_FAIL);
@@ -313,6 +314,7 @@ static int pmatch_repeat(const char **P_PtrPtr, const char **S_PtrPtr, const cha
         count++;
         if ((val > 0) && (count > val)) break;
         (*S_PtrPtr)++;
+	if (**S_PtrPtr == '\0') break;
     }
 
     (*S_PtrPtr)--;

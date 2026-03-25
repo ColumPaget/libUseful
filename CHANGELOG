@@ -1,10 +1,15 @@
+v5.68 (2026-02-26)
+  * honor stderr2null in 'Spawn' commands
+  * pmatch now supports {n} matches
+
+
 v5.67 (2026-02-26)
   * Fix build issues on linux systems lacking MS_REC mount option
   * Fix some issues with timeouts when using linux 'poll' syscall
-	* STREAMSelect now supports epoll 
+  * STREAMSelect now supports epoll 
   * STREAMSelect now removes STREAMS from lists when stream is closed
-	* Fix bug in STREAMSelect when using 'select' with more than 1024 file descriptors
-	* Added 'ListMoveEnd' and 'ListMoveStart' functions
+  * Fix bug in STREAMSelect when using 'select' with more than 1024 file descriptors
+  * Added 'ListMoveEnd' and 'ListMoveStart' functions
   * Make sure STREAMIsConnected can only return 'TRUE' or 'FALSE', not 'SOCK_CONNECTING' etc
   
   

@@ -193,7 +193,7 @@ static int PipeSpawnCreateStdOutPipe(const char *Type, int channel[2], int ToNul
     channel[0]=-1;
     channel[1]=-1;
 
-//if we ask for this to be set to null, then we map leave fd set to -1
+//if we ask for this to be set to null, then we leave fd set to -1 
 //which maps to /dev/null in xforkio
     if (! ToNull)
     {
@@ -282,15 +282,28 @@ pid_t PipeSpawn(int *infd,int  *outfd,int  *errfd, const char *Command, const ch
 
 
 
-pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int Flags, const char *Config)
+pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int TTYFlags, const char *Config)
 {
     pid_t pid=-1, ConfigFlags=0;
-    int tty, pty;
+    int tty, tty_in, tty_out, tty_err, pty;
+		int SpawnFlags;
 
-    if (PseudoTTYGrab(&pty, &tty, Flags))
+
+    if (PseudoTTYGrab(&pty, &tty, TTYFlags))
     {
+
+    SpawnFlags=SpawnParseConfig(Config);
+			//if we've been asked to point stderr or stdout to /dev/null then set those file descriptors to -1
+			//xforkio will then map them to /dev/null.
+			//otherwise set tty_in, tty_out, tty_err to point to our tty
+			tty_in=tty;
+			if (SpawnFlags & SPAWN_STDOUT_NULL) tty_out=-1;
+			else tty_out=tty;
+			if (SpawnFlags & SPAWN_STDERR_NULL) tty_err=-1;
+			else tty_err=tty;
+
         //ContainerApplyConfig(Config);
-        pid=xforkio(tty, tty, tty);
+        pid=xforkio(tty_in, tty_out, tty_err);
         if (pid==0)
         {
             close(pty);

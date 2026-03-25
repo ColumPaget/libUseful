@@ -19,6 +19,21 @@ SUPPORTED NATCHES ARE:
 ^      start-of-string marker
 $      end-of-string marker
 [..]   list of characters
+{n}    n instances of the previous match, e.g. \D{10} for ten digits
+
+
+
+
+
+BEWARE: the follwing matches have to be double-quoted if you call a pmatch-function directly within the C program, like this:
+
+result=pmatch("\\D{4}ABC", Tempstr, StrLen(Tempstr), NULL, NULL, 0);
+
+this is to prevent the c-compiler from trying to interpret the escape sequences itself.
+
+However, if you read the pattern string in from a config file, or from use-entered input, or from anywhere other than directly coded into the program, then you don't need this double-quote and can just write "\D{4}ABC"
+
+
 
 \a     alert (bell)
 \b     backspace
@@ -27,6 +42,8 @@ $      end-of-string marker
 \n     newline
 \r     carriage-return
 \t     tab
+
+
 \l     any lowercase character
 \A     any alphabetic character
 \B     any alphanumeric character
