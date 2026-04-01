@@ -204,15 +204,18 @@ static int SelectAddFD(TSelectSet *Set, int type, int fd)
 {
     struct pollfd *items;
 
-    Set->size++;
-    Set->items=realloc(Set->items, sizeof(struct pollfd) * Set->size);
+    if (fd > -1)
+    {
+        Set->size++;
+        Set->items=realloc(Set->items, sizeof(struct pollfd) * Set->size);
 
-    items=(struct pollfd *) Set->items;
-    items[Set->size-1].fd=fd;
-    items[Set->size-1].events=0;
-    items[Set->size-1].revents=0;
-    if (type & SELECT_READ) items[Set->size-1].events |= POLLIN;
-    if (type & SELECT_WRITE) items[Set->size-1].events |= POLLOUT;
+        items=(struct pollfd *) Set->items;
+        items[Set->size-1].fd=fd;
+        items[Set->size-1].events=0;
+        items[Set->size-1].revents=0;
+        if (type & SELECT_READ) items[Set->size-1].events |= POLLIN;
+        if (type & SELECT_WRITE) items[Set->size-1].events |= POLLOUT;
+    }
 
     return(TRUE);
 }
@@ -246,14 +249,17 @@ static int SelectCheck(TSelectSet *Set, int fd)
     int i, RetVal=0;
     struct pollfd *items;
 
-    items=(struct pollfd *) Set->items;
-    for (i=0; i < Set->size; i++)
+    if (fd > -1)
     {
-        if (items[i].fd==fd)
+        items=(struct pollfd *) Set->items;
+        for (i=0; i < Set->size; i++)
         {
-            if (items[i].revents & (POLLIN | POLLHUP)) RetVal |= SELECT_READ;
-            if (items[i].revents & POLLOUT) RetVal |= SELECT_WRITE;
-            break;
+            if (items[i].fd==fd)
+            {
+                if (items[i].revents & (POLLIN | POLLHUP)) RetVal |= SELECT_READ;
+                if (items[i].revents & POLLOUT) RetVal |= SELECT_WRITE;
+                break;
+            }
         }
     }
 
@@ -268,6 +274,13 @@ static int SelectAddFD(TSelectSet *Set, int type, int fd)
 {
     int RetVal=TRUE;
 
+    if (fd  < 0)
+    {
+        RaiseError(ERRFLAG_DEBUG, "SelectAddFD", "File Descriptor '%d' is < 0.", fd);
+        return(FALSE);
+    }
+
+
     if (type & SELECT_WRITE)
     {
         if (Set->wsize < FD_SETSIZE)
@@ -278,7 +291,7 @@ static int SelectAddFD(TSelectSet *Set, int type, int fd)
         }
         else
         {
-            RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "SelectAddFD", "File Descriptor '%d' is higher than FD_SETSIZE limit. Cannot add to select.", fd);
+            RaiseError(ERRFLAG_DEBUG, "SelectAddFD", "File Descriptor '%d' is higher than FD_SETSIZE limit. Cannot add to select.", fd);
             RetVal=FALSE;
         }
     }
@@ -293,7 +306,7 @@ static int SelectAddFD(TSelectSet *Set, int type, int fd)
         }
         else
         {
-            RaiseError(ERRFLAG_ERRNO|ERRFLAG_DEBUG, "SelectAddFD", "File Descriptor '%d' is higher than FD_SETSIZE limit. Cannot add to select.", fd);
+            RaiseError(ERRFLAG_DEBUG, "SelectAddFD", "File Descriptor '%d' is higher than FD_SETSIZE limit. Cannot add to select.", fd);
             RetVal=FALSE;
         }
     }
@@ -314,8 +327,12 @@ static int SelectCheck(TSelectSet *Set, int fd)
 {
     int RetVal=0;
 
-    if (Set->items  && FD_ISSET(fd, (fd_set *) Set->items )) RetVal |= SELECT_READ;
-    if (Set->witems && FD_ISSET(fd, (fd_set *) Set->witems)) RetVal |= SELECT_WRITE;
+    if (FD > -1)
+    {
+        if (Set->items  && FD_ISSET(fd, (fd_set *) Set->items )) RetVal |= SELECT_READ;
+        if (Set->witems && FD_ISSET(fd, (fd_set *) Set->witems)) RetVal |= SELECT_WRITE;
+    }
+    else RaiseError(ERRFLAG_DEBUG, "SelectCheck", "File Descriptor '%d' is < 0.", fd);
 
     return(RetVal);
 }
@@ -337,16 +354,20 @@ static void SelectSetDestroy(TSelectSet *Set)
 int FDSelect(int fd, int type, struct timeval *tv)
 {
     TSelectSet *Set;
-    int result, RetVal=0;
+    int result, RetVal=STREAM_CLOSED;
 
-    Set=(TSelectSet *) calloc(1,sizeof(TSelectSet));
-    SelectAddFD(Set, type, fd);
-    result=SelectWait(Set, tv);
+    if (fd > -1)
+    {
+        Set=(TSelectSet *) calloc(1,sizeof(TSelectSet));
+        SelectAddFD(Set, type, fd);
+        result=SelectWait(Set, tv);
 
-    if ((result==-1) && (errno==EBADF)) RetVal=0;
-    else if (result  > 0) RetVal=SelectCheck(Set, fd);
+        if ((result==-1) && (errno==EBADF)) RetVal=STREAM_CLOSED;
+        else if (result  > 0) RetVal=SelectCheck(Set, fd);
 
-    SelectSetDestroy(Set);
+        SelectSetDestroy(Set);
+    }
+    else RaiseError(ERRFLAG_DEBUG, "FDSelect", "File Descriptor '%d' is < 0.", fd);
 
     return(RetVal);
 }
@@ -355,6 +376,8 @@ int FDSelect(int fd, int type, struct timeval *tv)
 int FDIsWritable(int fd)
 {
     struct timeval tv;
+
+    if (fd < 0) return(FALSE);
 
     tv.tv_sec=0;
     tv.tv_usec=0;
@@ -368,9 +391,12 @@ int FDCheckForBytes(int fd)
 {
     struct timeval tv;
 
+    if (fd < 0) return(FALSE);
+
     tv.tv_sec=0;
     tv.tv_usec=0;
     if (FDSelect(fd, SELECT_READ, &tv) & SELECT_READ) return(TRUE);
+
     return(FALSE);
 }
 

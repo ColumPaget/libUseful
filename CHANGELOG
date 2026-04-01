@@ -1,3 +1,8 @@
+v5.70 (2026-04-01)
+  * limit direct use of 'select' syscall, replace with FDSelect instead (means more use of poll when supported, rather than select)
+  * catch filedescriptors < 0 passed to FDSelect et al
+  * add debug print on STREAMOpen and STREAMClose
+
 v5.69 (2026-04-01)
   * fix issue with 'SSHClose' not being called correctly when writing files over ssh
 

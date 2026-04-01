@@ -157,7 +157,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     S=STREAMSpawnCommand(Tempstr, TTYConfigs);
     if (S)
     {
-	S->Flags |= StreamFlags;
+        S->Flags |= StreamFlags;
         S->Path=MCopyStr(S->Path, "ssh:", Host, NULL);
         S->Type=STREAM_TYPE_SSH;
         if (StrValid(User) && (! StrValid(KeyFile)))

@@ -220,7 +220,6 @@ int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
 static int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 {
     int result;
-    fd_set selectset;
     struct timeval tv;
 
     //if the OS defines the PIPE_BUF variable that indicates how much data can
@@ -236,10 +235,8 @@ static int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
     //wait for fd to become writeable
     if (S->Timeout > 0)
     {
-        FD_ZERO(&selectset);
-        FD_SET(S->out_fd, &selectset);
         MillisecsToTV(S->Timeout * 10, &tv);
-        result=select(S->out_fd+1,NULL,&selectset,NULL,&tv);
+        result=FDSelect(S->out_fd, SELECT_WRITE, &tv);
         if (result < 1)
         {
             if ((result == 0) || (errno==EAGAIN)) return(STREAM_TIMEOUT);
@@ -963,6 +960,8 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
 
     if (! StrValid(URL)) return(NULL);
 
+    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: STREAMOpen: %s config: %s\n", URL, Config);
+
     Proto=CopyStr(Proto,"");
     ptr=STREAMExtractMasterURL(URL);
     ParseURL(ptr, &Proto, &Host, &Token, &User, &Pass, &Path, &Args);
@@ -1164,6 +1163,8 @@ void STREAMCloseFile(STREAM *S)
     )
     {
 
+        if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: STREAMClose: %s in_fd: %d out_fd: %d\n", S->Path, S->in_fd, S->out_fd);
+
         if (S->out_fd != -1)
         {
             //as we have closed the file sucessfully, we no longer need backup
@@ -1277,7 +1278,6 @@ int STREAMWaitForBytes(STREAM *S)
 {
     int WaitForBytes=TRUE;
     int read_result, val;
-    fd_set selectset;
     struct timeval tv;
 
     //if using SSL and already has bytes queued, don't do a wait on select
@@ -1294,30 +1294,22 @@ int STREAMWaitForBytes(STREAM *S)
     //if we ned to wait, then do so
     if ((S->Timeout > 0) && WaitForBytes)
     {
-        FD_ZERO(&selectset);
-        FD_SET(S->in_fd, &selectset);
         //convert S->Timeout from centisecs number to a tv struct
         MillisecsToTV(S->Timeout * 10, &tv);
 
-        //okay, wait for somethign to happen
-        val=select(S->in_fd+1,&selectset,NULL,NULL,&tv);
+        //okay, wait for something to happen
+        val=FDSelect(S->in_fd, SELECT_READ, &tv);
 
-        switch (val)
+        if (val & SELECT_READ) read_result=1;
+        else if (val == 0)
         {
-        //we are only checking one FD, so should be 1
-        case 1:
-            read_result=1;
-            break;
-
-        case 0:
             errno=ETIMEDOUT;
             read_result=STREAM_TIMEOUT;
-            break;
-
-        default:
+        }
+        else
+        {
             if (errno==EINTR) read_result=STREAM_TIMEOUT;
             else read_result=STREAM_CLOSED;
-            break;
         }
 
     }

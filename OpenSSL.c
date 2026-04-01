@@ -1029,7 +1029,7 @@ int OpenSSLAutoDetect(STREAM *S)
     val=S->Timeout;
     STREAMSetTimeout(S, 5);
 
-//we must not read any bytes into our stream, or else e'll be stealing them
+//we must not read any bytes into our stream, or else we'll be stealing them
 //from ssl, which only has access to the file descriptor
     result=FDSelect(S->in_fd, SELECT_READ, NULL);
     if (result > 0)

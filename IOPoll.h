@@ -23,12 +23,15 @@ extern "C" {
 
 
 //watch a file descriptor for activity. 'Flags' can be SELECT_READ, and/or SELECT_WRITE depending on what is being watched for
+//return value is the OR-ed values 'SELECT_READ' and 'SELECT_WRITE' if the file descriptor is ready for the one(s) we asked for
+//zero if the file descriptor is not ready and
+//STREAM_CLOSED if the file descriptor is closed or -1
 int FDSelect(int fd, int Flags, struct timeval *tv);
 
-//is file ready to recieve bytes?
+//is file ready to recieve bytes? TRUE if so, FALSE otherwise
 int FDIsWritable(int fd);
 
-//are bytes available to be read? 
+//are bytes available to be read? TRUE if so, FALSE otherwise
 int FDCheckForBytes(int fd);
 
 
