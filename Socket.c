@@ -923,11 +923,11 @@ int STREAMIsConnected(STREAM *S)
             S->State |= LU_SS_CONNECTED;
             S->State &= (~LU_SS_CONNECTING);
         }
-		return(TRUE);
+        return(TRUE);
     }
 
-		//result can be SOCK_CONNECTING, or maybe other things
-		//return false for those
+    //result can be SOCK_CONNECTING, or maybe other things
+    //return false for those
     return(FALSE);
 }
 

@@ -21,12 +21,16 @@ static int SSHParseFlags(const char *Token)
         {
         case 'a':
             Flags |= STREAM_APPEND;
+            break;
         case 'r':
             Flags |= SF_RDONLY;
+            break;
         case 'w':
             Flags |= SF_WRONLY;
+            break;
         case 'l':
             Flags |= SF_LIST;
+            break;
         }
     }
 
@@ -55,7 +59,6 @@ static int SSHParseConfig(const char *Config, char **BindAddress, char **ConfigF
         //unfortunately that will mean rethinking SSHConnect
         //as it has no way of passing such arguments at current
 
-
         if ( (strcasecmp(Name, "bind")==0)  && BindAddress) *BindAddress=CopyStr(*BindAddress, Value);
         if ( (strcasecmp(Name, "config")==0)  && ConfigFile) *ConfigFile=CopyStr(*ConfigFile, Value);
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
@@ -75,17 +78,17 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     const char *ptr;
     STREAM *S;
     int IsTunnel=FALSE;
-    int Flags, SshFlags=0;
+    int StreamFlags, SshFlags=0;
 
-    Flags=SSHParseConfig(Config, &BindAddress, &ConfigFile);
+    StreamFlags=SSHParseConfig(Config, &BindAddress, &ConfigFile);
 
 
     //translate stream flags into specific SSH configurations
-    if (Flags & SF_COMPRESSED) SshFlags |= SSH_COMPRESS;
+    if (StreamFlags & SF_COMPRESSED) SshFlags |= SSH_COMPRESS;
 
-    if (Flags & SF_WRONLY) SshFlags |= SSH_CANON_PTY;
-    else if (Flags & STREAM_APPEND) SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
-    else if (Flags & SF_LIST) SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
+    if (StreamFlags & SF_WRONLY) SshFlags |= SSH_CANON_PTY;
+    else if (StreamFlags & STREAM_APPEND) SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
+    else if (StreamFlags & SF_LIST) SshFlags |= SSH_CANON_PTY | SSH_NO_ESCAPE;
 
 
 
@@ -154,6 +157,7 @@ STREAM *SSHConnect(const char *Host, int Port, const char *User, const char *Pas
     S=STREAMSpawnCommand(Tempstr, TTYConfigs);
     if (S)
     {
+	S->Flags |= StreamFlags;
         S->Path=MCopyStr(S->Path, "ssh:", Host, NULL);
         S->Type=STREAM_TYPE_SSH;
         if (StrValid(User) && (! StrValid(KeyFile)))
@@ -226,13 +230,13 @@ STREAM *SSHOpen(const char *Host, int Port, const char *User, const char *Pass, 
     }
     else if (Flags & SF_WRONLY)
     {
-        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
-        Path=MCopyStr(Path, "cat - > ", Tempstr, NULL);
+        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()'");
+        Path=MCopyStr(Path, "cat - > '", Tempstr, "'", NULL);
     }
     else if (Flags & STREAM_APPEND)
     {
-        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()");
-        Path=MCopyStr(Path, "cat - >> ", Tempstr, NULL);
+        Tempstr=QuoteCharsInStr(Tempstr, ptr, "    ()'");
+        Path=MCopyStr(Path, "cat - >> '", Tempstr, "'", NULL);
     }
     else if (Flags & SF_LIST)
     {
@@ -261,7 +265,7 @@ void SSHClose(STREAM *S)
 //send cntrl-d
         STREAMWriteBytes(S, &endchar, 1);
         STREAMFlush(S);
-        Tempstr=STREAMReadDocument(Tempstr, S);
+        Tempstr=STREAMReadLine(Tempstr, S);
     }
 
     Destroy(Tempstr);

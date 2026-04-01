@@ -1,3 +1,6 @@
+v5.69 (2026-04-01)
+  * fix issue with 'SSHClose' not being called correctly when writing files over ssh
+
 v5.68 (2026-02-26)
   * honor stderr2null in 'Spawn' commands
   * pmatch now supports {n} matches

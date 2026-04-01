@@ -904,13 +904,13 @@ void *ListDeleteNode(ListNode *Node)
 void ListMoveStart(ListNode *Curr)
 {
     ListNode *Head;
-		
-		if (! Curr) return;
 
-		Head=ListGetHead(Curr);
-		if (! Head) return;
+    if (! Curr) return;
 
-		//if it's already first, don't bother
+    Head=ListGetHead(Curr);
+    if (! Head) return;
+
+    //if it's already first, don't bother
     if (Curr->Prev != Head)
     {
         ListUnThreadNode(Curr);
@@ -921,13 +921,13 @@ void ListMoveStart(ListNode *Curr)
 void ListMoveEnd(ListNode *Curr)
 {
     ListNode *Head, *Last;
-		
-		if (! Curr) return;
 
-		Head=ListGetHead(Curr);
-		if (! Head) return;
+    if (! Curr) return;
 
-		//if it's already last, don't bother
+    Head=ListGetHead(Curr);
+    if (! Head) return;
+
+    //if it's already last, don't bother
     if (Curr->Next != NULL)
     {
         ListUnThreadNode(Curr);
