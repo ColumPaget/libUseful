@@ -223,8 +223,8 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     if (infd) c1=PipeSpawnCreateStdOutPipe("stdin", channel1, 0);
     if (outfd) c2=PipeSpawnCreateStdOutPipe("stdout", channel2, Flags & SPAWN_STDOUT_NULL);
 
-    if (errfd) c3=PipeSpawnCreateStdOutPipe("stderr", channel3, Flags & SPAWN_STDERR_NULL);
-    else if (Flags & SPAWN_COMBINE_STDERR) c3=c2;
+    if (Flags & SPAWN_COMBINE_STDERR) c3=c2;
+		else if (errfd) c3=PipeSpawnCreateStdOutPipe("stderr", channel3, Flags & SPAWN_STDERR_NULL);
 
     pid=xforkio(c1, c2, c3);
     if (pid==0)
@@ -346,7 +346,7 @@ pid_t PseudoTTYSpawn(int *pty, const char *Command, const char *Config)
 
 STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 {
-    int to_fd, from_fd, *iptr;
+    int to_fd, from_fd, err_fd, *iptr;
     pid_t pid=0;
     STREAM *S=NULL;
     char *Tempstr=NULL;
@@ -360,8 +360,8 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
     }
     else
     {
-        iptr=NULL;
-        pid=PipeSpawnFunction(&to_fd, &from_fd, iptr, Func, Data, Config);
+				err_fd=-1;
+        pid=PipeSpawnFunction(&to_fd, &from_fd, &err_fd, Func, Data, Config);
     }
 
     if (pid > 0)

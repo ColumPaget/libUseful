@@ -35,7 +35,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 #define PROC_JAIL          524288    // chroot after everything setup. This jails a process in a directory, not the same as PROC_CHROOT
 #define PROC_ISOCUBE      1048576    // chroot into a tmpfs filesystem. Any files process writes will be lost when it exits
-
+#define PROC_LAN_ONLY    33554432    // set don't route on all sockets. This is used to setup apps that we don't want to talk cross-network.
 
 #define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID | PROC_CONTAINER_IPC)
 

@@ -1,3 +1,9 @@
+v5.71 (2026-04-18)
+  * honor 'stderr2null' when running commands
+  * added 'security=lan' for ProcessApplyConfig to limit all socket connections to 'non-routed' local ips
+  * fix edge case in 'SelectWait' causing hangs in some apps
+
+
 v5.70 (2026-04-01)
   * limit direct use of 'select' syscall, replace with FDSelect instead (means more use of poll when supported, rather than select)
   * catch filedescriptors < 0 passed to FDSelect et al

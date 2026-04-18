@@ -421,8 +421,8 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
     char *Token=NULL;
     const char *ptr;
     int Flags=0, val;
-    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "local", "nonet", "killnet","noexec", "killexec", "nopid", "noshm", "nomsgq", "noipc", NULL};
-    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC} TSecLevel;
+    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "lan", "local", "nonet", "killnet", "noexec", "killexec", "nopid", "noshm", "nomsgq", "noipc", NULL};
+    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_LAN, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC} TSecLevel;
 
 
     //if the user asks for ANY security then we set 'no new privs'
@@ -446,6 +446,10 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
         case LU_SEC_LOCAL:
             *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
             Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
+            break;
+
+        case LU_SEC_LAN:
+            Flags |= PROC_LAN_ONLY;
             break;
 
         case LU_SEC_NONET:
@@ -616,6 +620,7 @@ static int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"-pid")==0) Flags |= PROC_CONTAINER_PID;
         else if (strcasecmp(Name,"ns")==0) Flags |= PROC_CONTAINER_FS;
         else if (strcasecmp(Name,"namespace")==0) Flags |= PROC_CONTAINER_FS;
+        else if (strcasecmp(Name,"lan")==0) Flags |= PROC_LAN_ONLY;
         else if (strcasecmp(Name,"mlock")==0) ProcessMemLockAdd();
         else if (strcasecmp(Name,"memlock")==0) ProcessMemLockAdd();
         else if (strcasecmp(Name,"mdwe")==0) ProcessNoWriteExec(FALSE);
@@ -771,6 +776,8 @@ int ProcessApplyConfig(const char *Config)
 
 //do all things that we can do 'early' (i.e. before chroot and demonize)
     Flags=ProcessApplyEarlyConfig(Config);
+
+    if (Flags & PROC_LAN_ONLY) LibUsefulFlags |= LU_DONT_ROUTE;
 
     if (Flags & PROC_SETUP_FAIL)
     {

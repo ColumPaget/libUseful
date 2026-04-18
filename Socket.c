@@ -231,6 +231,9 @@ int SocketParseConfig(const char *Config, TSockSettings *Settings)
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
     }
 
+    if (LibUsefulFlags & LU_DONT_ROUTE)  Settings->Flags |= SOCK_DONTROUTE;
+
+
     Destroy(Name);
     Destroy(Value);
 
