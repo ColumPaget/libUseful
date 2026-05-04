@@ -4,7 +4,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 */
 
 
-/* 
+/*
 This module provides a data processor that uses openssl for encryption and decryption.
 The resulting output is openssl compatible 'Salted__' format, with pbkdf2 interrated 10000 times
 */

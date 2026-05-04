@@ -76,7 +76,7 @@ GETTOKEN_QUOTES only strips quotes that surround a token at start and end, it wi
 
 title='this is the title'
 
-This is due to the common use of both \' and \" in strings in the english language, e.g. as the possessive apostrophe 
+This is due to the common use of both \' and \" in strings in the english language, e.g. as the possessive apostrophe
 or the use of \' to indicate feed and \" to indicate inches in imperial measurments.
 
 In situations where it is desirable to quote only a substring of a string, use backslash quoting, e.g.

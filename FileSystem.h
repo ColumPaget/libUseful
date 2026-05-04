@@ -69,7 +69,7 @@ int MakeDirPath(const char *Path, int DirMask);
 char *FindFileInPath(char *InBuff, const char *File, const char *Path);
 
 //searches a ':' separated path (as in the PATH environment variable) for a file IN A SUBDIRECTORY.
-//If found, the full file path is copied into InBuff and returned. InBuff might be resized, so it 
+//If found, the full file path is copied into InBuff and returned. InBuff might be resized, so it
 //should be a libUseful style string (see String.h). If the file cannot be found an empty string will be returned.
 char *FindFileInPathSubDirectory(char *RetStr, const char *File, const char *SubDirectory, const char *Path);
 
@@ -79,7 +79,7 @@ char *FindFileInPathSubDirectory(char *RetStr, const char *File, const char *Sub
 //return value is number of files found
 int FindFilesInPath(const char *File, const char *Path, ListNode *Files);
 
-//find files matching a glob pattern IN A SUBDIRECTORY of any directories in 'Path' 
+//find files matching a glob pattern IN A SUBDIRECTORY of any directories in 'Path'
 //return all found files in the list 'Files',
 //return value is number of files found
 int FindFilesInPathSubDirectory(const char *File, const char *Path, const char *SubDirectory, ListNode *Files);
@@ -96,7 +96,7 @@ char *FindFileInPrefixSubDirectory(char *RetStr, const char *File, const char *S
 int RecursiveFindFilesInDir(const char *Pattern, const char *Dir, ListNode *Files);
 
 
-//Take a ':' seperated list of paths (as per the $PATH environment variable) and 
+//Take a ':' seperated list of paths (as per the $PATH environment variable) and
 //RECURSIVELY find files matching 'Pattern' under each of these paths
 int RecursiveFindFilesInPath(const char *Pattern, const char *Path, ListNode *Files);
 
@@ -200,7 +200,7 @@ int FileSetSTREAMFlags(const char *Path, int Set, int Unset);
 //file paths can be http or ssh URLs etc, as STREAM objects support many protocols.
 //these are particularly intended to support '1 line' data files like those in /proc and /sys on linux
 //they are also useful for reading json and other structured data that is then passed to 'dataparser' functions
-//FileRead returns "" if it can't read the file, or the file is actually empty. This approach has been 
+//FileRead returns "" if it can't read the file, or the file is actually empty. This approach has been
 //chosen to prevent crashes if FileRead unexpectedly returns NULL. If it's desired to distinguish between
 //empty files and files that can't be opened, errno can be consulted. If the file was opened, but was empty
 //errno will have the value of 0.

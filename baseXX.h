@@ -16,12 +16,12 @@ extern "C" {
 
 
 //the mysterious '5' in baseXXencode is the number of bits that can be encoded in one character of base32
-#define base32encode(Out, In, Len, Encoder, Pad) (baseXXencode((Out), (In), (Len), 5, (Encoder), (Pad))) 
+#define base32encode(Out, In, Len, Encoder, Pad) (baseXXencode((Out), (In), (Len), 5, (Encoder), (Pad)))
 //the mysterious '16' in baseXXdecode is the highest bit that can be encoded in base32
 #define base32decode(Out, In, Encoder) (baseXXdecode((Out), (In), (Encoder), 16))
 
 //the mysterious '6' in baseXXencode is the number of bits that can be encoded in one character of base64
-#define base64encode(Out, In, Len, Encoder, Pad) (baseXXencode((Out), (In), (Len), 6, (Encoder), (Pad))) 
+#define base64encode(Out, In, Len, Encoder, Pad) (baseXXencode((Out), (In), (Len), 6, (Encoder), (Pad)))
 //the mysterious '32' in baseXXdecode is the highest bit that can be encoded in base64
 #define base64decode(Out, In, Encoder) (baseXXdecode((Out), (In), (Encoder) , 32))
 

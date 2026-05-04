@@ -13,7 +13,7 @@ Connect to an ssh server and run a command. This requires the ssh command-line p
 
 You will normally not use these functions, instead using something like 'STREAMOpen("ssh://myhost.com:2222", "r bind=192.168.6.1");'
 
-The 'config' argument to SSHConnect and SSHOpen is the same as other STREAMOpen style commands, consisting of a set of fopen-style 'open flags' 
+The 'config' argument to SSHConnect and SSHOpen is the same as other STREAMOpen style commands, consisting of a set of fopen-style 'open flags'
 followed by name-value pairs for other settings
 
 Currently recognized 'open flags' are:

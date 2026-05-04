@@ -14,9 +14,9 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 typedef struct
 {
-unsigned int argc;
-unsigned int curr;
-const char **argv;
+    unsigned int argc;
+    unsigned int curr;
+    const char **argv;
 } CMDLINE;
 
 

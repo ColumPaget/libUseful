@@ -37,8 +37,8 @@ References: <CABsuZXUfs=U5_-3FSgMv2dC1dS_P3UFVhpM77D8JKhYEWXj+vA@mail.gmail.com>
 In-Reply-To: <CABsuZXUfs=U5_-3FSgMv2dC1dS_P3UFVhpM77D8JKhYEWXj+vA@mail.gmail.com>
 Accept-Language: en-US
 Content-Language: en-US
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
 x-originating-ip: [119.74.104.56]
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable

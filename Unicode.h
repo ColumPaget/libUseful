@@ -4,7 +4,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 */
 
 
-/* 
+/*
 This file relates to outputing unicode characters at the terminal. It supplies functions to lookup characters by name.
 
 Unicode in libUseful is usually enabled using 'tilde strings' like ~:alien: that are parsed and converted by the functions  int 'Terminal.h' like TerminalPutStr and TerminalFormatStr
@@ -21,7 +21,7 @@ https://github.com/8bitmcu/NerdFont-Cheat-Sheet
 
 Either space-separated or comma-seperated files will work so long as:
 
- 1) the file is called 'nerdfont.csv' 'nerdfont.csv.txt' or 'nerdfont.txt' 
+ 1) the file is called 'nerdfont.csv' 'nerdfont.csv.txt' or 'nerdfont.txt'
  2) there is one mapping per line
  3) the first field is the name and the second is the character-number
  4) neither space or , exist in the name
@@ -54,8 +54,8 @@ extern "C" {
 #endif
 
 // set the GLOBAL unicode level.
-// this is a global value that represents the unicode abilities of an OS or device. 
-// Functions like 'UnicodeStr' and 'StrAddUnicodeChar' use this information in all their operations.  
+// this is a global value that represents the unicode abilities of an OS or device.
+// Functions like 'UnicodeStr' and 'StrAddUnicodeChar' use this information in all their operations.
 
 // There are 3 values
 // level 0: no unicode support, unicode chars will be replaced with '?'
@@ -65,11 +65,11 @@ extern "C" {
 // level 9: unicode support up to 0x1FFFF plus nerdfonts support (also up to character 0x1FFFF)
 void UnicodeSetUTF8(int level);
 
-//decode a single UTF-8 sequence pointed to by ptr and return it as an unsigned int, incrementing ptr to 
+//decode a single UTF-8 sequence pointed to by ptr and return it as an unsigned int, incrementing ptr to
 //point beyond the just decoded sequence
 unsigned int UnicodeDecode(const char **ptr);
 
-//encode a single unicode value ('Code') to a UTF-8 string using the supplied UnicodeLevel 
+//encode a single unicode value ('Code') to a UTF-8 string using the supplied UnicodeLevel
 //rather than the global unicode level set by UnicodeSetUTF9
 char *UnicodeEncodeChar(char *RetStr, int UnicodeLevel, int Code);
 

@@ -21,7 +21,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
  *
  *  The 'Config' parameter of TerminalChoice takes the following entries:
  *
- *  prompt=        A text or prompt that preceeds the menu 
+ *  prompt=        A text or prompt that preceeds the menu
  *  options=       A comma-separated list of menu options
  *  choices=       Equivalent to 'options='
  *  x=             Position the menu at terminal column 'x'. Without x and/or y the menu will be on the current line
@@ -51,7 +51,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
       if ((! RetStr) || StrValid(RetStr)) break;
 
 			// do other things
-			
+
       inchar=TerminalReadChar(Term);
 		}
     RetStr=TerminalChoiceProcess(RetStr, Chooser);

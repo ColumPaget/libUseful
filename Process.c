@@ -18,6 +18,7 @@
 #include "UnitsOfMeasure.h"
 #include "Users.h"
 #include "Seccomp.h"
+#include "IPAddress.h"
 
 //needed for 'flock' used by CreatePidFile and CreateLockFile
 #include <sys/file.h>
@@ -416,13 +417,162 @@ static int ProcessMemLockAdd()
 }
 
 
+//used by all 'seccomp' related functions below
+typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_BASIC_NET, LU_SEC_LAN, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC} TSecLevel;
+
+
+
+
+
+static char *ProcessSeccompParseModifier(char *RetStr, int ModifierID, int *Flags)
+{
+
+    //these values arent 'levels' but rather things we can turn on or off at every level
+    //these are mostly about network access
+    switch (ModifierID)
+    {
+    case LU_SEC_CLIENT:
+        //do not attempt to add bind to this list, it's needed for client sockets and
+        //accepts a sockaddr object that seccomp cannot parse.
+        RetStr=CatStr(RetStr, "syscall_deny=group:server ");
+        break;
+
+    case LU_SEC_BASIC_NET:
+        RetStr=CatStr(RetStr, "syscall_allow=socket(inet);socket(inet6);socket(unix);socketpair(inet);socketpair(inet6);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
+        (*Flags) |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
+        break;
+
+    case LU_SEC_LOCAL:
+        RetStr=CatStr(RetStr, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
+        (*Flags) |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
+        break;
+
+    case LU_SEC_LAN:
+        (*Flags) |= PROC_LAN_ONLY;
+        break;
+
+    case LU_SEC_NONET:
+        RetStr=CatStr(RetStr, "syscall_deny=group:net ");
+        (*Flags) |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
+        break;
+
+    case LU_SEC_KILLNET:
+        RetStr=CatStr(RetStr, "syscall_kill=group:net ");
+        (*Flags) |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
+        break;
+
+    case LU_SEC_NOEXEC:
+        RetStr=CatStr(RetStr, "syscall_deny=group:exec ");
+        break;
+
+    case LU_SEC_KILLEXEC:
+        RetStr=CatStr(RetStr, "syscall_kill=group:exec ");
+        break;
+
+    case LU_SEC_NOPID:
+        (*Flags) |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_PID;
+        break;
+
+    case LU_SEC_NOSHM:
+        RetStr=CatStr(RetStr, "syscall_deny=group:shm");
+        break;
+
+    case LU_SEC_NOMSGQ:
+        RetStr=CatStr(RetStr, "syscall_deny=group:msgq");
+        break;
+
+    case LU_SEC_NOIPC:
+        RetStr=CatStr(RetStr, "syscall_deny=group:ipc ");
+        (*Flags) |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_IPC;
+        break;
+    }
+
+    return(RetStr);
+}
+
+
+
+static char *ProcessSeccompParseLevel(char *RetStr, int LevelID, const char *Token, int *Flags)
+{
+    //these are 'levels', so each falls through to the ones below it
+    switch (LevelID)
+    {
+    //ignore any of the about 'non-level' switches
+    case LU_SEC_BASIC_NET:
+    case LU_SEC_LAN:
+    case LU_SEC_CLIENT:
+    case LU_SEC_LOCAL:
+    case LU_SEC_NONET:
+    case LU_SEC_KILLNET:
+    case LU_SEC_NOEXEC:
+    case LU_SEC_KILLEXEC:
+    case LU_SEC_NOPID:
+    case LU_SEC_NOSHM:
+    case LU_SEC_NOMSGQ:
+    case LU_SEC_NOIPC:
+        break;
+
+    case LU_SEC_MEMWORKER:
+        RetStr=CatStr(RetStr, "syscall_kill=group:open;group:filesystem:pipe ");
+    //break; //fall through to LU_SEC_WORKER
+
+    case LU_SEC_WORKER:
+        RetStr=CatStr(RetStr, "syscall_deny=group:filesystem ");
+    //break; //fall through to LU_SEC_PARANOID
+
+    case LU_SEC_PARANOID:
+        RetStr=CatStr(RetStr, "syscall_kill=group:kill;link;symlink;group:exec ");
+    //break; //fall through to LU_SEC_HIGH
+
+    case LU_SEC_HIGH:
+        RetStr=CatStr(RetStr, "syscall_deny=group:kill;link;symlink ");
+    //break; //fall through to LU_SEC_CONSTRAINED
+
+    case LU_SEC_CONSTRAINED:
+        RetStr=CatStr(RetStr, "syscall_allow=ioctl(termget);ioctl(termset) syscall_kill=mprotect(exec);mmap(exec);ioctl;group:ptrace;utimes ");
+    //break; //fall through to LU_SEC_UNTRUSTED
+
+    case LU_SEC_UNTRUSTED:
+        RetStr=CatStr(RetStr, "syscall_kill=group:chroot;group:keyring;group:ns;acct;pidfd_open syscall_deny=utimes ");
+    //break; //fall through to LU_SEC_GUEST
+
+    case LU_SEC_GUEST:
+        RetStr=CatStr(RetStr, "syscall_deny=group:keyring ");
+    //break; //fall through to LU_SEC_USER
+
+    case LU_SEC_USER:
+        RetStr=CatStr(RetStr, "syscall_deny=chown;chmod(exec);chmod(suid) syscall_kill=group:sysadmin;bpf;capset ");
+    //break; //fall through to LU_SEC_BASIC
+
+    case LU_SEC_BASIC:
+        RetStr=CatStr(RetStr, "syscall_deny=acct;capset ");
+    //break; //fall through to LU_SEC_MINIMAL
+
+    case LU_SEC_MINIMAL:
+        //sadly, things like wine use ptrace, so we'd rather deny it than kill them.
+        RetStr=CatStr(RetStr, "syscall_deny=ptrace syscall_kill=group:kexec;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages ");
+
+        break;
+
+    //'default' handles 'syscall_allow=', 'syscall_deny=' and 'syscall_kill=' values supplied by the user
+    default:
+        if (strncmp(Token, "syscall_allow=", 14)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
+        else if (strncmp(Token, "syscall_kill=", 13)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
+        else if (strncmp(Token, "syscall_deny=", 13)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
+        break;
+    }
+
+    return(RetStr);
+}
+
+
+
 static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
 {
     char *Token=NULL;
     const char *ptr;
-    int Flags=0, val;
-    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "lan", "local", "nonet", "killnet", "noexec", "killexec", "nopid", "noshm", "nomsgq", "noipc", NULL};
-    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_LAN, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC} TSecLevel;
+    int Flags=0, SeccompLevelID;
+    const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "basic-net", "lan", "local", "nonet", "killnet", "noexec", "killexec", "nopid", "noshm", "nomsgq", "noipc", NULL};
 
 
     //if the user asks for ANY security then we set 'no new privs'
@@ -431,129 +581,10 @@ static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
     ptr=GetToken(Config, " |+", &Token, GETTOKEN_MULTI_SEP);
     while (ptr)
     {
-        val=MatchTokenFromList(Token, Levels, 0);
+        SeccompLevelID=MatchTokenFromList(Token, Levels, 0);
+        *SeccompSetup=ProcessSeccompParseModifier(*SeccompSetup, SeccompLevelID, &Flags);
+        *SeccompSetup=ProcessSeccompParseLevel(*SeccompSetup, SeccompLevelID, Token, &Flags);
 
-        //these values arent 'levels' but rather things we can turn on or off at every level
-        //these are mostly about network access
-        switch (val)
-        {
-        case LU_SEC_CLIENT:
-            //do not attempt to add bind to this list, it's needed for client sockets and
-            //accepts a sockaddr object that seccomp cannot parse.
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:server ");
-            break;
-
-        case LU_SEC_LOCAL:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
-            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
-            break;
-
-        case LU_SEC_LAN:
-            Flags |= PROC_LAN_ONLY;
-            break;
-
-        case LU_SEC_NONET:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:net ");
-            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
-            break;
-
-        case LU_SEC_KILLNET:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:net ");
-            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_NET;
-            break;
-
-        case LU_SEC_NOEXEC:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:exec ");
-            break;
-
-        case LU_SEC_KILLEXEC:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:exec ");
-            break;
-
-        case LU_SEC_NOPID:
-            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_PID;
-            break;
-
-        case LU_SEC_NOSHM:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:shm");
-            break;
-
-        case LU_SEC_NOMSGQ:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:msgq");
-            break;
-
-        case LU_SEC_NOIPC:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:ipc ");
-            Flags |= PROC_NO_NEW_PRIVS | PROC_CONTAINER_IPC;
-            break;
-        }
-
-
-        //these are 'levels', so each falls through to the ones below it
-        switch (val)
-        {
-        //ignore any of the about 'non-level' switches
-        case LU_SEC_CLIENT:
-        case LU_SEC_LOCAL:
-        case LU_SEC_NONET:
-        case LU_SEC_KILLNET:
-        case LU_SEC_KILLEXEC:
-        case LU_SEC_NOPID:
-        case LU_SEC_NOSHM:
-        case LU_SEC_NOMSGQ:
-        case LU_SEC_NOIPC:
-            break;
-
-        case LU_SEC_MEMWORKER:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:open;group:filesystem:pipe ");
-        //break; //fall through to LU_SEC_WORKER
-
-        case LU_SEC_WORKER:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:filesystem ");
-        //break; //fall through to LU_SEC_PARANOID
-
-        case LU_SEC_PARANOID:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:kill;link;symlink;group:exec ");
-        //break; //fall through to LU_SEC_HIGH
-
-        case LU_SEC_HIGH:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:kill;link;symlink ");
-        //break; //fall through to LU_SEC_CONSTRAINED
-
-        case LU_SEC_CONSTRAINED:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_allow=ioctl(termget);ioctl(termset) syscall_kill=mprotect(exec);mmap(exec);ioctl;group:ptrace;utimes ");
-        //break; //fall through to LU_SEC_UNTRUSTED
-
-        case LU_SEC_UNTRUSTED:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_kill=group:chroot;group:keyring;group:ns;acct;pidfd_open syscall_deny=utimes ");
-        //break; //fall through to LU_SEC_GUEST
-
-        case LU_SEC_GUEST:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=group:keyring ");
-        //break; //fall through to LU_SEC_USER
-
-        case LU_SEC_USER:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=chown;chmod(exec) syscall_kill=group:sysadmin;bpf;capset ");
-        //break; //fall through to LU_SEC_BASIC
-
-        case LU_SEC_BASIC:
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=acct;capset ");
-        //break; //fall through to LU_SEC_MINIMAL
-
-        case LU_SEC_MINIMAL:
-            //sadly, things like wine use ptrace, so we'd rather deny it than kill them.
-            *SeccompSetup=CatStr(*SeccompSetup, "syscall_deny=ptrace syscall_kill=group:kexec;uselib;userfaultfd;personality;perf_event_open;group:kern_mods;kexec_load;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages ");
-
-            break;
-
-
-        //'default' handles 'syscall_allow=', 'syscall_deny=' and 'syscall_kill=' values supplied by the user
-        default:
-            if (strncmp(Token, "syscall_allow=", 14)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
-            else if (strncmp(Token, "syscall_kill=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
-            else if (strncmp(Token, "syscall_deny=", 13)==0) *SeccompSetup=MCatStr(*SeccompSetup, Token, " ", NULL);
-            break;
-        }
         ptr=GetToken(ptr, " |+", &Token, GETTOKEN_MULTI_SEP);
     }
 
@@ -623,10 +654,6 @@ static int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"lan")==0) Flags |= PROC_LAN_ONLY;
         else if (strcasecmp(Name,"mlock")==0) ProcessMemLockAdd();
         else if (strcasecmp(Name,"memlock")==0) ProcessMemLockAdd();
-        else if (strcasecmp(Name,"mdwe")==0) ProcessNoWriteExec(FALSE);
-        else if (strcasecmp(Name,"mdwe:inherit")==0) ProcessNoWriteExec(TRUE);
-        else if (strcasecmp(Name,"w^x")==0) ProcessNoWriteExec(FALSE);
-        else if (strcasecmp(Name,"w^x:inherit")==0) ProcessNoWriteExec(TRUE);
         else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);
         else if (strcasecmp(Name,"mlockmax")==0) ProcessSetRLimit(RLIMIT_MEMLOCK, Value);
         else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);
@@ -634,15 +661,21 @@ static int ProcessApplyEarlyConfig(const char *Config)
         else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
         else if ( (strcasecmp(Name,"procs")==0) || (strcasecmp(Name,"nproc")==0) ) ProcessSetRLimit(RLIMIT_NPROC, Value);
         else if (strcasecmp(Name, "resist_ptrace")==0) LibUsefulFlags |= LU_RESIST_PTRACE;
-        else if (strcasecmp(Name,"chroot")==0)
-        {
-            if ( StrValid(Value) && (chdir(Value) !=0 ) )
+        else if (strcasecmp(Name,"mdwe")==0) ProcessNoWriteExec(FALSE);
+        else if (strcasecmp(Name,"mdwe:inherit")==0) ProcessNoWriteExec(TRUE);
+        else if (strcasecmp(Name,"mdwe:hard")==0) Flags |= PROC_MDWE_HARD;
+        else if (strcasecmp(Name,"w^x")==0) ProcessNoWriteExec(FALSE);
+        else if (strcasecmp(Name,"w^x:inherit")==0) ProcessNoWriteExec(TRUE);
+        else if (strcasecmp(Name,"w^x:hard")==0) if (! ProcessNoWriteExec(TRUE)) Flags |= PROC_MDWE_HARD;
+            else if (strcasecmp(Name,"chroot")==0)
             {
-                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chdir to directory %s for chrooting", Value);
-                Flags |= PROC_SETUP_FAIL;
+                if ( StrValid(Value) && (chdir(Value) !=0 ) )
+                {
+                    RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chdir to directory %s for chrooting", Value);
+                    Flags |= PROC_SETUP_FAIL;
+                }
+                else Flags |= PROC_CHROOT;
             }
-            else Flags |= PROC_CHROOT;
-        }
 
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
@@ -663,11 +696,16 @@ static int ProcessApplyEarlyConfig(const char *Config)
 //Apply config changes that are relevant AFTER chroot/daemonize
 static int ProcessApplyLateConfig(int Flags, const char *Config)
 {
-    char *Name=NULL, *Value=NULL, *Capabilities=NULL, *SeccompDeny=NULL;
+    char *Name=NULL, *Value=NULL, *Capabilities=NULL, *SeccompSetup=NULL;
     const char *ptr;
     long uid=0, gid=0;
     int lockfd, ctty_fd=0;
 
+    if (Flags & PROC_MDWE_HARD)
+    {
+        LookupHostIP("example.net");
+        SeccompSetup=CopyStr(SeccompSetup, "syscall_kill=group:mexec ");
+    }
 //these are things that, if we've Chroot-ed, happen *within* the Chroot. But not within a Jail.
     ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
     while (ptr)
@@ -703,7 +741,7 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
         else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
         else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
-        else if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &SeccompDeny);
+        else if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &SeccompSetup);
         else if (strcasecmp(Name,"ctty")==0)
         {
             ctty_fd=atoi(Value);
@@ -755,14 +793,14 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
 
         //seccomp must come after PROC_NO_NEW_PRIVS
 #ifdef USE_SECCOMP
-        if (StrValid(SeccompDeny)) SeccompAddRules(SeccompDeny);
+        if (StrValid(SeccompSetup)) SeccompAddRules(SeccompSetup);
 #endif
     }
 
     Destroy(Name);
     Destroy(Value);
     Destroy(Capabilities);
-    Destroy(SeccompDeny);
+    Destroy(SeccompSetup);
 
     return(Flags);
 }

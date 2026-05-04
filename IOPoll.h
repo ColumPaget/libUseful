@@ -65,12 +65,12 @@ void STREAMSelectsRemoveStream(STREAM *S);
 
 // STREAMSelect has a feature where, when a stream has been active, it is moved
 // to the bottom of the list so that constant activity on that stream does not
-// lock out other streams. 
+// lock out other streams.
 
 // If 'epoll' is supported by the OS, and libUseful was compiled with 'epoll' support
 // STREAMSelect will use 'epoll' if the list is greater than 5 items
 
-// If using 'select' STREAMSelect will refuse to add Streams when the list is 
+// If using 'select' STREAMSelect will refuse to add Streams when the list is
 // longer than FD_SETSIZE. However, it will move Streams not added to the
 // start of the 'Streams' list so they get their turn next time. Used in combination
 // with a short 'tv' timeval, this mitigates large select lists on platforms that

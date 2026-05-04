@@ -18,7 +18,7 @@ A number of general functions that don't fit anywhere else
 extern "C" {
 #endif
 
-//Destroy an allocated object. Will not crash if passed NULL. 
+//Destroy an allocated object. Will not crash if passed NULL.
 void Destroy(void *Obj);
 
 //reverse bytes within a uint32, There doesn't seem to be a POSIX function for this,

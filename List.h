@@ -8,9 +8,9 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 /*
 
-This module provides double linked lists and 'maps'. Maps are hashed arrays of linked lists, so they're very good for storing large numbers of items that can be looked up by a key or name. 
+This module provides double linked lists and 'maps'. Maps are hashed arrays of linked lists, so they're very good for storing large numbers of items that can be looked up by a key or name.
 
-Items are stored as (void *) pointers, and can be tagged with a name by using 'ListAddNamedItem'. 
+Items are stored as (void *) pointers, and can be tagged with a name by using 'ListAddNamedItem'.
 
 When the list is destroyed by the 'ListDestroy' function, a Destructor function can be passed in as the second argument which is used to destroy items stored in the list. If the items in the list aren't unique copies, but are pointers to things that exist outside of the list, then pass NULL as the destructor.
 
@@ -86,13 +86,13 @@ MyList=MapCreate(4096, LIST_FLAG_CACHE);
 
 
 The 'LIST_FLAG_CACHE' flag used in these examples caches the last item found in a lookup, so that if the same item is looked up many times in a row,
-it is returned more quickly. This is particularly useful with large maps with many sub-lists and many items in each sub-list, as the likelyhood of 
+it is returned more quickly. This is particularly useful with large maps with many sub-lists and many items in each sub-list, as the likelyhood of
 looking up the same item twice in a given chain is much higher, as that chain is only visited for a subset of items in the map. This can speed up
 lookups as the whole sub-chain does not have to be explored to find the item, as the cached item will be returned immediately.
 
 
 The maximum length of a list, or of each subchain in a map, can be set with 'ListSetMaxItems', and Items can be timed-out from the
-list using 'LIST_FLAG_TIMEOUT. 
+list using 'LIST_FLAG_TIMEOUT.
 
 */
 
@@ -115,12 +115,12 @@ list using 'LIST_FLAG_TIMEOUT.
 #define LIST_FLAG_STATS     256   //internally used flag
 
 //list contains only one instance of a named item, so don't keep searching after first find.
-//N.B. This ignores item type, one instance of a name means exactly that, NOT one instance of 
+//N.B. This ignores item type, one instance of a name means exactly that, NOT one instance of
 //name and type. It's specifically for use in cases where items are uniquely named but might
 //have different types, or the type value might be being used for some other purpose. It
 //allows list to return 'not found' as soon as it can
-#define LIST_FLAG_UNIQ  512     
-                             
+#define LIST_FLAG_UNIQ  512
+
 
 
 //these flags are available to be set against a listnode for whatever purpose the user
@@ -154,7 +154,7 @@ typedef void *(*LIST_ITEM_CLONE_FUNC)(void *);
 
 
 //ListStats started out as a structure to store how many times a node in a list is accessed ("Hits")
-//and it's last access time. However, since then it's become a multi-use structure. 
+//and it's last access time. However, since then it's become a multi-use structure.
 
 //Data nodes in a list only have a "ListStats" item if the list has been created with the LIST_FLAG_STATS flag
 //or if they've been created with the LIST_FLAG_TIMEOUT (see below)
@@ -162,9 +162,9 @@ typedef void *(*LIST_ITEM_CLONE_FUNC)(void *);
 //Head nodes of a list don't have a "Hits" value, and instead "Hits" is used to store the number
 //of items in the list. For this and other reasons, head nodes always have a 'stats' subitem.
 
-//If LIST_FLAG_TIMEOUT is set on a list, then the 'Time' field is used in combination 
+//If LIST_FLAG_TIMEOUT is set on a list, then the 'Time' field is used in combination
 //with the 'ListNodeSetTime' function to set an expiry time for items in a list. In this
-//situation 'last access time' is not available. 
+//situation 'last access time' is not available.
 
 //If the 'ListSetMaxItems' function is used to set a maximum number of items in the list, then the 'Max'
 //value is set in ListStats, and if the list, or a chain in a map, has more items than this, then
@@ -174,7 +174,7 @@ typedef void *(*LIST_ITEM_CLONE_FUNC)(void *);
 //Destroyer is a function that can be set with either 'ListSetDestroyer' or 'ListSetMaxItems' which is
 //called to destroy items in the list when they time out, or are deleted because the list has exceeded
 //the 'Max' items level.
- 
+
 
 typedef struct
 {
@@ -269,7 +269,7 @@ void ListSetMaxItems(ListNode *Node, unsigned long Max, LIST_ITEM_DESTROY_FUNC D
 //Set time on a list. Normally this is automatically set on insertion
 void ListNodeSetTime(ListNode *Node, time_t When);
 
-//set number of hits on a listnode, This is normally set by 'ListFindNamedItem' 
+//set number of hits on a listnode, This is normally set by 'ListFindNamedItem'
 void ListNodeSetHits(ListNode *Node, int Hits);
 
 //add to number of hits on a listnode
@@ -298,7 +298,7 @@ void ListThreadNode(ListNode *Prev, ListNode *Node);
 //unclip a node from a list
 void ListUnThreadNode(ListNode *Node);
 
-//add an item to a list or map, 'Type' is just a number used to identify different 
+//add an item to a list or map, 'Type' is just a number used to identify different
 //types of thing in a list or map
 ListNode *ListAddTypedItem(ListNode *List, uint16_t Type, const char *Name, void *Item);
 

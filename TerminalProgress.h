@@ -17,7 +17,7 @@ TerminalInit(Term, TERM_RAWKEYS | TERM_SAVEATTRIBS);
 TerminalClear(Term);
 
 TP=TerminalProgressCreate(Term, "prompt='progress: ' left-contain=' -=' right-contain='=- ' progress=| width=20");
-for (i=0; i <= 20; i++) 
+for (i=0; i <= 20; i++)
 {
 Tempstr=FormatStr(Tempstr, "NOW AT: %d", i);
 TerminalProgressUpdate(TP, i, 20, Tempstr);

@@ -57,27 +57,27 @@ extern "C" {
 #endif
 
 #ifndef HAVE_HTONLL
-  #ifdef __APPLE__
-    # define htonll(x) OSSwapHostToBigInt64(x)
-  #else
-    #if __BIG_ENDIAN__
-      # define htonll(x) (x)
-    #else
-      # define htonll(x) ( ( (uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32) )
-    #endif
-  #endif
+#ifdef __APPLE__
+# define htonll(x) OSSwapHostToBigInt64(x)
+#else
+#if __BIG_ENDIAN__
+# define htonll(x) (x)
+#else
+# define htonll(x) ( ( (uint64_t)htonl((x) & 0xFFFFFFFF) << 32) | htonl((x) >> 32) )
+#endif
+#endif
 #endif
 
 #ifndef HAVE_NTOHLL
-  #ifdef __APPLE__
-    # define ntohll(x) OSSwapBigToHostInt64(x)
-  #else
-    #if __BIG_ENDIAN__
-      # define ntohll(x) (x)
-    #else
-      # define ntohll(x) ( ( (uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32) )
-    #endif
-  #endif
+#ifdef __APPLE__
+# define ntohll(x) OSSwapBigToHostInt64(x)
+#else
+#if __BIG_ENDIAN__
+# define ntohll(x) (x)
+#else
+# define ntohll(x) ( ( (uint64_t)ntohl((x) & 0xFFFFFFFF) << 32) | ntohl((x) >> 32) )
+#endif
+#endif
 #endif
 
 
@@ -165,8 +165,8 @@ STREAM *STREAMServerInit(const char *URL);
 //  A - Autodetect SSL
 //  B - BROADCAST  set udp socket to be a broadcast socket
 //  F - Tcp FASTOPEN
-//  N - Tcp NODELAY - disable Nagel's algorithm and send data straight away 
-//  R - Don't route. All addresses are treated as local 
+//  N - Tcp NODELAY - disable Nagel's algorithm and send data straight away
+//  R - Don't route. All addresses are treated as local
 //  P - REUSE_PORT allows multiple processes to listen on the same port
 
 //Supported name=value pairs are
@@ -184,7 +184,7 @@ STREAM *STREAMServerAccept(STREAM *Serv);
 //you don't want that particular info
 int GetSockDetails(int fd, char **LocalAddress, int *LocalPort, char **RemoteAddress, int *RemotePort);
 
-//if using SOCK_TPROXY 'tcp transparent proxying' then we will receive connections that are really intended 
+//if using SOCK_TPROXY 'tcp transparent proxying' then we will receive connections that are really intended
 //for elsewhere. This function allows looking up what the original intended destination was
 int GetSockDestination(int sock, char **Host, int *Port);
 
@@ -225,7 +225,7 @@ int TCPConnect(const char *Host, int Port, const char *Config);
 int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, const char *Config);
 int STREAMConnect(STREAM *S, const char *URL, const char *Config);
 
-//Send a UDP dgram (or maybe unix socket dgram) 
+//Send a UDP dgram (or maybe unix socket dgram)
 int STREAMSendDgram(STREAM *S, const char *Host, int Port, char *Data, int len);
 
 

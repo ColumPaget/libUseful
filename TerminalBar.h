@@ -23,22 +23,22 @@ extern "C" {
 //the 'TerminalWidget' base struct
 typedef struct
 {
-int Flags;
-int x, y;
-int ForeColor;
-int BackColor;
-int TextLen;
-char *Text;
-char *MenuPadLeft;
-char *MenuPadRight;
-char *CursorLeft;
-char *CursorRight;
-ListNode *MenuItems;
-STREAM *Term;
+    int Flags;
+    int x, y;
+    int ForeColor;
+    int BackColor;
+    int TextLen;
+    char *Text;
+    char *MenuPadLeft;
+    char *MenuPadRight;
+    char *CursorLeft;
+    char *CursorRight;
+    ListNode *MenuItems;
+    STREAM *Term;
 } TERMBAR;
 
 
-// These functions create a terminal bar at the bottom of the screen. 
+// These functions create a terminal bar at the bottom of the screen.
 TERMBAR *TerminalBarCreate(STREAM *Term, const char *Config, const char *Text);
 void TerminalBarDestroy(TERMBAR *TB);
 
@@ -52,7 +52,7 @@ void TerminalBarDestroy(TERMBAR *TB);
 void TerminalBarSetConfig(TERMBAR *TB, const char *Config);
 
 
-//display a terminal bar with 'Text' 
+//display a terminal bar with 'Text'
 void TerminalBarUpdate(TERMBAR *TB, const char *Text);
 
 //display a prompt in a terminal bar and let the user type in text. Flags are as for 'TerminalReadText'

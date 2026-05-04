@@ -7,8 +7,8 @@ Copyright (c) 2025 Colum Paget <colums.projects@googlemail.com>
 #ifndef LIBUSEFUL_LINEEDIT_H
 #define LIBUSEFUL_LINEEDIT_H
 
-/* 
-This module supplies a line-editor with a history. 
+/*
+This module supplies a line-editor with a history.
 
 Example code using this can be found in Terminal.h in 'TerminalReadText' or in examples/EditLine.c
 
@@ -64,12 +64,12 @@ extern "C" {
 
 typedef struct
 {
-char *Line;
-int Flags;
-int Len;
-int MaxHistory;
-int Cursor;
-ListNode *History;
+    char *Line;
+    int Flags;
+    int Len;
+    int MaxHistory;
+    int Cursor;
+    ListNode *History;
 } TLineEdit;
 
 

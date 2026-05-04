@@ -14,7 +14,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 /*
 This module provides log file functions. It keeps an internal list of log files so that you can just write to them without
 worrying about opening or closing them. These are separate log files from the syslog system, though these functions can
-write to syslog. These logfiles can auto-rotate when they reach a certain size. 
+write to syslog. These logfiles can auto-rotate when they reach a certain size.
 
 For most people only the function LogToFile will be relevant and perhaps LogFileSetDefaults and LogFileFindSetValues.
 
@@ -29,7 +29,7 @@ However, 'append only' requires the file to be opened as root, or by a user with
 
 
 //Flags passed to LogFileCreate and other functions that have a 'Flags' argument
-#define LOGFILE_DEFAULTS 0 
+#define LOGFILE_DEFAULTS 0
 #define LOGFILE_FLUSH 1        // flush on every write
 #define LOGFILE_SYSLOG 2       // send a copy of the log message to syslog
 #define LOGFILE_LOGPID 4       // include the pid  in the log message
@@ -91,23 +91,23 @@ int LogFileFindSetValues(const char *FileName, int Flags, int MaxSize, int MaxRo
 //append a file (could be another logfile) to a logfile
 int LogFileAppendTempLog(const char *LogPath, const char *TmpLogPath);
 
-//Flush all logfiles. 
+//Flush all logfiles.
 void LogFileFlushAll(int Force);
 
-//Close a specific logfile if it's open. 
+//Close a specific logfile if it's open.
 void LogFileClose(const char *Path);
 
 //Close all currently open logfiles
 void LogFileCloseAll();
 
 
-//This writes a log message to a stream, rather than an internally managed logfile object. 
+//This writes a log message to a stream, rather than an internally managed logfile object.
 int LogToSTREAM(STREAM *S, int Flags, const char *Str);
 
 //log message to a TLogFile object
 int LogWrite(TLogFile *Log, const char *Str);
 
-//this is the main function that you'll call to log to a logfile. 
+//this is the main function that you'll call to log to a logfile.
 int LogToFile(const char *FileName, const char *fmt, ...);
 
 //check if a logfile needs to be rotated and do so if it does

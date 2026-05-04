@@ -3,11 +3,11 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 * SPDX-License-Identifier: LGPL-3.0-or-later
 */
 
-/* 
+/*
 This module provides various functions related to terminal input and output, particularly terminal colors.
 
 The functions 'TerminalFormatStr' and  'TerminalPutStr' accept a string with backslash escape sequences
-and the following 'tilde command' formatting values 
+and the following 'tilde command' formatting values
 
 
 ~~        output the tilde character '~'
@@ -35,7 +35,7 @@ and the following 'tilde command' formatting values
 ~+n       switch color to bright black ('night' or 'noir')
 ~+N       switch background to bright black ('night' or 'noir')
 ~+w       switch color to bright white
-~+w       switch background to bright white 
+~+w       switch background to bright white
 ~+y       switch color to bright yellow
 ~+Y       switch background to bright yellow
 ~+m       switch color to bright magenta
@@ -49,7 +49,7 @@ and the following 'tilde command' formatting values
 ~>        clear to end of line
 ~0        reset all attributes (return to normal text)
 ~Uxxxx    output a unicode character (xxxx is the 4-digit unicode name)
-~:name:   output a unicode character using a name from the unicode names file 
+~:name:   output a unicode character using a name from the unicode names file
 
 so, for example:
 
@@ -79,7 +79,7 @@ Can be used to get the length of the string that will actually be displayed (wit
 
 To use unicode characters you must call the function `TerminalSetUTF8(level)` to tell libuseful your system supports unicode, and what level of unicode is supported.
 
- 
+
 Unicode characters can be output by code using ~Uxxxx, but this only supports characters up to FFFF. However characters can be referred to by name using `~:<name>:` like so:
 
 TerminalPutStr("duration: 80~:micro:s", StdOut);
@@ -174,13 +174,13 @@ typedef enum {TERM_NORM, TERM_TEXT, TERM_COLOR, TERM_CLEAR_SCREEN, TERM_CLEAR_EN
 
 typedef struct
 {
-int flags;
-int button;
-int x;
-int y;
+    int flags;
+    int button;
+    int x;
+    int y;
 } TMouseEvent;
 
-// pass in ANSI_ flags as listed above and get out an ANSI escape sequence 
+// pass in ANSI_ flags as listed above and get out an ANSI escape sequence
 char *ANSICode(int Color, int BgColor, int Flags);
 
 //parse a color name ('red', 'yellow' etc) and return the equivalent ANSI_ flag
@@ -316,7 +316,7 @@ const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term);
 void TerminalPutStr(const char *Str, STREAM *S);
 
 
-//'FmtStr' is a printf-style format string with '%d, %s' style substitutions and 'tilde commands' in it. 
+//'FmtStr' is a printf-style format string with '%d, %s' style substitutions and 'tilde commands' in it.
 //Furthermore, any strings printed with '%s' can contain tilde commands too.
 //The ANSI coded result is output to stream S
 void TerminalPrint(STREAM *S, const char *FmtStr, ...);
@@ -328,13 +328,13 @@ int TerminalConsumeCharacter(const char **ptr);
 //to the length and unicode escape sequences should only count as single chars
 int TerminalStrLen(const char *Str);
 
-// pad terminal string with a character to a length *handling ANSI formatting*, 
+// pad terminal string with a character to a length *handling ANSI formatting*,
 // so ANSI escape sequences don't count if they just change colors, and unicode
 // escape sequences should only count as single chars
 char *TerminalPadStr(char *Str, int PadChar, int PadTo);
 
-//truncate a terminal string to a length *handling ANSI formatting*, so ANSI escape sequences don't count to 
-//the length to be truncated. This means if you ask for 5 characters, you get five text characters, plus any 
+//truncate a terminal string to a length *handling ANSI formatting*, so ANSI escape sequences don't count to
+//the length to be truncated. This means if you ask for 5 characters, you get five text characters, plus any
 //ansi strings that preceed them
 char *TerminalStrTrunc(char *Str, int MaxLen);
 
@@ -347,7 +347,7 @@ void TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S);
 int TerminalReadChar(STREAM *S);
 
 
-/* 
+/*
 converts a key to a string. For non-printable key values these strings are the same as the #defined keys above, except without
 the leading 'TKEY_'. So 'ESC', 'F1' 'SHIFT_F1' 'UP' 'DOWN' etc etc */
 const char *TerminalTranslateKeyCode(int key);
@@ -363,7 +363,7 @@ int TerminalTranslateKeyStr(const char *str);
 int TerminalTextConfig(const char *Config);
 
 //read a line of text from the terminal. This command reads keystrokes and optionally echoes them. It supports backspace to delete typed
-//characters. When enter/newline is pressed the whole string of typed characters is returned. 
+//characters. When enter/newline is pressed the whole string of typed characters is returned.
 //N.B. this requires the termainl to have been initialized with the TERM_RAWKEYS flag set, otherwise the terminal driver will handle this
 //job in 'canonical' mode
 //Supported Flags are:
@@ -373,12 +373,12 @@ int TerminalTextConfig(const char *Config);
 //   TERM_SHOWTEXTSTARS which echoes a character, but overwrites it with '*' when the next character is typed, so that only one character of a password is visible at any time
 char *TerminalReadText(char *RetStr, int Flags, STREAM *S);
 
-//as TerminalReadText but with a prompt. 
-//Attributes can be set for the prompt using the TextPrompt:Active and TextPrompt:Done theme values in TerminalTheme.h  
+//as TerminalReadText but with a prompt.
+//Attributes can be set for the prompt using the TextPrompt:Active and TextPrompt:Done theme values in TerminalTheme.h
 char *TerminalReadPrompt(char *RetStr, const char *Prompt, int Flags, STREAM *S);
 
 //as TerminalReadText but with a prompt and supplied history
-//Attributes can be set for the prompt using the TextPrompt:Active and TextPrompt:Done theme values in TerminalTheme.h  
+//Attributes can be set for the prompt using the TextPrompt:Active and TextPrompt:Done theme values in TerminalTheme.h
 char *TerminalReadPromptWithHistory(char *RetStr, const char *Prompt, int Flags, ListNode *History, STREAM *S);
 
 //get width and height/length of a terminal

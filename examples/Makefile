@@ -50,8 +50,9 @@ all:
 	gcc -oipmask.exe ipmask.c $(LIBS)
 	gcc -orecurse.exe recurse.c $(LIBS)
 	gcc -g -opattest2.exe pattest2.c $(LIBS)
+	gcc  -rdynamic -g -obacktrace.exe backtrace.c $(LIBS)
 
-seccomp.exe: seccomp.c
+seccomp.exe: seccomp.c ../libUseful.a
 	gcc -oseccomp.exe seccomp.c $(LIBS)
 
 clean:

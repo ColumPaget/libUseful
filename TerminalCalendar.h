@@ -29,8 +29,8 @@ The date returned by 'TerminalCalendar' is in the format 'YYYY-mm-dd'
  *
  *  month=<num>                       Month in year, expressed as a number 1-12 (defaults to current month)
  *  year=<num>                        Year (defaults to current year)
- *  x=<col>                           Position the calendar at terminal column 'x'. 
- *  y=<row>                           Position the calendar at terminal row 'y'. 
+ *  x=<col>                           Position the calendar at terminal column 'x'.
+ *  y=<row>                           Position the calendar at terminal row 'y'.
  *  left_cursor=<str>                 Text/Attributes for the left hand side of the cursor
  *  right_cursor=<str>                Text/Attributes for the right hand side of the cursor
  *  TitleAttributes=<str>             Attributes for the Month/Year title bar
@@ -91,7 +91,7 @@ char *TerminalCalendarReturnDate(char *RetStr, TERMCALENDAR *TC);
 //set the month and year of the displayed calendar
 void TerminalCalendarSetMonthYear(TERMCALENDAR *TC, int Month, int Year);
 
-// set a 'state' and attributes for that state against a day/month/year 
+// set a 'state' and attributes for that state against a day/month/year
 void TerminalCalendarSetDateStrState(TERMCALENDAR *TC, const char *DateStr, const char *State, const char *Attribs);
 void TerminalCalendarSetDateState(TERMCALENDAR *TC, int Day, int Month, int Year, const char *State, const char *Attribs);
 

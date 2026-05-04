@@ -21,7 +21,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 //
 // File deletions require rewriting the file. This is done by writing to a new file and then
 // using an atomic rename, so the file should be preseved in the event of, say, a powercut
-// while editing this file. 
+// while editing this file.
 
 
 #ifndef LIBUSEFUL_PASSWORD_FILE_H
@@ -32,11 +32,11 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 typedef struct
 {
-char *User;
-char *Type;
-char *Salt;
-char *Cred;
-char *Extra;
+    char *User;
+    char *Type;
+    char *Salt;
+    char *Cred;
+    char *Extra;
 } TPasswordEntry;
 
 

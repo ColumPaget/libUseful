@@ -26,7 +26,7 @@ extern "C" {
 //convert a timeval structure into a milliseconds value. This is intended to
 //service both 64bit millisecond values, and 32bit signed ones.
 //32bit signed millisecond values are used by poll, epoll etc for timeouts
-//this function returns a 32bit value that is clamped to INT_MAX should the 
+//this function returns a 32bit value that is clamped to INT_MAX should the
 //value be more than 32bits can store.
 //If 'timeout_u64' is not NULL then the full 64bit value will be stored in that.
 //If timeval is NULL -1 is returned, which means 'forever' to poll and epoll.
@@ -41,7 +41,7 @@ uint64_t GetTime(int Flags);
 //return a string describing the current date/time, in a format described by 'DateFormat'. 'DateFormat' is an strftime/strptime style format string.
 char *GetDateStr(const char *DateFormat, const char *TimeZone);
 
-//in the next two functions 'epoch' is usually Jan 1 1970, but might be some other date on different systems. 
+//in the next two functions 'epoch' is usually Jan 1 1970, but might be some other date on different systems.
 //It's the date that all time is measured from in the operating system or hardware.
 
 //as GetDateStr except the 'Secs' argument (which is number of seconds since epoch, as returned by time(NULL)) specifies the time to format
@@ -55,8 +55,8 @@ time_t ParseDuration(const char *Dur);
 
 //format a string using the substitutions %w %d %h %m %s for weeks, days, hours, minutes and seconds
 //if any of the substututions are missing, then their value is carried over to the next highest substitution
-//so if there's no '%d', then the 'days' part will be counted in '%h' (hours) 
-//or if that is missing in '%m' (mins) or '%s' (seconds) 
+//so if there's no '%d', then the 'days' part will be counted in '%h' (hours)
+//or if that is missing in '%m' (mins) or '%s' (seconds)
 const char *FormatDuration(const char *Fmt, time_t Duration);
 
 //convert Time from timezone 'SrcZone' to 'DstZone'
@@ -86,7 +86,7 @@ int IsLeapYear(unsigned int year);
 int GetDaysInMonth(int Month, int Year);
 
 //produce a csv of days in month. each line is a week. Any dates starting
-//with '-' are in the previous month to the one requested, and any 
+//with '-' are in the previous month to the one requested, and any
 //started with '+' are in the next month
 char *CalendarFormatCSV(char *RetStr, unsigned int Month, unsigned int Year);
 

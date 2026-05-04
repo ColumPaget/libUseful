@@ -7,7 +7,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #ifndef LIBUSEFUL_OTP_H
 #define LIBUSEFUL_OTP_H
 
-/* Generate a Time based One Time Password. 
+/* Generate a Time based One Time Password.
 For compatiblity with Google authenticator you should use:
 
 HashType=sha1

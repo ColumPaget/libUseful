@@ -26,7 +26,7 @@ typedef struct
     int Flags;
     int Used;
     int Size;
-		pid_t OwnerPid;
+    pid_t OwnerPid;
     unsigned char *Data;
     unsigned char *CurrLine;
 

@@ -3,7 +3,7 @@
 */
 
 /* This MD5 implmentation is taken from fetchmail, and is declared as
- * in the public domain in the COPYING file that comes with fetchmail, 
+ * in the public domain in the COPYING file that comes with fetchmail,
  * and in the md5c.c file, relevant section reproduced below:
  *
  * This code implements the MD5 message-digest algorithm.

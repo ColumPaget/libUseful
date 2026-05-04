@@ -22,7 +22,7 @@ static int InstructionCount=0;
 
 
 
-int SysCallGetID(const char *Name)
+static int SysCallGetID(const char *Name)
 {
 
 //switch user functions
@@ -515,13 +515,16 @@ int SysCallGetID(const char *Name)
     if (strcmp(Name, "personality")==0) return(__NR_personality);
 #endif
 
+#ifdef __NR_splice
+    if (strcmp(Name, "splice")==0) return(__NR_splice);
+#endif
 
     return(-1);
 }
 
 
 
-int SocketCallGetID(const char *Name)
+static int SocketCallGetID(const char *Name)
 {
 #ifdef SYS_SOCKET
     if (strcmp(Name, "socket")==0) return(SYS_SOCKET);
@@ -556,58 +559,102 @@ int SocketCallGetID(const char *Name)
 
 
 
-const char *SyscallGroupLookup(const char *Name)
+
+//this function tries to be a bit more efficient than using 'SubstituteVarsInString'
+static char *SyscallGroupReplace(char *RetStr, const char *Replace, const char *Arg)
 {
-    if (strcmp(Name, "socket")==0) return("socket;socketpair;socketcall(socket);socketcall(socketpair)");
-    else if (strcmp(Name, "socket(ip)")==0) return("socket(ip);socketpair(ip);socketcall(socket,ip);socketcall(socketpair,ip)");
-    else if (strcmp(Name, "socket(unix)")==0) return("socket(unix);socketpair(unix);socketcall(socket,unix);socketcall(socketpair,unix)");
-    else if (strcmp(Name, "socket(packet)")==0) return("socket(packet);socketpair(packet);socketcall(socket,packet);socketcall(socketpair,packet)");
-    else if (strcmp(Name, "connect")==0) return("connect;socketcall(connect)");
-    else if (strcmp(Name, "accept")==0) return("accept;accept4;socketcall(accept);socketcall(accept4)");
-    else if (strcmp(Name, "bind")==0) return("bind;socketcall(bind)");
-    else if (strcmp(Name, "listen")==0) return("listen;socketcall(listen)");
-    else if (strcmp(Name, "link")==0) return("link;linkat");
-    else if (strcmp(Name, "symlink")==0) return("symlink;symlinkat");
-    else if (strcmp(Name, "unlink")==0) return("unlink;unlinkat");
-    else if (strcmp(Name, "mkdir")==0) return("mkdir;mkdirat");
-    else if (strcmp(Name, "rmdir")==0) return("rmdir;rmdirat");
-    else if (strcmp(Name, "rename")==0) return("rename;renameat;renameat2");
-    else if (strcmp(Name, "utimes")==0) return("utimes;utimesat;futimesat;utimensat;futimens");
-    else if (strcmp(Name, "truncate")==0) return("truncate;ftruncate;truncate64;ftruncate64");
-    else if (strcmp(Name, "chown")==0) return("chown;chown32;fchown;fchown32;fchownat;lchown;lchown32");
-    else if (strcmp(Name, "chmod")==0) return("chmod;fchmod;fchmodat;lchmod");
-    else if (strcmp(Name, "chmod(exec)")==0) return("chmod(exec);fchmod(exec);fchmodat(exec);lchmod(exec);open(exec);openat(exec);open2(exec);openat2(exec);creat(exec)");
-    else if (strcmp(Name, "mmap")==0) return("mmap;mmap2");
-    else if (strcmp(Name, "mmap(exec)")==0) return("mmap(exec);mmap2(exec)");
-    else if (strcmp(Name, "group:open")==0) return("open;openat;open2;openat2;creat");
-    else if (strcmp(Name, "group:creat()")==0) return("open(create);openat(create);open2(create);openat2(create);creat");
-    else if (strcmp(Name, "group:fork")==0) return("clone;clone2;clone3;fork;vfork");
-    else if (strcmp(Name, "group:uid")==0) return("setuid;setreuid;setresuid");
-    else if (strcmp(Name, "group:ugid")==0) return("setuid;setreuid;setresuid;setgid;setregid;setresgid");
-    else if (strcmp(Name, "group:mount")==0) return("mount;umount;umount2");
-    else if (strcmp(Name, "group:chroot")==0) return("chroot;pivot_root");
-    else if (strcmp(Name, "group:kill")==0) return("kill;tkill;tgkill");
-    else if (strcmp(Name, "group:settime")==0) return("settimeofday;clock_settime;clock_adjtime");
-    else if (strcmp(Name, "group:server")==0) return("accept;accept4;listen");
-    else if (strcmp(Name, "group:swap")==0) return("swapon;swapoff");
-    else if (strcmp(Name, "group:ns")==0) return("unshare;setns");
-    else if (strcmp(Name, "group:net")==0) return("socket;socketcall;connect;bind;listen;accept;accept4");
-    else if (strcmp(Name, "group:sysadmin")==0) return("settimeofday;clock_settime;clock_adjtime;quotactl;reboot;swapon;swapoff;mount;umount;umount2;mknod;quotactl;sethostname;setdomainname");
-    else if (strcmp(Name, "group:keyring")==0) return("add_key;request_key;keyctl");
-    else if (strcmp(Name, "group:shm")==0) return("shmat;shmdt;shmget;shmctl");
-    else if (strcmp(Name, "group:fsrm")==0) return("unlink;rmdir");
-    else if (strcmp(Name, "group:filesystem")==0) return("link;symlink;unlink;rmdir;rename;mkdir;mknod;chmod;chown;truncate");
-    else if (strcmp(Name, "group:ptrace")==0) return("ptrace;process_vm_readv;process_vm_writev;kcmp");
-    else if (strcmp(Name, "group:kern_mod")==0) return("create_module;delete_module;init_module;finit_module;query_module");
-    else if (strcmp(Name, "group:exec")==0) return("exec_with_loader;execv;execve;execveat");
-    else if (strcmp(Name, "group:kexec")==0) return("kexec_load;kexec_file_load");
-    else if (strcmp(Name, "group:shm")==0) return("shmat;shmdt;shmget;shmctl");
-    else if (strcmp(Name, "group:sem")==0) return("semop;semget;semctl");
-    else if (strcmp(Name, "group:msgq")==0) return("msgrcv;msgsnd;msgget;msgctl");
-    else if (strcmp(Name, "group:ipc")==0) return("shmat;shmdt;shmget;shmctl;semop;semget;semctl;msgrcv;msgsnd;msgget;msgctl");
+    const char *ptr;
+
+    ptr=strstr(Replace, "$arg");
+    if (ptr)
+    {
+        RetStr=CatStrLen(RetStr, Replace, ptr-Replace);
+        RetStr=MCatStr(RetStr, Arg, ptr+4, ";", NULL);
+    }
+    else RetStr=MCatStr(RetStr, Replace, ";", NULL);
+
+    return(RetStr);
+}
 
 
-    return(Name);
+
+static char *SyscallGroupLookupWithArg(char *RetStr, const char *Name, const char *SysCallList)
+{
+    char *SysCall=NULL, *Arg=NULL, *Replace=NULL;
+    const char *ptr;
+
+    RetStr=CopyStr(RetStr, "");
+    ptr=GetToken(Name, "(", &SysCall, 0);
+    ptr=GetToken(ptr, ")", &Arg, 0);
+
+    ptr=GetToken(SysCallList, ";", &Replace, 0);
+    while (ptr)
+    {
+        RetStr=SyscallGroupReplace(RetStr, Replace, Arg);
+        ptr=GetToken(ptr, ";", &Replace, 0);
+    }
+
+
+    Destroy(SysCall);
+    Destroy(Replace);
+    Destroy(Arg);
+
+    return(RetStr);
+}
+
+
+
+static char *SyscallGroupLookup(char *RetStr, const char *Name)
+{
+    if (strcmp(Name, "open")==0) return(CopyStr(RetStr, "open;openat;open2;openat2;creat"));
+    else if (strncmp(Name, "open(", 5)==0) return(SyscallGroupLookupWithArg(RetStr, Name, "open($arg);openat($arg);open2($arg);openat2($arg);creat($arg)"));
+    else if (strcmp(Name, "socket")==0) return(CopyStr(RetStr, "socket;socketpair;socketcall(socket);socketcall(socketpair)"));
+    else if (strncmp(Name, "socket(", 7)==0) return(SyscallGroupLookupWithArg(RetStr, Name, "socket($arg);socketpair($arg)"));
+    else if (strcmp(Name, "connect")==0) return(CopyStr(RetStr, "connect;socketcall(connect)"));
+    else if (strcmp(Name, "accept")==0) return(CopyStr(RetStr, "accept;accept4;socketcall(accept);socketcall(accept4)"));
+    else if (strcmp(Name, "bind")==0) return(CopyStr(RetStr, "bind;socketcall(bind)"));
+    else if (strcmp(Name, "listen")==0) return(CopyStr(RetStr, "listen;socketcall(listen)"));
+    else if (strcmp(Name, "link")==0) return(CopyStr(RetStr, "link;linkat"));
+    else if (strcmp(Name, "symlink")==0) return(CopyStr(RetStr, "symlink;symlinkat"));
+    else if (strcmp(Name, "unlink")==0) return(CopyStr(RetStr, "unlink;unlinkat"));
+    else if (strcmp(Name, "mkdir")==0) return(CopyStr(RetStr, "mkdir;mkdirat"));
+    else if (strcmp(Name, "rmdir")==0) return(CopyStr(RetStr, "rmdir;rmdirat"));
+    else if (strcmp(Name, "rename")==0) return(CopyStr(RetStr, "rename;renameat;renameat2"));
+    else if (strcmp(Name, "utimes")==0) return(CopyStr(RetStr, "utimes;utimesat;futimesat;utimensat;futimens"));
+    else if (strcmp(Name, "truncate")==0) return(CopyStr(RetStr, "truncate;ftruncate;truncate64;ftruncate64"));
+    else if (strcmp(Name, "chown")==0) return(CopyStr(RetStr, "chown;chown32;fchown;fchown32;fchownat;lchown;lchown32"));
+    else if (strcmp(Name, "chmod")==0) return(CopyStr(RetStr, "chmod;fchmod;fchmodat;lchmod"));
+    else if (strncmp(Name, "chmod(", 6)==0) return(SyscallGroupLookupWithArg(RetStr, Name, "chmod($arg);fchmod($arg);fchmodat($arg);lchmod($arg);open($arg);openat($arg);open2($arg);openat2($arg);creat($arg)"));
+    else if (strcmp(Name, "mmap")==0) return(CopyStr(RetStr, "mmap;mmap2"));
+    else if (strncmp(Name, "mmap(", 5)==0) return(SyscallGroupLookupWithArg(RetStr, Name, "mmap($arg);mmap2($arg)"));
+    else if (strcmp(Name, "group:create")==0) return(CopyStr(RetStr, "open(create);openat(create);open2(create);openat2(create);creat"));
+    else if (strcmp(Name, "group:fork")==0) return(CopyStr(RetStr, "clone;clone2;clone3;fork;vfork"));
+    else if (strcmp(Name, "group:uid")==0) return(CopyStr(RetStr, "setuid;setreuid;setresuid"));
+    else if (strcmp(Name, "group:ugid")==0) return(CopyStr(RetStr, "setuid;setreuid;setresuid;setgid;setregid;setresgid"));
+    else if (strcmp(Name, "group:mount")==0) return(CopyStr(RetStr, "mount;umount;umount2"));
+    else if (strcmp(Name, "group:chroot")==0) return(CopyStr(RetStr, "chroot;pivot_root"));
+    else if (strcmp(Name, "group:kill")==0) return(CopyStr(RetStr, "kill;tkill;tgkill"));
+    else if (strcmp(Name, "group:settime")==0) return(CopyStr(RetStr, "settimeofday;clock_settime;clock_adjtime"));
+    else if (strcmp(Name, "group:server")==0) return(CopyStr(RetStr, "bind(server);accept;accept4;listen"));
+    else if (strcmp(Name, "group:swap")==0) return(CopyStr(RetStr, "swapon;swapoff"));
+    else if (strcmp(Name, "group:ns")==0) return(CopyStr(RetStr, "unshare;setns"));
+    else if (strcmp(Name, "group:net")==0) return(CopyStr(RetStr, "socket;socketcall;connect;bind;listen;accept;accept4"));
+    else if (strcmp(Name, "group:sysadmin")==0) return(CopyStr(RetStr, "settimeofday;clock_settime;clock_adjtime;quotactl;reboot;swapon;swapoff;mount;umount;umount2;mknod;quotactl;sethostname;setdomainname"));
+    else if (strcmp(Name, "group:keyring")==0) return(CopyStr(RetStr, "add_key;request_key;keyctl"));
+    else if (strcmp(Name, "group:fsrm")==0) return(CopyStr(RetStr, "unlink;rmdir"));
+    else if (strcmp(Name, "group:filesystem")==0) return(CopyStr(RetStr, "link;symlink;unlink;rmdir;rename;mkdir;mknod;chmod;chown;truncate"));
+    else if (strcmp(Name, "group:ptrace")==0) return(CopyStr(RetStr, "ptrace;process_vm_readv;process_vm_writev;kcmp"));
+    else if (strcmp(Name, "group:kern_mod")==0) return(CopyStr(RetStr, "create_module;delete_module;init_module;finit_module;query_module"));
+    else if (strcmp(Name, "group:mexec")==0) return(CopyStr(RetStr, "mprotect(exec);mmap(exec)"));
+    else if (strcmp(Name, "group:exec")==0) return(CopyStr(RetStr, "exec_with_loader;execv;execve;execveat"));
+    else if (strcmp(Name, "group:kexec")==0) return(CopyStr(RetStr, "kexec_load;kexec_file_load"));
+    else if (strcmp(Name, "group:shm")==0) return(CopyStr(RetStr, "shmat;shmdt;shmget;shmctl"));
+    else if (strcmp(Name, "group:sem")==0) return(CopyStr(RetStr, "semop;semget;semctl"));
+    else if (strcmp(Name, "group:msgq")==0) return(CopyStr(RetStr, "msgrcv;msgsnd;msgget;msgctl"));
+    else if (strcmp(Name, "group:ipc")==0) return(CopyStr(RetStr, "shmat;shmdt;shmget;shmctl;semop;semget;semctl;msgrcv;msgsnd;msgget;msgctl"));
+
+
+    return(CopyStr(RetStr, Name));
 }
 
 
@@ -812,14 +859,57 @@ static int SeccompCommit(struct sock_filter **Filt, int Action)
 
 static int LookupSocketFamily(const char *name)
 {
+#ifdef AF_UNIX
     if (strcasecmp(name, "unix")==0) return(AF_UNIX);
+#endif
+
+#ifdef AF_INET
+    if (strcasecmp(name, "inet")==0) return(AF_INET);
     if (strcasecmp(name, "ip")==0) return(AF_INET);
+    if (strcasecmp(name, "ip4")==0) return(AF_INET);
+#endif
+
+#ifdef AF_INET6
+    if (strcasecmp(name, "inet6")==0) return(AF_INET6);
     if (strcasecmp(name, "ip6")==0) return(AF_INET6);
+#endif
+
+#ifdef AF_BLUETOOTH
     if (strcasecmp(name, "bt")==0) return(AF_BLUETOOTH);
+    if (strcasecmp(name, "bluetooth")==0) return(AF_BLUETOOTH);
+#endif
+
+#ifdef AF_ISDN
+    if (strcasecmp(name, "isdn")==0) return(AF_ISDN);
+#endif
+
+#ifdef AF_PACKET
+    if (strcasecmp(name, "raw")==0) return(AF_PACKET);
     if (strcasecmp(name, "packet")==0) return(AF_PACKET);
+#endif
+
+#ifdef AF_NETLINK
+    if (strcasecmp(name, "netlink")==0) return(AF_NETLINK);
+#endif
+
+#ifdef AF_VSOCK
+    if (strcasecmp(name, "vsock")==0) return(AF_VSOCK);
+#endif
+
+#ifdef AF_ALG
+    if (strcasecmp(name, "alg")==0) return(AF_ALG);
+#endif
+
+#ifdef AF_CAN
+    if (strcasecmp(name, "can")==0) return(AF_CAN);
+#endif
+
+
+
 
     return(-1);
 }
+
 
 
 //adds an argument to the list of things to be tested. These checks have names like 'exec' or 'setuid'
@@ -838,6 +928,9 @@ static int SeccompAddCheck(char **Args, const char *Fmt, int Value)
     Destroy(Tempstr);
     return(ArgInt);
 }
+
+
+
 
 static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
 {
@@ -866,44 +959,61 @@ static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
             break;
 #endif
 
+#ifdef __NR_bind
+        case __NR_bind:
+            //if we are passed a port greater than zero as the second argument, then assume
+            //that is being used as a server, not a client
+            if (strcasecmp(Name, "server")==0) SeccompAddCheck(Args, "1>%d", 0);
+            break;
+#endif
 
+
+
+//many of the below have a slightly confusing format string. Here 'b' is an operator like
+//'=' or '<', but it means 'bit'. So any bit in the value matches.
 #ifdef __NR_mprotect
         case __NR_mprotect:
+            if (strcasecmp(Name, "read")==0) SeccompAddCheck(Args, "2b%d", PROT_READ);
             if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", PROT_EXEC);
+            if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "2b%d", PROT_WRITE);
             break;
 #endif
 
 #ifdef __NR_mmap
         case __NR_mmap:
+            if (strcasecmp(Name, "read")==0) SeccompAddCheck(Args, "2b%d", PROT_READ);
             if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", PROT_EXEC);
+            if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "2b%d", PROT_WRITE);
             break;
 #endif
 
 #ifdef __NR_mmap2
         case __NR_mmap2:
+            if (strcasecmp(Name, "read")==0) SeccompAddCheck(Args, "2b%d", PROT_READ);
             if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", PROT_EXEC);
+            if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "2b%d", PROT_WRITE);
             break;
 #endif
 
 
 #ifdef __NR_chmod
         case __NR_chmod:
-            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "2b%d", S_ISUID | S_ISGID);
+            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "1b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "1b%d", S_ISUID | S_ISGID);
             break;
 #endif
 
 #ifdef __NR_fchmod
         case __NR_fchmod:
-            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "2b%d", S_ISUID | S_ISGID);
+            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "1b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "1b%d", S_ISUID | S_ISGID);
             break;
 #endif
 
 #ifdef __NR_lchmod
         case __NR_lchmod:
-            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "2b%d", S_ISUID | S_ISGID);
+            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "1b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "1b%d", S_ISUID | S_ISGID);
             break;
 #endif
 
@@ -916,10 +1026,8 @@ static int SeccompParseArg0(int SyscallID, const char *Name, char **Args)
 
 #ifdef __NR_creat
         case __NR_creat:
-            if (strcasecmp(Name, "create")==0) SeccompAddCheck(Args, "1b%d", O_CREAT);
-            if (strcasecmp(Name, "write")==0) SeccompAddCheck(Args, "1b%d", O_CREAT | O_WRONLY | O_RDWR | O_APPEND);
-            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "2b%d", S_IXUSR | S_IXGRP | S_IXOTH);
-            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "2b%d", S_ISUID | S_ISGID);
+            if (strcasecmp(Name, "exec")==0) SeccompAddCheck(Args, "1b%d", S_IXUSR | S_IXGRP | S_IXOTH);
+            if (strcasecmp(Name, "suid")==0) SeccompAddCheck(Args, "1b%d", S_ISUID | S_ISGID);
             break;
 #endif
 
@@ -1032,7 +1140,7 @@ static int SeccompParseArg1(int SyscallID, int Arg0, const char *Name, char **Ar
 }
 
 
-void SeccompParseName(const char *Token, int *SyscallID, char **Args)
+static void SeccompParseName(const char *Token, int *SyscallID, char **Args)
 {
     const char *p_args;
     char *Name=NULL;
@@ -1045,9 +1153,11 @@ void SeccompParseName(const char *Token, int *SyscallID, char **Args)
     if (StrValid(p_args))
     {
         p_args=GetToken(p_args, ",|)", &Name, GETTOKEN_MULTI_SEP);
+        //Arg0 here is an int value of the arg, that we can use in future tests
         if (StrValid(Name)) Arg0=SeccompParseArg0(*SyscallID, Name, Args);
 
         p_args=GetToken(p_args, ",|)", &Name, GETTOKEN_MULTI_SEP);
+        //Arg1 here is an int value of the arg, that we can use in future tests
         if (StrValid(Name)) Arg1=SeccompParseArg1(*SyscallID, Arg0, Name, Args);
     }
 
@@ -1068,15 +1178,19 @@ static const char *SeccompLookupActionName(int action)
     case SECCOMP_RET_ERRNO:
         return("deny");
         break;
+
+//on some old systems this doesn't exist
+#ifdef SECCOMP_RET_LOG
     case SECCOMP_RET_LOG:
         return("log");
         break;
+#endif
     }
     return("unknown");
 }
 
 
-int SeccompFilterAddSyscallNames(struct sock_filter **Filt, const char *NameList, int Action)
+static int SeccompFilterAddSyscallNames(struct sock_filter **Filt, const char *NameList, int Action)
 {
     int syscall_id;
     int NoOfStatements=0;
@@ -1098,19 +1212,22 @@ int SeccompFilterAddSyscallNames(struct sock_filter **Filt, const char *NameList
 }
 
 
-char *SeccompExpandOnce(char *RetStr, const char *NameList)
+static char *SeccompExpandOnce(char *RetStr, const char *NameList)
 {
-    char *Name=NULL;
+    char *Name=NULL, *Group=NULL;
     const char *ptr;
 
     RetStr=CopyStr(RetStr, "");
     ptr=GetToken(NameList, ";", &Name, 0);
     while (ptr)
     {
-        RetStr=MCatStr(RetStr, SyscallGroupLookup(Name), ";", NULL);
+        Group=SyscallGroupLookup(Group, Name);
+        if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: Seccomp expand [%s]: %s\n", Name, Group);
+        RetStr=MCatStr(RetStr, Group, ";", NULL);
         ptr=GetToken(ptr, ";", &Name, 0);
     }
 
+    Destroy(Group);
     Destroy(Name);
 
     return(RetStr);
@@ -1187,4 +1304,3 @@ int SeccompAddRules(const char *RuleList)
 }
 
 #endif
-

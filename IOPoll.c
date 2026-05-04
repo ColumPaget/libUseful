@@ -364,7 +364,7 @@ int FDSelect(int fd, int type, struct timeval *tv)
 
         if ((result==-1) && (errno==EBADF)) RetVal=STREAM_CLOSED;
         else if (result  > 0) RetVal=SelectCheck(Set, fd);
-				else RetVal=0;
+        else RetVal=0;
 
         SelectSetDestroy(Set);
     }

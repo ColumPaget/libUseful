@@ -85,7 +85,7 @@ tunnel will be available to all users on the local machine, so the previous ssh 
 preferred. Everything else about this connection is the same as for 'ssh' connection hops.
 
 sshproxy: this launches an ssh connection using the -D 127.0.0.1:localport method. This creates a socks5
-proxy on a randomly generated local port on 127.0.0.1 (ip4 local interface). 
+proxy on a randomly generated local port on 127.0.0.1 (ip4 local interface).
 
 socks4:  connect via a SOCKS version 4 proxy. These can usually be concatenated into long connection chains.
 SOCKS version 4 requires DNS lookups to happen locally, which means there's some leakage of information

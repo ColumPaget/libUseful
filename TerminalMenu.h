@@ -60,7 +60,7 @@ ListNode *TerminalMenuDown(TERMMENU *Menu);
 
 
 //create a menu from a list of options, and run it.
-//This keeps reading keypresses until an option is selected. 
+//This keeps reading keypresses until an option is selected.
 //Returns the selected option, or returns NULL if escape is pressed.
 //if TERMMENU_SELECTED is set on the head of Options, then the menu will allow setting
 //'selected' against multiple values
@@ -68,7 +68,7 @@ ListNode *TerminalMenu(STREAM *Term, ListNode *Options, int x, int y, int wid, i
 
 //create a menu from a line of text, and run it.
 //Options in the text a seperated by '|' so "This|That|The Other".
-//This keeps reading keypresses until an option is selected. 
+//This keeps reading keypresses until an option is selected.
 //Returns the selected option as string copied into 'RetStr', or returns NULL if escape is pressed.
 //if TERMMENU_SELECTED is set on the head of Options, then the menu will allow setting
 //'selected' against multiple values

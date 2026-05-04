@@ -7,9 +7,11 @@ pid_t pid;
 STREAM *S;
 
 
-ProcessApplyConfig("security='client'");
-pid=fork();
-if (pid == 0)
+LibUsefulSetValue("libUseful:Debug", "Y");
+
+ProcessApplyConfig("security='untrusted+client' mdwe:hard");
+//pid=fork();
+//if (pid == 0)
 {
 
 S=STREAMOpen("unix:/tmp/.X11-unix/X0", "");
@@ -22,6 +24,9 @@ STREAMClose(S);
 S=STREAMServerNew("tcp:0.0.0.0:2048", "");
 printf("Server: %d\n", S);
 STREAMClose(S);
+
+
+system("/bin/bash");
 
 chroot(".");
 printf("After chroot\n");

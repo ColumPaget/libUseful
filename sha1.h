@@ -20,7 +20,7 @@ Copyright (C) 2000-2001, 2003, 2005-2006, 2008-2011 Free Software Foundation, In
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 

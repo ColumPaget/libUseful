@@ -143,9 +143,9 @@ Age=immortal
 
 CMON is an experimental untyped 'lazy' object notation. It's mostly intended as a quick-and-dirty notation to compactly store and load data into programs which know the datatypes in advance. Thus everything is stored as strings and the program does any conversion to 'int' or 'bool' because it knows what data it's using. It's aimed at simple use cases where even typing JSON, and getting all the " and , lined up is too much bother.
 
-CMON's main use cases are 
-  1) 'quick and dirty' config files consisting of lines of key-value pairs, 
-  2) 'record files', a kind of database made up of single-line entities/objects 
+CMON's main use cases are
+  1) 'quick and dirty' config files consisting of lines of key-value pairs,
+  2) 'record files', a kind of database made up of single-line entities/objects
   3) debugging output: CMON is intended to be 'viewable' and has 'collapse' mode when exporting, which tries to write data as succinctly as possible. This is sometimes useful when importing formats like JSON to get an overview of what was imported.
 
 CMON supports comments starting with #:
@@ -166,7 +166,7 @@ CMON tries to handle names and values that contain spaces. Everything is treated
   quoted value=this is a value with an apostrophe in it\'s data
   quoted value2="this is also value with an apostrophe in it's data"
   unquoted value=this value will go wrong because it's got an unquoted apostrophe
-  
+
 CMON supports 'single line objects' like so:
 
   my_object: value1=this value2=that value3="the other"
@@ -182,7 +182,7 @@ CMON also supports multi-line objects like so:
 
 or like so:
 
-  my_object 
+  my_object
   {
   value1=this
   value2=that
@@ -223,7 +223,7 @@ or
 
 or
 
-  myarray 
+  myarray
   [
   this
   that
@@ -235,7 +235,7 @@ Arrays cannot contain named items. Note the use of semi-colon to divide up array
 
 
 
-CMON is parsed similarly to any other format: 
+CMON is parsed similarly to any other format:
   Root=ParserParseDocument("cmon", Document);
   Student=ParserOpenItem(Root, "/School/Class/Students/BillBlogs");
   printf("Grade Average: %s\n",ParserGetValue(Student, "grade_avg"));

@@ -10,20 +10,20 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 Functions related to resizeable strings.
 
 From version 4.0 libUseful uses 'StrLenCache-ing'. This dramatically speeds up
-programs that deal with long strings, as it's no longer needed to iterate 
+programs that deal with long strings, as it's no longer needed to iterate
 through the entire string to calculate its length. Instead the lengths of the
 most recently used strings are held in a cache. This means less data passes
 through the CPU's L1/L2/L3 cache, which can also further speed things up.
 
-The downside to this is that you can no longer just set a character to the 
+The downside to this is that you can no longer just set a character to the
 null character (ascii zero or '/0') in order to truncate the string, because
 the cache will still think the string has it's old length and functions like
-CatStr will misbehave, as characters will be added *after* the terminating 
+CatStr will misbehave, as characters will be added *after* the terminating
 null character, and so lost. This you must use the 'StrTrunc', 'StrTruncChar'
 and 'StrRTruncChar' functions to truncate strings
 
 Although, since the above was written, modern CPUs that have a strlen opcode
-are faster, but the difference is close enough to be hard to detect. 
+are faster, but the difference is close enough to be hard to detect.
 *****************************************************************************/
 
 #include <stdarg.h>
@@ -73,12 +73,12 @@ extern "C" {
 #define CloneStr(Str) (CopyStr(NULL,Str))
 
 //Concat 'Src' onto 'Dest'
-//yes, we need the strlen even though it means traversing the string twice. 
+//yes, we need the strlen even though it means traversing the string twice.
 //We need to know how much room 'realloc' needs
 #define CatStr(Dest, Src) (CatStrLen(Dest,Src,StrLen(Src)))
 
 
-//Quote some standard chars in a string with '\'. 
+//Quote some standard chars in a string with '\'.
 #define EnquoteStr(Dest, Src) (QuoteCharsInStr((Dest), (Src), "'\"\r\n"))
 
 
@@ -164,7 +164,7 @@ char *AddCharToBuffer(char *Buffer, size_t Len, char Char);
 //add 'Len' Bytes to a string already containing 'DestLen' characters
 char *AddBytesToBuffer(char *Dest, size_t DestLen, char *Bytes, size_t Len);
 //Truncate a string to so many chars, WITHOUT CHECKING IT'S GOT THAT MANY
-//this saves a strlen and is mostly for internal use. 
+//this saves a strlen and is mostly for internal use.
 //It does at least check that the string is not NULL
 char *StrUnsafeTrunc(char *Str, int Len);
 
@@ -172,7 +172,7 @@ char *StrUnsafeTrunc(char *Str, int Len);
 //Truncate a string to so many chars
 char *StrTrunc(char *Str, int Len);
 
-//Truncate a string to a terminator character. 
+//Truncate a string to a terminator character.
 //Returns 'TRUE' if character found, 'FALSE' otherwise
 int StrTruncChar(char *Str, char Term);
 
@@ -205,13 +205,13 @@ char *StripStartEndChars(char *Str, const char *StartChars, const char *EndChars
 
 //Strip either \" or \' characters surrounding a string. Only strips if the string starts and
 //ends with the same character (either \" or \'). Whitespace at start of string stripped too
-//DOESN'T strip backticks. 
+//DOESN'T strip backticks.
 char *StripQuotes(char *Str);
 
 //for any of the chars listed in 'QuoteChars' quote them using '\' style quotes.
 char *QuoteCharsInStr(char *Buffer, const char *String, const char *QuoteChars);
 
-//undo '\' style quoting and 
+//undo '\' style quoting and
 char *UnQuoteStr(char *Buffer, const char *Line);
 
 //given a list of strings. match 'Token' against them and return the index of the first one to match

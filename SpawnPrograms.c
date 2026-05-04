@@ -224,7 +224,7 @@ pid_t PipeSpawnFunction(int *infd, int *outfd, int *errfd, BASIC_FUNC Func, void
     if (outfd) c2=PipeSpawnCreateStdOutPipe("stdout", channel2, Flags & SPAWN_STDOUT_NULL);
 
     if (Flags & SPAWN_COMBINE_STDERR) c3=c2;
-		else if (errfd) c3=PipeSpawnCreateStdOutPipe("stderr", channel3, Flags & SPAWN_STDERR_NULL);
+    else if (errfd) c3=PipeSpawnCreateStdOutPipe("stderr", channel3, Flags & SPAWN_STDERR_NULL);
 
     pid=xforkio(c1, c2, c3);
     if (pid==0)
@@ -360,7 +360,7 @@ STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
     }
     else
     {
-				err_fd=-1;
+        err_fd=-1;
         pid=PipeSpawnFunction(&to_fd, &from_fd, &err_fd, Func, Data, Config);
     }
 

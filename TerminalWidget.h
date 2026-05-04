@@ -22,19 +22,19 @@ extern "C" {
 
 typedef struct
 {
-int x;
-int y;
-int wid;
-int high;
-STREAM *Term;
-ListNode *Options;
-char *Attribs;
-char *CursorAttribs;
-char *SelectedAttribs;
-char *CursorLeft;
-char *CursorRight;
-int Flags;
-char *Text;
+    int x;
+    int y;
+    int wid;
+    int high;
+    STREAM *Term;
+    ListNode *Options;
+    char *Attribs;
+    char *CursorAttribs;
+    char *SelectedAttribs;
+    char *CursorLeft;
+    char *CursorRight;
+    int Flags;
+    char *Text;
 } TERMWIDGET;
 
 TERMWIDGET *TerminalWidgetNew(STREAM *Term, int x, int y, int width, int high, const char *Options);

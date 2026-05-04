@@ -125,7 +125,7 @@ int LibUsefulGetInteger(const char *Name);
 
 STREAM *LibUsefulConfigFileOpen(const char *FName, const char *EnvVarName, const char *LibUsefulVar);
 
-//returns TRUE if libUseful Debug is active, FALSE otehrwise
+//returns TRUE if libUseful Debug is active, FALSE otherwise
 int LibUsefulDebugActive();
 
 //this function gets called at exit to do certain cleaning up. It's no concern of the user.

@@ -68,10 +68,10 @@ Errors are injected into the list with RaiseError like this:
 
 	RaiseError(ERRFLAG_DEBUG, "ServiceConnect", "host=%s port=%d",Host, Port);
 
-	Wouldn't produce any output normally.  This allows you to have debugging lines that can be switched on as 
-	needed. There's two ways to activate debugging. Firstly there's the environment variable 'LIBUSEFUL_DEBUG'. 
+	Wouldn't produce any output normally.  This allows you to have debugging lines that can be switched on as
+	needed. There's two ways to activate debugging. Firstly there's the environment variable 'LIBUSEFUL_DEBUG'.
 	When this environment variable exists and is non-empty  then RaiseError calls will print out, even if they're
-	passed ERRFLAG_DEBUG. Secondly there's the libuseful internal value 'Error:Debug'. When this has been set to 
+	passed ERRFLAG_DEBUG. Secondly there's the libuseful internal value 'Error:Debug'. When this has been set to
 	'true' (or 'y' or 'yes') with LibUsefulSetValue, then again all debugging lines will print out.
 
 	If ERRFLAG_DEBUG is passed then nothing is EVER added to the ErrorList, the 'error' is just a debugging line

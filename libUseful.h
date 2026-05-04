@@ -79,5 +79,6 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "StreamAuth.h"
 #include "CGI.h"
 #include "LineEdit.h"
+#include "Backtrace.h"
 
 #endif

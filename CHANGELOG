@@ -1,8 +1,16 @@
+v5.72 (2026-05-02)
+  * add "GetBacktrace" function
+  * add "basic-net" seccomp modifier
+  * add more address families to seccomp matches for the "socket" and other system calls
+  * add 'mdwe:hard' option for ProcessApplyConfig: if mdwe isn't available, try using seccomp to achive the same.
+  * add seccomp match for "bind" with ports > 0 to seccomp group "server"
+  * 'configure' check whether BPF_JLT exists. Disable seccomp build if not.
+  * 'configure' check whether SECCOMP_RET_LOG exists. Disable that seccomp feature if not.
+  
 v5.71 (2026-04-18)
   * honor 'stderr2null' when running commands
   * added 'security=lan' for ProcessApplyConfig to limit all socket connections to 'non-routed' local ips
   * fix edge case in 'SelectWait' causing hangs in some apps
-
 
 v5.70 (2026-04-01)
   * limit direct use of 'select' syscall, replace with FDSelect instead (means more use of poll when supported, rather than select)
@@ -16,7 +24,6 @@ v5.68 (2026-02-26)
   * honor stderr2null in 'Spawn' commands
   * pmatch now supports {n} matches
 
-
 v5.67 (2026-02-26)
   * Fix build issues on linux systems lacking MS_REC mount option
   * Fix some issues with timeouts when using linux 'poll' syscall
@@ -25,7 +32,6 @@ v5.67 (2026-02-26)
   * Fix bug in STREAMSelect when using 'select' with more than 1024 file descriptors
   * Added 'ListMoveEnd' and 'ListMoveStart' functions
   * Make sure STREAMIsConnected can only return 'TRUE' or 'FALSE', not 'SOCK_CONNECTING' etc
-  
   
 v5.66 (2026-01-22)
   * Add XtermStringBase64Command to Terminal.h, as this prevents libUseful-lua from building
@@ -72,7 +78,6 @@ v5.58 (2025-07-02)
   * Added TERM_NEWLINE flag so TerminalReadPrompt can go to a newline after entry if desired
   * Add TextPrompt theming
   * Many improvements to PasswordFile.c including file locking, credential deletion, handle 'bad' chars in username, password and extra
-
 
 v5.57 (2025-06-16)
   * Fix unguarded 'mount' in Container.c that prevents compile on non-linux platforms

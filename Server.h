@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 /*
-Create a server socket 'Type' can be SOCK_STREAM, SOCK_DGRAM, or SOCK_TPROXY. SOCK_STREAM creates a tcp socket, 
-SOCK_DGRAM a udp  socket and SOCK_TPROXY a tcp transparent proxy socket. 
+Create a server socket 'Type' can be SOCK_STREAM, SOCK_DGRAM, or SOCK_TPROXY. SOCK_STREAM creates a tcp socket,
+SOCK_DGRAM a udp  socket and SOCK_TPROXY a tcp transparent proxy socket.
 Transparent proxy sockets can have any tcp connection redirected to them using iptables.
 'Address' is a local device name or IP address to bind to, or blank to bind to all local addresses/devices.
 Return value is socket file descriptor
@@ -34,9 +34,9 @@ int IPServerAccept(int ServerSock,char **Addr);
 
 
 /*
-STREAMServerInit and STREAMServerNew create server sockets. 
+STREAMServerInit and STREAMServerNew create server sockets.
 The first argument of both is a URL with the format: <proto>:<local ip>:<local port>
-'local ip' is the IP address to bind to, so with machines that have multiple network cards 
+'local ip' is the IP address to bind to, so with machines that have multiple network cards
 it might be the IP of a specific card, or '127.0.0.1' to bind to the local interface, or
 '0.0.0.0' to bind to all interfaces
 
@@ -45,8 +45,8 @@ http:0.0.0.0:80                     HTTP server listening on port 80 on all inte
 https:0.0.0.0:443                   HTTP server listening on port 443 on all interfaces with SSL/TLS
 ws:127.0.0.1:80                     websocket server bound to network device 127.0.0.1 on port 80
 wss:127.0.0.1:443                   websocket server bound to network device 127.0.0.1 on port 443 with SSL/TLS
-tls:0.0.0.0:8888                    server listening on port 8888 on all interfaces with SSL/TLS 
-ssl:0.0.0.0:8888                    server listening on port 8888 on all interfaces with SSL/TLS 
+tls:0.0.0.0:8888                    server listening on port 8888 on all interfaces with SSL/TLS
+ssl:0.0.0.0:8888                    server listening on port 8888 on all interfaces with SSL/TLS
 tcp:192.168.2.1:25                  TCP server bound to network device 192.168.2.1 on port 25
 udp:192.168.2.1:53                  UDP server bound to network device 192.168.2.1 on port 53
 bcast:0.0.0.0:123                   UDP server bound port port 123 on all network devices that sends broadcast packets
@@ -71,8 +71,8 @@ STREAM *STREAMServerInit(const char *URL);
   A - Autodetect SSL
   B - BROADCAST  set udp socket to be a broadcast socket
   F - Tcp FASTOPEN
-  N - Tcp NODELAY - disable Nagel's algorithm and send data straight away 
-  R - Don't route. All addresses are treated as local 
+  N - Tcp NODELAY - disable Nagel's algorithm and send data straight away
+  R - Don't route. All addresses are treated as local
   P - REUSE_PORT allows multiple processes to listen on the same port
 
 Supported name=value pairs are
@@ -83,7 +83,7 @@ Supported name=value pairs are
   authentication=<method>:<value>    authentication for incoming connections. Multiple methods can be added seperated by commas.
   auth=<method>:<value>    authentication for incoming connections. Multiple methods can be added seperated by commas.
 
-  Authentication methods include: 
+  Authentication methods include:
   ip:<ipaddress>          only accept connections from <ipaddress>
   cert:<common name>      only accept connections that have a verified certificate named <common name>
   issuer:<common name>    only accept connections that have a verified certificate signed by issuer: <common name>
@@ -92,7 +92,7 @@ Supported name=value pairs are
   If client certificate authentication is required then an SSL:VerifyCertFile or SSL:VerifyCertDir parameter must be provided
   pointing to the file or directory containing CA certificates.
 
-  e.g.: 
+  e.g.:
 
     Serv=STREAMServerNew("tls:0.0.0.0:5000", "rw SSL:CertFile=/home/colum/.certtool/testcert/testcert.crt SSL:KeyFile=/home/colum/.certtool/testcert/testcert.key SSL:VerifyCertFile=/home/colum/.certtool/TestCA/ca.crt Authentication=certificate:testuser@test.com,issuer=TestCA");
 */

@@ -30,7 +30,7 @@ void ParseURL(const char *URL, char **Proto, char **Host, char **Port, char **Us
 //Parse a URL type that lacks a protocol or Args part, something like "myhost.com:22"
 const char *ParseHostDetails(const char *Data,char **Host,char **Port,char **User, char **Password);
 
-//Parse URL, but allow two arguments after the url '-password' and '-keyfile'. 
+//Parse URL, but allow two arguments after the url '-password' and '-keyfile'.
 // e.g. ssh:user@host -keyfile ./id_rsa
 //These are really intended for ssh urls
 void ParseConnectDetails(const char *Str, char **Proto, char **Host, char **Port, char **User, char **Pass, char **InitDir);
