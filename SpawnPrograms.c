@@ -86,6 +86,7 @@ int BASIC_FUNC_EXEC_COMMAND(void *Command, int Flags)
     else result=execl("/bin/sh","/bin/sh","-c",(char *) Command,NULL);
 
     RaiseError(ERRFLAG_ERRNO, "Spawn", "Failed to execute '%s'",Command);
+
 //We'll never get to here unless something fails!
     DestroyString(FinalCommand);
     DestroyString(ExecPath);

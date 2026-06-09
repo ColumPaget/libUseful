@@ -1,5 +1,6 @@
 #include "Container.h"
 #include "libUseful.h"
+#include "AtExit.h"
 #include <glob.h>
 
 #include <sys/mount.h>
@@ -20,9 +21,58 @@ static void InitSigHandler(int sig)
 }
 
 
+
+static int ContainerRemountProc(const char *iPath)
+{
+    char *Path=NULL;
+    int result=-1;
+
+#ifdef __linux__
+    if (StrValid(iPath)) Path=CopyStr(Path, iPath);
+    else Path=CopyStr(Path, "/proc");
+
+//if we are root, then we can mount a fresh 'proc'
+    mkdir(Path, 0755);
+    FileSystemUnMount(Path, "");
+
+//45893 mount("none", "/proc", NULL, MS_REC|MS_PRIVATE, NULL) = 0
+//45893 mount("proc", "/proc", "proc", MS_NOSUID|MS_NODEV|MS_NOEXEC, NULL) = 0
+
+    result=mount("", Path, NULL, MS_REC | MS_PRIVATE, NULL);
+    result=mount("", Path, "proc", MS_NOSUID|MS_NODEV|MS_NOEXEC, NULL);
+#ifdef MS_BIND
+#ifdef MS_REC
+    //if we are not root, we must rebind the existing proc
+    if (result != 0) result=mount("/proc", Path, NULL, MS_REC | MS_BIND, NULL);
+#endif
+
+#endif
+
+
+    Destroy(Path);
+#endif
+
+    if (result==0) return(TRUE);
+    return(FALSE);
+}
+
+static int ContainerEnterNamespace(const char *Namespace, int type)
+{
+
+    if (StrValid(Namespace)) return(ContainerJoinNamespace(Namespace, type));
+
+    if (unshare(type) == 0) return(TRUE);
+
+    return(FALSE);
+}
+
+
 static void ContainerInitProcess(int tunfd, int linkfd, pid_t Child, int RemoveRootDir)
 {
     struct sigaction sa;
+
+    fprintf(stderr, "LAUNCH INIT: %d\n", getpid());
+    fflush(NULL);
 
     //this process is init, the child will carry on execution
     //if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
@@ -35,23 +85,6 @@ static void ContainerInitProcess(int tunfd, int linkfd, pid_t Child, int RemoveR
     sa.sa_handler=InitSigHandler;
     sa.sa_flags=SA_NOCLDSTOP;
     sigaction(SIGCHLD, &sa,NULL);
-
-
-    /*
-    FileSystemUnMount("/proc","rmdir");
-    if (RemoveRootDir) FileSystemUnMount("/","recurse,rmdir");
-    else
-    {
-    FileSystemUnMount("/","subdirs,rmdir");
-    FileSystemUnMount("/","recurse");
-    }
-    */
-
-    //must do proc after the fork so that CLONE_NEWPID takes effect
-    //mkdir("/proc",0755);
-    //mount("", "/proc", "proc", 0, "hidepid=2");
-
-    //FileSystemMount("","/proc","proc","");
 
     while (waitpid(-1,NULL,0) != -1);
 }
@@ -71,19 +104,32 @@ static pid_t ContainerLaunchInit(int Flags, const char *Dir)
     child=fork();
     if (child == 0)
     {
-        setsid();
-        child=fork();
-        if (child !=0)
+
+        if (! (Flags & PROC_CONTAINER_NOINIT))
         {
-            if ((! (Flags & PROC_ISOCUBE)) && StrValid(Dir)) ContainerInitProcess(-1, -1, child, FALSE);
-            else ContainerInitProcess(-1, -1, child, TRUE);
-            //ContainerInitProcess should never return, but we'll have this here anyway
-            _exit(0);
+            child=fork();
+            //we want 'init' to be the first item launched in the container (local pid 1),
+            //so here we make init the parent, and we let the child we've just forked
+            //become our main process in the container
+            if (child != 0)
+            {
+                if ((! (Flags & PROC_ISOCUBE)) && StrValid(Dir)) ContainerInitProcess(-1, -1, child, FALSE);
+                else ContainerInitProcess(-1, -1, child, TRUE);
+                //ContainerInitProcess should never return, but we'll have this here anyway
+                _exit(0);
+            }
         }
     }
-    else _exit(0);
+    //we must 'waitpid' here. If we exit, the controlling tty will go back to the
+    //next process up the stack. That upper process will 'steal' input/keypresses
+    //from out forked process
+    else
+    {
+        waitpid(child, NULL, 0);
+        _exit(0);
+    }
 
-    return(child);
+    return(getpid());
 }
 
 
@@ -96,18 +142,20 @@ static int ContainerUnsharePID(int Flags, const char *Namespace, const char *Dir
 #ifdef HAVE_UNSHARE
 #ifdef CLONE_NEWPID
 
-    // NEWPID requires NEWNS which creates a new mount namespace, because we need to remount /roc
+    // NEWPID requires NEWNS which creates a new mount namespace, because we need to remount /proc
     // within the new PID container
-    if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWPID | CLONE_NEWNS);
-    else unshare(CLONE_NEWPID | CLONE_NEWNS);
+    if (! ContainerEnterNamespace(Namespace, CLONE_NEWPID | CLONE_NEWNS)) return(FALSE);
+
 
     //if we are given a namespace we assume there is already an init for it
     //otherwise launch and init from the NEWPID process
     if (! StrValid(Namespace))
     {
         init_pid=ContainerLaunchInit(Flags, Dir);
-        setpgid(init_pid, init_pid);
+        //setpgid(init_pid, init_pid);
     }
+
+    ContainerRemountProc("");
 
     return(TRUE);
 
@@ -171,7 +219,6 @@ static int ContainerJoinNamespace(const char *Namespace, int type)
     glob_t Glob;
     int i, fd, result=FALSE;
 
-#ifdef HAVE_UNSHARE
 #ifdef HAVE_SETNS
     stat(Namespace,&Stat);
     if (S_ISDIR(Stat.st_mode))
@@ -185,19 +232,20 @@ static int ContainerJoinNamespace(const char *Namespace, int type)
             if (fd > -1)
             {
                 result=TRUE;
-                setns(fd, type);
+                if (setns(fd, type) !=0) result=FALSE;
                 close(fd);
             }
             else RaiseError(ERRFLAG_ERRNO, "namespaces", "couldn't open namespace %s", Glob.gl_pathv[i]);
         }
+        globfree(&Glob);
     }
     else
     {
-        fd=open(Namespace,O_RDONLY);
+        fd=open(Namespace, O_RDONLY);
         if (fd > -1)
         {
             result=TRUE;
-            setns(fd, type);
+            if (setns(fd, type) !=0) result=FALSE;
             close(fd);
         }
         else RaiseError(ERRFLAG_ERRNO, "namespaces", "couldn't open namespace %s", Namespace);
@@ -205,12 +253,13 @@ static int ContainerJoinNamespace(const char *Namespace, int type)
 #else
     RaiseError(0, "namespaces", "setns unavailable");
 #endif
-    RaiseError(0, "namespaces", "setns unavailable");
-#endif
 
     Destroy(Tempstr);
     return(result);
 }
+
+
+
 
 
 
@@ -237,6 +286,7 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
         else if (strcasecmp(Name,"+plink")==0) PLinks=MCatStr(PLinks,",",Value,NULL);
         else if (strcasecmp(Name,"plink")==0) PLinks=CopyStr(PLinks,Value);
         else if (strcasecmp(Name,"pclone")==0) FileClones=CopyStr(FileClones,Value);
+
         ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
     }
 
@@ -246,7 +296,11 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
     else Tempstr=FormatStr(Tempstr,"%d.container",pid);
 
     mkdir(Tempstr,0755);
-    if (Flags & PROC_ISOCUBE)	FileSystemMount("",Tempstr,"tmpfs","");
+    if (Flags & PROC_ISOCUBE)
+    {
+        LibUsefulFlags |= LU_CONTAINER_MOUNT;
+        FileSystemMount("",Tempstr,"tmpfs","");
+    }
     if (chdir(Tempstr) !=0) RaiseError(ERRFLAG_ERRNO, "ContainerPrepareFilesys", "failed to chdir to %s", Tempstr);
 
     //always make a tmp directory
@@ -255,6 +309,7 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
     ptr=GetToken(ROMounts,",",&Value,GETTOKEN_QUOTES);
     while (ptr)
     {
+        LibUsefulFlags |= LU_CONTAINER_MOUNT;
         FileSystemMount(Value,"","bind","ro perms=755");
         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
     }
@@ -262,6 +317,7 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
     ptr=GetToken(RWMounts,",",&Value,GETTOKEN_QUOTES);
     while (ptr)
     {
+        LibUsefulFlags |= LU_CONTAINER_MOUNT;
         FileSystemMount(Value,"","bind","perms=777");
         ptr=GetToken(ptr,",",&Value,GETTOKEN_QUOTES);
     }
@@ -361,8 +417,7 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, cons
     if (Flags & PROC_CONTAINER_FS)
     {
 #ifdef CLONE_NEWNS
-        if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWNS);
-        else unshare(CLONE_NEWNS);
+        if (StrValid(Namespace)) ContainerEnterNamespace(Namespace, CLONE_NEWNS);
 
 //make container invisible to outside processes, apparently
 //  mount("none", "/", 0, MS_PRIVATE | MS_REC, NULL);
@@ -381,10 +436,9 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, cons
 #endif
 
     if (Flags & PROC_CONTAINER_PID) ContainerUnsharePID(Flags, Namespace, Dir);
+
+
     if (StrValid(HostName)) ContainerSetHostname(Namespace, HostName);
-
-
-
 #else
     RaiseError(0, "namespaces", "containers/unshare unavailable");
 #endif

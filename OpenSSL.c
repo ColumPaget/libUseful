@@ -816,6 +816,8 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
     const char *ptr;
     SSL_CTX *ctx;
     SSL *ssl;
+    int IsNonBlock=FALSE;
+    double StartTime=0;
 
     if (S)
     {
@@ -855,6 +857,10 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 
                 SSL_set_accept_state(ssl);
 
+                IsNonBlock = S->Flags & SF_NONBLOCK;
+                STREAMSetFlags(S, SF_NONBLOCK, 0);
+                StartTime=GetTime(TIME_CENTISECS);
+
                 while (1)
                 {
                     result=SSL_accept(ssl);
@@ -879,8 +885,16 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                         result=FALSE;
                         break;
                     }
+
                     if (result !=-1) break;
+
+                    if (S->Timeout > 0)
+                    {
+                        if (GetTime(TIME_CENTISECS) > (StartTime + S->Timeout)) break;
+                    }
                 }
+
+                if (! IsNonBlock) STREAMSetFlags(S, 0, SF_NONBLOCK);
             }
         }
     }
@@ -888,6 +902,7 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 #else
     RaiseError(0, "DoSSLServerNegotiation", "ssl support not compiled into libUseful");
 #endif
+
     return(result);
 }
 

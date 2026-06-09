@@ -597,13 +597,14 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
 #endif
 
 
-#define UMOUNT_RECURSE  1
-#define UMOUNT_SUBDIRS  2
-#define UMOUNT_RMDIR    4
-#define UMOUNT_RMFILE   8
+#define FSCHANGE_RECURSE  1
+#define FSCHANGE_SUBDIRS  2
+#define FSCHANGE_RMDIR    4
+#define FSCHANGE_RMFILE   8
+#define FSCHANGE_UNMOUNT  16
 
 
-int FileSystemUnMountFlagsDepth(const char *MountPoint, int UnmountFlags, int ExtraFlags, int Depth, int MaxDepth)
+static int FileSystemRecurseOperation(const char *MountPoint, int Operation, int Depth, int MaxDepth, int UnmountFlags)
 {
     int result, i;
     char *Path=NULL;
@@ -615,8 +616,7 @@ int FileSystemUnMountFlagsDepth(const char *MountPoint, int UnmountFlags, int Ex
     if (CompareStr(MountPoint, "/dev")==0) MaxDepth=10;
 
 
-
-    if (ExtraFlags & UMOUNT_RECURSE)
+    if (Operation & FSCHANGE_RECURSE)
     {
         if ((MaxDepth ==0) || (Depth <= MaxDepth))
         {
@@ -628,47 +628,47 @@ int FileSystemUnMountFlagsDepth(const char *MountPoint, int UnmountFlags, int Ex
                 {
                     if (S_ISDIR(FStat.st_mode))
                     {
-                        FileSystemUnMountFlagsDepth(Glob.gl_pathv[i], UnmountFlags, ExtraFlags & ~UMOUNT_SUBDIRS, Depth+1, MaxDepth);
+                        FileSystemRecurseOperation(Glob.gl_pathv[i], Operation & ~FSCHANGE_SUBDIRS, Depth+1, MaxDepth, UnmountFlags);
                     }
-                    else if (ExtraFlags & UMOUNT_RMFILE) unlink(Glob.gl_pathv[i]);
+                    else if (Operation & FSCHANGE_RMFILE) unlink(Glob.gl_pathv[i]);
                 }
             }
             globfree(&Glob);
         }
     }
 
-    if (ExtraFlags & UMOUNT_SUBDIRS) return(0);
+    if (Operation & FSCHANGE_SUBDIRS) return(0);
 
-    result=0;
-    while (result > -1)
+    if (Operation & FSCHANGE_UNMOUNT)
     {
+        result=0;
+        while (result > -1)
+        {
 #ifdef HAVE_UMOUNT2
-        result=umount2(MountPoint, UnmountFlags);
+            result=umount2(MountPoint, UnmountFlags);
 #elif HAVE_UMOUNT
-        result=umount(MountPoint);
+            result=umount(MountPoint);
 #elif HAVE_UNMOUNT
-        result=unmount(MountPoint,0);
+            result=unmount(MountPoint,0);
 #else
-        result=-1;
+            result=-1;
 #endif
+        }
     }
 
-    if (ExtraFlags & UMOUNT_RMDIR) rmdir(MountPoint);
+    if (Operation & FSCHANGE_RMDIR) rmdir(MountPoint);
 
     Destroy(Path);
     return(result);
 }
 
 
-int FileSystemUnMountFlags(const char *MountPoint, int UnmountFlags, int ExtraFlags)
-{
-    return(FileSystemUnMountFlagsDepth(MountPoint, UnmountFlags, ExtraFlags, 0, 0));
-}
+
 
 int FileSystemUnMount(const char *MountPoint, const char *Args)
 {
-    int Flags=UMOUNT_NOFOLLOW;
-    int ExtraFlags=0;
+    int UnmountFlags=UMOUNT_NOFOLLOW;
+    int Operation=FSCHANGE_UNMOUNT;
     char *Token=NULL;
     const char *ptr;
     int result;
@@ -676,17 +676,17 @@ int FileSystemUnMount(const char *MountPoint, const char *Args)
     ptr=GetToken(Args, " |,", &Token, GETTOKEN_MULTI_SEP);
     while (ptr)
     {
-        if (strcmp(Token,"follow")==0) Flags &= ~UMOUNT_NOFOLLOW;
-        if (strcmp(Token,"lazy")==0) Flags |= MNT_DETACH;
-        if (strcmp(Token,"detach")==0) Flags |= MNT_DETACH;
-        if (strcmp(Token,"recurse")==0) ExtraFlags |= UMOUNT_RECURSE;
-        if (strcmp(Token,"subdirs")==0) ExtraFlags |= UMOUNT_SUBDIRS | UMOUNT_RECURSE;
-        if (strcmp(Token,"rmdir")==0) ExtraFlags |= UMOUNT_RMDIR;
+        if (strcmp(Token, "follow")==0) UnmountFlags &= ~UMOUNT_NOFOLLOW;
+        if (strcmp(Token, "lazy")==0) UnmountFlags |= MNT_DETACH;
+        if (strcmp(Token, "detach")==0) UnmountFlags |= MNT_DETACH;
+        if (strcmp(Token, "recurse")==0) Operation |= FSCHANGE_RECURSE;
+        if (strcmp(Token, "subdirs")==0) Operation |= FSCHANGE_SUBDIRS | FSCHANGE_RECURSE;
+        if (strcmp(Token, "rmdir")==0) Operation |= FSCHANGE_RMDIR;
 
         ptr=GetToken(ptr, " |,", &Token, GETTOKEN_MULTI_SEP);
     }
 
-    result=FileSystemUnMountFlags(MountPoint, Flags, ExtraFlags);
+    result=FileSystemRecurseOperation(MountPoint, Operation, 0, 0, UnmountFlags);
     DestroyString(Token);
 
     return(result);
@@ -695,7 +695,12 @@ int FileSystemUnMount(const char *MountPoint, const char *Args)
 
 int FileSystemRmDir(const char *Dir)
 {
-    return(FileSystemUnMountFlagsDepth(Dir, 0, UMOUNT_RECURSE | UMOUNT_RMDIR | UMOUNT_RMFILE, 0, 0));
+    return(FileSystemRecurseOperation(Dir, FSCHANGE_RECURSE | FSCHANGE_RMDIR | FSCHANGE_RMFILE, 0, 0, 0));
+}
+
+int FileSystemRmDirWithUnmount(const char *Dir)
+{
+    return(FileSystemRecurseOperation(Dir, FSCHANGE_RECURSE | FSCHANGE_RMDIR | FSCHANGE_RMFILE | FSCHANGE_UNMOUNT, 0, 0, 0));
 }
 
 

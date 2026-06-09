@@ -401,10 +401,10 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, long InLen)
     int state=0, result;
     unsigned long olen=0, len=0;
 
-
     p_Input=Bytes;
     Curr=ListGetNext(S->ProcessingModules);
 
+    //if InLen < 0 then it's basically 'FLUSH
     if (InLen < 0) state=InLen;
     else len=InLen;
 
@@ -431,7 +431,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, long InLen)
                 if (InLen < 0) result=Mod->Read(Mod, p_Input, len, &OutputBuff, &olen,  TRUE);
                 else result=Mod->Read(Mod, p_Input, len, &OutputBuff, &olen,  FALSE);
 
-                if (result > 0) state=0;
+                if (result > 0) state=1;
 
 
                 if (result > 0)
@@ -474,8 +474,7 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, long InLen)
         if (S->State & LU_SS_DATA_ERROR) return(STREAM_DATA_ERROR);
     }
 
-    // this indicates that there's still data in the processing chain
-    return(1);
+    return(state);
 }
 
 
@@ -1289,11 +1288,11 @@ int STREAMWaitForBytes(STREAM *S)
 
     //must set this to 1 in case not doing a select, 'cos if S->Timeout is not set
     //then we won't wait at all, won't set read_result, so we must do it here
-    read_result=1;
 
     //if we ned to wait, then do so
     if ((S->Timeout > 0) && WaitForBytes)
     {
+        read_result=0;
         //convert S->Timeout from centisecs number to a tv struct
         MillisecsToTV(S->Timeout * 10, &tv);
 
@@ -1313,6 +1312,7 @@ int STREAMWaitForBytes(STREAM *S)
         }
 
     }
+    else read_result=1;
 
     return(read_result);
 }
@@ -1457,13 +1457,15 @@ int STREAMReadCharsToBuffer(STREAM *S)
 //messing with this block tends to break STREAMSendFile
     if (read_result >= 0)
     {
-        read_result=STREAMReadThroughProcessors(S, tmpBuff, bytes_read);
+        bytes_read=STREAMReadThroughProcessors(S, tmpBuff, bytes_read);
+        if (bytes_read > 0) read_result=bytes_read;
     }
     else //if (read_result == STREAM_CLOSED)
     {
         //-1 means 'FLUSH'
         //there's no bytes in tmpBuff in this situation
         bytes_read=STREAMReadThroughProcessors(S, NULL, -1);
+
         if (bytes_read > 0) read_result=bytes_read;
         //else read_result=STREAM_CLOSED;
     }
@@ -2002,7 +2004,7 @@ char *STREAMReadToMultiTerminator(char *RetStr, STREAM *S, char *Terms)
 
 //All error conditions are negative, but '0' can just mean
 //no more data to read
-    while (inchar > -1)
+    while (inchar > 0)
     {
         if (inchar > 0)
         {

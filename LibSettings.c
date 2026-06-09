@@ -118,20 +118,45 @@ STREAM *LibUsefulConfigFileOpen(const char *FName, const char *EnvVarName, const
 
 
 
-void LibUsefulAtExit()
+int LibUsefulCheckVersion(int Op, int CheckMajor, int CheckMinor)
 {
-#ifdef HAVE_MUNLOCKALL
-    if (LibUsefulFlags & LU_MLOCKALL) munlockall();
-#endif
+    const char *ptr;
+    char *Token=NULL;
+    int Major, Minor;
 
-    if (LibUsefulFlags & LU_CONTAINER) FileSystemUnMount("/","lazy");
-    ConnectionHopCloseAll();
-    CredsStoreDestroy();
+    ptr=GetVar(LibUsefulSettings, "LibUseful:Version");
+    if (! StrValid(ptr)) return(FALSE);
+
+    ptr=GetToken(ptr, ".", &Token, 0);
+    Major=atoi(Token);
+    Minor=atoi(ptr);
+
+    switch (Op)
+    {
+    case CHECK_VERSION_EXISTS:
+        return(TRUE);
+        break;
+
+    case CHECK_VERSION_EQUAL:
+        if ( (Major == CheckMajor) && (Minor == CheckMinor)) return(TRUE);
+        break;
+
+    case CHECK_VERSION_AT_LEAST:
+        if ( (Major >= CheckMajor) && (Minor >= CheckMinor)) return(TRUE);
+        break;
+
+    case CHECK_VERSION_GREATER:
+        if ( (Major <= CheckMajor) && (Minor <= CheckMinor)) return(TRUE);
+        break;
+    case CHECK_VERSION_LESS:
+        if ( (Major < CheckMajor) && (Minor < CheckMinor)) return(TRUE);
+        break;
+    }
+
+
+    Destroy(Token);
+
+    return(FALSE);
 }
 
 
-void LibUsefulSetupAtExit()
-{
-    if (! (LibUsefulFlags & LU_ATEXIT_REGISTERED)) atexit(LibUsefulAtExit);
-    LibUsefulFlags |= LU_ATEXIT_REGISTERED;
-}

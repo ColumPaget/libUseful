@@ -10,6 +10,7 @@
 #include "String.h"
 #include "Errors.h"
 #include "GeneralFunctions.h"
+#include "AtExit.h"
 
 //needed for low-level file access
 #include <sys/file.h>

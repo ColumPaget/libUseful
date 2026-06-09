@@ -37,6 +37,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define PROC_ISOCUBE      1048576    // chroot into a tmpfs filesystem. Any files process writes will be lost when it exits
 #define PROC_LAN_ONLY    33554432    // set don't route on all sockets. This is used to setup apps that we don't want to talk cross-network.
 #define PROC_MDWE_HARD   67108864    // if mdwe not supported, then use seccomp to achieve similar 
+#define PROC_CONTAINER_NOINIT     134217728    // within a PID container, don't launch an 'init' process (usually means only one process in this container)
 
 #define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID | PROC_CONTAINER_IPC)
 
@@ -83,6 +84,10 @@ int ProcessNoNewPrivs();
 //or future mappings to be writable and executable. This will prevent loading new
 //libraries or execing new programs
 int ProcessNoWriteExec(int Inherit);
+
+
+int ProcessSecurityParseLevel(const char *Name);
+
 
 
 /*
@@ -132,6 +137,10 @@ ns=<path>          linux namespace to join. <path> is either a path to a namespa
 nosu               set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
 nopriv             set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
 noprivs            set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
+nonet              run process in a network namespace container
+noipc              run process in a IPC namespace container
+nopid              run process in a PID namespace container
+noinit             if using 'nopid' then DONT launch an init for the PID namespace container
 mdwe               set 'memory deny write execute' protection for process
 mdwe:inherit       set 'memory deny write execute' protection for process and inherit to child processes
 mdwe:hard          set 'memory deny write execute' protection AND INHERIT to child process, but if that fails, apply seccomp rules to achive the same
@@ -158,9 +167,9 @@ lockfile=<path>    create lockfile at 'path'
 security=<level>   set security levels for seccomp. These are intended to mostly kill processess that are trying to use suspicious/dangerous or inappropriate syscalls.
    Any level includes the "nosu" setting as seccomp requires setting "prctrl(PR_NO_NEW_PRIVS)"
    Levels are 'minimal', 'basic', 'user', 'guest', 'untrusted', 'constrained', 'high', 'paranoid', 'worker' and 'memworker'. Each level includes the level below it, so 'untrusted' gives you everything in 'minimal', 'basic' and 'user'.
-	 In addition to levels there are also the modifiers 'client', 'basic-net', 'local', 'nonet', 'killnet', 'nopid', 'noshm', 'nomsgq', 'noipc', 'noexec' and 'killexec'. These can be combined with a level using the '+' sign as in 'security=guest+local'.
+	 In addition to levels there are also the modifiers 'client', 'basic-net', 'local', 'nonet', 'killnet', 'nopid', 'noinit', 'noshm', 'nomsgq', 'noipc', 'noexec' and 'killexec'. These can be combined with a level using the '+' sign as in 'security=guest+local'.
 
-	Levels:
+  Levels:
         minimal: disable ptrace and kill apps that try to use: personality, uselib, userfaultfd, perf_event_open, kexec_load, get_kernel_syms, lookup_dcookie, vm86, vm86old, mbind, move_pages, nfsservctl, and anything involving kernel modules
         basic: everything in 'minimal' but also disable the 'acct' and 'capset' syscalls
         user: everything in 'basic' but also kill processes that try to use bpf, or any 'sysadmin' calls: settimeofday, clocksettime, clockadjtime, quotactl, reboot, swapon, swapoff, mount, umount, umount2, mknod, quotactl capset
@@ -168,21 +177,26 @@ security=<level>   set security levels for seccomp. These are intended to mostly
         untrusted: everyting in 'user' but kill apps that try to: chroot, acct syscall, pidfd_open syscall, access the keyring, unshare or change namespaces
         constrained: everything in 'untrusted' but kill apps that try to use: mprotect, ioctl or ptrace. Only TGETS and TSETS ioctls are allowed for getting setting terminal attributes.
         high: everything in 'constrained' plus deny sending signals with 'kill' or changing file timestamps
-				paranoid: everyting in 'high' but kill processes that try to use exec to load another program, or that try to link or symlink to files, or change file timestamps
+    paranoid: everyting in 'high' but kill processes that try to use exec to load another program, or that try to link or symlink to files, or change file timestamps
         worker: everything in 'paranoid' plus deny making any filesystem changes. Intended for processes that just do calculations and write them to a file
         memworker: everything in 'worker' plus kill attempted use of 'open' or other filesystem calls. Intended for processes that just do calculations and write them to an existing file descriptor (e.g. stdout).
 
-	Modifiers:
-				local: only allow UNIX sockets/networking. WARNING: this modifier only works on x86_64, not on x86 due to issues with socketcall syscall
-				basic-net: only allow unix, inet (IPv4) and inet6 (IPv6) sockets/networking, disabling all 'weird' address families including AF_BLUETOOTH, AF_VSOCK and AF_ALG. WARNING: this modifier only works on x86_64, not on x86 due to issues with socketcall syscall
-				lan: only allow connections to devices on the same ethernet segment. This doesn't use seccomp, but instead causes all sockets to be opened with the SO_DONTROUTE flag set.
+
+  Modifiers:
+        local: only allow UNIX sockets/networking. WARNING: this modifier only works on x86_64, not on x86 due to issues with socketcall syscall
+        basic-net: only allow unix, inet (IPv4) and inet6 (IPv6) sockets/networking, disabling all 'weird' address families including AF_BLUETOOTH, AF_VSOCK and AF_ALG. WARNING: this modifier only works on x86_64, not on x86 due to issues with socketcall syscall
+        lan: only allow connections to devices on the same ethernet segment. This doesn't use seccomp, but instead causes all sockets to be opened with the SO_DONTROUTE flag set.
         client: deny syscalls: listen and accept, preventing 'server' activity
-        nonet: deny networking syscalls like socket,bind and connect
+        nonet: use namespaces to prevent network access AND/OR SECCOMP to deny networking syscalls like socket,bind and connect
         killnet: kill processes that attempt to use networking syscalls like socket,bind and connect
-				nopid: use namespaces to prevent access to other processes, sending signals or even seeing what processes are running
-				noshm: deny 'shared memory' syscalls: shmat, shmdt, shmget and shmctl
-				nomsgq: deny 'message queues' syscalls: msgrcv, msgsnd, msgget, and msgctl
-				noipc: deny syscalls included in both 'noshm' and 'nomsgq' above along with syscalls: semop, semget and semctl
+        netns: use namespaces to prevent access to network
+        nopid: use namespaces AND/OR SECCOMP to prevent access to other processes, sending signals or even seeing what processes are running (deny 'kill' syscall)
+        pidns: use namespaces to prevent access to other processes, sending signals or even seeing what processes are running
+        noipc: use namespace AND/OR SECCOMP to isolate posix IPC (deny syscalls included in both 'noshm' and 'nomsgq' above along with syscalls: semop, semget and semctl)
+        ipcns: use namespaces to prevent access to posix IPC (shared memory, message queues and semaphores)
+        noinit: when using a PID namespace, don't create an 'init' process for it, just run the main process in the namespace
+        noshm: deny 'shared memory' syscalls: shmat, shmdt, shmget and shmctl
+        nomsgq: deny 'message queues' syscalls: msgrcv, msgsnd, msgget, and msgctl
         noexec: deny use of exec family of programs to load another program
         killexec: kill processes that attempt to use exec to load another program
 

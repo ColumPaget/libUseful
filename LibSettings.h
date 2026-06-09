@@ -95,13 +95,18 @@ Unicode:NamesFile     path to file that maps names->unicode code points
 
 
 
+//Thse flags are used internally by lib useful to track certain
+//state info, the user would not normally use these
+#define  LU_ATEXIT_REGISTERED    1
+#define  LU_STRLEN_NOCACHE       4
+#define  LU_MLOCKALL             8
+#define  LU_RESIST_PTRACE       16
+#define  LU_DONT_ROUTE          32
+#define  LU_CONTAINER          128
+#define  LU_CONTAINER_MOUNT    256
 
-#define  LU_ATEXIT_REGISTERED   1
-#define  LU_CONTAINER           2
-#define  LU_STRLEN_NOCACHE      4
-#define  LU_MLOCKALL            8
-#define  LU_RESIST_PTRACE      16
-#define  LU_DONT_ROUTE         32
+
+
 
 extern int LibUsefulFlags;
 
@@ -128,10 +133,20 @@ STREAM *LibUsefulConfigFileOpen(const char *FName, const char *EnvVarName, const
 //returns TRUE if libUseful Debug is active, FALSE otherwise
 int LibUsefulDebugActive();
 
-//this function gets called at exit to do certain cleaning up. It's no concern of the user.
-//nothing to see here, move along
-void LibUsefulAtExit();
-void LibUsefulSetupAtExit();
+
+//ListUsefulCheckVersion allows us to check/match the version of libUseful
+//returns TRUE on match FALSE otherwise
+//'Op' is one of the following flags
+
+#define CHECK_VERSION_EXISTS    1  //do we even have a version recorded?
+#define CHECK_VERSION_EQUAL     2  //does it's major and minor match?
+#define CHECK_VERSION_AT_LEAST  3  //is it's major and minor equal to, or greater than?
+#define CHECK_VERSION_GREATER   4  //is it's major and minor greater than?
+#define CHECK_VERSION_LESS      5  //is it's major and minor less than?
+
+
+int LibUsefulCheckVersion(int Op, int CheckMajor, int CheckMinor);
+
 
 #ifdef __cplusplus
 };

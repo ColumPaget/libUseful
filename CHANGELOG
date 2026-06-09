@@ -1,6 +1,19 @@
+v5.73
+  * remove lazy 'try unmount any mounts' in FilesystemRmDir, as this is now incompatible with seccomp
+  * added 'LibUsefulCheckVersion' function
+  * revoke trying to match binding ports > 0, bind uses a sockaddr structure
+  * ProcessApplyConfig security modifier 'basic-net' had an issue that caused locking process into a net container
+  * add common 'user' ioctls to things seccomp recognizes
+  * handle 'non-existent' constants in seccomp (e.g. system lacks FIONASYNC)
+  * 'nopid' and pid containers now works more correctly
+  * add 'noinit' ProcessApplyConfig argument
+  * always call 'LookupIP' before enabling any type of MDWE so that resolver libraries are loaded
+  * 'debug' argument now supported by ProcessApplyConfig 
+
+
 v5.72 (2026-05-02)
   * add "GetBacktrace" function
-  * add "basic-net" seccomp modifier
+  * add "basic-net" security modifier
   * add more address families to seccomp matches for the "socket" and other system calls
   * add 'mdwe:hard' option for ProcessApplyConfig: if mdwe isn't available, try using seccomp to achive the same.
   * add seccomp match for "bind" with ports > 0 to seccomp group "server"

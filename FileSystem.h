@@ -136,15 +136,15 @@ int FileSystemParsePermissions(const char *Permissions);
 int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, const char *Args);
 
 
-//unmount the file system mounted at 'MountPoint'. 'Args' can contain a space-seperated list of the
-//following options:  'follow', 'lazy', 'detach', 'recurse', 'rmdir'
-//'follow' will follow symbolic links and unmount directories they point to. 'lazy' and 'detach' will
-//perform 'lazy unmounts', which mark the mount point for unmount if it's busy and carry out the
-//unmount when it ceases to be busy. 'recurse' will umount any filesystems mounted within the mount
-//point (rather than just failing with 'file system busy' and 'rmdir' will remove the mount-point
-//directory after unmounting
+// unmount the file system mounted at 'MountPoint'. 'Args' can contain a space-seperated list of the
+// following options:  'follow', 'lazy', 'detach', 'recurse', 'rmdir'
+//  'follow' will follow symbolic links and unmount directories they point to.
+//  'lazy' and 'detach' will perform 'lazy unmounts', which mark the mount point for unmount if it's busy
+//      and carry out the unmount when it ceases to be busy. 
+//  'recurse' will umount any filesystems mounted within the mount point 
+//      (rather than just failing with 'file system busy' 
+//  'rmdir' will remove the mount-point directory after unmounting
 int FileSystemUnMount(const char *MountPoint, const char *Args);
-
 
 
 
@@ -179,6 +179,9 @@ int FileSystemCopyDir(const char *Src, const char *Dest);
 
 //recursive remove directory and everything in it
 int FileSystemRmDir(const char *Dir);
+
+//recursive remove directory and everything in it, UNMOUNTING any mounted dirs under 'Dir'
+int FileSystemRmDirWithUnmount(const char *Dir);
 
 
 //these functions allow setting filesystem-wide flags under linux
