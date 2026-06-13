@@ -476,12 +476,13 @@ int GetHostARP(const char *IP, char **Device, char **MAC)
 /* to connect to before it got transparently proxied */
 int GetSockDestination(int sock, char **Host, int *Port)
 {
-    int salen;
-    struct sockaddr_storage sa;
     char *Tempstr=NULL;
     int result=FALSE;
 
 #ifdef SO_ORIGINAL_DST
+    int salen;
+    struct sockaddr_storage sa;
+
     salen=sizeof(struct sockaddr_in);
 
     if (getsockopt(sock, SOL_IP, SO_ORIGINAL_DST, (char *) &sa, (unsigned int *) &salen) ==0)

@@ -71,9 +71,6 @@ static void ContainerInitProcess(int tunfd, int linkfd, pid_t Child, int RemoveR
 {
     struct sigaction sa;
 
-    fprintf(stderr, "LAUNCH INIT: %d\n", getpid());
-    fflush(NULL);
-
     //this process is init, the child will carry on execution
     //if (chroot(".") == -1) RaiseError(ERRFLAG_ERRNO, "chroot", "failed to chroot to curr directory");
     ProcessSetTitle("init");
@@ -95,7 +92,7 @@ static void ContainerInitProcess(int tunfd, int linkfd, pid_t Child, int RemoveR
 //(this is mostly just to reap exited/zombie processes)
 static pid_t ContainerLaunchInit(int Flags, const char *Dir)
 {
-    pid_t child, parent;
+    pid_t child;
 
     //as we are going to create an init for a namespace it needs to be session leader
     //setsid();
@@ -137,8 +134,6 @@ static pid_t ContainerLaunchInit(int Flags, const char *Dir)
 
 static int ContainerUnsharePID(int Flags, const char *Namespace, const char *Dir)
 {
-    pid_t pid, init_pid=0;
-
 #ifdef HAVE_UNSHARE
 #ifdef CLONE_NEWPID
 
@@ -151,8 +146,7 @@ static int ContainerUnsharePID(int Flags, const char *Namespace, const char *Dir
     //otherwise launch and init from the NEWPID process
     if (! StrValid(Namespace))
     {
-        init_pid=ContainerLaunchInit(Flags, Dir);
-        //setpgid(init_pid, init_pid);
+       ContainerLaunchInit(Flags, Dir);
     }
 
     ContainerRemountProc("");
@@ -406,9 +400,6 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, cons
 {
 #ifdef HAVE_UNSHARE
 
-    int val, result;
-
-
 //if we're not root, then we'll have to set up a user namespace
 #ifdef CLONE_NEWUSER
     if (uid !=0) ContainerNewUserNamespace(getpid(), uid, gid);
@@ -538,9 +529,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
     char *Dir=NULL, *ChRoot=NULL;
     char *Name=NULL, *Value=NULL;
     char *Tempstr=NULL;
-    const char *ptr;
     int RetVal=TRUE;
-    pid_t child;
     uid_t external_uid;
     gid_t external_gid;
 

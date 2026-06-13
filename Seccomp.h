@@ -88,6 +88,15 @@ open: (expands to open;openat;open2;openat2;creat)
    open(suid)       - match creating files with suid permissions
    open(exec)       - match creating files with exec permissions
 
+ioctl: the following expand into lists of ioctl calls, but note that some of the expansions are themselves expanded (e.g. ioctl(user) contains ioctl(pty))
+   ioctl(term)      - expands to ioctl(tcgets);ioctl(tcsets);ioctl(tcsetsw);ioctl(tcsetsf);ioctl(tcflsh);ioctl(tcsetsf);ioctl(tiocgwinsz);ioctl(tiocswinsz)
+   ioctl(ctty)      - expands to ioctl(tiocsctty);ioctl(tiocnotty)
+   ioctl(pgrp)      - expands to ioctl(tiocgpgrp);ioctl(tiocspgrp);ioctl(tiocgsid)
+   ioctl(fio)       - expands to ioctl(fionread);ioctl(fionwrite);ioctl(fionspace);ioctl(fioclex);ioctl(fionclex);ioctl(fionbio);ioctl(fionasync);ioctl(fiosetown);ioctl(fiogetown)
+   ioctl(user)      - expands to ioctl(term);ioctl(fio);ioctl(ctty);ioctl(pty);ioctl(pgrp)
+   ioctl(pty)       - expands to ioctl(tiocgptn);ioctl(tiocptmaster);ioctl(tiocpkt);ioctl(tiocsptlck);ioctl(tiocgptlck)
+   ioctl(danger)    - expands to ioctl(tiocsti)
+
 
 
 There are also "groups" which are special names that expand to a list of syscalls. They are all
@@ -98,15 +107,15 @@ group:create     syscalls relating to creating files: open(create);openat(create
 group:fork       syscalls relating to process fork: clone;clone2;clone3;fork;vfork
 group:uid        syscalls relating to setting process user id: setuid;setreuid;setresuid
 group:ugid       syscalls relating to setting either process user or group id: setuid;setreuid;setresuid;setgid;setregid;setresgid
-group:mount      syscalls relating to mount/unmount of filesystems: mount;umount;umount2
+group:mount      syscalls relating to mount/unmount of filesystems: mount;umount;umount2;fsmount;move_mount
 group:chroot     syscalls relating to chaning root of filesystem: chroot;pivot_root
 group:kill       syscalls relating to sending signals: kill;tkill;tgkill
 group:settime    syscalls relating to setting system time: settimeofday;clock_settime;clock_adjtime
-group:server     syscalls relating to network servers: accept;accept4;listen and 'bind' of ports higher than 0 on x86_64
+group:server     syscalls relating to network servers: accept;accept4;listen
 group:net        syscalls relating to both client and server networking: socket;socketcall;connect;bind;listen;accept;accept4
 group:swap		   syscalls relating to system swap: swapon;swapoff
 group:ns         syscalls relating to namespaces: unshare;setns
-group:sysadmin   syscalls relating to system admin, including setting time, rebooting system, managing mounts, swap, etc: settimeofday;clock_settime;clock_adjtime;quotactl;reboot;swapon;swapoff;mount;umount;umount2;mknod;quotactl;sethostname;setdomainname
+group:sysadmin   syscalls relating to system admin, including setting time, rebooting system, managing mounts, swap, etc: settimeofday;clock_settime;clock_adjtime;quotactl;quotactl_fd;reboot;swapon;swapoff;mount;umount;umount2;fsmount;move_mount;mknod;sethostname;setdomainname
 group:keyring    syscalls relating to keyring/credentials storage: add_key;request_key;keyctl
 group:shm        syscalls relating to shared memoryshmat;shmdt;shmget;shmctl
 group:fsrm       syscalls relating to deleting files and directories: unlink;rmdir
@@ -119,7 +128,9 @@ group:shm        syscalls relating to POSIX shared memory: shmat;shmdt;shmget;sh
 group:sem        syscalls relating to POSIX semaphores: semop;semget;semctl
 group:msgq       syscalls relating to POSIX message queues: msgrcv;msgsnd;msgget;msgctl
 group:ipc        syscalls relating to all POSIX interprocess communication: shmat;shmdt;shmget;shmctl;semop;semget;semctl;msgrcv;msgsnd;msgget;msgctl
-group:mexec      syscalls that set memory permissions to 'exec', such syscalls are needed to load libraries and run programs
+group:mexec      syscalls that set memory permissions to 'exec', such syscalls are needed to load libraries and run programs: mprotect(exec); mmap(exec)
+group:weird      unusual or obsolete syscalls: uselib;personality;perf_event_open;get_kernel_syms;lookup_dcookie;vm86;vm86old;mbind;move_pages;nfsservctl;open_by_handle_at 
+
 
 
 

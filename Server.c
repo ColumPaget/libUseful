@@ -9,7 +9,6 @@
 int IPServerNewWithSettings(int iType, const char *Address, int Port, TSockSettings *Settings)
 {
     int sock, val, Type;
-    int BindFlags=0;
     const char *p_Addr=NULL;
 
 //if IP6 not compiled in then throw error if one is passed

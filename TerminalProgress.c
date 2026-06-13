@@ -79,8 +79,7 @@ static char *TerminalProgressBuildInnerText(char *Bar, TERMPROGRESS *TP, float F
 void TerminalProgressDraw(TERMPROGRESS *TP, float Fract, const char *Info)
 {
     char *Tempstr=NULL, *Bar=NULL, *Remain=NULL;
-    const char *ptr;
-    int len, wide, used;
+    int wide, used;
 
     wide=TP->wid;
     used=(int) (wide * Fract + 0.5);

@@ -12,10 +12,6 @@
 #include <sys/xattr.h>
 #endif
 
-#ifdef USE_FANOTIFY
-#include <sys/fanotify.h>
-#endif
-
 #ifdef USE_FSFLAGS
 #include <linux/fs.h>
 #endif
@@ -153,7 +149,7 @@ int FileMoveToDir(const char *FilePath, const char *Dir)
 {
     char *Tempstr=NULL;
     struct stat Stat;
-    int result, size;
+    int size;
     int RetVal=FALSE;
 
     Tempstr=MCopyStr(Tempstr, Dir, "/", GetBasename(FilePath), NULL);
@@ -606,7 +602,7 @@ int FileSystemMount(const char *Dev, const char *MountPoint, const char *Type, c
 
 static int FileSystemRecurseOperation(const char *MountPoint, int Operation, int Depth, int MaxDepth, int UnmountFlags)
 {
-    int result, i;
+    int result=0, i;
     char *Path=NULL;
     struct stat FStat;
     glob_t Glob;
@@ -641,7 +637,6 @@ static int FileSystemRecurseOperation(const char *MountPoint, int Operation, int
 
     if (Operation & FSCHANGE_UNMOUNT)
     {
-        result=0;
         while (result > -1)
         {
 #ifdef HAVE_UMOUNT2
@@ -849,10 +844,11 @@ int FDSetFlags(int fd, int Set, int UnSet)
 
 int FileSetFlags(const char *Path, int Set, int Unset)
 {
-    int fd;
     int RetVal=FALSE;
 
 #ifdef FS_IOC_GETFLAGS
+    int fd;
+
     fd=open(Path, O_RDONLY);
     if (fd > -1)
     {
@@ -885,10 +881,11 @@ int FileSystemSetSTREAMFlags(int fd, int Set, int UnSet)
 
 int FileSetSTREAMFlags(const char *Path, int Set, int Unset)
 {
-    int fd;
     int RetVal=FALSE;
 
 #ifdef FS_IOC_GETFLAGS
+    int fd;
+
     fd=open(Path, O_RDONLY);
     if (fd > -1)
     {

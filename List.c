@@ -409,8 +409,7 @@ static void ListHandleMaxSize(ListNode *Node, ListNode *Head)
 
 ListNode *ListInsertTypedItem(ListNode *InsertNode, uint16_t Type, const char *Name, void *Item)
 {
-    ListNode *NewNode, *Head, *Curr;
-    int i;
+    ListNode *NewNode, *Head;
 
     if (! InsertNode) return(NULL);
 
@@ -485,7 +484,7 @@ static inline int ListConsiderInsertPoint(ListNode *Head, ListNode *Prev, const 
 ListNode *ListFindNamedItemInsert(ListNode *Root, const char *Name)
 {
     ListNode *Prev=NULL, *Curr, *Next, *Head;
-    int result=0, len;
+    int len;
     unsigned long long val;
 
     if (! Root) return(Root);

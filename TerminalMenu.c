@@ -58,7 +58,7 @@ static void TerminalGetLineAttributes(TERMMENU *Menu, ListNode *Curr, char **p_A
 
 static char *TerminalMenuFormatItem(char *Output, TERMMENU *Menu, ListNode *Curr, int TermWidth)
 {
-    int count, margins, wide;
+    int margins, wide;
     char *LineStart=NULL, *LineEnd=NULL, *Contents=NULL, *Tempstr=NULL;
     char *SingleLineCR=NULL;
     char *p_Attribs;
@@ -128,7 +128,7 @@ void TerminalMenuDraw(TERMMENU *Menu)
 {
     ListNode *Curr;
     char *Output=NULL;
-    int y, yend, TermWide, TermHigh;
+    int y, yend, TermWide=80, TermHigh=20;
     //single line mode is a special case
     //that doesn't use 'cursor move' to build
     //a menu at a specific screen position,

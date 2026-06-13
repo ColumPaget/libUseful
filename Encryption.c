@@ -219,7 +219,6 @@ int libCryptoProcessorInit(TProcessingModule *ProcMod, const char *Args, unsigne
 
     libCryptoProcessorData *Data;
     EVP_CIPHER *cipher;
-    EVP_CIPHER_CTX *ctx;
     int val;
     char *Tempstr=NULL;
 
@@ -382,7 +381,6 @@ int libCryptoProcessorRead(TProcessingModule *ProcMod, const char *InData, unsig
 int libCryptoProcessorClose(TProcessingModule *ProcMod)
 {
     libCryptoProcessorData *Data;
-    EVP_CIPHER_CTX *ctx;
 
     Data=(libCryptoProcessorData *) ProcMod->Data;
     if (Data)

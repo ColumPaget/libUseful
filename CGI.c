@@ -1,5 +1,6 @@
 #include "CGI.h"
 
+//
 char *CGIReadDocument(char *RetStr, STREAM *S)
 {
     const char *ptr;

@@ -347,7 +347,7 @@ pid_t PseudoTTYSpawn(int *pty, const char *Command, const char *Config)
 
 STREAM *STREAMSpawnFunction(BASIC_FUNC Func, void *Data, const char *Config)
 {
-    int to_fd, from_fd, err_fd, *iptr;
+    int to_fd, from_fd, err_fd;
     pid_t pid=0;
     STREAM *S=NULL;
     char *Tempstr=NULL;

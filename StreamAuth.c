@@ -38,7 +38,6 @@ static int STREAMAuthProcessCertificate(STREAM *S, const char *CertName, const c
 static int STREAMBasicAuthPasswordFile(const char *Path, STREAM *S)
 {
     char *User=NULL, *Password=NULL;
-    const char *ptr;
     int AuthResult=FALSE;
 
     if (StrValid(Path))

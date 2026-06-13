@@ -170,16 +170,18 @@ security=<level>   set security levels for seccomp. These are intended to mostly
 	 In addition to levels there are also the modifiers 'client', 'basic-net', 'local', 'nonet', 'killnet', 'nopid', 'noinit', 'noshm', 'nomsgq', 'noipc', 'noexec' and 'killexec'. These can be combined with a level using the '+' sign as in 'security=guest+local'.
 
   Levels:
-        minimal: disable ptrace and kill apps that try to use: personality, uselib, userfaultfd, perf_event_open, kexec_load, get_kernel_syms, lookup_dcookie, vm86, vm86old, mbind, move_pages, nfsservctl, and anything involving kernel modules
+        minimal: disable ptrace, deny ioctl(TIOCSTI) and kill apps that try to use: personality, uselib, userfaultfd, perf_event_open, kexec_load, get_kernel_syms, lookup_dcookie, vm86, vm86old, mbind, move_pages, nfsservctl, and anything involving kernel modules
         basic: everything in 'minimal' but also disable the 'acct' and 'capset' syscalls
-        user: everything in 'basic' but also kill processes that try to use bpf, or any 'sysadmin' calls: settimeofday, clocksettime, clockadjtime, quotactl, reboot, swapon, swapoff, mount, umount, umount2, mknod, quotactl capset
-        guest: everything in 'user' but also deny 'chown' and 'chmod' and kill attempts use 'sysadmin' calls like mount, reboot or settimeofday, and kill attempts to use bpf
-        untrusted: everyting in 'user' but kill apps that try to: chroot, acct syscall, pidfd_open syscall, access the keyring, unshare or change namespaces
-        constrained: everything in 'untrusted' but kill apps that try to use: mprotect, ioctl or ptrace. Only TGETS and TSETS ioctls are allowed for getting setting terminal attributes.
-        high: everything in 'constrained' plus deny sending signals with 'kill' or changing file timestamps
-    paranoid: everyting in 'high' but kill processes that try to use exec to load another program, or that try to link or symlink to files, or change file timestamps
+        user: everything in 'basic' but also kill processes that try to use bpf, or any 'sysadmin' calls: settimeofday, clocksettime, clockadjtime, quotactl, reboot, swapon, swapoff, mount, umount, umount2, mknod, quotactl capset, or that try to use the TIOCSTI ioctl
+        guest: everything in 'user' but also deny keyring access and kill attempts to use ptrace
+        untrusted: everyting in 'user' but kill apps that try to: chroot, acct syscall, pidfd_open syscall, access the keyring, unshare or change namespaces, and deny access to utimes syscall
+        constrained: everything in 'untrusted' but kill apps that try to change filesystem times, and deny all ioctls except those listed in ioctl(user)
+        high: everything in 'constrained' plus deny sending signals, making filesystem links and symlinks, or chmoding files to be exectuable
+        paranoid: everything in 'high' but kill processes that try to use exec to load another program, or that try to link or symlink to files, or change file timestamps, or send signals
         worker: everything in 'paranoid' plus deny making any filesystem changes. Intended for processes that just do calculations and write them to a file
-        memworker: everything in 'worker' plus kill attempted use of 'open' or other filesystem calls. Intended for processes that just do calculations and write them to an existing file descriptor (e.g. stdout).
+        memworker: everything in 'worker' plus kill attempted use of 'open' or other filesystem calls/changes, or 'pipe'. Intended for processes that just do calculations and write them to an existing file descriptor (e.g. stdout).
+
+
 
 
   Modifiers:

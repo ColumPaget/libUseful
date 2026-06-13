@@ -195,7 +195,7 @@ const char *XMLGetTag(const char *Input, char **Namespace, char **TagType, char 
 int XMLIsEndTag(const char *TagType, const char *TagData)
 {
     const char *ptr;
-    int len;
+		int len;
 
     if (TagType && (*TagType=='/')) return(TRUE);
 

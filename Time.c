@@ -216,7 +216,7 @@ const char *FormatDuration(const char *Fmt, time_t Duration)
 {
     char *Tempstr=NULL;
     static char *RetStr=NULL;
-    unsigned long weeks, days, hours, mins, secs;
+    unsigned long weeks=0, days=0, hours=0, mins=0, secs=0;
     const char *ptr;
     int len=0;
 
@@ -409,7 +409,7 @@ char *CalendarFormatCSV(char *RetStr, unsigned int Month, unsigned int Year)
 {
     struct tm InTM, *OutTM;
     time_t when;
-    int i, wday, day, maxday;
+    int wday, day, maxday;
     char *Tempstr=NULL;
 
 

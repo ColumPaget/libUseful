@@ -183,7 +183,6 @@ int STREAMAddDataProcessor(STREAM *S, TProcessingModule *Mod)
 {
     ListNode *Curr;
     char *Tempstr=NULL;
-    int len;
 
     STREAMFlush(S);
 

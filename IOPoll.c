@@ -131,8 +131,7 @@ static int EPOLLWait(TSelectSet *Set, struct timeval *tv)
     struct epoll_event event;
     int timeout=-1;
     uint64_t timeout64;
-    uint64_t start, diff;
-    int result;
+    uint64_t start;
     int fd, i;
     T_EPOLL_ITEMS *items;
 
@@ -176,7 +175,7 @@ static int EPOLLWait(TSelectSet *Set, struct timeval *tv)
 
 static int EPOLLCheck(TSelectSet *Set, int fd)
 {
-    int i, RetVal=0;
+    int i;
     T_EPOLL_ITEMS *items;
 
     items=(T_EPOLL_ITEMS *) Set->items;
@@ -545,7 +544,6 @@ static int STREAMSelectAddStream(TSelectSet *Set, ListNode *Curr, int UseEPOLL)
 STREAM *STREAMSelectAddStreams(TSelectSet *Set, ListNode *Streams, int UseEPOLL)
 {
     ListNode *Curr, *Next;
-    int result;
 
     Curr=ListGetNext(Streams);
     while (Curr)

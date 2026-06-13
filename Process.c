@@ -575,7 +575,7 @@ static char *ProcessSeccompParseLevel(char *RetStr, int LevelID, const char *Tok
     //break; //fall through to LU_SEC_HIGH
 
     case LU_SEC_HIGH:
-        RetStr=CatStr(RetStr, "syscall_deny=group:kill;link;symlink ");
+        RetStr=CatStr(RetStr, "syscall_deny=chmod(exec);group:kill;link;symlink ");
     //break; //fall through to LU_SEC_CONSTRAINED
 
     case LU_SEC_CONSTRAINED:
@@ -591,7 +591,7 @@ static char *ProcessSeccompParseLevel(char *RetStr, int LevelID, const char *Tok
     //break; //fall through to LU_SEC_USER
 
     case LU_SEC_USER:
-        RetStr=CatStr(RetStr, "syscall_deny=chown;chmod(exec);chmod(suid) syscall_kill=group:sysadmin;bpf;capset;ioctl(TIOCSTI)  ");
+        RetStr=CatStr(RetStr, "syscall_deny=chown;chmod(suid) syscall_kill=group:sysadmin;bpf;capset;ioctl(TIOCSTI)  ");
     //break; //fall through to LU_SEC_BASIC
 
     case LU_SEC_BASIC:

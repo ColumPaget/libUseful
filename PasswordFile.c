@@ -26,7 +26,6 @@ TPasswordEntry *PasswordFileParse(const char *Line)
 {
     const char *ptr;
     TPasswordEntry *Entry;
-    char *Token=NULL;
 
     Entry=(TPasswordEntry *) calloc(1, sizeof(TPasswordEntry));
 
@@ -210,7 +209,6 @@ TPasswordEntry *PasswordFileGet(const char *Path, const char *User)
 static int PasswordFileMatchItem(const char *Data, const char *User, const char *Password)
 {
     char *Tempstr=NULL, *ProvidedCred=NULL;
-    const char *ptr;
     TPasswordEntry *Entry=NULL;
     int result=FALSE;
 

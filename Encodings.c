@@ -347,7 +347,7 @@ char *EncodeBytes(char *RetStr, const char *Bytes, int len, int Encoding)
 {
     char *Tempstr=NULL;
     char PrintBuff[10];
-    int i, olen;
+    int i, olen=0;
 
     switch (Encoding)
     {

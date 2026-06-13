@@ -221,7 +221,6 @@ static void OpenSSLSetupECDH(SSL_CTX *ctx)
 static void OpenSSLSetupDH(SSL_CTX *ctx)
 {
     char *Tempstr=NULL;
-    const char *ptr;
     DH *dh=NULL;
     FILE *paramfile;
 
@@ -301,7 +300,6 @@ static int INTERNAL_SSL_INIT()
 static const char *OpenSSLGetCertificateValue(STREAM *S, const char *ValName, X509_NAME *X509name)
 {
     char *Value=NULL;
-    const char *ptr;
     ListNode *Node;
 
 //Value is dynamically allocated by X509_NAME_oneline
@@ -813,7 +811,6 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
     int result=FALSE;
 #ifdef HAVE_LIBSSL
     const SSL_METHOD *Method;
-    const char *ptr;
     SSL_CTX *ctx;
     SSL *ssl;
     int IsNonBlock=FALSE;

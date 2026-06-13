@@ -110,8 +110,6 @@ int RAWDATAReadAt(RAWDATA *RD, STREAM *S, size_t offset, size_t size)
 
 int RAWDATAWrite(RAWDATA *RD, STREAM *S, size_t offset, size_t size)
 {
-    int result;
-
     if (offset > RD->BuffLen) return(FALSE);
     if (size==0) size=RD->DataLen;
     if ((offset+size) > RD->DataLen) size=RD->DataLen-offset;

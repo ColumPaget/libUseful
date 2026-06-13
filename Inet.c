@@ -118,7 +118,7 @@ static ListNode *IPInfoLookupGetServices(const char *Type)
 
 int ProcessIPGeolocateService(const char *IP, const char *URL, const char *Settings, ListNode *Vars)
 {
-    ListNode *Config;
+    ListNode *Config=NULL;
     PARSER *P;
     char *Tempstr=NULL;
     const char *ptr;
@@ -160,10 +160,8 @@ int ProcessIPGeolocateService(const char *IP, const char *URL, const char *Setti
 
 int IPGeoLocate(const char *Host, ListNode *Vars)
 {
-    STREAM *S=NULL;
     char *Tempstr=NULL, *IP=NULL;
     ListNode *Services, *Curr;
-    const char *ptr;
     int result=FALSE;
 
     if (! StrValid(Host)) return(FALSE);
@@ -212,7 +210,6 @@ char *GetExternalIP(char *RetStr)
     ListNode *Services, *Curr;
     char *Token=NULL;
     const char *ptr;
-    STREAM *S;
 
     RetStr=CopyStr(RetStr,"");
 

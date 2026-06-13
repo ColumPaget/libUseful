@@ -59,7 +59,7 @@ uint8_t parse_bcd_byte(const char *In)
 char *encode_bcd_bytes(char *RetStr, unsigned const char *Bytes, int Len)
 {
     unsigned const char *ptr, *end;
-    unsigned char *optr;
+    char *optr;
     int bit, i, ilen, olen;
 
     end=Bytes+Len;

@@ -788,16 +788,15 @@ void TerminalCommand(int Cmd, int Arg1, int Arg2, STREAM *S)
 
 
 //this can put uinicode characters
-void TerminalPutChar(int Char, STREAM *S)
+int TerminalPutChar(int Char, STREAM *S)
 {
     char *Tempstr=NULL;
-    char towrite;
-    int result;
+    char towrite, result=0;
 
     if (Char <= 0x7f)
     {
         towrite=Char;
-        if (S) STREAMWriteChar(S, towrite);
+        if (S) result=STREAMWriteChar(S, towrite);
         else result=write(1, &towrite, 1);
     }
     else
@@ -805,29 +804,33 @@ void TerminalPutChar(int Char, STREAM *S)
         Tempstr=UnicodeStr(Tempstr, Char);
 
         //do not use StrLenFromCache here, as string will be short
-        if (S) STREAMWriteLine(Tempstr, S);
+        if (S) result=STREAMWriteLine(Tempstr, S);
         else result=write(1,Tempstr,StrLen(Tempstr));
     }
 
 
     Destroy(Tempstr);
+
+return(result);
 }
 
 
 
 
-void TerminalPutStr(const char *Str, STREAM *S)
+int TerminalPutStr(const char *Str, STREAM *S)
 {
     char *Tempstr=NULL;
-    int len, result;
+    int len, result=0;
 
     Tempstr=TerminalFormatStr(Tempstr, Str, S);
     //this could be a long-ish string, so we do use StrLenFromCache
     len=StrLenFromCache(Tempstr);
-    if (S) STREAMWriteBytes(S, Tempstr, len);
+    if (S) result=STREAMWriteBytes(S, Tempstr, len);
     else result=write(1,Tempstr,len);
 
     Destroy(Tempstr);
+
+return(result);
 }
 
 

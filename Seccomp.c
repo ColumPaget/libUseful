@@ -1127,7 +1127,7 @@ static int SeccompAddIoctlArgCheck(const char *Name, int *Arg0, char **Args)
 
 static int SeccompParseArg0(int SyscallID, const char *Name, int *Arg0, char **Args)
 {
-    int success=FALSE, val;
+    int val;
 
     *Arg0=-1;
 
@@ -1282,7 +1282,7 @@ static int  SeccompParseName(const char *SyscallStr, char **Args)
 {
     const char *p_args;
     char *Name=NULL;
-    int SyscallID=-1, Arg0=0, Arg1=0;
+    int SyscallID=-1, Arg0=0;
 
     *Args=CopyStr(*Args, "");
     p_args= GetToken( SyscallStr, "(", &Name, 0);
@@ -1425,7 +1425,6 @@ int SeccompFilterAddSyscallGroup(struct sock_filter **Filt, const char *NameList
 {
     int NoOfStatements=0;
     char *Name=NULL, *Tempstr=NULL;
-    const char *ptr;
 
     Tempstr=SeccompExpand(Tempstr, NameList);
 
@@ -1438,10 +1437,10 @@ int SeccompFilterAddSyscallGroup(struct sock_filter **Filt, const char *NameList
     return(NoOfStatements);
 }
 
+
 void SeccompSetup(struct sock_filter **SeccompFilter, const char *Setup)
 {
     char *Name=NULL, *Value=NULL;
-    int NoOfStatements=0;
     const char *ptr;
 
 

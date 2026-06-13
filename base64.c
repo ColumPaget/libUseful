@@ -55,7 +55,7 @@ void to64frombits(char *out, const char *in, int inlen)
 
 
 
-int Radix64tobits(char *out, const char *in, const char *base64digits, char pad)
+int Radix64tobits(char *out, const unsigned char *in, const unsigned char *base64digits, char pad)
 /* base 64 to raw bytes in quasi-big-endian order, returning count of bytes */
 {
     int len = 0, i=0;
@@ -63,14 +63,15 @@ int Radix64tobits(char *out, const char *in, const char *base64digits, char pad)
     register unsigned char digit1, digit2, digit3, digit4;
     const unsigned char *ptr, *end;
 
-    for (ptr=(const unsigned char *) base64digits; *ptr !='\0'; ptr++)
+    for (ptr=base64digits; *ptr !='\0'; ptr++)
     {
         base64vals[*ptr]=i;
         i++;
     }
 
     ptr=in;
-    end=in+StrLen(in);
+		//strlen, used within StrLen, expects signed chars
+    end=in+StrLen((const char *) in);
     if (ptr[0] == '+' && ptr[1] == ' ') ptr += 2;
     if (*ptr == '\r') return(0);
 
@@ -109,7 +110,7 @@ int Radix64tobits(char *out, const char *in, const char *base64digits, char pad)
 
 int from64tobits(char *out, const char *in)
 {
-    return(Radix64tobits(out, in, BASE64_CHARS,'='));
+    return(Radix64tobits(out,(const unsigned char *) in, (const unsigned char *) BASE64_CHARS,'='));
 }
 
 /* base64.c ends here */

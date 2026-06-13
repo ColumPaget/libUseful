@@ -117,7 +117,7 @@ void SecureDestroy(unsigned char *Mem, int Size)
 int SecureRealloc(unsigned char **OldMem, int OldSize, int NewSize, int Flags)
 {
     unsigned char *NewMem=NULL;
-    int val=0, PageSize;
+    int PageSize;
     int MemSize;
 
     PageSize=getpagesize();
@@ -241,8 +241,7 @@ SECURESTORE *SecureStoreLoad(const char *Path)
 {
     SECURESTORE *Store=NULL;
     struct stat FStat;
-    char *addr;
-    int fd, result, Flags=0;
+    int fd, result;
 
     fd=open(Path, O_RDONLY);
     if (fd > -1)
@@ -263,7 +262,7 @@ SECURESTORE *SecureStoreLoad(const char *Path)
 
 int SecureStoreNextLine(SECURESTORE *SS, unsigned char **Line)
 {
-    unsigned char *line_start, *line_end, *block_end;
+    unsigned char *line_end, *block_end;
 
     block_end=SS->Data + SS->Size;
     if (SS->CurrLine >= block_end) return(EOF);

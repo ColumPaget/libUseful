@@ -304,7 +304,7 @@ void XtermStringBase64Command(const char *Prefix, const char *Str, const char *P
 void XtermSetDefaultColors(STREAM *S, const char *Colors);
 
 //put a character. Char can be a value outside the ANSI range which will result in an xterm unicode character string being output
-void TerminalPutChar(int Char, STREAM *S);
+int TerminalPutChar(int Char, STREAM *S);
 
 //'Str' is a format string with with 'tilde commands' in it. The ANSI coded result is copied into RetStr, which is resized as needed and returned
 char *TerminalFormatStr(char *RetStr, const char *Str, STREAM *Term);
@@ -313,7 +313,7 @@ char *TerminalFormatStr(char *RetStr, const char *Str, STREAM *Term);
 const char *TerminalFormatSubStr(const char *Str, char **RetStr, STREAM *Term);
 
 //'Str' is a format string with 'tilde commands' in it. The ANSI coded result is output to stream S
-void TerminalPutStr(const char *Str, STREAM *S);
+int TerminalPutStr(const char *Str, STREAM *S);
 
 
 //'FmtStr' is a printf-style format string with '%d, %s' style substitutions and 'tilde commands' in it.
