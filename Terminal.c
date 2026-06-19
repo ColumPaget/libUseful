@@ -811,7 +811,7 @@ int TerminalPutChar(int Char, STREAM *S)
 
     Destroy(Tempstr);
 
-return(result);
+    return(result);
 }
 
 
@@ -830,7 +830,7 @@ int TerminalPutStr(const char *Str, STREAM *S)
 
     Destroy(Tempstr);
 
-return(result);
+    return(result);
 }
 
 

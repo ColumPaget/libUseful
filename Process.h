@@ -17,9 +17,9 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define PROC_SETSID           16     // create a new session for this process
 #define PROC_CTRL_TTY         32     // set stdin to be a controlling tty
 #define PROC_CHROOT           64     // chroot this process before switching user etc. Used to chroot into a full unix system.
-#define PROC_NEWPGROUP       128     // create new process group for this process
-#define PROC_SIGDEF          256     // set default signal mask for this process
-#define PROC_CONTAINER_FS    512
+#define PROC_CONTAINER_USER  128     // unshare user and group ids
+#define PROC_CONTAINER_FS    256     // unshare filesystem mounts
+#define PROC_CONTAINER_UTS   512     //unshare hostname etc
 #define PROC_CONTAINER_NET  1024     // unshare network namespace for this process
 #define PROC_CONTAINER_PID  2048     // unshare pids namespace
 #define PROC_CONTAINER_IPC  4096     // unshare ipc (shared memory, message queues, semaphors) namespace
@@ -35,11 +35,13 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 #define PROC_JAIL          524288    // chroot after everything setup. This jails a process in a directory, not the same as PROC_CHROOT
 #define PROC_ISOCUBE      1048576    // chroot into a tmpfs filesystem. Any files process writes will be lost when it exits
+#define PROC_SIGDEF       2097152    // set default signal mask for this process
+#define PROC_NEWPGROUP    4194304    // create new process group for this process
 #define PROC_LAN_ONLY    33554432    // set don't route on all sockets. This is used to setup apps that we don't want to talk cross-network.
 #define PROC_MDWE_HARD   67108864    // if mdwe not supported, then use seccomp to achieve similar 
 #define PROC_CONTAINER_NOINIT     134217728    // within a PID container, don't launch an 'init' process (usually means only one process in this container)
 
-#define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID | PROC_CONTAINER_IPC)
+#define PROC_CONTAINER (PROC_CONTAINER_FS | PROC_CONTAINER_NET | PROC_CONTAINER_PID | PROC_CONTAINER_IPC | PROC_CONTAINER_UTS | PROC_CONTAINER_USER)
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,8 +157,9 @@ mlockmax=<value>   resource limit for locked memory
 fsize=<value>      resource limit for filesize
 files=<value>      resource limit for open files
 coredumps=<value>  resource limit for max size of coredump files
-procs=<value>      resource limit for max number of processes ON A PER USER BASIS.
-nproc=<value>      resource limit for max number of processes ON A PER USER BASIS.
+procs=<value>      resource limit for max number of processes FOR THIS PROCESS (requires and activates pid namespace), will not apply if pid namespace can't be joined
+nproc=<value>      resource limit for max number of processes FOR THIS PROCESS (requires and activates pid namespace), will not apply if pid namespace can't be joined
+uprocs=<value>     resource limit for max number of processes ON A SYSTEM-WIDE PER USER BASIS.
 resist_ptrace      set prctrl(PR_NONE_DUMPABLE) to prevent ptracing of the process. This also prevents coredumps totally.
 openlog=<name>     set 'ident' of future syslog messages to 'name'. Also adds 'LOG_PID' and sets facility to 'LOG_USER' (see "man openlog" for more details).
 mlock              lock all current and future pages in memory so they don't swap out

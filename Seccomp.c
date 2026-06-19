@@ -347,6 +347,26 @@ static int SysCallGetID(const char *Name)
 #endif
 
 
+// rlimit group, get and set rlimits
+#ifdef __NR_getrlimit
+    if (strcmp(Name, "getrlimit")==0) return(__NR_getrlimit);
+#endif
+
+#ifdef __NR_setrlimit
+    if (strcmp(Name, "setrlimit")==0) return(__NR_setrlimit);
+#endif
+
+//prlimit likely doesn't exist, but some plantforms like QNX seem to have it
+//so we include this in case. If it doesn't exist this line will not be
+//included
+#ifdef __NR_prlimit
+    if (strcmp(Name, "prlimit")==0) return(__NR_prlimit);
+#endif
+
+#ifdef __NR_prlimit64
+    if (strcmp(Name, "prlimit64")==0) return(__NR_prlimit64);
+#endif
+
 
 //ptrace group. These are some of the most dangerous syscalls. They allow attaching to another process
 //and altering it, even overwriting it's code. Programs like wine, strace and gdb use these, but
@@ -637,6 +657,7 @@ static char *SyscallGroupLookup(char *RetStr, const char *Name)
     else if (strcmp(Name, "accept")==0) return(CopyStr(RetStr, "accept;accept4;socketcall(accept);socketcall(accept4)"));
     else if (strcmp(Name, "bind")==0) return(CopyStr(RetStr, "bind;socketcall(bind)"));
     else if (strcmp(Name, "listen")==0) return(CopyStr(RetStr, "listen;socketcall(listen)"));
+    else if (strcmp(Name, "setrlimit")==0) return(CopyStr(RetStr, "setrlimit;prlimit(set);prlimit64(set)"));
     else if (strcmp(Name, "link")==0) return(CopyStr(RetStr, "link;linkat"));
     else if (strcmp(Name, "symlink")==0) return(CopyStr(RetStr, "symlink;symlinkat"));
     else if (strcmp(Name, "unlink")==0) return(CopyStr(RetStr, "unlink;unlinkat"));
@@ -668,6 +689,7 @@ static char *SyscallGroupLookup(char *RetStr, const char *Name)
     else if (strcmp(Name, "group:settime")==0) return(CopyStr(RetStr, "settimeofday;clock_settime;clock_adjtime"));
     else if (strcmp(Name, "group:server")==0) return(CopyStr(RetStr, "accept;accept4;listen"));
     else if (strcmp(Name, "group:swap")==0) return(CopyStr(RetStr, "swapon;swapoff"));
+    else if (strcmp(Name, "group:rlimit")==0) return(CopyStr(RetStr, "getrlimit;setrlimit;prlimit;prlimit64"));
     else if (strcmp(Name, "group:ns")==0) return(CopyStr(RetStr, "unshare;setns"));
     else if (strcmp(Name, "group:net")==0) return(CopyStr(RetStr, "socket;socketcall;connect;bind;listen;accept;accept4"));
     else if (strcmp(Name, "group:sysadmin")==0) return(CopyStr(RetStr, "settimeofday;clock_settime;clock_adjtime;quotactl;quotactl_fd;reboot;swapon;swapoff;group:mount;mknod;sethostname;setdomainname"));
@@ -964,6 +986,8 @@ static int SeccompAddCheck(int *Arg0, char **Args, const char *Fmt, int Value)
 }
 
 
+
+
 //add checks for 'open' family of syscalls
 static int SeccompAddOpenArgCheck(const char *Name, int *Arg0, char **Args, const char *OpenModeFmt, const char *PermsFmt)
 {
@@ -1124,7 +1148,8 @@ static int SeccompAddIoctlArgCheck(const char *Name, int *Arg0, char **Args)
 }
 
 
-
+//Arg0 here is the first argument in our specification, not of the syscall
+//so chmod(exec) actually check the second argument (arg1) of the syscall
 static int SeccompParseArg0(int SyscallID, const char *Name, int *Arg0, char **Args)
 {
     int val;
@@ -1241,6 +1266,21 @@ static int SeccompParseArg0(int SyscallID, const char *Name, int *Arg0, char **A
 #ifdef __NR_ioctl
     case __NR_ioctl:
         return(SeccompAddIoctlArgCheck(Name, Arg0, Args));
+        break;
+#endif
+
+#ifdef __NR_prlimit
+    case __NR_prlimit:
+        if (strcasecmp(Name, "get")==0) return(SeccompAddCheck(Arg0, Args, "2=%d", 0));
+        if (strcasecmp(Name, "set")==0) return(SeccompAddCheck(Arg0, Args, "2!%d", 0));
+        break;
+#endif
+
+
+#ifdef __NR_prlimit64
+    case __NR_prlimit64:
+        if (strcasecmp(Name, "get")==0) return(SeccompAddCheck(Arg0, Args, "2=%d", 0));
+        if (strcasecmp(Name, "set")==0) return(SeccompAddCheck(Arg0, Args, "2!%d", 0));
         break;
 #endif
     }

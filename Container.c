@@ -22,6 +22,76 @@ static void InitSigHandler(int sig)
 
 
 
+//set flags to indicate types of namespace we have successfully joined
+static int OnNamespaceJoin(const char *Namespace, int Type, int Success)
+{
+    int RetVal=0;
+    char *TypeName=NULL;
+
+    TypeName=CopyStr(TypeName, "");
+
+#ifdef CLONE_NEWNS
+    if (Type & CLONE_NEWNS)
+    {
+        RetVal |= PROC_CONTAINER_FS;
+        TypeName=StringListAdd(TypeName, "fs", ",");
+    }
+#endif
+
+#ifdef CLONE_NEWUSER
+    if (Type & CLONE_NEWUSER)
+    {
+        RetVal |= PROC_CONTAINER_USER;
+        TypeName=StringListAdd(TypeName, "user", ",");
+    }
+#endif
+
+
+#ifdef CLONE_NEWPID
+    if (Type & CLONE_NEWPID)
+    {
+        RetVal |= PROC_CONTAINER_PID;
+        TypeName=StringListAdd(TypeName, "pid", ",");
+    }
+#endif
+
+#ifdef CLONE_NEWIPC
+    if (Type & CLONE_NEWIPC)
+    {
+        RetVal |= PROC_CONTAINER_IPC;
+        TypeName=StringListAdd(TypeName, "ipc", ",");
+    }
+#endif
+
+#ifdef CLONE_NEWNET
+    if (Type & CLONE_NEWNET)
+    {
+        RetVal |= PROC_CONTAINER_NET;
+        TypeName=StringListAdd(TypeName, "net", ",");
+    }
+#endif
+
+#ifdef CLONE_NEWUTS
+    if (Type & CLONE_NEWUTS)
+    {
+        RetVal |= PROC_CONTAINER_UTS;
+        TypeName=StringListAdd(TypeName, "uts", ",");
+    }
+#endif
+
+
+    if (! Success) RaiseError(0, "namespaces", "failed to join/unshare namespace=%s type=%s", Namespace, TypeName);
+    else if (LibUsefulDebugActive())
+    {
+        fprintf(stderr, "DEBUG: join/unshare to namespace=%s type=%s\n", Namespace, TypeName);
+    }
+
+    Destroy(TypeName);
+
+    return(RetVal);
+}
+
+
 static int ContainerRemountProc(const char *iPath)
 {
     char *Path=NULL;
@@ -56,14 +126,16 @@ static int ContainerRemountProc(const char *iPath)
     return(FALSE);
 }
 
-static int ContainerEnterNamespace(const char *Namespace, int type)
+
+
+static int ContainerEnterNamespace(const char *Namespace, int Type)
 {
+    int result=FALSE;
 
-    if (StrValid(Namespace)) return(ContainerJoinNamespace(Namespace, type));
+    if (StrValid(Namespace)) return(ContainerJoinNamespace(Namespace, Type));
+    result=unshare(Type);
 
-    if (unshare(type) == 0) return(TRUE);
-
-    return(FALSE);
+    return(OnNamespaceJoin(Namespace, Type, result == 0));
 }
 
 
@@ -94,8 +166,7 @@ static pid_t ContainerLaunchInit(int Flags, const char *Dir)
 {
     pid_t child;
 
-    //as we are going to create an init for a namespace it needs to be session leader
-    //setsid();
+    setsid();
 
     //fork off a process that will be our 'init' process
     child=fork();
@@ -134,52 +205,66 @@ static pid_t ContainerLaunchInit(int Flags, const char *Dir)
 
 static int ContainerUnsharePID(int Flags, const char *Namespace, const char *Dir)
 {
+    int RetVal=0;
+
 #ifdef HAVE_UNSHARE
 #ifdef CLONE_NEWPID
 
     // NEWPID requires NEWNS which creates a new mount namespace, because we need to remount /proc
     // within the new PID container
-    if (! ContainerEnterNamespace(Namespace, CLONE_NEWPID | CLONE_NEWNS)) return(FALSE);
+    RetVal=ContainerEnterNamespace(Namespace, CLONE_NEWPID | CLONE_NEWNS);
 
-
-    //if we are given a namespace we assume there is already an init for it
-    //otherwise launch and init from the NEWPID process
-    if (! StrValid(Namespace))
+    if (RetVal & PROC_CONTAINER_PID)
     {
-       ContainerLaunchInit(Flags, Dir);
+        //if we are given a namespace we assume there is already an init for it
+        //otherwise launch and init from the NEWPID process
+        if (! StrValid(Namespace))
+        {
+            ContainerLaunchInit(Flags, Dir);
+        }
+
+        ContainerRemountProc("");
     }
 
-    ContainerRemountProc("");
-
-    return(TRUE);
 
 #endif
 #else
     RaiseError(0, "namespaces", "containers/unshare unavailable");
 #endif
-    return(FALSE);
+
+
+    return(RetVal);
 }
 
 
-static void ContainerSetHostname(const char *Namespace, const char *HostName)
+static int ContainerSetHostname(const char *Namespace, const char *HostName)
 {
     int val, result;
+    int RetVal=0;
 
 #ifdef HAVE_UNSHARE
 #ifdef CLONE_NEWUTS
-    if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWUTS);
+    if (StrValid(Namespace)) RetVal=ContainerJoinNamespace(Namespace, CLONE_NEWUTS);
     else
     {
-        unshare(CLONE_NEWUTS);
-        val=StrLen(HostName);
-        if (val != 0) result=sethostname(HostName, val);
-        else result=sethostname("container", 9);
-        if (result != 0) RaiseError(ERRFLAG_ERRNO, "ContainerNamespace", "Failed to sethostname for container.");
+        result=unshare(CLONE_NEWUTS);
+        RetVal=OnNamespaceJoin(Namespace, CLONE_NEWUTS, result==0);
+
+        //if the unshare succeeded then set the new hostname
+        if (result==0)
+        {
+            val=StrLen(HostName);
+            if (val != 0) result=sethostname(HostName, val);
+            else result=sethostname("container", 9);
+            if (result != 0) RaiseError(ERRFLAG_ERRNO, "ContainerNamespace", "Failed to sethostname for container.");
+        }
     }
 #endif
 #else
     RaiseError(0, "namespaces", "containers/unshare unavailable");
 #endif
+
+    return(RetVal);
 }
 
 
@@ -206,12 +291,32 @@ static void ContainerSetEnvs(const char *Envs)
 }
 
 
+static int ContainerJoinNamespaceFD(const char *Path, const char *Namespace, int NamespaceType)
+{
+    int fd, result;
+    int RetVal=0;
+
+    fd=open(Path, O_RDONLY);
+    if (fd > -1)
+    {
+        if (setns(fd, NamespaceType) ==0) result=TRUE;
+        else result=FALSE;
+
+        RetVal = OnNamespaceJoin(Namespace, NamespaceType, result);
+        close(fd);
+    }
+    else RaiseError(ERRFLAG_ERRNO, "namespaces", "couldn't open namespace %s", Path);
+
+    return(RetVal);
+}
+
+
 static int ContainerJoinNamespace(const char *Namespace, int type)
 {
     char *Tempstr=NULL;
     struct stat Stat;
     glob_t Glob;
-    int i, fd, result=FALSE;
+    int i, RetVal=0;
 
 #ifdef HAVE_SETNS
     stat(Namespace,&Stat);
@@ -222,34 +327,20 @@ static int ContainerJoinNamespace(const char *Namespace, int type)
         if (Glob.gl_pathc ==0) RaiseError(ERRFLAG_ERRNO, "namespaces", "namespace dir %s empty", Tempstr);
         for (i=0; i < Glob.gl_pathc; i++)
         {
-            fd=open(Glob.gl_pathv[i],O_RDONLY);
-            if (fd > -1)
-            {
-                result=TRUE;
-                if (setns(fd, type) !=0) result=FALSE;
-                close(fd);
-            }
-            else RaiseError(ERRFLAG_ERRNO, "namespaces", "couldn't open namespace %s", Glob.gl_pathv[i]);
+            RetVal |= ContainerJoinNamespaceFD(Glob.gl_pathv[i], Namespace, type);
         }
         globfree(&Glob);
     }
-    else
-    {
-        fd=open(Namespace, O_RDONLY);
-        if (fd > -1)
-        {
-            result=TRUE;
-            if (setns(fd, type) !=0) result=FALSE;
-            close(fd);
-        }
-        else RaiseError(ERRFLAG_ERRNO, "namespaces", "couldn't open namespace %s", Namespace);
-    }
+    else RetVal |= ContainerJoinNamespaceFD(Namespace, Namespace, type);
+
 #else
     RaiseError(0, "namespaces", "setns unavailable");
 #endif
 
     Destroy(Tempstr);
-    return(result);
+
+
+    return(RetVal);
 }
 
 
@@ -365,13 +456,16 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
 #ifdef HAVE_UNSHARE
 #ifdef CLONE_NEWUSER
 
-static void ContainerNewUserNamespace(pid_t myPid, uid_t myUid, gid_t myGid)
+static int ContainerNewUserNamespace(pid_t myPid, uid_t myUid, gid_t myGid)
 {
     char *Path=NULL, *Tempstr=NULL;
+		int RetVal=0, result;
 
-    unshare(CLONE_NEWUSER);
+    result=unshare(CLONE_NEWUSER);
+    RetVal=OnNamespaceJoin("", CLONE_NEWUSER, result==0);
 
-
+		if (result==0)
+		{
 //map our user number (0) in the namespace to our real user id outside it
     Path=FormatStr(Path, "/proc/%d/uid_map", myPid);
     Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myUid, myUid);
@@ -386,29 +480,34 @@ static void ContainerNewUserNamespace(pid_t myPid, uid_t myUid, gid_t myGid)
     Path=FormatStr(Path, "/proc/%d/gid_map", myPid);
     Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myGid, myGid);
     FileWrite(Path, Tempstr);
+		}
 
 
     Destroy(Tempstr);
     Destroy(Path);
+
+return(RetVal);
 }
 
 #endif
 #endif
 
 //uid and gid here are the EXTERNAL uid and gid outside of the container
-static void ContainerNamespace(const char *Namespace, const char *HostName, const char *Dir, int Flags, uid_t uid, gid_t gid)
+static int ContainerNamespace(const char *Namespace, const char *HostName, const char *Dir, int Flags, uid_t uid, gid_t gid)
 {
+    int RetVal=0;
+
 #ifdef HAVE_UNSHARE
 
 //if we're not root, then we'll have to set up a user namespace
 #ifdef CLONE_NEWUSER
-    if (uid !=0) ContainerNewUserNamespace(getpid(), uid, gid);
+    if (uid !=0) RetVal |= ContainerNewUserNamespace(getpid(), uid, gid);
 #endif
 
     if (Flags & PROC_CONTAINER_FS)
     {
 #ifdef CLONE_NEWNS
-        if (StrValid(Namespace)) ContainerEnterNamespace(Namespace, CLONE_NEWNS);
+        RetVal |= ContainerEnterNamespace(Namespace, CLONE_NEWNS);
 
 //make container invisible to outside processes, apparently
 //  mount("none", "/", 0, MS_PRIVATE | MS_REC, NULL);
@@ -416,23 +515,24 @@ static void ContainerNamespace(const char *Namespace, const char *HostName, cons
     }
 
 #ifdef CLONE_NEWNET
-    if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWNET);
-    else if (Flags & PROC_CONTAINER_NET) unshare(CLONE_NEWNET);
+    if (Flags & PROC_CONTAINER_NET) RetVal |= ContainerEnterNamespace(Namespace, CLONE_NEWNET);
 #endif
-
 
 #ifdef CLONE_NEWIPC
-    if (StrValid(Namespace)) ContainerJoinNamespace(Namespace, CLONE_NEWIPC);
-    else if (Flags & PROC_CONTAINER_IPC) unshare(CLONE_NEWIPC);
+    if (Flags & PROC_CONTAINER_IPC) RetVal |= ContainerEnterNamespace(Namespace, CLONE_NEWIPC);
 #endif
 
-    if (Flags & PROC_CONTAINER_PID) ContainerUnsharePID(Flags, Namespace, Dir);
+#ifdef CLONE_NEWPID
+    if (Flags & PROC_CONTAINER_PID) RetVal |= ContainerUnsharePID(Flags, Namespace, Dir);
+#endif
 
 
     if (StrValid(HostName)) ContainerSetHostname(Namespace, HostName);
 #else
     RaiseError(0, "namespaces", "containers/unshare unavailable");
 #endif
+
+    return(RetVal);
 }
 
 
@@ -529,9 +629,9 @@ int ContainerApplyConfig(int Flags, const char *Config)
     char *Dir=NULL, *ChRoot=NULL;
     char *Name=NULL, *Value=NULL;
     char *Tempstr=NULL;
-    int RetVal=TRUE;
     uid_t external_uid;
     gid_t external_gid;
+    int RetVal=0;
 
 
     external_uid=getuid();
@@ -542,7 +642,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
 
     if (Flags)
     {
-        ContainerNamespace(Namespace, HostName, Dir, Flags, external_uid, external_gid);
+        RetVal |= ContainerNamespace(Namespace, HostName, Dir, Flags, external_uid, external_gid);
 
         if (Flags & PROC_CONTAINER_FS)
         {
@@ -564,7 +664,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
 
         //ContainerSetEnvs(Envs);
 
-        if (Flags & PROC_CONTAINER_FS) RetVal=ContainerApplyChRoot(external_uid);
+        if (Flags & PROC_CONTAINER_FS) RetVal |= ContainerApplyChRoot(external_uid);
 
         //'RetVal' is our 'so far so good' value
         if (RetVal)
@@ -582,6 +682,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
         if ( setgid(external_gid) != 0) RaiseError(ERRFLAG_ERRNO, "ContainerApplyConfig", "failed to switch group to %d", external_gid);
     }
 
+
     Destroy(Tempstr);
     Destroy(SetupScript);
     Destroy(HostName);
@@ -589,6 +690,7 @@ int ContainerApplyConfig(int Flags, const char *Config)
     Destroy(Name);
     Destroy(Value);
     Destroy(ChRoot);
+    Destroy(Envs);
     Destroy(Dir);
 
     return(RetVal);

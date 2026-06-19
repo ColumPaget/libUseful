@@ -70,7 +70,7 @@ int Radix64tobits(char *out, const unsigned char *in, const unsigned char *base6
     }
 
     ptr=in;
-		//strlen, used within StrLen, expects signed chars
+    //strlen, used within StrLen, expects signed chars
     end=in+StrLen((const char *) in);
     if (ptr[0] == '+' && ptr[1] == ' ') ptr += 2;
     if (*ptr == '\r') return(0);

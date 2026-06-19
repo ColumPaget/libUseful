@@ -309,9 +309,11 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int TTYF
         {
             close(pty);
 
+            //we want limits etc to apply to our new session
+            setsid();
+
             ConfigFlags=ProcessApplyConfig(Config);
 
-            setsid();
             ProcessSetControlTTY(tty);
 
             ///now that we've dupped it, we don't need to keep it open

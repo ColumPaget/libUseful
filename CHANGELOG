@@ -1,4 +1,18 @@
-v5.73
+v5.75 (2026-06-19)
+  * added rlimit syscalls to seccomp system
+  * following options now supported within the 'security=' stanza of ProcessApplyConfig: w^x, w^x:inherit, w^x:hard, w^x, w^x:inherit, w^x:hard, nosu, nopriv, noprivs
+  * added 'noptrace' security option
+  * move 'rlimit' setup to late stage of process apply config, so it will work right if we're in a container, call 'setsid', etc
+	* 'procs' or 'nproc' option in ProcessApplyConfig requires pid namespaces now
+	* 'uprocs' option replaces procs as system-wide user processes
+ 
+v5.74 (2026-06-13)
+  * fix issues with detecting compiler options on some compilers
+  * added support for gcc -fharden
+  * fix 'transparent proxy' never being compiled in
+  * return number of chars written by 'TerminalPutChar' and 'TerminalPutStr'
+
+v5.73 (2026-06-09)
   * remove lazy 'try unmount any mounts' in FilesystemRmDir, as this is now incompatible with seccomp
   * added 'LibUsefulCheckVersion' function
   * revoke trying to match binding ports > 0, bind uses a sockaddr structure
