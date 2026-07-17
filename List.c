@@ -211,14 +211,14 @@ unsigned long ListIncrNoOfItems(ListNode *List)
     //it's count, but we also need to update the count for the whole map
     if (Head->Flags & LIST_FLAG_MAP_CHAIN)
     {
-        Head->Stats->Hits++;
+        if (Head->Stats) Head->Stats->Hits++;
 
         //get map head, head of whole map,  rather than chain head
         Head=Head->Head;
     }
 
     //okay, for plain lists, and map heads, update Hits
-    Head->Stats->Hits++;
+    if (Head->Stats) Head->Stats->Hits++;
 
     return(Head->Stats->Hits);
 }
@@ -235,15 +235,19 @@ unsigned long ListDecrNoOfItems(ListNode *List)
 
     if (Head->Flags & LIST_FLAG_MAP_CHAIN)
     {
-        Head->Stats->Hits--;
+        if (Head->Stats) Head->Stats->Hits--;
         //get map head, rather than chain head
         Head=Head->Head;
     }
 
     //okay, for plain lists, and map heads, update Hits
-    Head->Stats->Hits--;
+    if (Head->Stats)
+    {
+        Head->Stats->Hits--;
+        return(Head->Stats->Hits);
+    }
 
-    return(Head->Stats->Hits);
+    return(0);
 }
 
 

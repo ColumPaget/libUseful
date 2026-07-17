@@ -33,6 +33,22 @@ DoSSLServerNegotiation(S, 0);
 }
 
 
+Alternatively you can read the entirity of the certificate and key files into memory buffers, and then pass that data using SSL:CertData and SSL:KeyData, like this:
+
+CertInMemory=FileRead(CertInMemory, "/etc/ssl/myhost.crt");
+KeyInMemory=FileRead(KeyInMemory, "/etc/ssl/myhost.key");
+
+fd=IPServerAccept(ListenSocket, &PeerAddress);
+if (fd > -1)
+{
+S=STREAMFromFD(fd);
+STREAMSetValue(S,"SSL:CertData", CertInMemory);
+STREAMSetValue(S,"SSL:KeyData", KeyInMemory);
+DoSSLServerNegotiation(S, 0);
+}
+
+
+
 if you want to do certificate verification on a certificate sent by a peer, then you must
 supply a link to either a directory containing certs, or a single certificate file that
 is a concatanation of certificates:

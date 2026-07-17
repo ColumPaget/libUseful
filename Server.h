@@ -95,6 +95,9 @@ Supported name=value pairs are
   e.g.:
 
     Serv=STREAMServerNew("tls:0.0.0.0:5000", "rw SSL:CertFile=/home/colum/.certtool/testcert/testcert.crt SSL:KeyFile=/home/colum/.certtool/testcert/testcert.key SSL:VerifyCertFile=/home/colum/.certtool/TestCA/ca.crt Authentication=certificate:testuser@test.com,issuer=TestCA");
+
+
+  Instead of SSL:CertFile and SSL:KeyFile the values SSL:CertData and SSL:KeyData can be used. In this case the value should be the entire contents of  a PEM=encoded Certificate or Key File. This allows storing Certificates and keys in memory and using them in programs that cannot access the original files (e.g. because these programs are chrooted and the original keys are outside of chroot, or because they have switched user and their current user doesn't have permissions to read the files).
 */
 
 

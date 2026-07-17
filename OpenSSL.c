@@ -39,16 +39,150 @@ static DH *CachedDH=NULL;
 
 
 
-static void OpenSSLRaiseError(STREAM *S)
+static void OpenSSLRaiseError(STREAM *S, const char *FuncName, const char *Description)
 {
     int result;
     const char *ptr;
 
+    RaiseError(0, FuncName, Description);
     result=ERR_get_error();
     ptr=ERR_error_string(result,NULL);
     STREAMSetValue(S, "SSL:Error", ptr);
     RaiseError(0, "OpenSSLRaiseError", "SSL:ERROR %s", ptr);
 }
+
+
+
+// this is adapted from libressl's "SSL_CTX_use_certificate_chain_bio" function.
+// Though both libressl and openssl seem to have functions like
+// "SSL_CTX_use_certificate_chain_bio" and "SSL_CTX_use_certificate_chain_mem"
+// they do not seem to be documented and may not be available in many versions
+// of thse libraries, hence we have to reproduce their functionality here
+static int OpenSSLLoadCertificateChain(STREAM *S, SSL_CTX *ctx, const char *ChainData)
+{
+    X509 *ca, *main_cert = NULL;
+    int RetVal=FALSE, result;
+    BIO *in;
+
+    in = BIO_new_mem_buf(ChainData, StrLen(ChainData));
+    if (in == NULL)
+    {
+        OpenSSLRaiseError(S, "OpenSSLLoadCertificateChain", "Can't read Certificate Chain to memory");
+        return(FALSE);
+    }
+
+
+    main_cert = PEM_read_bio_X509_AUX(in, NULL, NULL, NULL);
+
+    if (main_cert)
+    {
+        if (SSL_CTX_use_certificate(ctx, main_cert) && SSL_CTX_set0_chain(ctx, NULL) )
+        {
+            RetVal=TRUE;
+            /* Process any additional CA certificates. */
+            ca = PEM_read_bio_X509(in, NULL, NULL, NULL);
+            while (ca)
+            {
+                result=SSL_CTX_add0_chain_cert(ctx, ca);
+                X509_free(ca);
+                if (! result)
+                {
+                    OpenSSLRaiseError(S, "OpenSSLLoadCertificateChain", "Error loading extra certificates");
+                    RetVal=FALSE;
+                    break;
+                }
+                ca = PEM_read_bio_X509(in, NULL, NULL, NULL);
+            }
+        }
+        else
+        {
+            OpenSSLRaiseError(S, "OpenSSLLoadCertificateChain", "Error loading primary certificate");
+            return(FALSE);
+        }
+    }
+
+
+    BIO_free(in);
+    X509_free(main_cert);
+
+    return(RetVal);
+}
+
+
+static int OpenSSLLoadCertificateChainFile(STREAM *Con, SSL_CTX *ctx, const char *Path)
+{
+    STREAM *S;
+    int RetVal=FALSE;
+    char *CertChain=NULL;
+
+    S=STREAMOpen(Path, "r");
+    if (S)
+    {
+        CertChain=STREAMReadDocument(CertChain, S);
+        STREAMClose(S);
+
+        RetVal=OpenSSLLoadCertificateChain(Con, ctx, CertChain);
+    }
+    else RaiseError(0, "OpenSSLLoadCertificateChainFile", "ERROR: Can't open '%s'", Path);
+
+    Destroy(CertChain);
+
+    return(RetVal);
+}
+
+
+
+static int OpenSSLLoadPrivateKey(STREAM *S, SSL_CTX *ctx, const char *KeyData)
+{
+    EVP_PKEY *key;
+    int RetVal=FALSE, result;
+    BIO *in;
+
+
+    in = BIO_new_mem_buf(KeyData, StrLen(KeyData));
+    if (in == NULL)
+    {
+        OpenSSLRaiseError(S, "OpenSSLLoadPrivateKey", "Can't read Private Key to memory");
+        return(FALSE);
+    }
+
+    key = PEM_read_bio_PrivateKey(in, NULL, NULL, NULL);
+    if (key)
+    {
+        result = SSL_CTX_use_PrivateKey(ctx, key);
+        if (result) RetVal=TRUE;
+        else OpenSSLRaiseError(S, "OpenSSLLoadPrivateKey", "Can't use Private Key");
+        EVP_PKEY_free(key);
+    }
+    else OpenSSLRaiseError(S, "OpenSSLLoadPrivateKey", "Can't read Private Key as PEM encoded RSA");
+
+    BIO_free(in);
+    return (RetVal);
+}
+
+
+
+static int OpenSSLLoadPrivateKeyFile(STREAM *Con, SSL_CTX *ctx, const char *Path)
+{
+    STREAM *S;
+    int RetVal=FALSE;
+    char *KeyData=NULL;
+
+    S=STREAMOpen(Path, "r");
+    if (S)
+    {
+        KeyData=STREAMReadDocument(KeyData, S);
+        STREAMClose(S);
+
+        RetVal=OpenSSLLoadPrivateKey(Con, ctx, KeyData);
+    }
+    else RaiseError(0, "OpenSSLLoadPrivateKeyFile", "ERROR: Can't open '%s'", Path);
+
+    Destroy(KeyData);
+
+    return(RetVal);
+}
+
 
 
 static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(STREAM *S, SSL_CTX *ctx, ListNode *List, char **VerifyPath, char **VerifyFile)
@@ -68,12 +202,20 @@ static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(STREAM *S, SSL_CTX *ctx, Li
                 if (strcasecmp(Curr->Tag,"SSL:CertFile")==0)
                 {
                     if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Certificate File '%s' not readable", p_Value);
-                    SSL_CTX_use_certificate_chain_file(ctx, p_Value);
+                    OpenSSLLoadCertificateChainFile(S, ctx, p_Value);
                 }
                 else if (strcasecmp(Curr->Tag,"SSL:KeyFile")==0)
                 {
                     if (access(p_Value, R_OK) != 0) RaiseError(0, "SSL_ADD_SECURE_KEYS", "SSL: Private Key File '%s' not readable", p_Value);
-                    SSL_CTX_use_PrivateKey_file(ctx, p_Value, SSL_FILETYPE_PEM);
+                    OpenSSLLoadPrivateKeyFile(S, ctx, p_Value);
+                }
+                else if (strcasecmp(Curr->Tag,"SSL:CertData")==0)
+                {
+                    OpenSSLLoadCertificateChain(S, ctx, p_Value);
+                }
+                else if (strcasecmp(Curr->Tag,"SSL:KeyData")==0)
+                {
+                    OpenSSLLoadPrivateKey(S, ctx, p_Value);
                 }
                 else if (strncasecmp(Curr->Tag,"SSL:VerifyCertDir",18)==0)
                 {
@@ -115,7 +257,7 @@ static void STREAM_INTERNAL_SSL_ADD_SECURE_KEYS(STREAM *S, SSL_CTX *ctx)
     STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(S, ctx, LibUsefulValuesGetHead(), &VerifyPath, &VerifyFile);
     STREAM_INTERNAL_SSL_ADD_SECURE_KEYS_LIST(S, ctx, S->Values, &VerifyPath, &VerifyFile);
 
-    SSL_CTX_load_verify_locations(ctx,VerifyFile,VerifyPath);
+    SSL_CTX_load_verify_locations(ctx, VerifyFile, VerifyPath);
 
     DestroyString(VerifyFile);
     DestroyString(VerifyPath);
@@ -772,7 +914,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
                 result=SSL_get_error(ssl, result);
                 if ( (result != SSL_ERROR_WANT_READ) && (result != SSL_ERROR_WANT_WRITE) && (result != SSL_ERROR_WANT_CONNECT))
                 {
-                    OpenSSLRaiseError(S);
+                    OpenSSLRaiseError(S, "DoSSLClientNegotiation", "Error during connect");
                     break;
                 }
                 usleep(2000);
@@ -783,7 +925,7 @@ int DoSSLClientNegotiation(STREAM *S, int Flags)
             if (result == 1) S->State |= LU_SS_SSL;
             else
             {
-                OpenSSLRaiseError(S);
+                OpenSSLRaiseError(S, "DoSSLClientNegotiation", "Error during handshake");
                 result=FALSE;
             }
 
@@ -818,11 +960,13 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 
     if (S)
     {
-        if (STREAMWaitForBytes(S) < 0)
-        {
-            RaiseError(ERRFLAG_DEBUG, "DoSSLServerNegotiation", "Timeout waiting for SSL negotiation on %s", S->Path);
-            return(FALSE);
-        }
+        /*
+                if (STREAMWaitForBytes(S) < 0)
+                {
+                    RaiseError(ERRFLAG_DEBUG, "DoSSLServerNegotiation", "Timeout waiting for SSL negotiation on %s", S->Path);
+                    return(FALSE);
+                }
+        */
 
         INTERNAL_SSL_INIT();
         Method=SSLv23_server_method();
@@ -845,7 +989,8 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                 }
                 SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
                 ssl=SSL_new(ctx);
-                OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE|SSL_OP_CIPHER_SERVER_PREFERENCE);
+                //OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE| SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET);
+                OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE| SSL_OP_CIPHER_SERVER_PREFERENCE);
 
                 SSL_set_fd(ssl,S->in_fd);
 
@@ -855,12 +1000,13 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                 SSL_set_accept_state(ssl);
 
                 IsNonBlock = S->Flags & SF_NONBLOCK;
-                STREAMSetFlags(S, SF_NONBLOCK, 0);
+                //STREAMSetFlags(S, SF_NONBLOCK, 0);
                 StartTime=GetTime(TIME_CENTISECS);
 
                 while (1)
                 {
                     result=SSL_accept(ssl);
+
                     if (result != TRUE) result=SSL_get_error(ssl,result);
 
                     switch (result)
@@ -878,7 +1024,7 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                         break;
 
                     default:
-                        OpenSSLRaiseError(S);
+                        OpenSSLRaiseError(S, "DoSSLServerNegotiation", "Error during accept");
                         result=FALSE;
                         break;
                     }
@@ -999,7 +1145,21 @@ int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
     ssl=(SSL *) STREAMGetItem(S,"LIBUSEFUL-SSL:OBJ");
     if (ssl)
     {
-        result=SSL_write(ssl, Data, Len);
+        while (Len > 0)
+        {
+            result=SSL_write(ssl, Data, Len);
+            switch (SSL_get_error(ssl, result))
+            {
+            case SSL_ERROR_WANT_READ:
+            case SSL_ERROR_WANT_WRITE:
+		usleep(300);
+                break;
+
+            default:
+                Len=0;
+                break;
+            }
+        }
         if (result < 1) result=STREAM_CLOSED;
     }
 #endif
@@ -1011,12 +1171,16 @@ int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
 void OpenSSLClose(STREAM *S)
 {
     ListNode *Node;
+    SSL *ssl;
 
 #ifdef HAVE_LIBSSL
     Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
     if (Node)
     {
-        SSL_free((SSL *) Node->Item);
+	ssl=(SSL *) Node->Item;
+        while (SSL_shutdown(ssl) == 0);
+
+        SSL_free(ssl);
         ListDeleteNode(Node);
     }
 

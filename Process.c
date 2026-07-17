@@ -709,7 +709,7 @@ static int ProcessApplyEarlyConfig(const char *Config)
     while (isspace(*ptr)) ptr++;
     ptr=GetNameValuePair(ptr,"\\S", "=", &Name, &Value);
 
-		strlwr(Name);
+    strlwr(Name);
     while (ptr)
     {
         //we parse 'security' here purely to get flags like PROC_CONTAINER_NET

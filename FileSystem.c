@@ -18,13 +18,18 @@
 
 #include <fnmatch.h>
 
+//this function will only be included in old systems that lack get_current_dir_name
 #ifndef HAVE_GET_CURR_DIR
 char *get_current_dir_name()
 {
     char *path;
 
     path=(char *) calloc(1, PATH_MAX+1);
-    getcwd(path, PATH_MAX+1);
+    if (getcwd(path, PATH_MAX) == NULL)
+    {
+        RaiseError(ERRFLAG_ERRNO, "get_current_dir_name","getcwd could not copy cwd name");
+    }
+
     return(path);
 }
 #endif

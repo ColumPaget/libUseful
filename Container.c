@@ -459,34 +459,34 @@ static void ContainerPrepareFilesys(const char *Config, const char *Dir, int Fla
 static int ContainerNewUserNamespace(pid_t myPid, uid_t myUid, gid_t myGid)
 {
     char *Path=NULL, *Tempstr=NULL;
-		int RetVal=0, result;
+    int RetVal=0, result;
 
     result=unshare(CLONE_NEWUSER);
     RetVal=OnNamespaceJoin("", CLONE_NEWUSER, result==0);
 
-		if (result==0)
-		{
+    if (result==0)
+    {
 //map our user number (0) in the namespace to our real user id outside it
-    Path=FormatStr(Path, "/proc/%d/uid_map", myPid);
-    Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myUid, myUid);
-    FileWrite(Path, Tempstr);
+        Path=FormatStr(Path, "/proc/%d/uid_map", myPid);
+        Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myUid, myUid);
+        FileWrite(Path, Tempstr);
 
 
 //map our group number (0) in the namespace to our real gid outside it
-    Path=FormatStr(Path, "/proc/%d/setgroups", myPid);
-    FileWrite(Path, "deny");
+        Path=FormatStr(Path, "/proc/%d/setgroups", myPid);
+        FileWrite(Path, "deny");
 
 //map our user number (0) in the namespace to our real user id outside it
-    Path=FormatStr(Path, "/proc/%d/gid_map", myPid);
-    Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myGid, myGid);
-    FileWrite(Path, Tempstr);
-		}
+        Path=FormatStr(Path, "/proc/%d/gid_map", myPid);
+        Tempstr=FormatStr(Tempstr, "%ld %ld 1\n", myGid, myGid);
+        FileWrite(Path, Tempstr);
+    }
 
 
     Destroy(Tempstr);
     Destroy(Path);
 
-return(RetVal);
+    return(RetVal);
 }
 
 #endif

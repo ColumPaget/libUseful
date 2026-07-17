@@ -1,3 +1,8 @@
+v5.76 (2026-07-17)
+  * shutdown TLS/SSL connections properly with 'SSL_shutdown'
+  * TLS/SSL certificates and keys can now be held in memory (and so passed to chrooted apps that cannot read these files)
+
+
 v5.75 (2026-06-19)
   * added rlimit syscalls to seccomp system
   * following options now supported within the 'security=' stanza of ProcessApplyConfig: w^x, w^x:inherit, w^x:hard, w^x, w^x:inherit, w^x:hard, nosu, nopriv, noprivs

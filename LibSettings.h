@@ -86,6 +86,9 @@ SSL:VerifyCertDir     set directory full of C.A. certificates to be used in cert
 SSL:VerifyCertFile    set path to file containing a concatanated list of C.A. certificates to be
                        used in certificate verification
 
+SSL:CertData          set default certificate to be offered by server-side ssl/tls connections. This certificate is held in memory.
+SSL:KeyData           set default key to be offered by server-side ssl/tls connections. This key is held in memory
+
 
 Net:Timeout           set default timeout for all network connections
 TCP:keep_alives       use tcp keepalives for all network connections

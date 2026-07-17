@@ -37,6 +37,7 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 
 #include "defines.h"
 #include "String.h"
+#include "StringList.h"
 #include "List.h"
 #include "Time.h"
 #include "Stream.h"
