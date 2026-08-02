@@ -31,58 +31,68 @@ void STREAMSetFlags(STREAM *S, int Set, int UnSet)
 {
     int val;
 
-    STREAMFlush(S);
-    S->Flags &= ~UnSet;
-    S->Flags |= Set;
+    if (S)
+    {
+        STREAMFlush(S);
+        S->Flags &= ~UnSet;
+        S->Flags |= Set;
 
-    //yes, flags are RETURNED, argument ignored
-    val=fcntl(S->in_fd,F_GETFL,NULL);
+        //yes, flags are RETURNED, argument ignored
+        val=fcntl(S->in_fd,F_GETFL,NULL);
 
-    //Handling nonblock flag involves setting nonblock on or off
-    //sadly fcntl does not honor O_CLOEXEC flag, so we have to set
-    //that using F_SETFD below
-    if (S->Flags & SF_NONBLOCK) val |= O_NONBLOCK;
-    else val &= (~O_NONBLOCK);
+        //Handling nonblock flag involves setting nonblock on or off
+        //sadly fcntl does not honor O_CLOEXEC flag, so we have to set
+        //that using F_SETFD below
+        if (S->Flags & SF_NONBLOCK) val |= O_NONBLOCK;
+        else val &= (~O_NONBLOCK);
 
-    //these two sets of flags should be the same
-    fcntl(S->in_fd, F_SETFL, val);
-    fcntl(S->out_fd, F_SETFL, val);
+        //these two sets of flags should be the same
+        fcntl(S->in_fd, F_SETFL, val);
+        fcntl(S->out_fd, F_SETFL, val);
 
 
-    //F_GETFD, NOT F_GETFL as above
-    val=fcntl(S->in_fd,F_GETFD, NULL);
-    //Handling close-on-exec flag
-    if (S->Flags & SF_EXEC_INHERIT) val &= (~FD_CLOEXEC);
-    else val |= FD_CLOEXEC;
+        //F_GETFD, NOT F_GETFL as above
+        val=fcntl(S->in_fd,F_GETFD, NULL);
+        //Handling close-on-exec flag
+        if (S->Flags & SF_EXEC_INHERIT) val &= (~FD_CLOEXEC);
+        else val |= FD_CLOEXEC;
 
-    //NOTE F_SETFD IS NOT SAME AS F_SETFL ABOVE!
-    //these two sets of flags should be the same
-    fcntl(S->in_fd, F_SETFD, val);
-    fcntl(S->out_fd, F_SETFD, val);
+        //NOTE F_SETFD IS NOT SAME AS F_SETFL ABOVE!
+        //these two sets of flags should be the same
+        fcntl(S->in_fd, F_SETFD, val);
+        fcntl(S->out_fd, F_SETFD, val);
 
 #ifdef USE_FSFLAGS
-    //immutable and append only flags are a special case as
-    //they are not io flags, but permanent file flags so we
-    //only touch those if explicitly set in Set or UnSet
-    if ((Set | UnSet) & (STREAM_IMMUTABLE | STREAM_APPENDONLY)) FileSystemSetSTREAMFlags(S->out_fd, Set, UnSet);
+        //immutable and append only flags are a special case as
+        //they are not io flags, but permanent file flags so we
+        //only touch those if explicitly set in Set or UnSet
+        if ((Set | UnSet) & (STREAM_IMMUTABLE | STREAM_APPENDONLY)) FileSystemSetSTREAMFlags(S->out_fd, Set, UnSet);
 #endif
+
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
 /*Set timeout for select calls within STREAM*/
 void STREAMSetTimeout(STREAM *S, int val)
 {
-    S->Timeout=val;
+    if (S) S->Timeout=val;
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
 /*Set flush type for STREAM*/
 void STREAMSetFlushType(STREAM *S, int Type, int StartPoint, int BlockSize)
 {
-    S->Flags &= ~(FLUSH_ALWAYS | FLUSH_LINE | FLUSH_BLOCK | FLUSH_BUFFER);
-    S->Flags |= Type;
-    S->StartPoint=StartPoint;
-    S->BlockSize=BlockSize;
+    if (S)
+    {
+        S->Flags &= ~(FLUSH_ALWAYS | FLUSH_LINE | FLUSH_BLOCK | FLUSH_BUFFER);
+        S->Flags |= Type;
+        S->StartPoint=StartPoint;
+        S->BlockSize=BlockSize;
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -93,52 +103,56 @@ void STREAMReAllocBuffer(STREAM *S, int size, int Flags)
     unsigned char *ibuf=NULL, *obuf=NULL;
     int RW;
 
-    if (S->Flags & SF_MMAP) return;
-
-    if ((Flags & SF_SECURE) && (! (Flags & SF_SECURE)))
+    if (S)
     {
-        ibuf=S->InputBuff;
-        obuf=S->OutputBuff;
-        S->InputBuff=NULL;
-        S->OutputBuff=NULL;
+        if (S->Flags & SF_MMAP) return;
+
+        if ((Flags & SF_SECURE) && (! (Flags & SF_SECURE)))
+        {
+            ibuf=S->InputBuff;
+            obuf=S->OutputBuff;
+            S->InputBuff=NULL;
+            S->OutputBuff=NULL;
+        }
+
+
+        // extract the 'readonly' and 'writeonly' flags
+        RW=S->Flags & (SF_WRONLY | SF_RDONLY);
+
+        //for HTTP 'readonly' and 'writeonly' have a different meaning, they mean
+        //'get' and 'post'. HTTP is always bidirectional
+        if (S->Type == STREAM_TYPE_HTTP) RW=0;
+
+        if (S->Flags & SF_SECURE)
+        {
+            if (! (RW & SF_WRONLY)) SecureRealloc(&S->InputBuff, S->BuffSize, size, SMEM_SECURE);
+            if (! (RW & SF_RDONLY)) SecureRealloc(&S->OutputBuff, S->BuffSize, size, SMEM_SECURE);
+        }
+        else
+        {
+            if (! (RW & SF_WRONLY)) S->InputBuff =(unsigned char *) realloc(S->InputBuff, size);
+            if (! (RW & SF_RDONLY)) S->OutputBuff=(unsigned char *) realloc(S->OutputBuff, size);
+        }
+
+        if (ibuf)
+        {
+            S->InputBuff=memcpy(S->InputBuff,ibuf+S->InStart,S->InEnd-S->InStart);
+            S->InEnd-=S->InStart;
+            S->InStart=0;
+
+            S->OutputBuff=memcpy(S->OutputBuff,obuf,S->OutEnd);
+
+            free(ibuf);
+            free(obuf);
+        }
+
+        S->BuffSize=size;
+
+        if (S->InStart > S->BuffSize) S->InStart=0;
+        if (S->InEnd > S->BuffSize) S->InEnd=0;
+        if (S->OutEnd > S->BuffSize) S->OutEnd=0;
     }
-
-
-    // extract the 'readonly' and 'writeonly' flags
-    RW=S->Flags & (SF_WRONLY | SF_RDONLY);
-
-    //for HTTP 'readonly' and 'writeonly' have a different meaning, they mean
-    //'get' and 'post'. HTTP is always bidirectional
-    if (S->Type == STREAM_TYPE_HTTP) RW=0;
-
-    if (S->Flags & SF_SECURE)
-    {
-        if (! (RW & SF_WRONLY)) SecureRealloc(&S->InputBuff, S->BuffSize, size, SMEM_SECURE);
-        if (! (RW & SF_RDONLY)) SecureRealloc(&S->OutputBuff, S->BuffSize, size, SMEM_SECURE);
-    }
-    else
-    {
-        if (! (RW & SF_WRONLY)) S->InputBuff =(unsigned char *) realloc(S->InputBuff, size);
-        if (! (RW & SF_RDONLY)) S->OutputBuff=(unsigned char *) realloc(S->OutputBuff, size);
-    }
-
-    if (ibuf)
-    {
-        S->InputBuff=memcpy(S->InputBuff,ibuf+S->InStart,S->InEnd-S->InStart);
-        S->InEnd-=S->InStart;
-        S->InStart=0;
-
-        S->OutputBuff=memcpy(S->OutputBuff,obuf,S->OutEnd);
-
-        free(ibuf);
-        free(obuf);
-    }
-
-    S->BuffSize=size;
-
-    if (S->InStart > S->BuffSize) S->InStart=0;
-    if (S->InEnd > S->BuffSize) S->InEnd=0;
-    if (S->OutEnd > S->BuffSize) S->OutEnd=0;
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -148,7 +162,13 @@ int STREAMCheckForBytes(STREAM *S)
     off_t pos;
     struct stat Stat;
 
-    if (! S) return(FALSE);
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(FALSE);
+    }
+
+
     if (S->State & LU_SS_EMBARGOED) return(FALSE);
     if (S->InEnd > S->InStart) return(TRUE);
     if (S->in_fd==-1) return(FALSE);
@@ -171,17 +191,21 @@ int STREAMCountWaitingBytes(STREAM *S)
 {
     int read_result=0, result;
 
-    if (! S) return(0);
-    if (S->State & LU_SS_EMBARGOED) return(0);
+    if (S)
+    {
+        if (S->State & LU_SS_EMBARGOED) return(0);
 
-    result=FDCheckForBytes(S->in_fd);
-    if (result > 0) read_result=STREAMReadCharsToBuffer(S);
-    else if (result < 0) read_result=STREAM_CLOSED;
-    result=S->InEnd - S->InStart;
+        result=FDCheckForBytes(S->in_fd);
+        if (result > 0) read_result=STREAMReadCharsToBuffer(S);
+        else if (result < 0) read_result=STREAM_CLOSED;
+        result=S->InEnd - S->InStart;
 
-    if (result > 0) return(result);
-    if (read_result==STREAM_CLOSED) return(STREAM_CLOSED);
-    if (read_result==STREAM_DATA_ERROR) return(STREAM_CLOSED);
+        if (result > 0) return(result);
+        if (read_result==STREAM_CLOSED) return(STREAM_CLOSED);
+        if (read_result==STREAM_DATA_ERROR) return(STREAM_CLOSED);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
+
     return(0);
 }
 
@@ -196,21 +220,25 @@ int STREAMCheckForWaitingChar(STREAM *S,unsigned char check_char)
     int read_result=0, result;
     char *found_char;
 
-    if (! S) return(0);
-    if (S->State & LU_SS_EMBARGOED) return(0);
-
-    result=FDCheckForBytes(S->in_fd);
-    if (result > 0) read_result=STREAMReadCharsToBuffer(S);
-    else if (result < 0) read_result=STREAM_CLOSED;
-
-    if (S->InStart < S->InEnd)
+    if (S)
     {
-        found_char=memchr(S->InputBuff + S->InStart,check_char,S->InEnd - S->InStart);
-        if (found_char > 0) return(TRUE);
-    }
+        if (S->State & LU_SS_EMBARGOED) return(FALSE);
 
-    if (read_result==STREAM_CLOSED) return(STREAM_CLOSED);
-    if (read_result==STREAM_DATA_ERROR) return(STREAM_CLOSED);
+        result=FDCheckForBytes(S->in_fd);
+        if (result > 0) read_result=STREAMReadCharsToBuffer(S);
+        else if (result < 0) read_result=STREAM_CLOSED;
+
+        if (S->InStart < S->InEnd)
+        {
+            found_char=memchr(S->InputBuff + S->InStart,check_char,S->InEnd - S->InStart);
+            if (found_char > 0) return(TRUE);
+        }
+
+        if (read_result==STREAM_CLOSED) return(STREAM_CLOSED);
+        if (read_result==STREAM_DATA_ERROR) return(STREAM_CLOSED);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
+
     return(FALSE);
 }
 
@@ -221,6 +249,13 @@ static int STREAMBasicSendBytes(STREAM *S, const char *Data, int DataLen)
 {
     int result;
     struct timeval tv;
+
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(0);
+    }
+
 
     //if the OS defines the PIPE_BUF variable that indicates how much data can
     //be written to a pipe in one read, and we are using a pipe, then we want to
@@ -340,52 +375,61 @@ static int STREAMInternalPushBytes(STREAM *S, const unsigned char *Data, int Dat
 
 int STREAMFlush(STREAM *S)
 {
-    int val;
+    int val=0;
 
-    val=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
-
-    if (S->Flags & SF_FULL_FLUSH)
+    if (S)
     {
-        switch (S->Type)
+        val=STREAMInternalPushBytes(S, S->OutputBuff, S->OutEnd);
+
+        if (S->Flags & SF_FULL_FLUSH)
         {
-        case STREAM_TYPE_FILE:
-        case STREAM_TYPE_PIPE:
-        case STREAM_TYPE_UNIX:
-        case STREAM_TYPE_UNIX_DGRAM:
-            fsync(S->out_fd);
-            break;
+            switch (S->Type)
+            {
+            case STREAM_TYPE_FILE:
+            case STREAM_TYPE_PIPE:
+            case STREAM_TYPE_UNIX:
+            case STREAM_TYPE_UNIX_DGRAM:
+                fsync(S->out_fd);
+                break;
 
 
-        case STREAM_TYPE_TCP:
-        case STREAM_TYPE_SSL:
-        case STREAM_TYPE_HTTP:
-        case STREAM_TYPE_CHUNKED_HTTP:
-        case STREAM_TYPE_TPROXY:
-        case STREAM_TYPE_WS:
-        case STREAM_TYPE_WSS:
-            //turning off Nagle's algorithm forces a flush of the buffer
-            SockSetOptions(S->out_fd, SOCK_TCP_NODELAY, 1);
-            //turn Nagle's back on, so we don't send partial data when we don't intend it
-            SockSetOptions(S->out_fd, SOCK_TCP_NODELAY, 0);
-            break;
+            case STREAM_TYPE_TCP:
+            case STREAM_TYPE_SSL:
+            case STREAM_TYPE_HTTP:
+            case STREAM_TYPE_CHUNKED_HTTP:
+            case STREAM_TYPE_TPROXY:
+            case STREAM_TYPE_WS:
+            case STREAM_TYPE_WSS:
+                //turning off Nagle's algorithm forces a flush of the buffer
+                SockSetOptions(S->out_fd, SOCK_TCP_NODELAY, 1);
+                //turn Nagle's back on, so we don't send partial data when we don't intend it
+                SockSetOptions(S->out_fd, SOCK_TCP_NODELAY, 0);
+                break;
+            }
         }
-    }
 
-    //if nothing left in stream (There shouldn't be) then wipe data because
-    //there might have been passwords sent on the stream, and we don't want
-    //that hanging about in memory
-    if (S->OutputBuff && (S->OutEnd==0)) xmemset((void *) S->OutputBuff, 0, S->BuffSize);
+        //if nothing left in stream (There shouldn't be) then wipe data because
+        //there might have been passwords sent on the stream, and we don't want
+        //that hanging about in memory
+        if (S->OutputBuff && (S->OutEnd==0)) xmemset((void *) S->OutputBuff, 0, S->BuffSize);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
+
     return(val);
 }
 
 void STREAMClear(STREAM *S)
 {
-    STREAMFlush(S);
-    S->InStart=0;
-    S->InEnd=0;
-    //clear input buffer, because anything might be hanging about in there and
-    //we don't want sensitive data persisiting in memory
-    if (S->InputBuff) xmemset((void *) S->InputBuff, 0, S->BuffSize);
+    if (S)
+    {
+        STREAMFlush(S);
+        S->InStart=0;
+        S->InEnd=0;
+        //clear input buffer, because anything might be hanging about in there and
+        //we don't want sensitive data persisiting in memory
+        if (S->InputBuff) xmemset((void *) S->InputBuff, 0, S->BuffSize);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -400,6 +444,12 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, long InLen)
     char *p_Input;
     int state=0, result;
     unsigned long olen=0, len=0;
+
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(0);
+    }
 
     p_Input=Bytes;
     Curr=ListGetNext(S->ProcessingModules);
@@ -483,11 +533,15 @@ int STREAMReadThroughProcessors(STREAM *S, char *Bytes, long InLen)
 
 int STREAMLock(STREAM *S, int val)
 {
-    int result;
+    int result=0;
 
-    result=flock(S->in_fd,val);
+    if (S)
+    {
+        result=flock(S->in_fd,val);
+        if (result==0) return(TRUE);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 
-    if (result==0) return(TRUE);
     return(FALSE);
 }
 
@@ -544,15 +598,19 @@ int STREAMOpenMMap(STREAM *S, int offset, int len, int Flags)
     unsigned char *ptr;
     int MProt=PROT_READ;
 
-    if (S->InputBuff) free(S->InputBuff);
-    if (Flags & (SF_WRONLY | SF_RDWR)) MProt |= PROT_WRITE;
-    ptr=(unsigned char *) mmap(0, len, MProt, MAP_SHARED, S->in_fd, offset);
-    if (ptr==MAP_FAILED) return(FALSE);
-    S->InEnd=len;
-    S->InStart=0;
-    S->Flags |= SF_MMAP;
-    S->InputBuff=ptr;
-    if (Flags & SF_SECURE) mlock(ptr, len);
+    if (S)
+    {
+        if (S->InputBuff) free(S->InputBuff);
+        if (Flags & (SF_WRONLY | SF_RDWR)) MProt |= PROT_WRITE;
+        ptr=(unsigned char *) mmap(0, len, MProt, MAP_SHARED, S->in_fd, offset);
+        if (ptr==MAP_FAILED) return(FALSE);
+        S->InEnd=len;
+        S->InStart=0;
+        S->Flags |= SF_MMAP;
+        S->InputBuff=ptr;
+        if (Flags & SF_SECURE) mlock(ptr, len);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 
     return(TRUE);
 }
@@ -923,6 +981,13 @@ static STREAM *STREAMSetupDataProcessorModules(STREAM *S, const char *Config)
 //if no processors are needed, then we consider things 'good'
     int SetupGood=TRUE;
 
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(NULL);
+    }
+
+
     if (S->Flags & SF_COMPRESSED)
     {
         // do not remove { braces in the below, otherwise you'll add the 'else if' to the
@@ -1145,7 +1210,11 @@ void STREAMDestroy(void *p_S)
 
 void STREAMTruncate(STREAM *S, long size)
 {
-    if (ftruncate(S->out_fd, size) != 0) RaiseError(ERRFLAG_ERRNO, "STREAMTruncate", "cannot ftruncate %s", S->Path);
+    if (S)
+    {
+        if (ftruncate(S->out_fd, size) != 0) RaiseError(ERRFLAG_ERRNO, "STREAMTruncate", "cannot ftruncate %s", S->Path);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -1155,6 +1224,14 @@ void STREAMTruncate(STREAM *S, long size)
 void STREAMCloseFile(STREAM *S)
 {
     char *Tempstr=NULL;
+
+
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return;
+    }
+
 
     if (
         (StrValid(S->Path)) &&
@@ -1265,8 +1342,13 @@ void STREAMShutdown(STREAM *S)
 
 void STREAMClose(STREAM *S)
 {
-    STREAMShutdown(S);
-    STREAMDestroy(S);
+
+    if (S)
+    {
+        STREAMShutdown(S);
+        STREAMDestroy(S);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -1275,44 +1357,47 @@ void STREAMClose(STREAM *S)
 //this function is used by STREAMReadCharsToBuffer. It checks for/ waits for input
 int STREAMWaitForBytes(STREAM *S)
 {
-    int WaitForBytes=TRUE;
-    int read_result, val;
+    int WaitForBytes=TRUE, val;
+    int read_result=-1;
     struct timeval tv;
 
-    //if using SSL and already has bytes queued, don't do a wait on select
-    if ( (S->State & LU_SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
-
-    //if using Websockets and we are in the middle of a read, don't wait, as
-    //the next call to websockets might return MESSAGE_END
-    if (S->State & LU_SS_MSG_READ) WaitForBytes=FALSE;
-
-    //must set this to 1 in case not doing a select, 'cos if S->Timeout is not set
-    //then we won't wait at all, won't set read_result, so we must do it here
-
-    //if we ned to wait, then do so
-    if ((S->Timeout > 0) && WaitForBytes)
+    if (S)
     {
-        read_result=0;
-        //convert S->Timeout from centisecs number to a tv struct
-        MillisecsToTV(S->Timeout * 10, &tv);
+        //if using SSL and already has bytes queued, don't do a wait on select
+        if ( (S->State & LU_SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
 
-        //okay, wait for something to happen
-        val=FDSelect(S->in_fd, SELECT_READ, &tv);
+        //if using Websockets and we are in the middle of a read, don't wait, as
+        //the next call to websockets might return MESSAGE_END
+        if (S->State & LU_SS_MSG_READ) WaitForBytes=FALSE;
 
-        if (val & SELECT_READ) read_result=1;
-        else if (val == 0)
+        //must set this to 1 in case not doing a select, 'cos if S->Timeout is not set
+        //then we won't wait at all, won't set read_result, so we must do it here
+
+        //if we ned to wait, then do so
+        if ((S->Timeout > 0) && WaitForBytes)
         {
-            errno=ETIMEDOUT;
-            read_result=STREAM_TIMEOUT;
-        }
-        else
-        {
-            if (errno==EINTR) read_result=STREAM_TIMEOUT;
-            else read_result=STREAM_CLOSED;
-        }
+            read_result=0;
+            //convert S->Timeout from centisecs number to a tv struct
+            MillisecsToTV(S->Timeout * 10, &tv);
 
+            //okay, wait for something to happen
+            val=FDSelect(S->in_fd, SELECT_READ, &tv);
+
+            if (val & SELECT_READ) read_result=1;
+            else if (val == 0)
+            {
+                errno=ETIMEDOUT;
+                read_result=STREAM_TIMEOUT;
+            }
+            else
+            {
+                if (errno==EINTR) read_result=STREAM_TIMEOUT;
+                else read_result=STREAM_CLOSED;
+            }
+
+        }
     }
-    else read_result=1;
+    else RaiseError(0, "", "NULL Stream Passed");
 
     return(read_result);
 }
@@ -1363,11 +1448,16 @@ static int STREAMReadCharsToBuffer_Default(STREAM *S, char *Buffer, int Len)
     return(bytes_read);
 }
 
+
+
 int STREAMPullBytes(STREAM *S, char *Buffer, int Len)
 {
     if (S->State & LU_SS_SSL) return(OpenSSLSTREAMReadBytes(S, Buffer, Len));
     return(STREAMReadCharsToBuffer_Default(S, Buffer, Len));
 }
+
+
+
 
 int STREAMReadCharsToBuffer(STREAM *S)
 {
@@ -1503,6 +1593,12 @@ int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
 {
     int state=STREAM_NODATA, result=0, total=0;
 
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(0);
+    }
+
 
     while (total < Buffsize)
     {
@@ -1532,6 +1628,9 @@ int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
 int STREAMReadBytes(STREAM *S, char *Buffer, int Buffsize)
 {
     int state, bytes_read=0;
+
+
+
     state=STREAMReadMessage(S, Buffer, Buffsize, &bytes_read);
 
     if (state == STREAM_BYTES_READ) return(bytes_read);
@@ -1545,17 +1644,21 @@ int STREAMReadBytes(STREAM *S, char *Buffer, int Buffsize)
 
 uint64_t STREAMTell(STREAM *S)
 {
-    uint64_t pos;
+    uint64_t pos=0;
 
-    if (S->Flags & SF_MMAP) return((uint64_t) S->InStart);
-    if (S->OutEnd > 0) STREAMFlush(S);
+    if (S)
+    {
+        if (S->Flags & SF_MMAP) return((uint64_t) S->InStart);
+        if (S->OutEnd > 0) STREAMFlush(S);
 
 #ifdef _LARGEFILE64_SOURCE
-    pos=(uint64_t) lseek64(S->in_fd,0,SEEK_CUR);
+        pos=(uint64_t) lseek64(S->in_fd,0,SEEK_CUR);
 #else
-    pos=(uint64_t) lseek(S->in_fd,0,SEEK_CUR);
+        pos=(uint64_t) lseek(S->in_fd,0,SEEK_CUR);
 #endif
-    pos-=(S->InEnd-S->InStart);
+        pos-=(S->InEnd-S->InStart);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 
     return(pos);
 }
@@ -1565,6 +1668,13 @@ uint64_t STREAMSeek(STREAM *S, int64_t offset, int whence)
 {
     int64_t pos=0;
     int wherefrom;
+
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(0);
+    }
+
 
     if (S->Flags & SF_MMAP)
     {
@@ -1766,6 +1876,13 @@ int STREAMWriteLine(const char *Buffer, STREAM *S)
 {
     int result;
 
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(FALSE);
+    }
+
+
     if (StrEnd(Buffer)) return(FALSE);
     result=STREAMWriteBytes(S,Buffer,strlen(Buffer));
     if (result < 0) return(result);
@@ -1815,6 +1932,13 @@ int STREAMPeekChar(STREAM *S)
 {
     int result;
 
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(STREAM_CLOSED);
+    }
+
+
     if (S->InStart >= S->InEnd)
     {
         result=STREAMReadCharsToBuffer(S);
@@ -1829,21 +1953,25 @@ int STREAMPeekBytes(STREAM *S, char *Buffer, int Buffsize)
 {
     int len=0, result=0;
 
-    if (S->InStart >= S->InEnd)
+    if (S)
     {
-        result=STREAMReadCharsToBuffer(S);
         if (S->InStart >= S->InEnd)
         {
-            if (result==STREAM_CLOSED) return(STREAM_CLOSED);
-            if (result==STREAM_TIMEOUT) return(STREAM_TIMEOUT);
-            if (result==STREAM_DATA_ERROR) return(STREAM_DATA_ERROR);
+            result=STREAMReadCharsToBuffer(S);
+            if (S->InStart >= S->InEnd)
+            {
+                if (result==STREAM_CLOSED) return(STREAM_CLOSED);
+                if (result==STREAM_TIMEOUT) return(STREAM_TIMEOUT);
+                if (result==STREAM_DATA_ERROR) return(STREAM_DATA_ERROR);
+            }
         }
+
+        len=S->InEnd-S->InStart;
+        if (len > Buffsize) len=Buffsize;
+
+        if (len > 0) memcpy(Buffer,S->InputBuff + S->InStart,len);
     }
-
-    len=S->InEnd-S->InStart;
-    if (len > Buffsize) len=Buffsize;
-
-    if (len > 0) memcpy(Buffer,S->InputBuff + S->InStart,len);
+    else RaiseError(0, "", "NULL Stream Passed");
 
     return(len);
 }
@@ -1852,6 +1980,13 @@ int STREAMPeekBytes(STREAM *S, char *Buffer, int Buffsize)
 void STREAMInsertBytes(STREAM *S, const char *Bytes, int len)
 {
     size_t val;
+
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return;
+    }
+
 
     if (S->InStart > len)
     {
@@ -1890,20 +2025,25 @@ int STREAMReadBytesToTerm(STREAM *S, char *Buffer, int BuffSize,unsigned char Te
 {
     int inchar, pos=0;
 
-    inchar=STREAMReadChar(S);
-    while (inchar != STREAM_CLOSED)
+    if (S)
     {
-        if (inchar > -1)
-        {
-            Buffer[pos]=inchar;
-            pos++;
-            if (inchar==Term) break;
-            if (pos==BuffSize) break;
-        }
         inchar=STREAMReadChar(S);
-    }
+        while (inchar != STREAM_CLOSED)
+        {
+            if (inchar > -1)
+            {
+                Buffer[pos]=inchar;
+                pos++;
+                if (inchar==Term) break;
+                if (pos==BuffSize) break;
+            }
+            inchar=STREAMReadChar(S);
+        }
 
-    if ((pos==0) && (inchar==STREAM_CLOSED)) return(STREAM_CLOSED);
+        if ((pos==0) && (inchar==STREAM_CLOSED)) return(STREAM_CLOSED);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
+
     return(pos);
 }
 
@@ -1916,7 +2056,7 @@ char *STREAMReadToTerminator(char *RetStr, STREAM *S, unsigned char Term)
 
     if (! S)
     {
-        RaiseError(0, "STREAMReadToTerminator", "NULL stream object passed to function");
+        RaiseError(0, "", "NULL Stream Passed");
         Destroy(RetStr);
         return(NULL);
     }
@@ -2000,36 +2140,40 @@ char *STREAMReadToMultiTerminator(char *RetStr, STREAM *S, char *Terms)
 
     RetStr=CopyStr(RetStr, "");
 
-    inchar=STREAMReadChar(S);
+    if (S)
+    {
+        inchar=STREAMReadChar(S);
 
 
 //All error conditions are negative, but '0' can just mean
 //no more data to read
-    while (inchar > 0)
-    {
-        if (inchar > 0)
+        while (inchar > 0)
         {
-            RetStr=AddCharToBuffer(RetStr,len,(char) inchar);
-            len++;
+            if (inchar > 0)
+            {
+                RetStr=AddCharToBuffer(RetStr,len,(char) inchar);
+                len++;
 
-            if (strchr(Terms,inchar)) break;
+                if (strchr(Terms,inchar)) break;
+            }
+            inchar=STREAMReadChar(S);
         }
-        inchar=STREAMReadChar(S);
-    }
 
 
-    *(RetStr+len)='\0';
+        *(RetStr+len)='\0';
 
 //if ((inchar==STREAM_CLOSED) && (errno==ECONNREFUSED)) return(RetStr);
-    if (
-        ((inchar==STREAM_CLOSED) || (inchar==STREAM_DATA_ERROR))
-        &&
-        (StrEnd(RetStr))
-    )
-    {
-        free(RetStr);
-        return(NULL);
+        if (
+            ((inchar==STREAM_CLOSED) || (inchar==STREAM_DATA_ERROR))
+            &&
+            (StrEnd(RetStr))
+        )
+        {
+            free(RetStr);
+            return(NULL);
+        }
     }
+    else RaiseError(0, "", "NULL Stream Passed");
 
     return(RetStr);
 }
@@ -2047,10 +2191,14 @@ void STREAMResetInputBuffers(STREAM *S)
 {
     double pos;
 
-    pos=STREAMTell(S);
-    S->InStart=0;
-    S->InEnd=0;
-    STREAMSeek(S,pos,SEEK_SET);
+    if (S)
+    {
+        pos=STREAMTell(S);
+        S->InStart=0;
+        S->InEnd=0;
+        STREAMSeek(S,pos,SEEK_SET);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -2059,30 +2207,34 @@ int STREAMReadToString(STREAM *S, char **RetStr, int *len, const char *Term)
 {
     int match=0, termlen=0, inchar;
 
-    if (len) *len=0;
-    //a terminator is usually short, so don't use StrLenFromCache
-    termlen=StrLen(Term);
-    inchar=STREAMReadChar(S);
-
-    while (inchar !=EOF)
+    if (S)
     {
-
-        if (RetStr && len && (inchar > -1)) *RetStr=AddCharToBuffer(*RetStr, (*len)++, inchar);
-
-        if (termlen > 0)
-        {
-            //if the current value does not equal where we are in the string
-            //we have to consider whether it is the first character in the string
-            if (Term[match]!=inchar) match=0;
-
-            if (Term[match]==inchar)
-            {
-                match++;
-                if (match==termlen) return(TRUE);
-            }
-        }
+        if (len) *len=0;
+        //a terminator is usually short, so don't use StrLenFromCache
+        termlen=StrLen(Term);
         inchar=STREAMReadChar(S);
+
+        while (inchar !=EOF)
+        {
+
+            if (RetStr && len && (inchar > -1)) *RetStr=AddCharToBuffer(*RetStr, (*len)++, inchar);
+
+            if (termlen > 0)
+            {
+                //if the current value does not equal where we are in the string
+                //we have to consider whether it is the first character in the string
+                if (Term[match]!=inchar) match=0;
+
+                if (Term[match]==inchar)
+                {
+                    match++;
+                    if (match==termlen) return(TRUE);
+                }
+            }
+            inchar=STREAMReadChar(S);
+        }
     }
+    else RaiseError(0, "", "NULL Stream Passed");
 
     return(FALSE);
 }
@@ -2094,6 +2246,13 @@ char *STREAMReadDocument(char *RetStr, STREAM *S)
     char *Tempstr=NULL;
     int result=0, bytes_read=0, new_bytes=0;
     int size=0, max;
+
+    if (! S)
+    {
+        RaiseError(0, "", "NULL Stream Passed");
+        return(RetStr);
+    }
+
 
     //for documents where we know the size, e.g. HTTP documents where we've had 'Content-Length'
     //there will be a size booked against the stream 'S'
@@ -2188,11 +2347,14 @@ void STREAMSetItem(STREAM *S, const char *Name, void *Value)
 {
     ListNode *Curr;
 
-    if (! S) return;
-    if (! S->Items) S->Items=ListCreate();
-    Curr=ListFindNamedItem(S->Items,Name);
-    if (Curr) Curr->Item=Value;
-    else ListAddNamedItem(S->Items,Name,Value);
+    if (S)
+    {
+        if (! S->Items) S->Items=ListCreate();
+        Curr=ListFindNamedItem(S->Items,Name);
+        if (Curr) Curr->Item=Value;
+        else ListAddNamedItem(S->Items,Name,Value);
+    }
+    else RaiseError(0, "", "NULL Stream Passed");
 }
 
 
@@ -2288,21 +2450,23 @@ int STREAMFind(STREAM *S, const char *Item, const char *Delimiter, char **RetStr
 {
     char *Tempstr=NULL;
 
-    if (!S) return(FALSE);
-
-    if (S->Flags & SF_SORTED) return(STREAMFindBinarySearch(S, Item, Delimiter, RetStr));
-
-    Tempstr=STREAMReadLine(Tempstr, S);
-    while (Tempstr)
+    if (S)
     {
-        StripTrailingWhitespace(Tempstr);
-        if (STREAMFindCompare(Tempstr, Item, Delimiter, RetStr)==0)
-        {
-            Destroy(Tempstr);
-            return(TRUE);
-        }
+        if (S->Flags & SF_SORTED) return(STREAMFindBinarySearch(S, Item, Delimiter, RetStr));
+
         Tempstr=STREAMReadLine(Tempstr, S);
+        while (Tempstr)
+        {
+            StripTrailingWhitespace(Tempstr);
+            if (STREAMFindCompare(Tempstr, Item, Delimiter, RetStr)==0)
+            {
+                Destroy(Tempstr);
+                return(TRUE);
+            }
+            Tempstr=STREAMReadLine(Tempstr, S);
+        }
     }
+    else RaiseError(0, "", "NULL Stream Passed");
 
     Destroy(Tempstr);
     return(FALSE);
@@ -2500,24 +2664,28 @@ int STREAMCommit(STREAM *S)
 {
     HTTPInfoStruct *Item;
 
-    //Always flush on a stream commit
-    STREAMFlush(S);
-
-    if (! (S->Flags & SF_RDONLY) )
+    if (S)
     {
-        Item=(HTTPInfoStruct *) STREAMGetItem(S, "HTTP:InfoStruct");
-        if ( Item && (HTTPTransact(Item) !=NULL) ) return(TRUE);
-    }
+        //Always flush on a stream commit
+        STREAMFlush(S);
 
-    //for streams where we are talking to someting on pipes
-    //(usually cmd: type streams where we are talking to a command on it's stdin)
-    // close our stdout
-    if (S->Type==STREAM_TYPE_PIPE)
-    {
-        close(S->out_fd);
-        S->out_fd=-1;
-        return(TRUE);
+        if (! (S->Flags & SF_RDONLY) )
+        {
+            Item=(HTTPInfoStruct *) STREAMGetItem(S, "HTTP:InfoStruct");
+            if ( Item && (HTTPTransact(Item) !=NULL) ) return(TRUE);
+        }
+
+        //for streams where we are talking to someting on pipes
+        //(usually cmd: type streams where we are talking to a command on it's stdin)
+        // close our stdout
+        if (S->Type==STREAM_TYPE_PIPE)
+        {
+            close(S->out_fd);
+            S->out_fd=-1;
+            return(TRUE);
+        }
     }
+    else RaiseError(0, "", "NULL Stream Passed");
 
 
     return(FALSE);

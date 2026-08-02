@@ -133,9 +133,15 @@ static int ContainerEnterNamespace(const char *Namespace, int Type)
     int result=FALSE;
 
     if (StrValid(Namespace)) return(ContainerJoinNamespace(Namespace, Type));
+#ifdef HAVE_UNSHARE
     result=unshare(Type);
 
     return(OnNamespaceJoin(Namespace, Type, result == 0));
+#else
+    RaiseError(ERRFLAG_ERRNO, "namespaces", "namespaces not compiled in");
+#endif
+
+    return(FALSE);
 }
 
 
@@ -296,6 +302,7 @@ static int ContainerJoinNamespaceFD(const char *Path, const char *Namespace, int
     int fd, result;
     int RetVal=0;
 
+#ifdef HAVE_SETNS
     fd=open(Path, O_RDONLY);
     if (fd > -1)
     {
@@ -306,6 +313,9 @@ static int ContainerJoinNamespaceFD(const char *Path, const char *Namespace, int
         close(fd);
     }
     else RaiseError(ERRFLAG_ERRNO, "namespaces", "couldn't open namespace %s", Path);
+#else
+    RaiseError(ERRFLAG_ERRNO, "namespaces", "namespaces not compiled in");
+#endif
 
     return(RetVal);
 }

@@ -178,6 +178,8 @@ extern "C" {
 void AddOAuthType(const char *Name, const char *Stage1Args, const char *Stage2Args, const char *VerifyTemplate);
 
 OAUTH *OAuthCreate(const char *Type, const char *Name, const char *ClientID, const char *ClientSecret, const char *Scopes, const char *RefreshURL);
+void OAuthSetRedirectURI(OAUTH *Ctx, const char *URI);
+
 void OAuthDestroy(void *p_OAUTH);
 
 int OAuthRegister(OAUTH *Ctx, const char *URL);

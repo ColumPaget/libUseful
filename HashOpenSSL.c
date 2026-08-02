@@ -78,6 +78,7 @@ static void OpenSSLDigestCallback(const OBJ_NAME *obj, void *arg)
         HashRegister(Tempstr, 0, OpenSSLInitHash);
     }
     OpenSSLFreeHashCTX(Hash);
+    free(Hash);
 
     Destroy(Tempstr);
 }

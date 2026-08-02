@@ -957,17 +957,11 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
     SSL *ssl;
     int IsNonBlock=FALSE;
     double StartTime=0;
+		int AcceptTimeout=50;
+		const char *ptr;
 
     if (S)
     {
-        /*
-                if (STREAMWaitForBytes(S) < 0)
-                {
-                    RaiseError(ERRFLAG_DEBUG, "DoSSLServerNegotiation", "Timeout waiting for SSL negotiation on %s", S->Path);
-                    return(FALSE);
-                }
-        */
-
         INTERNAL_SSL_INIT();
         Method=SSLv23_server_method();
         if (Method)
@@ -987,10 +981,15 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, OpenSSLVerifyCallback);
                     SSL_CTX_set_verify_depth(ctx,1);
                 }
+
                 SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
                 ssl=SSL_new(ctx);
                 //OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE| SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET);
                 OpenSSLSetOptions(S, ssl, SSL_OP_SINGLE_DH_USE| SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+                IsNonBlock = S->Flags & SF_NONBLOCK;
+                STREAMSetFlags(S, SF_NONBLOCK, 0);
+                StartTime=GetTime(TIME_CENTISECS);
 
                 SSL_set_fd(ssl,S->in_fd);
 
@@ -999,42 +998,44 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 
                 SSL_set_accept_state(ssl);
 
-                IsNonBlock = S->Flags & SF_NONBLOCK;
-                //STREAMSetFlags(S, SF_NONBLOCK, 0);
-                StartTime=GetTime(TIME_CENTISECS);
+								ptr=STREAMGetValue(S, "SSL:AcceptTimeout");
+								if (StrValid(ptr)) AcceptTimeout=atoi(ptr);
 
                 while (1)
                 {
                     result=SSL_accept(ssl);
 
-                    if (result != TRUE) result=SSL_get_error(ssl,result);
-
-                    switch (result)
+										//1 means 'handshake complete'
+                    if (result == 1)
                     {
-                    case SSL_ERROR_WANT_READ:
-                    case SSL_ERROR_WANT_WRITE:
-                        usleep(300);
-                        result=-1;
-                        break;
-
-                    case TRUE:
                         S->State |= LU_SS_SSL;
                         if (Flags & LU_SSL_VERIFY_PEER) OpenSSLVerifyCertificate(S, 0);
                         OpenSSLQueryCipher(S);
                         break;
-
-                    default:
-                        OpenSSLRaiseError(S, "DoSSLServerNegotiation", "Error during accept");
-                        result=FALSE;
-                        break;
                     }
-
-                    if (result !=-1) break;
-
-                    if (S->Timeout > 0)
+										//anything other than 1 means 'handshake incomplete',
+										//we have to call SSL_get_error to get more details
+                    else
                     {
-                        if (GetTime(TIME_CENTISECS) > (StartTime + S->Timeout)) break;
+                        result=SSL_get_error(ssl,result);
+
+                        switch (result)
+                        {
+                        case SSL_ERROR_WANT_READ:
+                        case SSL_ERROR_WANT_WRITE:
+                            usleep(300);
+                            result=-1;
+                            break;
+
+                        default:
+                            OpenSSLRaiseError(S, "DoSSLServerNegotiation", "Error during accept");
+                            result=FALSE;
+                            break;
+                        }
                     }
+
+										//if we've taken too long to get a handshake, then time out
+                    if (GetTime(TIME_CENTISECS) > (StartTime + AcceptTimeout)) break;
                 }
 
                 if (! IsNonBlock) STREAMSetFlags(S, 0, SF_NONBLOCK);
@@ -1152,7 +1153,7 @@ int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
             {
             case SSL_ERROR_WANT_READ:
             case SSL_ERROR_WANT_WRITE:
-		usleep(300);
+                usleep(300);
                 break;
 
             default:
@@ -1171,13 +1172,14 @@ int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
 void OpenSSLClose(STREAM *S)
 {
     ListNode *Node;
-    SSL *ssl;
 
 #ifdef HAVE_LIBSSL
+    SSL *ssl;
+
     Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
     if (Node)
     {
-	ssl=(SSL *) Node->Item;
+        ssl=(SSL *) Node->Item;
         while (SSL_shutdown(ssl) == 0);
 
         SSL_free(ssl);

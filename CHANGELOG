@@ -1,3 +1,10 @@
+v5.77 (2026-08-02)
+  * timeout implemented for DoSSLServerNegotiation
+  * ToSIUnit, ToMetric and ToIEC now support negative precision values that specify 'prefer higher unit'
+  * compile fixes for compiling without ssl and without containers
+  * added "check.sh" script to test compile scenarios
+
+
 v5.76 (2026-07-17)
   * shutdown TLS/SSL connections properly with 'SSL_shutdown'
   * TLS/SSL certificates and keys can now be held in memory (and so passed to chrooted apps that cannot read these files)

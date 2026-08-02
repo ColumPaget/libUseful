@@ -54,7 +54,43 @@ double FromSIUnit(const char *Data, int Base)
 }
 
 
+//for each suffix calcuate the value of that suffix
+//and see if it's greater than the value we are trying to format
+//so if we have 4096 to format, we first test against 1024. is our
+//value greater than that? If not we just use no suffix as 'k' is
+//our minimum. Otherwize we test against 1024 ^ 1024 (Meg) and so on
+int FindSuffix(const char *sufflist, double Value, int Base, int PreferFract, int Precision)
+{
+    double next=0, limit;
+    int i;
 
+    for (i=0; sufflist[i] !='\0'; i++)
+    {
+        next=ToPower(Base, i+1);
+        if (next > Value) break;
+
+        //if we have no next suffix, then stick with this one
+        if (sufflist[i+1] == '\0') break;
+    }
+
+
+    //Prefer Fractional Suffix: if this is requested and we still have a suffix to 'go up to'
+    //then check if our value is within the specified precision.
+    if (PreferFract && (sufflist[i] != '\0') && (sufflist[i+1] != '\0') )
+    {
+        next=ToPower(Base, i+1);
+        limit=ToPower(10, Precision);
+        if ((next / Value) > limit) PreferFract=FALSE;
+
+        if (PreferFract) i++;
+    }
+
+
+    return(i);
+}
+
+
+//'Base' here will be 1024 or 1000 for computing or scientific units (IEC or Metric/SI)
 const char *ToSIUnit(double Value, int Base, int Precision)
 {
     static char *Str=NULL;
@@ -62,14 +98,16 @@ const char *ToSIUnit(double Value, int Base, int Precision)
     double next;
 //Set to 0 to keep valgrind happy
     int i=0;
-    char suffix=' ', *sufflist=" kMGTPEZY";
+    char suffix=' ', *sufflist=" kMGTPEZYRQ";
+    int PreferFract=FALSE;
 
-
-    for (i=0; sufflist[i] !='\0'; i++)
+    if (Precision < 0)
     {
-        next=ToPower(Base, i+1);
-        if (next > Value) break;
+        Precision=0 - Precision;
+        PreferFract=TRUE;
     }
+
+    i=FindSuffix(sufflist, Value, Base, PreferFract, Precision);
 
     if ((i > 0) && (sufflist[i] !='\0'))
     {
