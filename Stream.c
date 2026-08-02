@@ -1358,11 +1358,12 @@ void STREAMClose(STREAM *S)
 int STREAMWaitForBytes(STREAM *S)
 {
     int WaitForBytes=TRUE, val;
-    int read_result=-1;
+    int read_result=STREAM_CLOSED;
     struct timeval tv;
 
     if (S)
     {
+
         //if using SSL and already has bytes queued, don't do a wait on select
         if ( (S->State & LU_SS_SSL) && OpenSSLSTREAMCheckForBytes(S) ) WaitForBytes=FALSE;
 
@@ -1376,7 +1377,6 @@ int STREAMWaitForBytes(STREAM *S)
         //if we ned to wait, then do so
         if ((S->Timeout > 0) && WaitForBytes)
         {
-            read_result=0;
             //convert S->Timeout from centisecs number to a tv struct
             MillisecsToTV(S->Timeout * 10, &tv);
 
@@ -1396,6 +1396,10 @@ int STREAMWaitForBytes(STREAM *S)
             }
 
         }
+				//we set read result == 1 to indicate that we should attempt a read
+				//because either WaitForBytes is FALSE or S->Timeout == 0
+				//which means we are working in 'blocking' mode, and so always do a read
+        else read_result=1;
     }
     else RaiseError(0, "", "NULL Stream Passed");
 
@@ -1465,7 +1469,7 @@ int STREAMReadCharsToBuffer(STREAM *S)
     long bytes_read=0;
     char *tmpBuff=NULL;
 
-    if (! S) return(0);
+    if (! S) return(STREAM_CLOSED);
 
 //we don't read from and embargoed stream. Embargoed is a state that we
 //use to indicate a stream must be ignored for a while
@@ -1512,7 +1516,6 @@ int STREAMReadCharsToBuffer(STREAM *S)
     //Here we perform the actual read
     if (read_result==1)
     {
-
         val=S->BuffSize - S->InEnd;
         if (val < 0) return(1);
         tmpBuff=(char *) realloc(tmpBuff, val);
@@ -1596,7 +1599,7 @@ int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
     if (! S)
     {
         RaiseError(0, "", "NULL Stream Passed");
-        return(0);
+        return(STREAM_CLOSED);
     }
 
 
@@ -1628,8 +1631,6 @@ int STREAMReadMessage(STREAM *S, char *Buffer, int Buffsize, int *BytesRead)
 int STREAMReadBytes(STREAM *S, char *Buffer, int Buffsize)
 {
     int state, bytes_read=0;
-
-
 
     state=STREAMReadMessage(S, Buffer, Buffsize, &bytes_read);
 
