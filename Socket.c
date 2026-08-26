@@ -365,16 +365,25 @@ int BindSockWithSettings(int Type, const char *Address, int Port, TSockSettings 
     salen=SockAddrCreate(&sa, Address, Port);
     if (salen==0) return(-1);
 
+
+
     if (Settings && (Settings->Flags & BIND_RAW))
     {
+        //raw sockets can be STREAM or DGRAM
         if (Type==SOCK_STREAM) fd=socket(sa->sa_family, SOCK_RAW, IPPROTO_TCP);
         else if (Type==SOCK_DGRAM) fd=socket(sa->sa_family, SOCK_RAW, IPPROTO_UDP);
     }
+    //normal sockets here
     else fd=socket(sa->sa_family, Type, 0);
 
 
     if (fd > -1)
     {
+        //udp and other dgram sockets clearly don't have 'keep alive'
+        //the value used for keepalive might be used to express other things
+        //with them, so don't set keep alive on these
+        if (Type == SOCK_DGRAM) Settings->Flags |= SOCK_NOKEEPALIVE;
+
         //We always REUSEADDR. It, and many other Socket options, must be set before bind
         result=1;
 #ifdef SO_REUSEADDR
@@ -628,7 +637,7 @@ int UDPOpen(const char *Addr, int Port, int Flags)
     int fd;
 
     fd=BindSock(SOCK_DGRAM, Addr, Port, 0);
-    if (fd > -1) SockSetOptions(fd, Flags, 0);
+    if (fd > -1) SockSetOptions(fd, Flags |= SOCK_NOKEEPALIVE, 0);
     return(fd);
 }
 
@@ -783,7 +792,7 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
 
     if (result==0)
     {
-        if (LocalAddress) *LocalAddress=CopyStr(*LocalAddress,IPtoStr(sa.sin_addr.s_addr));
+        if (LocalAddress) *LocalAddress=CopyStr(*LocalAddress, IPtoStr(sa.sin_addr.s_addr));
         if (LocalPort) *LocalPort=ntohs(sa.sin_port);
 
         //Set Address to be the same as control sock, as it might not be INADDR_ANY
@@ -791,7 +800,7 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
 
         if (result==0)
         {
-            if (RemoteAddress) *RemoteAddress=CopyStr(*RemoteAddress,IPtoStr(sa.sin_addr.s_addr));
+            if (RemoteAddress) *RemoteAddress=CopyStr(*RemoteAddress, IPtoStr(sa.sin_addr.s_addr));
             if (RemotePort) *RemotePort=ntohs(sa.sin_port);
         }
 
@@ -822,7 +831,28 @@ int IPReconnect(int sock, const char *Host, int Port, int Flags)
 
     SockSetOptions(sock, Flags, 0);
 
-    result=connect(sock,(struct sockaddr *) sa, salen);
+    //multicast sockets don't use 'connect', although I'm really not sure why not
+    //instead 'setsockopt' is used to set a multicast group, perhaps becasue using
+    //this method you can connect to many multicast groups. But how often will you
+    //actually want to?
+    if (Flags & SOCK_MULTICAST)
+    {
+#ifdef USE_MCAST
+#ifdef IP_ADD_MEMBERSHIP
+        struct ip_mreq mcast;
+
+        mcast.imr_multiaddr.s_addr = StrtoIP(Host);
+        mcast.imr_interface.s_addr = htonl(INADDR_ANY); // Use default network interface
+        result=setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mcast, sizeof(mcast));
+#else
+        RaiseError(0, "IPConnect", "IP_ADD_MEMBERSHIP for multicast UDP is not defined");
+#endif
+#else
+        RaiseError(0, "IPConnect", "IP multicast not compiled in");
+#endif
+    }
+    else  result=connect(sock,(struct sockaddr *) sa, salen);
+
     if (result==0) result=TRUE;
 
     if ((result==-1) && (Flags & CONNECT_NONBLOCK) && (errno == EINPROGRESS)) result=FALSE;
@@ -853,16 +883,23 @@ int NetConnectWithSettings(const char *Proto, const char *LocalHost, const char 
 
     if ((! StrValid(p_LocalHost)) && IsIP6Address(Host)) p_LocalHost="::";
 
-    if ((CompareStrNoCase(Proto,"udp")==0) || (CompareStrNoCase(Proto,"bcast")==0))
+    if (CompareStrNoCase(Proto,"udp")==0) sock=BindSockWithSettings(SOCK_DGRAM, p_LocalHost, 0, Settings);
+    else if (CompareStrNoCase(Proto,"bcast")==0)
     {
-        if (CompareStrNoCase(Proto,"bcast")==0) Settings->Flags |= SOCK_BROADCAST;
+        Settings->Flags |= SOCK_BROADCAST;
         sock=BindSockWithSettings(SOCK_DGRAM, p_LocalHost, 0, Settings);
+    }
+    else if (CompareStrNoCase(Proto,"mcast")==0)
+    {
+        Settings->Flags |= SOCK_MULTICAST;
+        sock=BindSockWithSettings(SOCK_DGRAM, p_LocalHost, Port, Settings);
     }
     else sock=BindSockWithSettings(SOCK_STREAM, p_LocalHost, 0, Settings);
 
     //if a timeout is specified at connection time, then we apply it to the connection step
     //if it's added later with STREAMAddTimeout, then it will only apply to read
     if (Settings->Timeout > 0) Settings->Flags |= CONNECT_NONBLOCK;
+
     result=IPReconnect(sock, Host, Port, Settings->Flags);
 
     Destroy(Host);
@@ -919,6 +956,12 @@ int STREAMIsConnected(STREAM *S)
     int result=FALSE;
 
     if (! S) return(FALSE);
+
+
+    //udp sockets have not concept of connection, so
+    //we always count them as connected
+    if (S->Type == STREAM_TYPE_UDP) return(TRUE);
+
     result=IsSockConnected(S->in_fd);
     if (result==TRUE)
     {
@@ -1033,6 +1076,7 @@ int STREAMNetConnect(STREAM *S, const char *Proto, const char *Host, int Port, c
         else if (CompareStrNoCase(Proto, "tls")==0) S->Type=STREAM_TYPE_SSL;
         else if (CompareStrNoCase(Proto, "udp")==0) S->Type=STREAM_TYPE_UDP;
         else if (CompareStrNoCase(Proto, "bcast")==0) S->Type=STREAM_TYPE_UDP;
+        else if (CompareStrNoCase(Proto, "mcast")==0) S->Type=STREAM_TYPE_UDP;
         else S->Type=STREAM_TYPE_TCP;
 
         if (S->Type==STREAM_TYPE_SSL) Settings.Flags |= CONNECT_SSL;
@@ -1071,7 +1115,6 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
     char *Name=NULL, *Value=NULL;
     int Port=0;
 
-
 //if URL is a comma-seperated list then it's a list of 'connection hops' through proxies
     if (StrValid(GlobalConnectionChain))
     {
@@ -1109,4 +1152,21 @@ int STREAMConnect(STREAM *S, const char *URL, const char *Config)
 
     return(result);
 }
+
+
+STREAM *STREAMSocketOpen(const char *URL, const char *Config)
+{
+    STREAM *S;
+
+    S=STREAMCreate();
+    S->Path=CopyStr(S->Path, URL);
+    if (! STREAMConnect(S, URL, Config))
+    {
+        STREAMClose(S);
+        S=NULL;
+    }
+
+    return(S);
+}
+
 

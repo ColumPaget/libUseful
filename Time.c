@@ -211,15 +211,51 @@ time_t ParseDuration(const char *Dur)
 }
 
 
-
-const char *FormatDuration(const char *Fmt, time_t Duration)
+static char *FormatDurationAutoFmt(char *Fmt, const char *iFmt, time_t Duration)
 {
-    char *Tempstr=NULL;
+    if (CompareStr(iFmt, "auto")==0)
+    {
+        if (Duration > DAYSECS * 365) Fmt=CopyStr(Fmt, "%yy,%ww,%dd,%hh,%mm,%ss");
+        else if (Duration > DAYSECS * 7) Fmt=CopyStr(Fmt, "%ww,%dd,%hh,%mm,%ss");
+        else if (Duration > DAYSECS) Fmt=CopyStr(Fmt, "%dd,%hh,%mm,%ss");
+        else if (Duration > 3600) Fmt=CopyStr(Fmt, "%hh,%mm,%ss");
+        else if (Duration > 60) Fmt=CopyStr(Fmt, "%mm,%ss");
+        else Fmt=CopyStr(Fmt, "%ss");
+    }
+    else if (CompareStr(iFmt, "high")==0)
+    {
+        if (Duration > DAYSECS * 7) Fmt=CopyStr(Fmt, "%yy");
+        else if (Duration > DAYSECS * 7) Fmt=CopyStr(Fmt, "%ww");
+        else if (Duration > DAYSECS) Fmt=CopyStr(Fmt, "%dd");
+        else if (Duration > 3600) Fmt=CopyStr(Fmt, "%hh");
+        else if (Duration > 60) Fmt=CopyStr(Fmt, "%mm");
+        else Fmt=CopyStr(Fmt, "%ss");
+    }
+    else Fmt=CopyStr(Fmt, iFmt);
+
+    return(Fmt);
+}
+
+
+
+
+
+const char *FormatDuration(const char *iFmt, time_t Duration)
+{
+    char *Tempstr=NULL, *Fmt=NULL;
     static char *RetStr=NULL;
-    unsigned long weeks=0, days=0, hours=0, mins=0, secs=0;
+    unsigned long years=0, weeks=0, days=0, hours=0, mins=0, secs=0;
     const char *ptr;
     int len=0;
 
+
+    Fmt=FormatDurationAutoFmt(Fmt, iFmt, Duration);
+
+    if (strstr(Fmt, "%y"))
+    {
+        years=Duration / (DAYSECS * 365);
+        if (years > 0) Duration -= (years * DAYSECS * 365);
+    }
 
     if (strstr(Fmt, "%w"))
     {
@@ -247,6 +283,7 @@ const char *FormatDuration(const char *Fmt, time_t Duration)
 
     secs=Duration;
 
+    RetStr=CopyStr(RetStr, "");
     for (ptr=Fmt; *ptr !='\0'; ptr++)
     {
         if (*ptr == '%')
@@ -263,6 +300,12 @@ const char *FormatDuration(const char *Fmt, time_t Duration)
 
             switch (*ptr)
             {
+            case 'y':
+                Tempstr=FormatStr(Tempstr, "%lu", years);
+                RetStr=CatStr(RetStr, Tempstr);
+                len+=StrLen(Tempstr);
+                break;
+
             case 'w':
                 Tempstr=FormatStr(Tempstr, "%lu", weeks);
                 RetStr=CatStr(RetStr, Tempstr);
@@ -314,7 +357,9 @@ const char *FormatDuration(const char *Fmt, time_t Duration)
     }
 
     Destroy(Tempstr);
+    Destroy(Fmt);
 
+    fprintf(stderr, "FormatDuration: [%s]\n", RetStr);
     return(RetStr);
 }
 

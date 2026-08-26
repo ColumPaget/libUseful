@@ -1,5 +1,7 @@
 #include "Process.h"
 #include "Container.h"
+#include "Capabilities.h"
+#include "Seccomp.h"
 
 #include "errno.h"
 #include "includes.h"
@@ -18,7 +20,6 @@
 #include "FileSystem.h"
 #include "UnitsOfMeasure.h"
 #include "Users.h"
-#include "Seccomp.h"
 #include "IPAddress.h"
 #include "AtExit.h"
 
@@ -46,93 +47,6 @@ static int TitleLen=0;
 
 
 
-
-#ifdef USE_CAPABILITIES
-#ifdef HAVE_LIBCAP
-#include <sys/capability.h>
-
-int CapabilitySet(cap_t caps, cap_value_t Cap)
-{
-
-    cap_set_flag(caps, CAP_EFFECTIVE, 1, &Cap, CAP_SET);
-    cap_set_flag(caps, CAP_PERMITTED, 1, &Cap, CAP_SET);
-    cap_set_flag(caps, CAP_INHERITABLE, 1, &Cap, CAP_SET);
-
-    return(TRUE);
-}
-#endif
-#endif
-
-int ProcessSetCapabilities(const char *CapNames)
-{
-#ifdef USE_CAPABILITIES
-#ifdef HAVE_LIBCAP
-
-    char *Token=NULL;
-    const char *ptr;
-    cap_t caps;
-    uid_t uid;
-
-    caps=cap_get_proc();
-    cap_clear(caps);
-    ptr=GetToken(CapNames, ",",&Token,0);
-    while (ptr)
-    {
-        if (strcasecmp(Token, "net-bind")==0) CapabilitySet(caps,  CAP_NET_BIND_SERVICE);
-        else if (strcasecmp(Token, "net-admin")==0) CapabilitySet(caps,  CAP_NET_ADMIN);
-        else if (strcasecmp(Token, "net-raw")==0) CapabilitySet(caps,  CAP_NET_RAW);
-        else if (strcasecmp(Token, "net-bcast")==0) CapabilitySet(caps,  CAP_NET_BROADCAST);
-        else if (strcasecmp(Token, "setuid")==0) CapabilitySet(caps,  CAP_SETUID);
-        else if (strcasecmp(Token, "setgid")==0) CapabilitySet(caps,  CAP_SETGID);
-        else if (strcasecmp(Token, "fsetid")==0) CapabilitySet(caps,  CAP_FSETID);
-        else if (strcasecmp(Token, "chown")==0) CapabilitySet(caps,  CAP_CHOWN);
-        else if (strcasecmp(Token, "mknod")==0) CapabilitySet(caps,  CAP_MKNOD);
-        else if (strcasecmp(Token, "kill")==0) CapabilitySet(caps,  CAP_KILL);
-        else if (strcasecmp(Token, "chroot")==0) CapabilitySet(caps,  CAP_SYS_CHROOT);
-        else if (strcasecmp(Token, "reboot")==0) CapabilitySet(caps,  CAP_SYS_BOOT);
-        else if (strcasecmp(Token, "nice")==0) CapabilitySet(caps,  CAP_SYS_NICE);
-        else if (strcasecmp(Token, "time")==0) CapabilitySet(caps,  CAP_SYS_TIME);
-        else if (strcasecmp(Token, "sys-admin")==0) CapabilitySet(caps,  CAP_SYS_ADMIN);
-        else if (strcasecmp(Token, "rawio")==0) CapabilitySet(caps,  CAP_SYS_RAWIO);
-        else if (strcasecmp(Token, "file-access")==0) CapabilitySet(caps,  CAP_DAC_OVERRIDE);
-        else if (strcasecmp(Token, "audit")==0)
-        {
-            CapabilitySet(caps,  CAP_AUDIT_CONTROL);
-            CapabilitySet(caps,  CAP_AUDIT_READ);
-            CapabilitySet(caps,  CAP_AUDIT_WRITE);
-        }
-        else if (strcasecmp(Token, "audit")==0)
-        {
-            CapabilitySet(caps,  CAP_AUDIT_CONTROL);
-            CapabilitySet(caps,  CAP_AUDIT_READ);
-            CapabilitySet(caps,  CAP_AUDIT_WRITE);
-        }
-
-
-
-        ptr=GetToken(ptr, ",",&Token,0);
-    }
-
-    cap_set_proc(caps);
-
-    uid=getuid();
-#ifdef HAVE_SETRESUID
-    setresuid( uid, uid, uid);
-#else
-    setreuid( uid, uid);
-#endif
-
-    // once our capabilites are set, we can't be adding any
-    // further privilidges
-    ProcessNoNewPrivs();
-
-    Destroy(Token);
-
-#endif
-#endif
-
-    return(1);
-}
 
 
 //Set controlling tty to be fd.
@@ -777,11 +691,11 @@ static int ProcessApplyEarlyConfig(const char *Config)
 //Apply config changes that are relevant AFTER chroot/daemonize
 static int ProcessApplyLateConfig(int Flags, const char *Config)
 {
-    char *Name=NULL, *Value=NULL, *Capabilities=NULL, *SeccompSetup=NULL;
+    char *Name=NULL, *Value=NULL, *Capabilities=NULL, *InheritCapabilities=NULL, *SeccompSetup=NULL;
     const char *ptr;
     long uid=0, gid=0;
     int lockfd, ctty_fd=0;
-    int ContainerFlags=0, Requested;
+    int ContainerFlags=0, CapFlags=0, Requested=0;
 
 //we will have parsed anything that can set 'PROC_CONTAINER' in the early config.
 //we may now parse those things (e.g. 'security=') again here to carry them out
@@ -807,8 +721,8 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
         {
             if (chdir(Value) !=0)
             {
-                RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chdir to %s", Value);
-                RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "too dangerous to continue, (possibly in wrong directory) exiting...", Value);
+                RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ProcessApplyConfig", "failed to chdir to %s", Value);
+                RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ProcessApplyConfig", "too dangerous to continue, (possibly in wrong directory) exiting...", Value);
                 exit(1);
 
                 Flags |= PROC_SETUP_FAIL;
@@ -826,7 +740,10 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
             lockfd=CreateLockFile(Value, 0);
             if (lockfd==-1) _exit(1);
         }
-        else if (strcasecmp(Name,"capabilities")==0) Capabilities=CopyStr(Capabilities, Value);
+        else if (strcasecmp(Name,"capabilities")==0) Capabilities=MCatStr(Capabilities, Value, " ", NULL);
+        else if (strcasecmp(Name,"caps")==0) Capabilities=MCatStr(Capabilities, Value, " ", NULL);
+        else if (strcasecmp(Name,"inherit_capabilities")==0) InheritCapabilities=MCatStr(InheritCapabilities, Value, " ", NULL);
+        else if (strcasecmp(Name,"inherit_caps")==0) InheritCapabilities=MCatStr(InheritCapabilities, Value, " ", NULL);
         else if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &SeccompSetup);
         else if (strcasecmp(Name,"ctty")==0)
         {
@@ -838,6 +755,7 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
         else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);
         else if (strcasecmp(Name,"files")==0) ProcessSetRLimit(RLIMIT_NOFILE, Value);
         else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
+        else if (strcasecmp(Name,"keepcaps")==0) CapFlags |= LU_CAPABILITIES_KEEP;
         else if (InStringList(Name,"procs,nproc,nprocs",","))
         {
             if (ContainerFlags & PROC_CONTAINER_PID) ProcessSetRLimit(RLIMIT_NPROC, Value);
@@ -862,7 +780,27 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
 
 //Always do group first, otherwise we'll lose ability to switch user/group
     if (gid > 0) SwitchGID(gid);
-    if (uid > 0) SwitchUID(uid);
+
+
+    //this switch of JUST the effective UID exists purely to handle linux capabilites
+    //we have to set euid first in order to 'signal' that we want to keep some capabilites
+    //otherwise they all get wiped when we switch UID
+    if (uid > 0)
+    {
+        setreuid(-1, uid);
+
+        //set up capabilities before we switch user, so we can keep them across UID switch
+        //otherwise we'll lose all caps when we uid switch. This only gets called if we have a uid requested.
+        if (CapFlags & LU_CAPABILITIES_KEEP) Flags |= ProcessSetCapabilities(Capabilities, InheritCapabilities, CapFlags | LU_CAPABILITIES_UID);
+
+        if (uid > 0) SwitchUID(uid);
+    }
+
+    //this is the main 'capabilities' setting. If we asked to switch UID, then it sets the 'final' capabilites set
+    //If not asked to switch UID, then only this capabilities setting gets called.
+    //If the user didn't ask to switch UID above, then they must ask for setuid and setgid in their capabilities set if
+    //they want to do so themselves later 
+    Flags |= ProcessSetCapabilities(Capabilities, InheritCapabilities, CapFlags);
 
     if (LibUsefulFlags & LU_RESIST_PTRACE)
     {
@@ -882,7 +820,6 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
     }
 
 
-    if (StrValid(Capabilities)) ProcessSetCapabilities(Capabilities);
     //if we set any capabilites, we will already have set 'NO_NEW_PRIVS'
     //so only consider the PROC_NO_NEW_PRIVS flag if we didn't use
     //capabilities
@@ -894,13 +831,17 @@ static int ProcessApplyLateConfig(int Flags, const char *Config)
 
         //seccomp must come after PROC_NO_NEW_PRIVS
 #ifdef USE_SECCOMP
-        if (StrValid(SeccompSetup)) SeccompAddRules(SeccompSetup);
+        if (StrValid(SeccompSetup)) 
+	{
+	if (! SeccompAddRules(SeccompSetup)) Flags |= PROC_SETUP_FAIL;
+	}
 #endif
     }
 
     Destroy(Name);
     Destroy(Value);
     Destroy(Capabilities);
+    Destroy(InheritCapabilities);
     Destroy(SeccompSetup);
 
     return(Flags);
@@ -920,7 +861,7 @@ int ProcessApplyConfig(const char *Config)
 
     if (Flags & PROC_SETUP_FAIL)
     {
-        if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "Early setup failed. Strict mode requested. Aborting.");
+        if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT|ERRFLAG_SYSLOG, "ProcessApplyConfig", "Early setup failed. Strict mode requested. Aborting.");
         return(Flags);
     }
 

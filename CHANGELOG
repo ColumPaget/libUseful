@@ -1,3 +1,15 @@
+v5.78 (2026-09-09)
+  * mcast: stream type for multicast UDP added
+  * don't set 'keepalive' on udp sockets
+  * Linux Capabilities subsystem reworked to allow capabilites to be inherited and kept across user switch
+  * SMTP module can now be compiled-out at runtime
+  * SMTP now supports LU_SMTP_NO_TLS, LU_SMTP_STARTTLS and LU_SMTP_TLS_IMPLICIT flags
+  * Server sockets now have a 'nohandshake' or '2StepAccept' option.
+  * TLS/SSL certificate chains can now be setup using either 'ssl_cert_set0_chain' or the older 'SSL_CTX_add_extra_chain_cert'
+  * added 'auto' and 'high' options to FormatDuration
+  * ProcessApplyConfig 'strict' mode now applies to capabilites switch and seccomp
+
+
 v5.77 (2026-08-02)
   * timeout implemented for DoSSLServerNegotiation
   * ToSIUnit, ToMetric and ToIEC now support negative precision values that specify 'prefer higher unit'
@@ -15,8 +27,8 @@ v5.75 (2026-06-19)
   * following options now supported within the 'security=' stanza of ProcessApplyConfig: w^x, w^x:inherit, w^x:hard, w^x, w^x:inherit, w^x:hard, nosu, nopriv, noprivs
   * added 'noptrace' security option
   * move 'rlimit' setup to late stage of process apply config, so it will work right if we're in a container, call 'setsid', etc
-	* 'procs' or 'nproc' option in ProcessApplyConfig requires pid namespaces now
-	* 'uprocs' option replaces procs as system-wide user processes
+  * 'procs' or 'nproc' option in ProcessApplyConfig requires pid namespaces now
+  * 'uprocs' option replaces procs as system-wide user processes
  
 v5.74 (2026-06-13)
   * fix issues with detecting compiler options on some compilers

@@ -60,11 +60,13 @@ void InternalRaiseError(int flags, const char *where, const char *file, int line
     va_list args;
     const char *ptr="";
     int errno_save;
-    ListNode *Curr, *Next;;
+    ListNode *Curr, *Next;
     uint64_t Now;
+    int SyslogLevel=LOG_ERR;
     TError *Err;
 
     if (flags & ERRFLAG_CLEAR) ErrorsClear();
+    if (flags & ERRFLAG_DEBUG) SyslogLevel=LOG_DEBUG;
 
     errno_save=errno;
     va_start(args,FmtStr);
@@ -84,7 +86,7 @@ void InternalRaiseError(int flags, const char *where, const char *file, int line
     //tty for this case. ERRFLAG_NOTTY is a setting here, not at test that uses '&'
     if (ErrorOutputWanted(flags | ERRFLAG_NOTTY))
     {
-        if ((flags & ERRFLAG_SYSLOG) || LibUsefulGetBool("Error:Syslog")) syslog(LOG_ERR,"DEBUG: %s %s:%d %s. %s", where, file, line, Tempstr, ptr);
+        if ((flags & ERRFLAG_SYSLOG) || LibUsefulGetBool("Error:Syslog")) syslog(SyslogLevel, "%s %s:%d %s. %s", where, file, line, Tempstr, ptr);
     }
 
     //if this Error is just debugging, then never add it to the list of errors

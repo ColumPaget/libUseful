@@ -1068,6 +1068,9 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
 
     case 'm':
         if (strcasecmp(Proto,"mmap")==0) S=STREAMFileOpen(URL+5, STREAMParseConfig(Config) | SF_MMAP);
+#ifdef USE_MCAST
+        else if (strcasecmp(Proto,"mcast")==0) S=STREAMSocketOpen(URL, Config);
+#endif
         else S=STREAMFileOpenWithConfig(URL, Config);
         break;
 
@@ -1088,16 +1091,8 @@ STREAM *STREAMOpen(const char *URL, const char *Config)
                 S->Type=STREAM_TYPE_TTY;
             }
         }
-        else
-        {
-            S=STREAMCreate();
-            S->Path=CopyStr(S->Path, URL);
-            if (! STREAMConnect(S, URL, Config))
-            {
-                STREAMClose(S);
-                S=NULL;
-            }
-        }
+        //bcast, udp, tcp, tls, ssl, etc, etc handled below
+        else S=STREAMSocketOpen(URL, Config);
         break;
 
 
@@ -1396,9 +1391,9 @@ int STREAMWaitForBytes(STREAM *S)
             }
 
         }
-				//we set read result == 1 to indicate that we should attempt a read
-				//because either WaitForBytes is FALSE or S->Timeout == 0
-				//which means we are working in 'blocking' mode, and so always do a read
+        //we set read result == 1 to indicate that we should attempt a read
+        //because either WaitForBytes is FALSE or S->Timeout == 0
+        //which means we are working in 'blocking' mode, and so always do a read
         else read_result=1;
     }
     else RaiseError(0, "", "NULL Stream Passed");

@@ -76,12 +76,15 @@ STREAM *STREAMServerInit(const char *URL);
   P - REUSE_PORT allows multiple processes to listen on the same port
 
 Supported name=value pairs are
-  listen=<val> allow <val> number of connections waiting to be accepted on a listening server socket
-  mode=<perms> set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
-  perms=<perms> set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
-  permissions=<perms> set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
+  listen=<val>                       allow <val> number of connections waiting to be accepted on a listening server socket
+  mode=<perms>                       set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
+  perms=<perms>                      set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
+  permissions=<perms>                set permissions for a unix server socket. '<perms>' can be an octal value (e.g. 666) or a 'rwx' string (e.g. rw-rw-rw-)
   authentication=<method>:<value>    authentication for incoming connections. Multiple methods can be added seperated by commas.
-  auth=<method>:<value>    authentication for incoming connections. Multiple methods can be added seperated by commas.
+  auth=<method>:<value>              authentication for incoming connections. Multiple methods can be added seperated by commas.
+  nohandshake                        don't do TLS/SSL and other negotiations on STREAMServerAccept (see discussion below)
+  2StepAccept                        don't do TLS/SSL and other negotiations on STREAMServerAccept (see discussion below)
+
 
   Authentication methods include:
   ip:<ipaddress>          only accept connections from <ipaddress>
@@ -98,15 +101,18 @@ Supported name=value pairs are
 
 
   Instead of SSL:CertFile and SSL:KeyFile the values SSL:CertData and SSL:KeyData can be used. In this case the value should be the entire contents of  a PEM=encoded Certificate or Key File. This allows storing Certificates and keys in memory and using them in programs that cannot access the original files (e.g. because these programs are chrooted and the original keys are outside of chroot, or because they have switched user and their current user doesn't have permissions to read the files).
+
+  NOHANDSHAKE or 2STEPACCEPT:
+  These values tell STREAMServerAccept not to do various negotiations (e.g. TLS/SSL negotiation) on the accepted socket. Instead the programmer must call STREAMServerPostAccept when they want those done. This is provided for server scenarios where we wish to 'hand off' the connection to a subprocess. TLS negotation can hang, and thus moving that to a child process and not hanging the 'main' thread of an application is frequently desirable.
 */
 
 
 STREAM *STREAMServerNew(const char *URL, const char *Config);
 
-
-
 //Accept a connection on a STREAM socket
 STREAM *STREAMServerAccept(STREAM *Serv);
+
+STREAM *STREAMServerPostAccept(STREAM *S);
 
 #ifdef __cplusplus
 }

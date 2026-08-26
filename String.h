@@ -187,7 +187,7 @@ char *StripTrailingWhitespace(char *Str);
 char *StripLeadingWhitespace(char *Str);
 
 //strip leading and trailing whitespace. Though string is returned, it is never realloced.
-char *StringTrim(char *Str);
+char *StrTrim(char *Str);
 
 //strip carriage-return and linefeed characters from the end of a string
 char *StripCRLF(char *Str);

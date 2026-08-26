@@ -14,10 +14,11 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #define CONNECT_SSL             2
 #define CONNECT_HTTP_PROXY      4
 #define CONNECT_SOCKS_PROXY     8
-#define SOCK_NOKEEPALIVE       16 //by default sockets have TCP keepalive set. This option turns it off
-#define SOCK_BROADCAST         32 //used internally to create broadcast sockets
+#define SOCK_NOKEEPALIVE       16  //by default sockets have TCP keepalive set. This option turns it off
+#define SOCK_BROADCAST         32  //used internally to create broadcast sockets
 #define SOCK_DONTROUTE         64
 #define SOCK_REUSEPORT        128
+#define SOCK_MULTICAST        256  //used internally to create multicast sockets
 #define SOCK_PEERCREDS        512  //used with UNIX sockets to get remote user ID
 #define CONNECT_ERROR        1024  //report errors even if Error:IgnoreIP is set
 #define SOCK_TLS_AUTO        2048
@@ -196,7 +197,7 @@ int STREAMSendDgram(STREAM *S, const char *Host, int Port, char *Data, int len);
 int STREAMProtocolConnect(STREAM *S, const char *URL, const char *Config);
 int STREAMDirectConnect(STREAM *S, const char *URL, int Flags);
 int DoPostConnect(STREAM *S, int Flags);
-
+STREAM *STREAMSocketOpen(const char *URL, const char *Config);
 
 #ifdef __cplusplus
 }

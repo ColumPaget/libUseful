@@ -1,4 +1,4 @@
-AC_INIT([libUseful], [5.77], [colums.projects@gmail.com])
+AC_INIT([libUseful], [5.78], [colums.projects@gmail.com])
 
 
 dnl define a function we can use to check if a compiler flag
@@ -411,7 +411,7 @@ cf_have_libssl=$ac_cv_lib_ssl_OPENSSL_init_ssl
 AS_IF([test "$cf_have_libssl" = "yes"], [
 cf_use_zlib=yes
 
-AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch X509_get0_notBefore X509_get0_notAfter EC_KEY_new_by_curve_name DH_generate_parameters_ex DH_new PEM_read_DHparams)
+AC_CHECK_FUNCS(OpenSSL_add_all_algorithms EVP_MD_CTX_create EVP_MD_CTX_new EVP_MD_CTX_destroy EVP_MD_CTX_free X509_check_host SSL_set_tlsext_host_name SSL_set_min_proto_version EVP_CIPHER_fetch X509_get0_notBefore X509_get0_notAfter EC_KEY_new_by_curve_name DH_generate_parameters_ex DH_new PEM_read_DHparams SSL_CTX_set0_chain)
 
 
 AC_CHECK_DECLS(OpenSSL_add_all_algorithms,AC_DEFINE([HAVE_OPENSSL_ADD_ALL_ALGORITHMS]),[],[[#include <openssl/ssl.h>]])
@@ -526,6 +526,34 @@ AC_DEFINE([USE_SECCOMP])
 ])
 
 
+AC_ARG_ENABLE([smtp],
+[AS_HELP_STRING([--enable-smtp], [enable SMTP functions for sending mails (default=yes)])],
+[cf_use_smtp=$enableval],
+[cf_use_smtp=yes]
+)
+AS_IF([test "$cf_use_smtp" = "yes"], [
+AC_DEFINE([USE_SMTP])
+])
+
+
+
+
+AC_ARG_ENABLE([mcast],
+[AS_HELP_STRING([--enable-mcast], [enable UDP multicast (default=yes)])],
+[cf_use_mcast=$enableval],
+[cf_use_mcast=yes]
+)
+
+AS_IF([test "$cf_use_mcast" = "yes"],
+[
+CHECK_DEFINE([IP_ADD_MEMBERSHIP], [netinet/ip.h])
+AS_IF([test "$have_IP_ADD_MEMBERSHIP" = "yes"],cf_use_mcast=yes,cf_use_mcast=no)
+])
+AS_IF([test "$cf_use_mcast" = "yes"], [
+AC_DEFINE([USE_MCAST])
+])
+
+
 
 
 dnl read Makefile.in and write Makefile
@@ -579,6 +607,17 @@ echo "IPv6 enabled"
 ], [
 echo "IPv6 NOT enabled"
 ])
+
+AS_IF([test "$cf_use_smtp" = "yes"], [
+echo "SMTP enabled" ], [
+echo "SMTP NOT enabled"
+])
+
+AS_IF([test "$cf_use_mcast" = "yes"], [
+echo "IP multicast enabled" ], [
+echo "IP multicast NOT enabled"
+])
+
 
 AS_IF([test "$cf_have_libssl" = "yes"], [
 echo "SSL/TLS enabled"
@@ -657,6 +696,6 @@ echo "linux seccomp support NOT enabled"
 AS_IF([test "$cf_use_backtrace" = "yes"], [
 echo "linux backtrace support enabled"
 ], [
-echo "linux backtrace support NOT enabled"
+echo "linux backtrace support not enabled"
 ])
 

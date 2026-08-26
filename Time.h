@@ -56,7 +56,11 @@ time_t ParseDuration(const char *Dur);
 //format a string using the substitutions %w %d %h %m %s for weeks, days, hours, minutes and seconds
 //if any of the substututions are missing, then their value is carried over to the next highest substitution
 //so if there's no '%d', then the 'days' part will be counted in '%h' (hours)
-//or if that is missing in '%m' (mins) or '%s' (seconds)
+//or if that is missing in '%m' (mins) or '%s' (seconds).
+
+//there are two 'special formats': 'auto' and 'high'. 
+//passing 'auto' for Fmt results in a format string being produced internall that expresses the duration succinctly
+//passing 'high' for Fmt results in just the largest component of the duration being expressed 
 const char *FormatDuration(const char *Fmt, time_t Duration);
 
 //convert Time from timezone 'SrcZone' to 'DstZone'

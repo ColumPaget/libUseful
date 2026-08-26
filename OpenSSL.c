@@ -72,23 +72,36 @@ static int OpenSSLLoadCertificateChain(STREAM *S, SSL_CTX *ctx, const char *Chai
     }
 
 
-    main_cert = PEM_read_bio_X509_AUX(in, NULL, NULL, NULL);
-
+    main_cert = PEM_read_bio_X509(in, NULL, NULL, NULL);
     if (main_cert)
     {
-        if (SSL_CTX_use_certificate(ctx, main_cert) && SSL_CTX_set0_chain(ctx, NULL) )
+        if (SSL_CTX_use_certificate(ctx, main_cert))
         {
+#ifdef HAVE_SSL_CTX_SET0_CHAIN
+            //initialize chain of extra certificates
+            SSL_CTX_set0_chain(ctx, NULL);
+#endif
+
             RetVal=TRUE;
             /* Process any additional CA certificates. */
             ca = PEM_read_bio_X509(in, NULL, NULL, NULL);
             while (ca)
             {
+#ifdef HAVE_SSL_CTX_SET0_CHAIN
                 result=SSL_CTX_add0_chain_cert(ctx, ca);
-                X509_free(ca);
-                if (! result)
+#else
+                result=SSL_CTX_add_extra_chain_cert(ctx, ca);
+#endif
+
+                if (result < 1)
                 {
                     OpenSSLRaiseError(S, "OpenSSLLoadCertificateChain", "Error loading extra certificates");
                     RetVal=FALSE;
+
+                    //ONLY FREE CERTIFICATE IF FAILED TO ADD IT TO CHAIN
+                    //THESE ARE STORED INTERNALLY IN CTX
+                    X509_free(ca);
+
                     break;
                 }
                 ca = PEM_read_bio_X509(in, NULL, NULL, NULL);
@@ -957,8 +970,8 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
     SSL *ssl;
     int IsNonBlock=FALSE;
     double StartTime=0;
-		int AcceptTimeout=50;
-		const char *ptr;
+    int AcceptTimeout=50;
+    const char *ptr;
 
     if (S)
     {
@@ -998,14 +1011,14 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
 
                 SSL_set_accept_state(ssl);
 
-								ptr=STREAMGetValue(S, "SSL:AcceptTimeout");
-								if (StrValid(ptr)) AcceptTimeout=atoi(ptr);
+                ptr=STREAMGetValue(S, "SSL:AcceptTimeout");
+                if (StrValid(ptr)) AcceptTimeout=atoi(ptr);
 
                 while (1)
                 {
                     result=SSL_accept(ssl);
 
-										//1 means 'handshake complete'
+                    //1 means 'handshake complete'
                     if (result == 1)
                     {
                         S->State |= LU_SS_SSL;
@@ -1013,8 +1026,8 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                         OpenSSLQueryCipher(S);
                         break;
                     }
-										//anything other than 1 means 'handshake incomplete',
-										//we have to call SSL_get_error to get more details
+                    //anything other than 1 means 'handshake incomplete',
+                    //we have to call SSL_get_error to get more details
                     else
                     {
                         result=SSL_get_error(ssl,result);
@@ -1034,7 +1047,7 @@ int DoSSLServerNegotiation(STREAM *S, int Flags)
                         }
                     }
 
-										//if we've taken too long to get a handshake, then time out
+                    //if we've taken too long to get a handshake, then time out
                     if (GetTime(TIME_CENTISECS) > (StartTime + AcceptTimeout)) break;
                 }
 
@@ -1171,16 +1184,25 @@ int OpenSSLSTREAMWriteBytes(STREAM *S, const char *Data, int Len)
 
 void OpenSSLClose(STREAM *S)
 {
-    ListNode *Node;
 
 #ifdef HAVE_LIBSSL
     SSL *ssl;
+    ListNode *Node;
+    int result, count;
 
     Node=ListFindNamedItem(S->Items,"LIBUSEFUL-SSL:OBJ");
     if (Node)
     {
         ssl=(SSL *) Node->Item;
-        while (SSL_shutdown(ssl) == 0);
+        count=0;
+        while (SSL_shutdown(ssl) == 0)
+        {
+            result=SSL_get_error(ssl, result);
+            if ( (result != SSL_ERROR_WANT_READ) && (result != SSL_ERROR_WANT_WRITE)) break;
+            count++;
+            if (count > 10) break;
+            usleep(3000);
+        }
 
         SSL_free(ssl);
         ListDeleteNode(Node);

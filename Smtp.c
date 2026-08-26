@@ -3,16 +3,17 @@
 #include "URL.h"
 #include "Inet.h"
 
-#define CAP_HELO 1
-#define CAP_EHLO 2
-#define CAP_AUTH_LOGIN 4
-#define CAP_AUTH_PLAIN 8
+#define SMTP_CAP_HELO 1
+#define SMTP_CAP_EHLO 2
+#define SMTP_CAP_AUTH_LOGIN 4
+#define SMTP_CAP_AUTH_PLAIN 8
 
 char *SMTPRead(char *RetStr, STREAM *S)
 {
     char *Tempstr=NULL;
 
     RetStr=CopyStr(RetStr, "");
+#ifdef USE_SMTP
     Tempstr=STREAMReadLine(Tempstr, S);
     while (StrLen(Tempstr) > 3)
     {
@@ -21,19 +22,43 @@ char *SMTPRead(char *RetStr, STREAM *S)
         Tempstr=STREAMReadLine(Tempstr, S);
     }
 
+    if (LibUsefulDebugActive()) fprintf(stderr, "SMTP: << %s\n", Tempstr);
+
     DestroyString(Tempstr);
+#endif
+
     return(RetStr);
 }
 
 
-int SMTPInteract(const char *Line, STREAM *S)
+int SMTPWrite(const char *Line, STREAM *S)
+{
+#ifdef USE_SMTP
+    if (StrValid(Line))
+    {
+        STREAMWriteLine(Line, S);
+        if (LibUsefulDebugActive()) fprintf(stderr, "SMTP: >> %s\n", Line);
+
+        STREAMFlush(S);
+        return(TRUE);
+    }
+#endif
+
+    return(FALSE);
+}
+
+
+#ifdef USE_SMTP //all the below functions will be compiled out if 'configure --disable-smtp' is selected
+
+static int SMTPInteract(const char *Line, STREAM *S)
 {
     char *Tempstr=NULL;
     int result=FALSE;
 
-    if (StrValid(Line)) STREAMWriteLine(Line, S);
-    STREAMFlush(S);
+
+    SMTPWrite(Line, S);
     Tempstr=SMTPRead(Tempstr, S);
+
 
     /*
     syslog(LOG_DEBUG,"mail >> %s",Line);
@@ -43,14 +68,15 @@ int SMTPInteract(const char *Line, STREAM *S)
     if (
         StrValid(Tempstr) &&
         ( (*Tempstr=='2') || (*Tempstr=='3') )
-    ) result=TRUE;
+    ) result=atoi(Tempstr);
+    else result=FALSE;
 
     DestroyString(Tempstr);
     return(result);
 }
 
 
-int SMTPParseCapabilities(const char *String)
+static int SMTPParseCapabilities(const char *String)
 {
     char *Token=NULL;
     const char *ptr;
@@ -59,8 +85,8 @@ int SMTPParseCapabilities(const char *String)
     ptr=GetToken(String+4," ",&Token,0);
     while (ptr)
     {
-        if (strcasecmp(Token, "LOGIN")==0) Caps |= CAP_AUTH_LOGIN;
-        if (strcasecmp(Token, "PLAIN")==0) Caps |= CAP_AUTH_PLAIN;
+        if (strcasecmp(Token, "LOGIN")==0) Caps |= SMTP_CAP_AUTH_LOGIN;
+        if (strcasecmp(Token, "PLAIN")==0) Caps |= SMTP_CAP_AUTH_PLAIN;
         ptr=GetToken(ptr," ",&Token,0);
     }
 
@@ -70,7 +96,7 @@ int SMTPParseCapabilities(const char *String)
 }
 
 
-int SMTPHelo(STREAM *S)
+static int SMTPHelo(STREAM *S)
 {
     int RetVal=0;
     char *Tempstr=NULL, *Token=NULL;
@@ -85,12 +111,12 @@ int SMTPHelo(STREAM *S)
     }
 
     Tempstr=MCopyStr(Tempstr, "EHLO ", ptr, "\r\n", NULL);
-    STREAMWriteLine(Tempstr,S);
+    SMTPWrite(Tempstr,  S);
     Tempstr=SMTPRead(Tempstr, S);
 
-    if (*Tempstr == '2')
+    if (StrValid(Tempstr) && (*Tempstr=='2'))
     {
-        RetVal |= CAP_EHLO;
+        RetVal |= SMTP_CAP_EHLO;
         ptr=GetToken(Tempstr,"\n",&Token,0);
         while (ptr)
         {
@@ -103,12 +129,8 @@ int SMTPHelo(STREAM *S)
     else
     {
         Tempstr=MCopyStr(Tempstr, "HELO ", ptr, "\r\n", NULL);
-        STREAMWriteLine(Tempstr,S);
-        if (SMTPInteract(Tempstr, S)) RetVal |= CAP_HELO;
+        if (SMTPInteract(Tempstr, S)) RetVal |= SMTP_CAP_HELO;
     }
-
-
-
 
     DestroyString(Tempstr);
     DestroyString(Token);
@@ -116,16 +138,22 @@ int SMTPHelo(STREAM *S)
 }
 
 
-int SMTPLogin(STREAM *S, int Caps, const char *User, const char *Pass)
+
+static int SMTPLogin(STREAM *S, int Caps, const char *User, const char *Pass)
 {
     char *Tempstr=NULL, *Base64=NULL, *ptr;
-    int len, result=FALSE;
+    int len, result, RetVal=FALSE;
 
 
-    if (Caps & CAP_AUTH_LOGIN)
+    if (Caps & SMTP_CAP_AUTH_LOGIN)
     {
         Tempstr=CopyStr(Tempstr, "AUTH LOGIN\r\n");
-        if (SMTPInteract(Tempstr, S))
+        result=SMTPInteract(Tempstr, S);
+
+        //if mailserver tells us '235' straight away, then it's telling
+        //us we don't need to authenticate
+        if (result == 235) RetVal=TRUE;
+        else if (result == 334)
         {
             Base64=EncodeBytes(Base64, User, StrLen(User), ENCODE_BASE64);
             Tempstr=MCopyStr(Tempstr, Base64, "\r\n", NULL);
@@ -133,11 +161,12 @@ int SMTPLogin(STREAM *S, int Caps, const char *User, const char *Pass)
             {
                 Base64=EncodeBytes(Base64, Pass, StrLen(Pass), ENCODE_BASE64);
                 Tempstr=MCopyStr(Tempstr, Base64, "\r\n", NULL);
-                if (SMTPInteract(Tempstr, S)) result=TRUE;
+                if (SMTPInteract(Tempstr, S)) RetVal=TRUE;
             }
         }
+        else RaiseError(0, "SMTPLogin", "SMTP Login Conversation Failed");
     }
-    else if (Caps & CAP_AUTH_PLAIN)
+    else if (Caps & SMTP_CAP_AUTH_PLAIN)
     {
         Tempstr=SetStrLen(Tempstr, StrLen(User) + StrLen(Pass) +10);
 
@@ -158,17 +187,17 @@ int SMTPLogin(STREAM *S, int Caps, const char *User, const char *Pass)
 
         Base64=EncodeBytes(Base64, Tempstr, ptr-Tempstr, ENCODE_BASE64);
         Tempstr=MCopyStr(Tempstr, "AUTH PLAIN ", Base64, "\r\n",NULL);
-        if (SMTPInteract(Tempstr, S)) result=TRUE;
+        if (SMTPInteract(Tempstr, S)) RetVal=TRUE;
     }
 
     DestroyString(Tempstr);
     DestroyString(Base64);
 
-    return(result);
+    return(RetVal);
 }
 
 
-int SmtpSendRecipients(const char *Recipients, STREAM *S)
+static int SmtpSendRecipients(const char *Recipients, STREAM *S)
 {
     char *Recip=NULL, *Tempstr=NULL;
     const char *ptr;
@@ -188,13 +217,38 @@ int SmtpSendRecipients(const char *Recipients, STREAM *S)
 }
 
 
+
+static char *SMTPRationalizeProtocol(char *Proto, int Flags)
+{
+    if (Flags & LU_SMTP_NOSSL) Proto=CopyStr(Proto, "tcp");
+    else if (Flags & LU_SMTP_INITIAL_SSL) Proto=CopyStr(Proto, "tls");
+    else if (Flags & LU_SMTP_STARTTLS) Proto=CopyStr(Proto, "tcp");
+
+    if (StrValid(Proto))
+    {
+        if (strcasecmp(Proto, "smtp")==0) Proto=CopyStr(Proto, "tcp");
+        else if (strcasecmp(Proto, "smtps")==0) Proto=CopyStr(Proto, "tls");
+        else if (strcasecmp(Proto, "tcp")==0) Proto=CopyStr(Proto, "tcp");
+        else if (strcasecmp(Proto, "tls")==0) Proto=CopyStr(Proto, "tls");
+        else if (strcasecmp(Proto, "ssl")==0) Proto=CopyStr(Proto, "tls");
+        else Proto=CopyStr(Proto, "tcp");
+    }
+
+    return(Proto);
+}
+
+#endif //all the above functions are compiled out if 'configure --disable-smtp' is selected
+
+
 STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
 {
+    STREAM *S=NULL;
+
+#ifdef USE_SMTP
     char *Recip=NULL, *Tempstr=NULL;
     char *Proto=NULL, *User=NULL, *Pass=NULL, *Host=NULL, *PortStr=NULL;
     const char *p_MailServer;
     int result=FALSE, Caps=0;
-    STREAM *S;
 
     p_MailServer=LibUsefulGetValue("SMTP:Server");
     if (! StrValid(p_MailServer))
@@ -203,12 +257,19 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
         return(NULL);
     }
 
-    if (strncmp(p_MailServer,"smtp:",5) !=0) Tempstr=MCopyStr(Tempstr,"smtp:",p_MailServer,NULL);
-    else Tempstr=CopyStr(Tempstr, p_MailServer);
 
-    ParseURL(Tempstr, &Proto, &Host, &PortStr, &User, &Pass, NULL, NULL);
+    ParseURL(p_MailServer, &Proto, &Host, &PortStr, &User, &Pass, NULL, NULL);
+    Proto=SMTPRationalizeProtocol(Proto, Flags);
     if (! StrValid(PortStr)) PortStr=CopyStr(PortStr, "25");
-    Tempstr=MCopyStr(Tempstr,"tcp:",Host,":",PortStr,NULL);
+
+    //if we are connecting with TLS from the get-go, then we dont' want to do
+    //STARTTLS below
+    if (strcmp(Proto, "tls")==0) Flags |= LU_SMTP_NOSSL;
+
+
+    Tempstr=MCopyStr(Tempstr, Proto, ":", Host, ":", PortStr, NULL);
+
+
 //syslog(LOG_DEBUG, "mailto: %s [%s] [%s] [%s]",Tempstr,Proto,Host,PortStr);
 
     S=STREAMOpen(Tempstr, "");
@@ -221,10 +282,10 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
             if (Caps > 0)
             {
                 //try STARTTLS, the worst that will happen is the server will say no
-                if ((! (Flags & SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S)) DoSSLClientNegotiation(S, 0);
+                if ((! (Flags & LU_SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S)) DoSSLClientNegotiation(S, 0);
 
                 if (
-                    (Caps & (CAP_AUTH_LOGIN | CAP_AUTH_PLAIN)) &&
+                    (Caps & (SMTP_CAP_AUTH_LOGIN | SMTP_CAP_AUTH_PLAIN)) &&
                     (StrValid(User) && StrValid(Pass))
                 ) SMTPLogin(S, Caps, User, Pass);
 
@@ -260,20 +321,24 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
         return(NULL);
     }
 
+#endif
+
     return(S);
 }
 
 
 int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags)
 {
+    int result=FALSE;
+
+#ifdef USE_SMTP
     char *Tempstr=NULL;
     STREAM *S;
-    int result=FALSE;
 
     S=SMTPConnect(Sender, Recipient, Flags);
     if (S)
     {
-        if (! (Flags & SMTP_NOHEADER))
+        if (! (Flags & LU_SMTP_NOHEADER))
         {
             Tempstr=MCopyStr(Tempstr,"Date: ", GetDateStr("%a, %d %b %Y %H:%M:%S", NULL), "\r\n", NULL);
             Tempstr=MCatStr(Tempstr,"From: ", Sender, "\r\n", NULL);
@@ -291,6 +356,8 @@ int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject,
     }
 
     DestroyString(Tempstr);
+#endif
+
     return(result);
 }
 
@@ -298,9 +365,11 @@ int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject,
 
 int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path, int Flags)
 {
+    int result=FALSE;
+
+#ifdef USE_SMTP
     char *Tempstr=NULL;
     STREAM *S, *F;
-    int result=FALSE;
 
     F=STREAMOpen(Path, "r");
     if (F)
@@ -321,6 +390,8 @@ int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path
     else RaiseError(0,"SMTPSendMailFile","Failed to open file for sending");
 
     DestroyString(Tempstr);
+#endif
+
     return(result);
 }
 

@@ -227,6 +227,7 @@ typedef enum {STREAM_TYPE_FILE, STREAM_TYPE_PIPE, STREAM_TYPE_TTY, STREAM_TYPE_U
 //FLUSH_ flags go in this gap
 
 #define SF_RDONLY               16  //open stream read only 
+#define SF_2STEP_ACCEPT         16  //ONLY FOR SERVERS: expect 'ACCEPT' to be done in two steps STREAMServerAccept and then STREAMServerPostAccept
 #define SF_WRONLY               32  //open stream write only
 #define SF_CREAT                64  //create stream if it doesn't exist
 #define SF_CREATE               64  //create stream if it doesn't exist

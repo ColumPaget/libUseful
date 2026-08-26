@@ -24,4 +24,8 @@ CheckCompile "--disable-ssl --disable-seccomp --disable-namespaces"
 CheckCompile "--enable-ssl --disable-seccomp --disable-namespaces"
 CheckCompile "--enable-seccomp --disable-namespaces"
 CheckCompile "--enable-seccomp --enable-namespaces"
+CheckCompile "--enable-seccomp --disable-capabilities"
+CheckCompile "--enable-seccomp --enable-capabilites"
+CheckCompile "--enable-seccomp --disable-smtp"
+CheckCompile "--enable-seccomp --enable-smtp"
 

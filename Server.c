@@ -128,6 +128,8 @@ static void STREAMServerParseConfig(STREAM *S, const char *Config)
     while (ptr)
     {
         if (CompareStrNoCase(Name, "Auth")==0) STREAMSetValue(S, "AUTH:Types", Value);
+        else if (CompareStrNoCase(Name, "NoHandshake")==0) S->Flags |= SF_2STEP_ACCEPT;
+        else if (CompareStrNoCase(Name, "2StepAccept")==0) S->Flags |= SF_2STEP_ACCEPT;
         else STREAMSetValue(S, Name, Value);
 
         ptr=GetNameValuePair(ptr, "\\S", "=", &Name, &Value);
@@ -149,7 +151,6 @@ STREAM *STREAMServerNew(const char *URL, const char *Config)
     if (StrValid(Token)) Port=atoi(Token);
 
     Flags=SocketParseConfig(Config, &Settings);
-
     switch (*Proto)
     {
     case 'b':
@@ -266,6 +267,47 @@ STREAM *STREAMServerInit(const char *URL)
 }
 
 
+
+STREAM *STREAMServerPostAccept(STREAM *S)
+{
+    //things that we have to do post-accept for each type of socket
+    switch (S->Type)
+    {
+    case STREAM_TYPE_TCP_ACCEPT:
+        //if TLS autodetection enabled, perform it now
+        if ((S->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+        else if (S->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+
+        // for tcp and tls/ssl, if STREAMAuth fails, we disconnect
+        if (! STREAMAuth(S))
+        {
+            STREAMClose(S);
+            S=NULL;
+        }
+        break;
+
+    case STREAM_TYPE_HTTP_ACCEPT:
+        if ((S->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+        else if (S->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+
+        //HttpServer handles STREAMAuth internally
+        HTTPServerAccept(S);
+        break;
+
+    case STREAM_TYPE_WS_ACCEPT:
+        if ((S->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+        else if (S->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
+
+        //Websocket handles STREAMAuth internally
+        WebSocketAccept(S);
+        break;
+    }
+
+    return(S);
+}
+
+
+
 STREAM *STREAMServerAccept(STREAM *Serv)
 {
     char *Tempstr=NULL, *DestIP=NULL;
@@ -313,44 +355,14 @@ STREAM *STREAMServerAccept(STREAM *Serv)
     S=STREAMFromSock(fd, type, Tempstr, DestIP, DestPort);
     if (S)
     {
+        S->Flags=Serv->Flags;
         CopyVars(S->Values, Serv->Values);
-
-        //things that we have to do post-accept for each type of socket
-        switch (type)
-        {
-        case STREAM_TYPE_TCP_ACCEPT:
-            //if TLS autodetection enabled, perform it now
-            if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
-            else if (Serv->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
-
-            // for tcp and tls/ssl, if STREAMAuth fails, we disconnect
-            if (! STREAMAuth(S))
-            {
-                STREAMClose(S);
-                S=NULL;
-            }
-            break;
-
-        case STREAM_TYPE_HTTP_ACCEPT:
-            if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
-            else if (Serv->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
-
-            //HttpServer handles STREAMAuth internally
-            HTTPServerAccept(S);
-            break;
-
-        case STREAM_TYPE_WS_ACCEPT:
-            if ((Serv->Flags & SF_TLS_AUTO) && OpenSSLAutoDetect(S)) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
-            else if (Serv->Flags & SF_TLS) DoSSLServerNegotiation(S, LU_SSL_VERIFY_PEER);
-
-            //Websocket handles STREAMAuth internally
-            WebSocketAccept(S);
-            break;
-        }
+        if (! (S->Flags & SF_2STEP_ACCEPT)) S=STREAMServerPostAccept(S);
     }
 
     DestroyString(Tempstr);
     DestroyString(DestIP);
+
     return(S);
 }
 

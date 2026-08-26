@@ -9,8 +9,13 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 #include "includes.h"
 #include "defines.h"
 
-#define SMTP_NOSSL 1
-#define SMTP_NOHEADER 2
+//Flags that pass as the 'Flags' argument of SMTPSendMail
+#define LU_SMTP_NOSSL       1   //don't use SSL/TLS (including starttls even if server supports it)
+#define LU_SMTP_NOTLS       1   //don't use SSL/TLS (including starttls even if server supports it)
+#define LU_SMTP_NOHEADER    2   //don't add a header to the mail
+#define LU_SMTP_STARTTLS    4   //use 'starttls' if server supports it
+#define LU_SMTP_INITIAL_TLS 8   //use TLS/SSL straight away (rather than 'starttls')
+#define LU_SMTP_INITIAL_SSL 8   //use TLS/SSL straight away (rather than 'starttls')
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +23,8 @@ extern "C" {
 
 int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags);
 int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path, int Flags);
+STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags);
+char *SMTPRead(char *RetStr, STREAM *S);
 
 #ifdef __cplusplus
 }

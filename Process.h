@@ -130,11 +130,20 @@ chroot=<path>      chroot process into <path>. This option happens before switch
 
 jail               jail the process. This does a chroot AFTER looking up the user id, creating lockfile, etc ,etc. This can be used to jail a process into an empty or private directory
 
-strict             abort process if chdir, chroot or jail fails
+strict             abort process if setting capablities, seccomp, namespaces, no new privs, chdir, chroot or jail fails
 
 namespace=<path>
 ns=<path>          linux namespace to join. <path> is either a path to a namespace file, or a path to a directory (e.g. /proc/<pid>/ns )
                    that contains namespace descriptor files
+
+capabilities=<caplist>
+caps=<caplist>     linux capabilites for this process. The process must normally be running as 'root' (userid == 0) to do this. <caplist> is a comma-separated list of capabilities like 'cap_setuid,cap_net_admin'. These capabilities ARE NOT inhertied by child processes.
+
+inherit_capabilities=<caplist>
+inherit_caps=<caplist>     linux capabilites for this process. The process must normally be running as 'root' (userid == 0) to do this. <caplist> is a comma-separated list of capabilities like 'cap_setuid,cap_net_admin'. These capabilities ARE inhertied by child processes.
+
+keepcaps           KEEP capabilites set with caps= or inherit_caps= after a user/UID switch
+
 
 nosu               set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
 nopriv             set 'prctl(PR_NO_NEW_PRIVS)' to prevent privesc via su/sudo/setuid
