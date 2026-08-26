@@ -107,6 +107,7 @@ static int SMTPHelo(STREAM *S)
     if (! StrValid(ptr))
     {
         Token=GetExternalIP(Token);
+        LibUsefulSetValue("SMTP:HELO", Token);
         ptr=Token;
     }
 
@@ -239,26 +240,23 @@ static char *SMTPRationalizeProtocol(char *Proto, int Flags)
 
 #endif //all the above functions are compiled out if 'configure --disable-smtp' is selected
 
-
-STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
+STREAM *SMTPConnectServer(const char *ServerURL, const char *Sender, const char *Recipients, int Flags)
 {
     STREAM *S=NULL;
 
 #ifdef USE_SMTP
     char *Recip=NULL, *Tempstr=NULL;
     char *Proto=NULL, *User=NULL, *Pass=NULL, *Host=NULL, *PortStr=NULL;
-    const char *p_MailServer;
     int result=FALSE, Caps=0;
 
-    p_MailServer=LibUsefulGetValue("SMTP:Server");
-    if (! StrValid(p_MailServer))
+    if (! StrValid(ServerURL))
     {
         RaiseError(0, "SendMail", "No Mailserver set");
         return(NULL);
     }
 
 
-    ParseURL(p_MailServer, &Proto, &Host, &PortStr, &User, &Pass, NULL, NULL);
+    ParseURL(ServerURL, &Proto, &Host, &PortStr, &User, &Pass, NULL, NULL);
     Proto=SMTPRationalizeProtocol(Proto, Flags);
     if (! StrValid(PortStr)) PortStr=CopyStr(PortStr, "25");
 
@@ -282,7 +280,11 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
             if (Caps > 0)
             {
                 //try STARTTLS, the worst that will happen is the server will say no
-                if ((! (Flags & LU_SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S)) DoSSLClientNegotiation(S, 0);
+                if ((! (Flags & LU_SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S)) 
+		{
+			DoSSLClientNegotiation(S, 0);
+            		Caps=SMTPHelo(S);
+		}
 
                 if (
                     (Caps & (SMTP_CAP_AUTH_LOGIN | SMTP_CAP_AUTH_PLAIN)) &&
@@ -327,7 +329,13 @@ STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
 }
 
 
-int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags)
+STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
+{
+return(SMTPConnectServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Flags));
+}
+
+
+int SMTPSendMailViaServer(const char *ServerURL, const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags)
 {
     int result=FALSE;
 
@@ -335,7 +343,7 @@ int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject,
     char *Tempstr=NULL;
     STREAM *S;
 
-    S=SMTPConnect(Sender, Recipient, Flags);
+    S=SMTPConnectServer(ServerURL, Sender, Recipient, Flags);
     if (S)
     {
         if (! (Flags & LU_SMTP_NOHEADER))
@@ -361,9 +369,13 @@ int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject,
     return(result);
 }
 
+int SMTPSendMail(const char *Sender, const char *Recipients, const char *Subject, const char *Body, int Flags)
+{
+return(SMTPSendMailViaServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Subject, Body, Flags));
+}
 
 
-int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path, int Flags)
+int SMTPSendMailFileViaServer(const char *ServerURL, const char *Sender, const char *Recipients, const char *Path, int Flags)
 {
     int result=FALSE;
 
@@ -374,7 +386,7 @@ int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path
     F=STREAMOpen(Path, "r");
     if (F)
     {
-        S=SMTPConnect(Sender, Recipient, Flags);
+        S=SMTPConnectServer(ServerURL, Sender, Recipients, Flags);
         if (S)
         {
             STREAMSendFile(F, S, 0, SENDFILE_LOOP);
@@ -395,5 +407,10 @@ int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path
     return(result);
 }
 
+
+int SMTPSendMailFile(const char *Sender, const char *Recipients, const char *Path, int Flags)
+{
+return(SMTPSendMailFileViaServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Path, Flags));
+}
 
 

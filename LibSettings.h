@@ -62,9 +62,9 @@ HTTP:UserAgent         set default UserAgent value to be used by HTTP connection
 SSL:Library            openssl library that libUseful is linked against. This is set on first use
                        of ssl connections or call to 'SSLAvailable' and has the format:
 
-												 name:version:build date:cflags
+                               name:version:build date:cflags
 
-                       currently openssl is the only supported library
+                       currently openssl/libressl is the only supported library
 
 
 SSL:Level              minimum SSL/TLS version to use on SSL connections. possible values are
@@ -72,7 +72,7 @@ SSL:Level              minimum SSL/TLS version to use on SSL connections. possib
                          ssl    ssl version 3
                          tls    tls version 1
                          tls1.1 tls version 1.1
-												 tls1.2 tls version 1.2
+                         tls1.2 tls version 1.2
 
                        currently 'tls' is the default
 

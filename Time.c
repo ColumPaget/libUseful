@@ -215,8 +215,8 @@ static char *FormatDurationAutoFmt(char *Fmt, const char *iFmt, time_t Duration)
 {
     if (CompareStr(iFmt, "auto")==0)
     {
-        if (Duration > DAYSECS * 365) Fmt=CopyStr(Fmt, "%yy,%ww,%dd,%hh,%mm,%ss");
-        else if (Duration > DAYSECS * 7) Fmt=CopyStr(Fmt, "%ww,%dd,%hh,%mm,%ss");
+        if (Duration > (DAYSECS * 365)) Fmt=CopyStr(Fmt, "%yy,%ww,%dd,%hh,%mm,%ss");
+        else if (Duration > (DAYSECS * 7)) Fmt=CopyStr(Fmt, "%ww,%dd,%hh,%mm,%ss");
         else if (Duration > DAYSECS) Fmt=CopyStr(Fmt, "%dd,%hh,%mm,%ss");
         else if (Duration > 3600) Fmt=CopyStr(Fmt, "%hh,%mm,%ss");
         else if (Duration > 60) Fmt=CopyStr(Fmt, "%mm,%ss");
@@ -224,19 +224,41 @@ static char *FormatDurationAutoFmt(char *Fmt, const char *iFmt, time_t Duration)
     }
     else if (CompareStr(iFmt, "high")==0)
     {
-        if (Duration > DAYSECS * 7) Fmt=CopyStr(Fmt, "%yy");
-        else if (Duration > DAYSECS * 7) Fmt=CopyStr(Fmt, "%ww");
+        if (Duration > (DAYSECS * 365)) Fmt=CopyStr(Fmt, "%yy");
+        else if (Duration > (DAYSECS * 7)) Fmt=CopyStr(Fmt, "%ww");
         else if (Duration > DAYSECS) Fmt=CopyStr(Fmt, "%dd");
         else if (Duration > 3600) Fmt=CopyStr(Fmt, "%hh");
         else if (Duration > 60) Fmt=CopyStr(Fmt, "%mm");
         else Fmt=CopyStr(Fmt, "%ss");
     }
+    else if (CompareStr(iFmt, "high+1")==0)
+    {
+        if (Duration > (DAYSECS * 365)) Fmt=CopyStr(Fmt, "%yy,%dd");
+        else if (Duration > (DAYSECS * 7)) Fmt=CopyStr(Fmt, "%ww,%dd");
+        else if (Duration > DAYSECS) Fmt=CopyStr(Fmt, "%dd,%hh");
+        else if (Duration > 3600) Fmt=CopyStr(Fmt, "%hh,%mm");
+        else if (Duration > 60) Fmt=CopyStr(Fmt, "%mm,%ss");
+        else Fmt=CopyStr(Fmt, "%ss");
+    }
+
+
     else Fmt=CopyStr(Fmt, iFmt);
 
     return(Fmt);
 }
 
 
+static time_t FormatDurationPrepareComponent(time_t Duration, const char *Fmt, const char *ComponentStr, unsigned long ComponentSeconds, unsigned long *Component)
+{
+
+    if (strstr(Fmt, ComponentStr))
+    {
+        *Component=Duration / (ComponentSeconds);
+        if ((*Component) > 0) Duration -= ((*Component) * ComponentSeconds);
+    }
+
+return(Duration);
+}
 
 
 
@@ -251,35 +273,11 @@ const char *FormatDuration(const char *iFmt, time_t Duration)
 
     Fmt=FormatDurationAutoFmt(Fmt, iFmt, Duration);
 
-    if (strstr(Fmt, "%y"))
-    {
-        years=Duration / (DAYSECS * 365);
-        if (years > 0) Duration -= (years * DAYSECS * 365);
-    }
-
-    if (strstr(Fmt, "%w"))
-    {
-        weeks=Duration / (DAYSECS * 7);
-        if (weeks > 0) Duration -= (weeks * DAYSECS * 7);
-    }
-
-    if (strstr(Fmt, "%d"))
-    {
-        days=Duration / DAYSECS;
-        if (days > 0) Duration -= (days * DAYSECS);
-    }
-
-    if (strstr(Fmt, "%h"))
-    {
-        hours=Duration / 3600;
-        if (hours > 0) Duration -= (hours * 3600);
-    }
-
-    if (strstr(Fmt, "%m"))
-    {
-        mins=Duration / 60;
-        if (mins > 0) Duration -= (mins * 60);
-    }
+    Duration=FormatDurationPrepareComponent(Duration, Fmt, "%y", DAYSECS * 365, &years);
+    Duration=FormatDurationPrepareComponent(Duration, Fmt, "%w", DAYSECS * 7, &weeks);
+    Duration=FormatDurationPrepareComponent(Duration, Fmt, "%d", DAYSECS, &days);
+    Duration=FormatDurationPrepareComponent(Duration, Fmt, "%h", 3600, &hours);
+    Duration=FormatDurationPrepareComponent(Duration, Fmt, "%m", 60, &mins);
 
     secs=Duration;
 
@@ -359,7 +357,6 @@ const char *FormatDuration(const char *iFmt, time_t Duration)
     Destroy(Tempstr);
     Destroy(Fmt);
 
-    fprintf(stderr, "FormatDuration: [%s]\n", RetStr);
     return(RetStr);
 }
 

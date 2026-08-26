@@ -21,9 +21,12 @@ Copyright (c) 2015 Colum Paget <colums.projects@googlemail.com>
 extern "C" {
 #endif
 
-int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags);
-int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path, int Flags);
+STREAM *SMTPConnectServer(const char *ServerURL, const char *Sender, const char *Recipients, int Flags);
 STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags);
+int SMTPSendMailViaServer(const char *ServerURL, const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags);
+int SMTPSendMail(const char *Sender, const char *Recipient, const char *Subject, const char *Body, int Flags);
+int SMTPSendMailFileViaServer(const char *ServerURL, const char *Sender, const char *Recipient, const char *Path, int Flags);
+int SMTPSendMailFile(const char *Sender, const char *Recipient, const char *Path, int Flags);
 char *SMTPRead(char *RetStr, STREAM *S);
 
 #ifdef __cplusplus
