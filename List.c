@@ -101,7 +101,7 @@ void ListSetFlags(ListNode *List, int Flags)
     Head=ListGetHead(List);
 //only the first 16bit of flags is stored. Some flags > 16 bit effect config, but
 //don't need to be stored long term
-    Head->Flags=Flags & 0xFFFF;
+    if (Head) Head->Flags=Flags & 0xFFFF;
 }
 
 void ListSetDestroyer(ListNode *List, LIST_ITEM_DESTROY_FUNC Destroyer)
@@ -109,8 +109,11 @@ void ListSetDestroyer(ListNode *List, LIST_ITEM_DESTROY_FUNC Destroyer)
     ListNode *Head;
 
     Head=ListGetRoot(List);
-    if (! Head->Stats) Head->Stats=(ListStats *) calloc(1,sizeof(ListStats));
-    Head->Stats->Destroyer=Destroyer;
+    if (Head)
+    {
+        if (! Head->Stats) Head->Stats=(ListStats *) calloc(1,sizeof(ListStats));
+        Head->Stats->Destroyer=Destroyer;
+    }
 }
 
 
@@ -119,9 +122,12 @@ void ListSetMaxItems(ListNode *List, unsigned long val, LIST_ITEM_DESTROY_FUNC D
     ListNode *Head;
 
     Head=ListGetRoot(List);
-    if (! Head->Stats) Head->Stats=(ListStats *) calloc(1,sizeof(ListStats));
-    Head->Stats->Max=val;
-    Head->Stats->Destroyer=Destroyer;
+    if (Head)
+    {
+        if (! Head->Stats) Head->Stats=(ListStats *) calloc(1,sizeof(ListStats));
+        Head->Stats->Max=val;
+        Head->Stats->Destroyer=Destroyer;
+    }
 }
 
 
@@ -398,15 +404,18 @@ static void ListHandleMaxSize(ListNode *Node, ListNode *Head)
     //in lists it will be the same as 'Head'
     ChainHead=ListGetHead(Node);
 
-    //we delete up to 3 items, as we're only adding 1, then even if somehow the
-    //list has grown over 'Max' it will gradually shrink back
-    for (i=0; (i < 3) && (ChainHead->Stats->Hits > Head->Stats->Max); i++)
+    if (ChainHead)
     {
-        Curr=ListGetNext(ChainHead);
-        if (! Curr) break;
+        //we delete up to 3 items, as we're only adding 1, then even if somehow the
+        //list has grown over 'Max' it will gradually shrink back
+        for (i=0; (i < 3) && (ChainHead->Stats->Hits > Head->Stats->Max); i++)
+        {
+            Curr=ListGetNext(ChainHead);
+            if (! Curr) break;
 
-        if (Head->Stats->Destroyer) Head->Stats->Destroyer(Curr->Item);
-        ListDeleteNode(Curr);
+            if (Head->Stats->Destroyer) Head->Stats->Destroyer(Curr->Item);
+            ListDeleteNode(Curr);
+        }
     }
 }
 

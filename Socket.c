@@ -822,7 +822,7 @@ int GetSockDetails(int sock, char **LocalAddress, int *LocalPort, char **RemoteA
 int IPReconnect(int sock, const char *Host, int Port, int Flags)
 {
     socklen_t salen;
-    int result;
+    int result=-2;
     struct sockaddr *sa;
 
 
@@ -851,13 +851,13 @@ int IPReconnect(int sock, const char *Host, int Port, int Flags)
         RaiseError(0, "IPConnect", "IP multicast not compiled in");
 #endif
     }
-    else  result=connect(sock,(struct sockaddr *) sa, salen);
+    else result=connect(sock,(struct sockaddr *) sa, salen);
 
     if (result==0) result=TRUE;
 
     if ((result==-1) && (Flags & CONNECT_NONBLOCK) && (errno == EINPROGRESS)) result=FALSE;
 
-    if (result==-1)
+    if ((result==-1) || (result==-2))
     {
         //if ( (Flags & CONNECT_ERROR) || (! LibUsefulGetBool("Error:IgnoreIP")) ) RaiseError(ERRFLAG_ERRNO, "IPConnect", "1: failed to connect to %s:%d", Host, Port);
         if (Flags & CONNECT_ERROR) RaiseError(ERRFLAG_ERRNO, "IPConnect", "failed to connect to %s:%d", Host, Port);

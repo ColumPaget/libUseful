@@ -35,10 +35,11 @@ static char *ProcessBuildCapabilitiesString(char *RetStr, const char *CapNames, 
 
 int ProcessSetCapabilities(const char *Capabilites, const char *InheritCapabilities, int Flags)
 {
+    char *CapsStr=NULL, *Tempstr=NULL;
 //default is to indicate failure.
 //if no Capabilities or InheritCapabilities asked for we will return 0 immediately
 //else we will only return 0 on success
-int RetVal=PROC_SETUP_FAIL;
+    int RetVal=PROC_SETUP_FAIL;
 
 //we want to return FALSE straight away to prevent 'Capabilities not compiled in' debug warnings
     if ( (! StrValid(Capabilites)) && (! StrValid(InheritCapabilities)) ) return(0);
@@ -46,14 +47,12 @@ int RetVal=PROC_SETUP_FAIL;
 #ifdef USE_CAPABILITIES
 #ifdef HAVE_LIBCAP
 
-    char *Tempstr=NULL;
     cap_t caps;
 
 
-
-    if (Flags & LU_CAPABILITIES_UID) Tempstr=CopyStr(Tempstr, "cap_setuid=pe cap_setgid=pe ");
-    Tempstr=ProcessBuildCapabilitiesString(Tempstr, Capabilites, FALSE);
-    Tempstr=ProcessBuildCapabilitiesString(Tempstr, InheritCapabilities, TRUE);
+    if (Flags & LU_CAPABILITIES_UID) CapsStr=CopyStr(CapsStr, "cap_setuid=pe cap_setgid=pe ");
+    CapsStr=ProcessBuildCapabilitiesString(CapsStr, Capabilites, FALSE);
+    CapsStr=ProcessBuildCapabilitiesString(CapsStr, InheritCapabilities, TRUE);
 
     if (Flags & LU_CAPABILITIES_KEEP)
     {
@@ -61,17 +60,20 @@ int RetVal=PROC_SETUP_FAIL;
         prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0);
     }
 
-    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: LinuxCapabilities: %s  keepcaps=%d\n", Tempstr, Flags && LU_CAPABILITIES_KEEP);
+    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: LinuxCapabilities: %s  keepcaps=%d\n", CapsStr, Flags && LU_CAPABILITIES_KEEP);
 
-    caps=cap_from_text(Tempstr);
+    caps=cap_from_text(CapsStr);
     if (caps)
     {
-	//set 'RetVal' to 0 to indicate everything worked
-        if (cap_set_proc(caps) == 0) RetVal=0;
+        if (cap_set_proc(caps) == 0)
+        {
+            //set 'RetVal' to 0 to indicate everything worked
+            RetVal=0;
+        }
         cap_free(caps);
-	
+
     }
-    else RaiseError(ERRFLAG_ERRNO, "capabilities", "bad capabilities string: %s", Tempstr);
+    else RaiseError(ERRFLAG_ERRNO, "capabilities", "bad capabilities string: %s", CapsStr);
 
 
 #else
@@ -83,6 +85,7 @@ int RetVal=PROC_SETUP_FAIL;
 #endif
 
     Destroy(Tempstr);
+    Destroy(CapsStr);
     return(RetVal);
 }
 

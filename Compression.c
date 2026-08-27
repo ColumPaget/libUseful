@@ -97,6 +97,8 @@ TProcessingModule *LU_CompressionModuleCreate(const char *Name, const char *Args
 {
     TProcessingModule *Mod=NULL;
 
+    if (! StrValid(Name)) return(NULL);
+
     if (
         (strcasecmp(Name,"zlib")==0)  ||
         (strcasecmp(Name,"deflate")==0)

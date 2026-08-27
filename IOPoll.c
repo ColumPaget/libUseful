@@ -70,15 +70,18 @@ static TSelectSet *EPOLLInit(ListNode *Streams, TSelectSet *Set)
     T_POLL_CTX *Ctx;
 
     Head=ListGetHead(Streams);
-    if (Head->Item) Ctx=(T_POLL_CTX *) Head->Item;
-    else
+    if (Head)
     {
-        Ctx=(T_POLL_CTX *) calloc(1, sizeof(T_POLL_CTX));
-        Ctx->pollfd=epoll_create1(EPOLL_CLOEXEC);
-        Head->Item=(void *) Ctx;
-    }
+        if (Head->Item) Ctx=(T_POLL_CTX *) Head->Item;
+        else if (Head)
+        {
+            Ctx=(T_POLL_CTX *) calloc(1, sizeof(T_POLL_CTX));
+            Ctx->pollfd=epoll_create1(EPOLL_CLOEXEC);
+            Head->Item=(void *) Ctx;
+        }
 
-    Set->pollfd=Ctx->pollfd;
+        Set->pollfd=Ctx->pollfd;
+    }
 
     return(Set);
 }
@@ -132,7 +135,7 @@ static int EPOLLWait(TSelectSet *Set, struct timeval *tv)
     int timeout=-1;
     uint64_t timeout64;
     uint64_t start;
-    int fd, i;
+    int i;
     T_EPOLL_ITEMS *items;
 
 
@@ -166,7 +169,7 @@ static int EPOLLWait(TSelectSet *Set, struct timeval *tv)
             }
         }
     }
-    else RaiseError(ERRFLAG_ERRNO, "SelectWait:(epoll)", "failed to add file descriptor '%d' using epoll", fd);
+    else RaiseError(ERRFLAG_ERRNO, "SelectWait:(epoll)", "pollfd is -1");
 
 
     return(event_count);
@@ -428,8 +431,11 @@ void STREAMSelectUnregister(ListNode *Select)
         SelectList=(ListNode *) Curr->Item;
 // EPOLL stores a context in Head->Item, get rid of that
         Head=ListGetHead(SelectList);
-        if (Head->Item) free(Head->Item);
-        Head->Item=NULL;
+        if (Head)
+        {
+            if (Head->Item) free(Head->Item);
+            Head->Item=NULL;
+        }
     }
 
 //remove the stream select from our list
@@ -452,7 +458,7 @@ static void STREAMSelectRemove(ListNode *Select, STREAM *S)
         Head=ListGetHead(Select);
 
 #ifdef HAVE_EPOLL
-        EPOLLRemoveFD((T_POLL_CTX *) Head->Item, S->in_fd);
+        if (Head && Head->Item) EPOLLRemoveFD((T_POLL_CTX *) Head->Item, S->in_fd);
 #endif
 
 //remove STREAM from list. STREAMSelect will ignore this entry

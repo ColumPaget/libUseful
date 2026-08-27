@@ -425,7 +425,7 @@ static void HTTPParseHeader(STREAM *S, HTTPInfoStruct *Info, char *Header)
 
     if (Info->Flags & HTTP_DEBUG) fprintf(stderr,"HEADER: %s\n",Header);
     ptr=GetToken(Header,":",&Token,0);
-    while (isspace(*ptr)) ptr++;
+    while (ptr && isspace(*ptr)) ptr++;
 
     Tempstr=MCopyStr(Tempstr,"HTTP:",Token,NULL);
     STREAMSetValue(S,Tempstr,ptr);

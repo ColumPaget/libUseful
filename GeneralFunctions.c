@@ -96,11 +96,29 @@ void xmemset(volatile char *Str, char fill, off_t size)
     for (p=Str; p < (Str+size); p++) *p=fill;
 }
 
+
 int xsetenv(const char *Name, const char *Value)
 {
-    if (setenv(Name, Value,TRUE)==0) return(TRUE);
+    if (setenv(Name, Value, TRUE)==0) return(TRUE);
     return(FALSE);
 }
+
+int appendenv(const char *Name, const char *Value)
+{
+    char *Tempstr=NULL;
+    int RetVal=FALSE;
+
+//must do two steps here as getenv can return NULL
+    Tempstr=CopyStr(Tempstr, getenv(Name));
+    Tempstr=MCatStr(Tempstr, " ", Value, NULL);
+
+    if (setenv(Name, Tempstr, TRUE)==0) RetVal=TRUE;
+
+    Destroy(Tempstr);
+
+    return(RetVal);
+}
+
 
 
 //increment ptr but don't go past '\0'

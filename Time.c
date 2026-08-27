@@ -257,7 +257,7 @@ static time_t FormatDurationPrepareComponent(time_t Duration, const char *Fmt, c
         if ((*Component) > 0) Duration -= ((*Component) * ComponentSeconds);
     }
 
-return(Duration);
+    return(Duration);
 }
 
 

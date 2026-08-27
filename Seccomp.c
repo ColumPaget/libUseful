@@ -18,7 +18,7 @@
 
 #include "StringList.h"
 
-static int InstructionCount=0;
+static int SeccompInstructionCount=0;
 
 
 
@@ -715,24 +715,24 @@ static char *SyscallGroupLookup(char *RetStr, const char *Name)
 
 
 
-int SeccompFilterAddSTMT(struct sock_filter **Filt, int Statement, uint32_t Arg)
+static int SeccompFilterAddSTMT(struct sock_filter **Filt, int Statement, uint32_t Arg)
 {
     struct sock_filter stmt=BPF_STMT(Statement, Arg);
 
-    *Filt=(struct sock_filter *) realloc(*Filt, sizeof(struct sock_filter) * (InstructionCount + 10));
-    memcpy((*Filt) + InstructionCount, &stmt, sizeof(struct sock_filter));
-    InstructionCount++;
-    return(InstructionCount);
+    *Filt=(struct sock_filter *) realloc(*Filt, sizeof(struct sock_filter) * (SeccompInstructionCount + 10));
+    memcpy((*Filt) + SeccompInstructionCount, &stmt, sizeof(struct sock_filter));
+    SeccompInstructionCount++;
+    return(SeccompInstructionCount);
 }
 
-int SeccompFilterAddJUMP(struct sock_filter **Filt, int Type, int Arg, int JumpEQ, int JumpNE)
+static int SeccompFilterAddJUMP(struct sock_filter **Filt, int Type, int Arg, int JumpEQ, int JumpNE)
 {
     struct sock_filter jump=BPF_JUMP(Type, Arg, JumpEQ, JumpNE);
 
-    *Filt=(struct sock_filter *) realloc(*Filt, sizeof(struct sock_filter) * (InstructionCount + 10));
-    memcpy((*Filt) + InstructionCount, &jump, sizeof(struct sock_filter));
-    InstructionCount++;
-    return(InstructionCount);
+    *Filt=(struct sock_filter *) realloc(*Filt, sizeof(struct sock_filter) * (SeccompInstructionCount + 10));
+    memcpy((*Filt) + SeccompInstructionCount, &jump, sizeof(struct sock_filter));
+    SeccompInstructionCount++;
+    return(SeccompInstructionCount);
 }
 
 
@@ -751,7 +751,7 @@ static int SeccompArch()
 
 
 
-void SeccompFilterAddArchCheck(struct sock_filter **Filt)
+static void SeccompFilterAddArchCheck(struct sock_filter **Filt)
 {
     int expected_arch;
 
@@ -789,7 +789,7 @@ static int SeccompFilterCalcJump(const char *Args)
 #define SECCOMP_ARG_EQ  5
 #define SECCOMP_ARG_NEQ 6
 
-const char *GetArg(const char *Args, int *pos, int *type, int *value)
+static const char *SeccompFilterGetArg(const char *Args, int *pos, int *type, int *value)
 {
     char *ptr;
 
@@ -831,7 +831,7 @@ const char *GetArg(const char *Args, int *pos, int *type, int *value)
 }
 
 
-int SeccompFilterAddSyscall(struct sock_filter **Filt, int SysCall, const char *Args, int Action)
+static int SeccompFilterAddSyscall(struct sock_filter **Filt, int SysCall, const char *Args, int Action)
 {
     int jump, pos, type, value;
     int argcount=0;
@@ -845,7 +845,7 @@ int SeccompFilterAddSyscall(struct sock_filter **Filt, int SysCall, const char *
 //If it matches execute next instruction, otherwise jump over following instructions
     SeccompFilterAddJUMP(Filt, BPF_JMP | BPF_JEQ | BPF_K, SysCall, 0, jump);
 
-    ptr=GetArg(Args, &pos, &type, &value);
+    ptr=SeccompFilterGetArg(Args, &pos, &type, &value);
     while (ptr)
     {
         if (type > 0)
@@ -876,7 +876,7 @@ int SeccompFilterAddSyscall(struct sock_filter **Filt, int SysCall, const char *
         else RaiseError(ERRFLAG_DEBUG, "SeccompFilterAddSyscall","ERROR: BadArgument %d to syscall %d", argcount, SysCall);
         argcount++;
 
-        ptr=GetArg(ptr, &pos, &type, &value);
+        ptr=SeccompFilterGetArg(ptr, &pos, &type, &value);
     }
 
 
@@ -897,10 +897,10 @@ static int SeccompCommit(struct sock_filter **Filt, int Action)
     struct sock_fprog SeccompProg;
 
     SeccompFilterAddSTMT(Filt, BPF_RET | BPF_K, Action);
-    SeccompProg.len = (unsigned short) InstructionCount;
+    SeccompProg.len = (unsigned short) SeccompInstructionCount;
     SeccompProg.filter = *Filt;
 
-    InstructionCount=0;
+    SeccompInstructionCount=0;
 
     //if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &SeccompProg))
     if (syscall(SYS_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_LOG, &SeccompProg))
@@ -1318,7 +1318,7 @@ static int SeccompParseArg1(int SyscallID, int Arg0, const char *Name, char **Ar
 }
 
 
-static int  SeccompParseName(const char *SyscallStr, char **Args)
+static int SeccompParseName(const char *SyscallStr, char **Args)
 {
     const char *p_args;
     char *Name=NULL;

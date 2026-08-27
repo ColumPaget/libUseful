@@ -164,6 +164,7 @@ but never both.
 extern "C" {
 #endif
 
+char *SeccompExpand(char *RetStr, const char *NameList);
 int SeccompAddRules(const char *RuleList);
 
 #ifdef __cplusplus

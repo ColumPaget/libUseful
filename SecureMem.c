@@ -135,6 +135,7 @@ int SecureRealloc(unsigned char **OldMem, int OldSize, int NewSize, int Flags)
         }
 
         SecureLockMem(NewMem, MemSize, Flags);
+        *OldMem=NewMem;
     }
     else
     {
@@ -142,7 +143,6 @@ int SecureRealloc(unsigned char **OldMem, int OldSize, int NewSize, int Flags)
         exit(3);
     }
 
-    *OldMem=NewMem;
     return(MemSize);
 }
 

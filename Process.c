@@ -233,10 +233,14 @@ int ProcessResistPtrace()
 #include <sys/prctl.h>
 #ifdef PR_SET_DUMPABLE
 
-//set, then check we have the set. This covers situations where the sat failed, but we've already
+//set, then check we have the set. This covers situations where the set failed, but we've already
 //set the value previously somehow
     prctl(PR_SET_DUMPABLE, 0, 0, 0, 0);
-    if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0) return(TRUE);
+    if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0)
+    {
+        if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: set 'PR_SET_DUMPABLE', no coredumps or strace\n");
+        return(TRUE);
+    }
 
     RaiseError(ERRFLAG_ERRNO, "ProcessResistPtrace", "Failed to setup ptrace resistance");
 #else
@@ -259,7 +263,11 @@ int ProcessNoNewPrivs()
 //set, then check that the set worked. This correctly handles situations where we ask to set more than once
 //as the second attempt may 'fail', but we already have the desired result
     prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
-    if (prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) == 1) return(TRUE);
+    if (prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) == 1)
+    {
+        if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: set 'PR_NO_NEW_PRIVS', su/suid should not be possible now\n");
+        return(TRUE);
+    }
 
     RaiseError(ERRFLAG_ERRNO, "ProcessNoNewPrivs", "Failed to set 'no new privs'");
 #else
@@ -272,6 +280,8 @@ int ProcessNoNewPrivs()
 
     return(FALSE);
 }
+
+
 
 int ProcessNoWriteExec(int Inherit)
 {
@@ -307,11 +317,12 @@ int ProcessNoWriteExec(int Inherit)
     prctl(PR_SET_MDWE, Flags, 0, 0, 0);
     if (prctl(PR_GET_MDWE, 0, 0, 0, 0) != 0)
     {
-        if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: MDWE/W^X memory protections enabled\n");
-        return(TRUE);
-    }
+        if (LibUsefulDebugActive()) {
+            fprintf(stderr, "DEBUG: MDWE/W^X memory protections enabled. Flags=%d\n", Flags);
+            return(TRUE);
+        }
 
-    RaiseError(ERRFLAG_ERRNO, "ProcessNoWriteExec", "Failed to set 'NoWriteExec' (W^X) memory protections");
+        RaiseError(ERRFLAG_ERRNO, "ProcessNoWriteExec", "Failed to set 'NoWriteExec' (W^X) memory protections");
 #else
     RaiseError(ERRFLAG_DEBUG, "ProcessNoWriteExec", "This platform doesn't seem to support 'NoWriteExec' (W^X) memory protections");
 #endif
@@ -321,635 +332,638 @@ int ProcessNoWriteExec(int Inherit)
 
 #endif
 
-    return(FALSE);
-}
+        return(FALSE);
+    }
 
 
 
 
-static int ProcessApplyMemoryProtections(int Inherit, int Hard)
-{
-    int Flags=0;
+    static int ProcessApplyMemoryProtections(int Inherit, int Hard)
+    {
+        int Flags=0;
 
 //do this to load resolver shared libraries before we lock down process
 //so that it can't load libraries
-    LookupHostIP("example.net");
+        LookupHostIP("example.net");
 
-    if (! ProcessNoWriteExec(Inherit))
-    {
-        //set this flag to emulate MDWE with seccomp
-        //if mdwe not supported. THIS IMPLIES INHERIT.
-        if (Hard) Flags |= PROC_MDWE_HARD;
+        if (! ProcessNoWriteExec(Inherit))
+        {
+            //set this flag to emulate MDWE with seccomp
+            //if mdwe not supported. THIS IMPLIES INHERIT.
+            if (Hard) Flags |= PROC_MDWE_HARD;
+        }
+
+        return(Flags);
     }
 
-    return(Flags);
-}
 
 
-
-static int ProcessMemLockAdd()
-{
-    int result=FALSE;
-    LibUsefulFlags |= LU_MLOCKALL;
+    static int ProcessMemLockAdd()
+    {
+        int result=FALSE;
+        LibUsefulFlags |= LU_MLOCKALL;
 #ifdef HAVE_MLOCKALL
-    if (mlockall(MCL_CURRENT | MCL_FUTURE)) result=TRUE;
-    else RaiseError(ERRFLAG_ERRNO, "ProcessMemLockAdd", "Failed to set 'mlockall'");
+        if (mlockall(MCL_CURRENT | MCL_FUTURE))
+        {
+            result=TRUE;
+            if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: mlockall enabled, all memory pages non-swappable\n");
+        }
+        else RaiseError(ERRFLAG_ERRNO, "ProcessMemLockAdd", "Failed to set 'mlockall'");
 #else
-    RaiseError(0, "ProcessMemLockAdd", "This platform doesn't seem to support 'mlockall'");
+        RaiseError(0, "ProcessMemLockAdd", "This platform doesn't seem to support 'mlockall'");
 #endif
-    LibUsefulSetupAtExit();
+        LibUsefulSetupAtExit();
 
-    return(result);
-}
-
-
+        return(result);
+    }
 
 
-static int ProcessSecurityParseExtraOptions(const char *Name)
-{
-    int Flags=0;
 
-    if (strcasecmp(Name,"mdwe")==0) Flags |= ProcessApplyMemoryProtections(FALSE, FALSE);
-    else if (strcasecmp(Name,"mdwe:inherit")==0) Flags |= ProcessApplyMemoryProtections(TRUE, FALSE);
-    else if (strcasecmp(Name,"mdwe:hard")==0) Flags |= ProcessApplyMemoryProtections(TRUE, TRUE);
-    else if (strcasecmp(Name,"w^x")==0) Flags |= ProcessApplyMemoryProtections(FALSE, FALSE);
-    else if (strcasecmp(Name,"w^x:inherit")==0) Flags |= ProcessApplyMemoryProtections(TRUE, FALSE);
-    else if (strcasecmp(Name,"w^x:hard")==0) Flags |= ProcessApplyMemoryProtections(TRUE, TRUE);
-    else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
-    else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
-    else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
 
-    return(Flags);
-}
+    static int ProcessSecurityParseExtraOptions(const char *Name)
+    {
+        int Flags=0;
+
+        if (strcasecmp(Name,"mdwe")==0) Flags |= ProcessApplyMemoryProtections(FALSE, FALSE);
+        else if (strcasecmp(Name,"mdwe:inherit")==0) Flags |= ProcessApplyMemoryProtections(TRUE, FALSE);
+        else if (strcasecmp(Name,"mdwe:hard")==0) Flags |= ProcessApplyMemoryProtections(TRUE, TRUE);
+        else if (strcasecmp(Name,"w^x")==0) Flags |= ProcessApplyMemoryProtections(FALSE, FALSE);
+        else if (strcasecmp(Name,"w^x:inherit")==0) Flags |= ProcessApplyMemoryProtections(TRUE, FALSE);
+        else if (strcasecmp(Name,"w^x:hard")==0) Flags |= ProcessApplyMemoryProtections(TRUE, TRUE);
+        else if (strcasecmp(Name,"nosu")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"nopriv")==0) Flags |= PROC_NO_NEW_PRIVS;
+        else if (strcasecmp(Name,"noprivs")==0) Flags |= PROC_NO_NEW_PRIVS;
+
+        return(Flags);
+    }
 
 
 //used by all 'seccomp' related functions below
-typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_BASIC_NET, LU_SEC_LAN, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOMEMEXEC, LU_SEC_KILLMEMEXEC, LU_SEC_PIDNS, LU_SEC_IPCNS, LU_SEC_NETNS, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC, LU_SEC_NOSU, LU_SEC_NOINIT, LU_SEC_NOPTRACE} TSecLevel;
+    typedef enum {LU_SEC_MINIMAL, LU_SEC_BASIC, LU_SEC_USER, LU_SEC_GUEST, LU_SEC_UNTRUSTED, LU_SEC_CONSTRAINED, LU_SEC_HIGH, LU_SEC_WORKER, LU_SEC_MEMWORKER, LU_SEC_PARANOID, LU_SEC_CLIENT, LU_SEC_BASIC_NET, LU_SEC_LAN, LU_SEC_LOCAL, LU_SEC_NONET, LU_SEC_KILLNET, LU_SEC_NOEXEC, LU_SEC_KILLEXEC, LU_SEC_NOMEMEXEC, LU_SEC_KILLMEMEXEC, LU_SEC_PIDNS, LU_SEC_IPCNS, LU_SEC_NETNS, LU_SEC_NOPID, LU_SEC_NOSHM, LU_SEC_NOMSGQ, LU_SEC_NOIPC, LU_SEC_NOSU, LU_SEC_NOINIT, LU_SEC_NOPTRACE} TSecLevel;
 
 
 
-static int ProcessSecurityParseToken(const char *Name)
-{
-    static const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "basic-net", "lan", "local", "nonet", "killnet", "noexec", "killexec", "nomemexec", "killmemexec", "pidns", "ipcns", "netns", "nopid", "noshm", "nomsgq", "noipc", "nosu", "noinit", "noptrace", NULL};
-    int Level;
-
-    Level=MatchTokenFromList(Name, Levels, 0);
-
-    return(Level);
-}
-
-
-static char *ProcessSeccompSetupModifier(char *RetStr, int ModifierID, int *Flags)
-{
-
-    //these values arent 'levels' but rather things we can turn on or off at every level
-    //these are mostly about network access, namespaces
-    switch (ModifierID)
+    static int ProcessSecurityParseToken(const char *Name)
     {
-    case LU_SEC_CLIENT:
-        //do not attempt to add bind to this list, it's needed for client sockets and
-        //accepts a sockaddr object that seccomp cannot parse.
-        RetStr=CatStr(RetStr, "syscall_deny=group:server ");
-        break;
+        static const char *Levels[]= {"minimal", "basic", "user", "guest", "untrusted", "constrained", "high", "worker", "memworker", "paranoid", "client", "basic-net", "lan", "local", "nonet", "killnet", "noexec", "killexec", "nomemexec", "killmemexec", "pidns", "ipcns", "netns", "nopid", "noshm", "nomsgq", "noipc", "nosu", "noinit", "noptrace", NULL};
+        int Level;
 
-    case LU_SEC_BASIC_NET:
-        RetStr=CatStr(RetStr, "syscall_allow=socket(inet);socket(inet6);socket(unix);socketpair(inet);socketpair(inet6);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
-        break;
+        Level=MatchTokenFromList(Name, Levels, 0);
 
-    case LU_SEC_LOCAL:
-        RetStr=CatStr(RetStr, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
-        (*Flags) |= PROC_CONTAINER_NET;
-        break;
-
-    case LU_SEC_LAN:
-        (*Flags) |= PROC_LAN_ONLY;
-        break;
-
-
-    case LU_SEC_NONET:
-        RetStr=CatStr(RetStr, "syscall_deny=group:net ");
-        (*Flags) |= PROC_CONTAINER_NET;
-        break;
-
-    case LU_SEC_KILLNET:
-        RetStr=CatStr(RetStr, "syscall_kill=group:net ");
-        (*Flags) |= PROC_CONTAINER_NET;
-        break;
-
-    case LU_SEC_NOEXEC:
-        RetStr=CatStr(RetStr, "syscall_deny=group:exec ");
-        break;
-
-    case LU_SEC_KILLEXEC:
-        RetStr=CatStr(RetStr, "syscall_kill=group:exec ");
-        break;
-
-    case LU_SEC_NOMEMEXEC:
-        RetStr=CatStr(RetStr, "syscall_deny=group:mexec ");
-        break;
-
-    case LU_SEC_KILLMEMEXEC:
-        RetStr=CatStr(RetStr, "syscall_kill=group:mexec ");
-        break;
-
-    case LU_SEC_PIDNS:
-        (*Flags) |= PROC_CONTAINER_PID;
-        break;
-
-    case LU_SEC_IPCNS:
-        (*Flags) |= PROC_CONTAINER_IPC;
-        break;
-
-    case LU_SEC_NETNS:
-        (*Flags) |= PROC_CONTAINER_NET;
-        break;
-
-    case LU_SEC_NOPID:
-        (*Flags) |= PROC_CONTAINER_PID;
-        break;
-
-    case LU_SEC_NOSHM:
-        RetStr=CatStr(RetStr, "syscall_deny=group:shm");
-        break;
-
-    case LU_SEC_NOMSGQ:
-        RetStr=CatStr(RetStr, "syscall_deny=group:msgq");
-        break;
-
-    case LU_SEC_NOIPC:
-        RetStr=CatStr(RetStr, "syscall_deny=group:ipc ");
-        (*Flags) |= PROC_CONTAINER_IPC;
-        break;
-
-    case LU_SEC_NOSU:
-        (*Flags) |= PROC_NO_NEW_PRIVS;
-        break;
-
-    case LU_SEC_NOINIT:
-        (*Flags) |= PROC_CONTAINER_NOINIT;
-        break;
-
-    case LU_SEC_NOPTRACE:
-        RetStr=CatStr(RetStr, "syscall_deny=group:ptrace ");
-        LibUsefulFlags |= LU_RESIST_PTRACE;
-        break;
+        return(Level);
     }
 
-    return(RetStr);
-}
 
-
-
-static char *ProcessSeccompSetupLevel(char *RetStr, int LevelID, const char *Token, int *Flags)
-{
-    //these are 'levels', so each falls through to the ones below it
-    switch (LevelID)
+    static char *ProcessSeccompSetupModifier(char *RetStr, int ModifierID, int *Flags)
     {
-    //ignore any of the about 'non-level' switches
-    case LU_SEC_BASIC_NET:
-    case LU_SEC_LAN:
-    case LU_SEC_CLIENT:
-    case LU_SEC_LOCAL:
-    case LU_SEC_NONET:
-    case LU_SEC_KILLNET:
-    case LU_SEC_NOEXEC:
-    case LU_SEC_KILLEXEC:
-    case LU_SEC_NOMEMEXEC:
-    case LU_SEC_KILLMEMEXEC:
-    case LU_SEC_NOPID:
-    case LU_SEC_NOSHM:
-    case LU_SEC_NOMSGQ:
-    case LU_SEC_NOIPC:
-    case LU_SEC_NOINIT:
-        break;
 
-    case LU_SEC_MEMWORKER:
-        RetStr=CatStr(RetStr, "syscall_kill=group:open;group:filesystem:pipe ");
-    //break; //fall through to LU_SEC_WORKER
+        //these values arent 'levels' but rather things we can turn on or off at every level
+        //these are mostly about network access, namespaces
+        switch (ModifierID)
+        {
+        case LU_SEC_CLIENT:
+            //do not attempt to add bind to this list, it's needed for client sockets and
+            //accepts a sockaddr object that seccomp cannot parse.
+            RetStr=CatStr(RetStr, "syscall_deny=group:server ");
+            break;
 
-    case LU_SEC_WORKER:
-        RetStr=CatStr(RetStr, "syscall_deny=group:filesystem ");
-    //break; //fall through to LU_SEC_PARANOID
+        case LU_SEC_BASIC_NET:
+            RetStr=CatStr(RetStr, "syscall_allow=socket(inet);socket(inet6);socket(unix);socketpair(inet);socketpair(inet6);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
+            break;
 
-    case LU_SEC_PARANOID:
-        RetStr=CatStr(RetStr, "syscall_kill=group:kill;link;symlink;unlink;group:exec ");
-    //break; //fall through to LU_SEC_HIGH
+        case LU_SEC_LOCAL:
+            RetStr=CatStr(RetStr, "syscall_allow=socket(unix);socketpair(unix);socketcall(socket);socketcall(socketpair) syscall_deny=socket;socketpair ");
+            (*Flags) |= PROC_CONTAINER_NET;
+            break;
 
-    case LU_SEC_HIGH:
-        RetStr=CatStr(RetStr, "syscall_deny=chmod(exec);group:kill;link;symlink ");
-    //break; //fall through to LU_SEC_CONSTRAINED
+        case LU_SEC_LAN:
+            (*Flags) |= PROC_LAN_ONLY;
+            break;
 
-    case LU_SEC_CONSTRAINED:
-        RetStr=CatStr(RetStr, "syscall_allow=ioctl(user) syscall_deny=ioctl syscall_kill=utimes ");
-    //break; //fall through to LU_SEC_UNTRUSTED
 
-    case LU_SEC_UNTRUSTED:
-        RetStr=CatStr(RetStr, "syscall_kill=group:chroot;group:keyring;group:ns;acct;pidfd_open syscall_deny=utimes ");
-    //break; //fall through to LU_SEC_GUEST
+        case LU_SEC_NONET:
+            RetStr=CatStr(RetStr, "syscall_deny=group:net ");
+            (*Flags) |= PROC_CONTAINER_NET;
+            break;
 
-    case LU_SEC_GUEST:
-        RetStr=CatStr(RetStr, "syscall_deny=group:keyring syscall_kill=group:ptrace ");
-    //break; //fall through to LU_SEC_USER
+        case LU_SEC_KILLNET:
+            RetStr=CatStr(RetStr, "syscall_kill=group:net ");
+            (*Flags) |= PROC_CONTAINER_NET;
+            break;
 
-    case LU_SEC_USER:
-        RetStr=CatStr(RetStr, "syscall_deny=chown;chmod(suid) syscall_kill=group:sysadmin;bpf;capset;ioctl(TIOCSTI)  ");
-    //break; //fall through to LU_SEC_BASIC
+        case LU_SEC_NOEXEC:
+            RetStr=CatStr(RetStr, "syscall_deny=group:exec ");
+            break;
 
-    case LU_SEC_BASIC:
-        RetStr=CatStr(RetStr, "syscall_deny=acct;capset ");
-    //break; //fall through to LU_SEC_MINIMAL
+        case LU_SEC_KILLEXEC:
+            RetStr=CatStr(RetStr, "syscall_kill=group:exec ");
+            break;
 
-    case LU_SEC_MINIMAL:
-        //sadly, things like wine use ptrace, so we'd rather deny it than kill them.
-        RetStr=CatStr(RetStr, "syscall_deny=group:ptrace;ioctl(TIOCSTI) syscall_kill=group:kexec;group:kern_module;group:weird ");
-        break;
+        case LU_SEC_NOMEMEXEC:
+            RetStr=CatStr(RetStr, "syscall_deny=group:mexec ");
+            break;
 
-    //'default' handles 'syscall_allow=', 'syscall_deny=' and 'syscall_kill=' values supplied by the user
-    default:
-        if (strncmp(Token, "syscall_allow=", 14)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
-        else if (strncmp(Token, "syscall_kill=", 13)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
-        else if (strncmp(Token, "syscall_deny=", 13)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
-        else *Flags |= ProcessSecurityParseExtraOptions(Token);
-        break;
+        case LU_SEC_KILLMEMEXEC:
+            RetStr=CatStr(RetStr, "syscall_kill=group:mexec ");
+            break;
+
+        case LU_SEC_PIDNS:
+            (*Flags) |= PROC_CONTAINER_PID;
+            break;
+
+        case LU_SEC_IPCNS:
+            (*Flags) |= PROC_CONTAINER_IPC;
+            break;
+
+        case LU_SEC_NETNS:
+            (*Flags) |= PROC_CONTAINER_NET;
+            break;
+
+        case LU_SEC_NOPID:
+            (*Flags) |= PROC_CONTAINER_PID;
+            break;
+
+        case LU_SEC_NOSHM:
+            RetStr=CatStr(RetStr, "syscall_deny=group:shm");
+            break;
+
+        case LU_SEC_NOMSGQ:
+            RetStr=CatStr(RetStr, "syscall_deny=group:msgq");
+            break;
+
+        case LU_SEC_NOIPC:
+            RetStr=CatStr(RetStr, "syscall_deny=group:ipc ");
+            (*Flags) |= PROC_CONTAINER_IPC;
+            break;
+
+        case LU_SEC_NOSU:
+            (*Flags) |= PROC_NO_NEW_PRIVS;
+            break;
+
+        case LU_SEC_NOINIT:
+            (*Flags) |= PROC_CONTAINER_NOINIT;
+            break;
+
+        case LU_SEC_NOPTRACE:
+            RetStr=CatStr(RetStr, "syscall_deny=group:ptrace ");
+            LibUsefulFlags |= LU_RESIST_PTRACE;
+            break;
+        }
+
+        return(RetStr);
     }
 
-    return(RetStr);
-}
 
 
-
-static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
-{
-    char *Token=NULL;
-    const char *ptr;
-    int Flags=0, SeccompItem;
-
-
-    ptr=GetToken(Config, " |+", &Token, GETTOKEN_MULTI_SEP);
-    while (ptr)
+    static char *ProcessSeccompSetupLevel(char *RetStr, int LevelID, const char *Token, int *Flags)
     {
-        //will either be a level like 'untrusted', a modifier like 'no net' or 'syscall_allow', 'syscall_deny' etc
-        SeccompItem=ProcessSecurityParseToken(Token);
+        //these are 'levels', so each falls through to the ones below it
+        switch (LevelID)
+        {
+        //ignore any of the about 'non-level' switches
+        case LU_SEC_BASIC_NET:
+        case LU_SEC_LAN:
+        case LU_SEC_CLIENT:
+        case LU_SEC_LOCAL:
+        case LU_SEC_NONET:
+        case LU_SEC_KILLNET:
+        case LU_SEC_NOEXEC:
+        case LU_SEC_KILLEXEC:
+        case LU_SEC_NOMEMEXEC:
+        case LU_SEC_KILLMEMEXEC:
+        case LU_SEC_NOPID:
+        case LU_SEC_NOSHM:
+        case LU_SEC_NOMSGQ:
+        case LU_SEC_NOIPC:
+        case LU_SEC_NOINIT:
+            break;
 
-        //if SeccompItem is a modifier, then set that up
-        *SeccompSetup=ProcessSeccompSetupModifier(*SeccompSetup, SeccompItem, &Flags);
+        case LU_SEC_MEMWORKER:
+            RetStr=CatStr(RetStr, "syscall_kill=group:open;group:filesystem:pipe ");
+        //break; //fall through to LU_SEC_WORKER
 
-        //if SeccompItem is a level, set that up. Modifiers are ignored her, but if Token is a 'syscall_xxxx' then that is parsed here
-        *SeccompSetup=ProcessSeccompSetupLevel(*SeccompSetup, SeccompItem, Token, &Flags);
+        case LU_SEC_WORKER:
+            RetStr=CatStr(RetStr, "syscall_deny=group:filesystem ");
+        //break; //fall through to LU_SEC_PARANOID
 
-        ptr=GetToken(ptr, " |+", &Token, GETTOKEN_MULTI_SEP);
+        case LU_SEC_PARANOID:
+            RetStr=CatStr(RetStr, "syscall_kill=group:kill;link;symlink;unlink;group:exec ");
+        //break; //fall through to LU_SEC_HIGH
+
+        case LU_SEC_HIGH:
+            RetStr=CatStr(RetStr, "syscall_deny=chmod(exec);group:kill;link;symlink ");
+        //break; //fall through to LU_SEC_CONSTRAINED
+
+        case LU_SEC_CONSTRAINED:
+            RetStr=CatStr(RetStr, "syscall_allow=ioctl(user) syscall_deny=ioctl syscall_kill=utimes ");
+        //break; //fall through to LU_SEC_UNTRUSTED
+
+        case LU_SEC_UNTRUSTED:
+            RetStr=CatStr(RetStr, "syscall_kill=group:chroot;group:keyring;group:ns;acct;pidfd_open syscall_deny=utimes ");
+        //break; //fall through to LU_SEC_GUEST
+
+        case LU_SEC_GUEST:
+            RetStr=CatStr(RetStr, "syscall_deny=group:keyring syscall_kill=group:ptrace ");
+        //break; //fall through to LU_SEC_USER
+
+        case LU_SEC_USER:
+            RetStr=CatStr(RetStr, "syscall_deny=chown;chmod(suid) syscall_kill=group:sysadmin;bpf;capset;ioctl(TIOCSTI)  ");
+        //break; //fall through to LU_SEC_BASIC
+
+        case LU_SEC_BASIC:
+            RetStr=CatStr(RetStr, "syscall_deny=acct;capset ");
+        //break; //fall through to LU_SEC_MINIMAL
+
+        case LU_SEC_MINIMAL:
+            //sadly, things like wine use ptrace, so we'd rather deny it than kill them.
+            RetStr=CatStr(RetStr, "syscall_deny=group:ptrace;ioctl(TIOCSTI) syscall_kill=group:kexec;group:kern_module;group:weird ");
+            break;
+
+        //'default' handles 'syscall_allow=', 'syscall_deny=' and 'syscall_kill=' values supplied by the user
+        default:
+            if (strncmp(Token, "syscall_allow=", 14)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
+            else if (strncmp(Token, "syscall_kill=", 13)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
+            else if (strncmp(Token, "syscall_deny=", 13)==0) RetStr=MCatStr(RetStr, Token, " ", NULL);
+            else *Flags |= ProcessSecurityParseExtraOptions(Token);
+            break;
+        }
+
+        return(RetStr);
     }
 
-    if (StrValid(*SeccompSetup)) Flags |= PROC_NO_NEW_PRIVS;
-    if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: Security setup: %s\n", *SeccompSetup);
 
 
-    Destroy(Token);
+    static int ProcessParseSecurity(const char *Config, char **SeccompSetup)
+    {
+        char *Token=NULL;
+        const char *ptr;
+        int Flags=0, SeccompItem;
 
-    return(Flags);
-}
+
+        ptr=GetToken(Config, " |+", &Token, GETTOKEN_MULTI_SEP);
+        while (ptr)
+        {
+            //will either be a level like 'untrusted', a modifier like 'no net' or 'syscall_allow', 'syscall_deny' etc
+            SeccompItem=ProcessSecurityParseToken(Token);
+
+            //if SeccompItem is a modifier, then set that up
+            *SeccompSetup=ProcessSeccompSetupModifier(*SeccompSetup, SeccompItem, &Flags);
+
+            //if SeccompItem is a level, set that up. Modifiers are ignored her, but if Token is a 'syscall_xxxx' then that is parsed here
+            *SeccompSetup=ProcessSeccompSetupLevel(*SeccompSetup, SeccompItem, Token, &Flags);
+
+            ptr=GetToken(ptr, " |+", &Token, GETTOKEN_MULTI_SEP);
+        }
+
+        if (StrValid(*SeccompSetup)) Flags |= PROC_NO_NEW_PRIVS;
+        if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: Security setup: %s\n", *SeccompSetup);
+
+
+        Destroy(Token);
+
+        return(Flags);
+    }
 
 
 
 //do all things that we can do 'early' (i.e. before chroot and demonize)
-static int ProcessApplyEarlyConfig(const char *Config)
-{
-    char *Name=NULL, *Value=NULL, *Tempstr=NULL;
-    const char *ptr;
-    int Flags=0;
-
-
-    ptr=Config;
-    while (isspace(*ptr)) ptr++;
-    ptr=GetNameValuePair(ptr,"\\S", "=", &Name, &Value);
-
-    strlwr(Name);
-    while (ptr)
+    static int ProcessApplyEarlyConfig(const char *Config)
     {
-        //we parse 'security' here purely to get flags like PROC_CONTAINER_NET
-        if (strcmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &Tempstr);
-        else if (strcmp(Name,"debug")==0) LibUsefulSetValue("libUseful:Debug", "Y");
-        else if (strcmp(Name,"strict")==0) Flags |= PROC_SETUP_STRICT;
-        else if (strcmp(Name,"openlog")==0) openlog(Value, LOG_PID, LOG_USER);
-        else if (strcmp(Name,"setsid")==0) Flags |= PROC_SETSID;
-        else if (strcmp(Name,"newpgroup")==0) Flags |= PROC_NEWPGROUP;
-        else if (InStringList(Name, "nice,prio,priority", ",")) setpriority(PRIO_PROCESS, 0, atoi(Value));
-        else if (InStringList(Name, "sigdef,sigdefault", ",")) Flags |= PROC_SIGDEF;
-        else if (InStringList(Name, "daemon,demon", ",")) Flags |= PROC_DAEMON;
-        else if (InStringList(Name, "ctrltty,ctrl_tty", ",")) Flags |= PROC_CTRL_TTY;
-        else if (strcmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
-        else if (strcmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
-        else if (strcmp(Name,"outnull")==0)
+        char *Name=NULL, *Value=NULL, *Tempstr=NULL;
+        const char *ptr;
+        int Flags=0;
+
+
+        ptr=Config;
+        while (isspace(*ptr)) ptr++;
+        ptr=GetNameValuePair(ptr,"\\S", "=", &Name, &Value);
+
+        strlwr(Name);
+        while (ptr)
         {
-            fd_remap_path(1, "/dev/null", O_WRONLY);
-            fd_remap_path(2, "/dev/null", O_WRONLY);
-        }
-        else if (strcmp(Name,"stdin")==0)  fd_remap(0, atoi(Value));
-        else if (strcmp(Name,"stdout")==0)  fd_remap(1, atoi(Value));
-        else if (strcmp(Name,"stderr")==0)  fd_remap(2, atoi(Value));
-        else if (strcmp(Name,"jail")==0) Flags |= PROC_JAIL;
-        else if (strcmp(Name,"trust")==0) Flags |= SPAWN_TRUST_COMMAND;
-        else if (strcmp(Name,"noshell")==0) Flags |= SPAWN_NOSHELL;
-        else if (strcmp(Name,"arg0")==0) Flags |= SPAWN_ARG0;
-        else if (strcmp(Name,"container")==0) Flags |= PROC_CONTAINER_FS;
-        else if (strcmp(Name,"container+net")==0) Flags |= PROC_CONTAINER_FS | PROC_CONTAINER_NET;
-        else if (strcmp(Name,"isocube")==0) Flags |= PROC_CONTAINER_FS;
-        else if (strcmp(Name,"-net")==0) Flags |= PROC_CONTAINER_NET;
-        else if (strcmp(Name,"nonet")==0) Flags |= PROC_CONTAINER_NET;
-        else if (strcmp(Name,"nopid")==0) Flags |= PROC_CONTAINER_PID;
-        else if (strcmp(Name,"-pid")==0) Flags |= PROC_CONTAINER_PID;
-        else if (strcmp(Name,"noinit")==0) Flags |= PROC_CONTAINER_NOINIT;
-        else if (strcmp(Name,"ns")==0) Flags |= PROC_CONTAINER_FS;
-        else if (strcmp(Name,"namespace")==0) Flags |= PROC_CONTAINER_FS;
-        else if (strcmp(Name,"lan")==0) Flags |= PROC_LAN_ONLY;
-        else if (strcmp(Name,"mlock,memlock")==0) ProcessMemLockAdd();
-        else if (strcmp(Name, "resist_ptrace")==0) LibUsefulFlags |= LU_RESIST_PTRACE;
-        else if (InStringList(Name,"procs,nproc,nprocs", ",")) Flags |= PROC_CONTAINER_PID;
-        else if (strcmp(Name,"uprocs")==0) ProcessSetRLimit(RLIMIT_NPROC, Value);
-        else if (strcmp(Name,"chroot")==0)
-        {
-            if ( StrValid(Value) && (chdir(Value) !=0 ) )
+            //we parse 'security' here purely to get flags like PROC_CONTAINER_NET
+            if (strcmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &Tempstr);
+            else if (strcmp(Name,"debug")==0) LibUsefulSetValue("libUseful:Debug", "Y");
+            else if (strcmp(Name,"strict")==0) Flags |= PROC_SETUP_STRICT;
+            else if (strcmp(Name,"openlog")==0) openlog(Value, LOG_PID, LOG_USER);
+            else if (strcmp(Name,"setsid")==0) Flags |= PROC_SETSID;
+            else if (strcmp(Name,"newpgroup")==0) Flags |= PROC_NEWPGROUP;
+            else if (InStringList(Name, "nice,prio,priority", ",")) setpriority(PRIO_PROCESS, 0, atoi(Value));
+            else if (InStringList(Name, "sigdef,sigdefault", ",")) Flags |= PROC_SIGDEF;
+            else if (InStringList(Name, "daemon,demon", ",")) Flags |= PROC_DAEMON;
+            else if (InStringList(Name, "ctrltty,ctrl_tty", ",")) Flags |= PROC_CTRL_TTY;
+            else if (strcmp(Name,"innull")==0)  fd_remap_path(0, "/dev/null", O_WRONLY);
+            else if (strcmp(Name,"errnull")==0) fd_remap_path(2, "/dev/null", O_WRONLY);
+            else if (strcmp(Name,"outnull")==0)
             {
-                RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chdir to directory %s for chrooting", Value);
-                Flags |= PROC_SETUP_FAIL;
+                fd_remap_path(1, "/dev/null", O_WRONLY);
+                fd_remap_path(2, "/dev/null", O_WRONLY);
             }
-            else Flags |= PROC_CHROOT;
+            else if (strcmp(Name,"stdin")==0)  fd_remap(0, atoi(Value));
+            else if (strcmp(Name,"stdout")==0)  fd_remap(1, atoi(Value));
+            else if (strcmp(Name,"stderr")==0)  fd_remap(2, atoi(Value));
+            else if (strcmp(Name,"jail")==0) Flags |= PROC_JAIL;
+            else if (strcmp(Name,"trust")==0) Flags |= SPAWN_TRUST_COMMAND;
+            else if (strcmp(Name,"noshell")==0) Flags |= SPAWN_NOSHELL;
+            else if (strcmp(Name,"arg0")==0) Flags |= SPAWN_ARG0;
+            else if (strcmp(Name,"container")==0) Flags |= PROC_CONTAINER_FS;
+            else if (strcmp(Name,"container+net")==0) Flags |= PROC_CONTAINER_FS | PROC_CONTAINER_NET;
+            else if (strcmp(Name,"isocube")==0) Flags |= PROC_CONTAINER_FS;
+            else if (strcmp(Name,"-net")==0) Flags |= PROC_CONTAINER_NET;
+            else if (strcmp(Name,"nonet")==0) Flags |= PROC_CONTAINER_NET;
+            else if (strcmp(Name,"nopid")==0) Flags |= PROC_CONTAINER_PID;
+            else if (strcmp(Name,"-pid")==0) Flags |= PROC_CONTAINER_PID;
+            else if (strcmp(Name,"noinit")==0) Flags |= PROC_CONTAINER_NOINIT;
+            else if (strcmp(Name,"ns")==0) Flags |= PROC_CONTAINER_FS;
+            else if (strcmp(Name,"namespace")==0) Flags |= PROC_CONTAINER_FS;
+            else if (strcmp(Name,"lan")==0) Flags |= PROC_LAN_ONLY;
+            else if (strcmp(Name,"mlock,memlock")==0) ProcessMemLockAdd();
+            else if (strcmp(Name, "resist_ptrace")==0) LibUsefulFlags |= LU_RESIST_PTRACE;
+            else if (InStringList(Name,"procs,nproc,nprocs", ",")) Flags |= PROC_CONTAINER_PID;
+            else if (strcmp(Name,"uprocs")==0) ProcessSetRLimit(RLIMIT_NPROC, Value);
+            else if (strcmp(Name,"chroot")==0)
+            {
+                if ( StrValid(Value) && (chdir(Value) !=0 ) )
+                {
+                    RaiseError(ERRFLAG_ERRNO, "ProcessApplyEarlyConfig", "failed to chdir to directory %s for chrooting", Value);
+                    Flags |= PROC_SETUP_FAIL;
+                }
+                else Flags |= PROC_CHROOT;
+            }
+
+            ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
         }
 
-        ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
+
+        Destroy(Name);
+        Destroy(Value);
+        Destroy(Tempstr);
+
+        return(Flags);
     }
 
 
-    Destroy(Name);
-    Destroy(Value);
-    Destroy(Tempstr);
-
-    return(Flags);
-}
-
-
 //Apply config changes that are relevant AFTER chroot/daemonize
-static int ProcessApplyLateConfig(int Flags, const char *Config)
-{
-    char *Name=NULL, *Value=NULL, *Capabilities=NULL, *InheritCapabilities=NULL, *SeccompSetup=NULL;
-    const char *ptr;
-    long uid=0, gid=0;
-    int lockfd, ctty_fd=0;
-    int ContainerFlags=0, CapFlags=0, Requested=0;
+    static int ProcessApplyLateConfig(int Flags, const char *Config)
+    {
+        char *Name=NULL, *Value=NULL, *Capabilities=NULL, *InheritCapabilities=NULL, *SeccompSetup=NULL;
+        const char *ptr;
+        long uid=0, gid=0;
+        int lockfd, ctty_fd=0;
+        int ContainerFlags=0, CapFlags=0, Requested=0;
 
 //we will have parsed anything that can set 'PROC_CONTAINER' in the early config.
 //we may now parse those things (e.g. 'security=') again here to carry them out
 //but if PROC_CONTAINER is going to be set, it will already be so
-    if (Flags & PROC_CONTAINER)
-    {
-        Requested = Flags & PROC_CONTAINER;
-        ContainerFlags=ContainerApplyConfig(Flags, Config);
+        if (Flags & PROC_CONTAINER)
+        {
+            Requested = Flags & PROC_CONTAINER;
+            ContainerFlags=ContainerApplyConfig(Flags, Config);
 
-        if ((ContainerFlags & Requested) != Requested) Flags |= PROC_SETUP_FAIL;
-    }
+            if ((ContainerFlags & Requested) != Requested) Flags |= PROC_SETUP_FAIL;
+        }
 
 
 //these are things that, if we've Chroot-ed, happen *within* the Chroot. But not within a Jail.
-    ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
-    while (ptr)
-    {
-        if (strcasecmp(Name,"User")==0) uid=LookupUID(Value);
-        else if (strcasecmp(Name,"Group")==0) gid=LookupGID(Value);
-        else if (strcasecmp(Name,"UID")==0) uid=atoi(Value);
-        else if (strcasecmp(Name,"GID")==0) gid=atoi(Value);
-        else if ( (strcasecmp(Name,"Dir")==0) || (strcasecmp(Name, "chdir")==0) )
+        ptr=GetNameValuePair(Config,"\\S","=",&Name,&Value);
+        while (ptr)
         {
-            if (chdir(Value) !=0)
+            if (strcasecmp(Name,"User")==0) uid=LookupUID(Value);
+            else if (strcasecmp(Name,"Group")==0) gid=LookupGID(Value);
+            else if (strcasecmp(Name,"UID")==0) uid=atoi(Value);
+            else if (strcasecmp(Name,"GID")==0) gid=atoi(Value);
+            else if ( (strcasecmp(Name,"Dir")==0) || (strcasecmp(Name, "chdir")==0) )
             {
-                RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ProcessApplyConfig", "failed to chdir to %s", Value);
-                RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ProcessApplyConfig", "too dangerous to continue, (possibly in wrong directory) exiting...", Value);
-                exit(1);
+                if (chdir(Value) !=0)
+                {
+                    RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ProcessApplyConfig", "failed to chdir to %s", Value);
+                    RaiseError(ERRFLAG_ERRNO|ERRFLAG_SYSLOG, "ProcessApplyConfig", "too dangerous to continue, (possibly in wrong directory) exiting...", Value);
+                    exit(1);
 
-                Flags |= PROC_SETUP_FAIL;
+                    Flags |= PROC_SETUP_FAIL;
+                }
             }
-        }
-        else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
-        else if (strcasecmp(Name,"LockFile")==0)
-        {
-            lockfd=CreateLockFile(Value, 0);
-            if (lockfd==-1) _exit(1);
-        }
-        else if (strcasecmp(Name,"LockStdin")==0)
-        {
-            close(0);
-            lockfd=CreateLockFile(Value, 0);
-            if (lockfd==-1) _exit(1);
-        }
-        else if (strcasecmp(Name,"capabilities")==0) Capabilities=MCatStr(Capabilities, Value, " ", NULL);
-        else if (strcasecmp(Name,"caps")==0) Capabilities=MCatStr(Capabilities, Value, " ", NULL);
-        else if (strcasecmp(Name,"inherit_capabilities")==0) InheritCapabilities=MCatStr(InheritCapabilities, Value, " ", NULL);
-        else if (strcasecmp(Name,"inherit_caps")==0) InheritCapabilities=MCatStr(InheritCapabilities, Value, " ", NULL);
-        else if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &SeccompSetup);
-        else if (strcasecmp(Name,"ctty")==0)
-        {
-            ctty_fd=atoi(Value);
-            Flags |= PROC_CTRL_TTY;
-        }
-        else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);
-        else if (strcasecmp(Name,"mlockmax")==0) ProcessSetRLimit(RLIMIT_MEMLOCK, Value);
-        else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);
-        else if (strcasecmp(Name,"files")==0) ProcessSetRLimit(RLIMIT_NOFILE, Value);
-        else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
-        else if (strcasecmp(Name,"keepcaps")==0) CapFlags |= LU_CAPABILITIES_KEEP;
-        else if (InStringList(Name,"procs,nproc,nprocs",","))
-        {
-            if (ContainerFlags & PROC_CONTAINER_PID) ProcessSetRLimit(RLIMIT_NPROC, Value);
-        }
-        else Flags |= ProcessSecurityParseExtraOptions(Name);
+            else if (strcasecmp(Name,"PidFile")==0) WritePidFile(Value);
+            else if (strcasecmp(Name,"LockFile")==0)
+            {
+                lockfd=CreateLockFile(Value, 0);
+                if (lockfd==-1) _exit(1);
+            }
+            else if (strcasecmp(Name,"LockStdin")==0)
+            {
+                close(0);
+                lockfd=CreateLockFile(Value, 0);
+                if (lockfd==-1) _exit(1);
+            }
+            else if (strcasecmp(Name,"capabilities")==0) Capabilities=MCatStr(Capabilities, Value, " ", NULL);
+            else if (strcasecmp(Name,"caps")==0) Capabilities=MCatStr(Capabilities, Value, " ", NULL);
+            else if (strcasecmp(Name,"inherit_capabilities")==0) InheritCapabilities=MCatStr(InheritCapabilities, Value, " ", NULL);
+            else if (strcasecmp(Name,"inherit_caps")==0) InheritCapabilities=MCatStr(InheritCapabilities, Value, " ", NULL);
+            else if (strcasecmp(Name,"security")==0) Flags |= ProcessParseSecurity(Value, &SeccompSetup);
+            else if (strcasecmp(Name,"ctty")==0)
+            {
+                ctty_fd=atoi(Value);
+                Flags |= PROC_CTRL_TTY;
+            }
+            else if (strcasecmp(Name,"mem")==0) ProcessSetRLimit(RLIMIT_DATA, Value);
+            else if (strcasecmp(Name,"mlockmax")==0) ProcessSetRLimit(RLIMIT_MEMLOCK, Value);
+            else if (strcasecmp(Name,"fsize")==0) ProcessSetRLimit(RLIMIT_FSIZE, Value);
+            else if (strcasecmp(Name,"files")==0) ProcessSetRLimit(RLIMIT_NOFILE, Value);
+            else if (strcasecmp(Name,"coredumps")==0) ProcessSetRLimit(RLIMIT_CORE, Value);
+            else if (strcasecmp(Name,"keepcaps")==0) CapFlags |= LU_CAPABILITIES_KEEP;
+            else if (InStringList(Name,"procs,nproc,nprocs",","))
+            {
+                if (ContainerFlags & PROC_CONTAINER_PID) ProcessSetRLimit(RLIMIT_NPROC, Value);
+            }
+            else Flags |= ProcessSecurityParseExtraOptions(Name);
 
-        ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
-    }
+            ptr=GetNameValuePair(ptr,"\\S","=",&Name,&Value);
+        }
 
 
 //Now we are done with parsing, start setting flags
 
 
-    if (Flags & PROC_CTRL_TTY) ProcessSetControlTTY(ctty_fd);
+        if (Flags & PROC_CTRL_TTY) ProcessSetControlTTY(ctty_fd);
 
-    if (Flags & PROC_MDWE_HARD)
-    {
-        Value=CopyStr(Value, SeccompSetup);
-        SeccompSetup=MCopyStr(SeccompSetup, "syscall_kill=group:mexec ", Value, NULL);
-    }
+        if (Flags & PROC_MDWE_HARD)
+        {
+            Value=CopyStr(Value, SeccompSetup);
+            SeccompSetup=MCopyStr(SeccompSetup, "syscall_kill=group:mexec ", Value, NULL);
+        }
 
 
 //Always do group first, otherwise we'll lose ability to switch user/group
-    if (gid > 0) SwitchGID(gid);
+        if (gid > 0) SwitchGID(gid);
 
 
-    //this switch of JUST the effective UID exists purely to handle linux capabilites
-    //we have to set euid first in order to 'signal' that we want to keep some capabilites
-    //otherwise they all get wiped when we switch UID
-    if (uid > 0)
-    {
-        setreuid(-1, uid);
+        //this switch of JUST the effective UID exists purely to handle linux capabilites
+        //we have to set euid first in order to 'signal' that we want to keep some capabilites
+        //otherwise they all get wiped when we switch UID
+        if (uid > 0)
+        {
+            setreuid(-1, uid);
 
-        //set up capabilities before we switch user, so we can keep them across UID switch
-        //otherwise we'll lose all caps when we uid switch. This only gets called if we have a uid requested.
-        if (CapFlags & LU_CAPABILITIES_KEEP) Flags |= ProcessSetCapabilities(Capabilities, InheritCapabilities, CapFlags | LU_CAPABILITIES_UID);
+            //set up capabilities before we switch user, so we can keep them across UID switch
+            //otherwise we'll lose all caps when we uid switch. This only gets called if we have a uid requested.
+            if (CapFlags & LU_CAPABILITIES_KEEP) Flags |= ProcessSetCapabilities(Capabilities, InheritCapabilities, CapFlags | LU_CAPABILITIES_UID);
 
-        if (uid > 0) SwitchUID(uid);
-    }
+            if (uid > 0) SwitchUID(uid);
+        }
 
-    //this is the main 'capabilities' setting. If we asked to switch UID, then it sets the 'final' capabilites set
-    //If not asked to switch UID, then only this capabilities setting gets called.
-    //If the user didn't ask to switch UID above, then they must ask for setuid and setgid in their capabilities set if
-    //they want to do so themselves later 
-    Flags |= ProcessSetCapabilities(Capabilities, InheritCapabilities, CapFlags);
+        //this is the main 'capabilities' setting. If we asked to switch UID, then it sets the 'final' capabilites set
+        //If not asked to switch UID, then only this capabilities setting gets called.
+        //If the user didn't ask to switch UID above, then they must ask for setuid and setgid in their capabilities set if
+        //they want to do so themselves later
+        Flags |= ProcessSetCapabilities(Capabilities, InheritCapabilities, CapFlags);
 
-    if (LibUsefulFlags & LU_RESIST_PTRACE)
-    {
-        // do this again, as switching uid or gid can reset this
-        if (! ProcessResistPtrace()) Flags |= PROC_SETUP_FAIL;
-    }
+        if (LibUsefulFlags & LU_RESIST_PTRACE)
+        {
+            // do this again, as switching uid or gid can reset this
+            if (! ProcessResistPtrace()) Flags |= PROC_SETUP_FAIL;
+        }
 
 //Must do this last! After parsing Config, and also after functions like
 //SwitchUser that will need access to /etc/passwd
-    if (Flags & PROC_JAIL)
-    {
-        if (chroot(".") == -1)
+        if (Flags & PROC_JAIL)
         {
-            RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot to curr directory");
-            Flags |= PROC_SETUP_FAIL;
+            if (chroot(".") == -1)
+            {
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot to curr directory");
+                Flags |= PROC_SETUP_FAIL;
+            }
         }
-    }
 
 
-    //if we set any capabilites, we will already have set 'NO_NEW_PRIVS'
-    //so only consider the PROC_NO_NEW_PRIVS flag if we didn't use
-    //capabilities
-    else if (Flags & PROC_NO_NEW_PRIVS)
-    {
-        if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
-        else if (LibUsefulDebugActive()) fprintf(stderr, "DEBUG: set 'PROC_NO_NEW_PRIVS', su/suid should not be possible now\n");
+        //if we set any capabilites, we will already have set 'NO_NEW_PRIVS'
+        //so only consider the PROC_NO_NEW_PRIVS flag if we didn't use
+        //capabilities
+        else if (Flags & PROC_NO_NEW_PRIVS)
+        {
+            if (! ProcessNoNewPrivs()) Flags |= PROC_SETUP_FAIL;
 
 
-        //seccomp must come after PROC_NO_NEW_PRIVS
+            //seccomp must come after PROC_NO_NEW_PRIVS
 #ifdef USE_SECCOMP
-        if (StrValid(SeccompSetup)) 
-	{
-	if (! SeccompAddRules(SeccompSetup)) Flags |= PROC_SETUP_FAIL;
-	}
+            if (StrValid(SeccompSetup))
+            {
+                if (! SeccompAddRules(SeccompSetup)) Flags |= PROC_SETUP_FAIL;
+            }
 #endif
-    }
+        }
 
-    Destroy(Name);
-    Destroy(Value);
-    Destroy(Capabilities);
-    Destroy(InheritCapabilities);
-    Destroy(SeccompSetup);
+        Destroy(Name);
+        Destroy(Value);
+        Destroy(Capabilities);
+        Destroy(InheritCapabilities);
+        Destroy(SeccompSetup);
 
-    return(Flags);
-}
-
-
-
-
-int ProcessApplyConfig(const char *Config)
-{
-    int Flags=0, i;
-
-//do all things that we can do 'early' (i.e. before chroot and demonize)
-    Flags=ProcessApplyEarlyConfig(Config);
-
-    if (Flags & PROC_LAN_ONLY) LibUsefulFlags |= LU_DONT_ROUTE;
-
-    if (Flags & PROC_SETUP_FAIL)
-    {
-        if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT|ERRFLAG_SYSLOG, "ProcessApplyConfig", "Early setup failed. Strict mode requested. Aborting.");
         return(Flags);
     }
 
 
-//set all signal handlers to default
-    if (Flags & PROC_SIGDEF)
+
+
+    int ProcessApplyConfig(const char *Config)
     {
-        for (i =0; i < NSIG; i++) signal(i,SIG_DFL);
-    }
+        int Flags=0, i;
+
+//do all things that we can do 'early' (i.e. before chroot and demonize)
+        Flags=ProcessApplyEarlyConfig(Config);
+
+        if (Flags & PROC_LAN_ONLY) LibUsefulFlags |= LU_DONT_ROUTE;
+
+        if (Flags & PROC_SETUP_FAIL)
+        {
+            if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT|ERRFLAG_SYSLOG, "ProcessApplyConfig", "Early setup failed. Strict mode requested. Aborting.");
+            return(Flags);
+        }
+
+
+//set all signal handlers to default
+        if (Flags & PROC_SIGDEF)
+        {
+            for (i =0; i < NSIG; i++) signal(i,SIG_DFL);
+        }
 
 
 //if we're to run as a daemon service, then do so
 //which will mean a new group, new sid and closing our tty.
 //Otherwise setup these things for a process with a ttty
-    if (Flags & PROC_DAEMON) demonize();
-    else
-    {
-        if (Flags & PROC_SETSID)
+        if (Flags & PROC_DAEMON) demonize();
+        else
         {
-            //setsid may fail if we are the process-group master.
-            //this is usually the case if we are the 'current program' run by bash
-            //but if we run in the background, then this shouldn't be true, and we
-            //should be able to create a new session
-            setsid();
+            if (Flags & PROC_SETSID)
+            {
+                //setsid may fail if we are the process-group master.
+                //this is usually the case if we are the 'current program' run by bash
+                //but if we run in the background, then this shouldn't be true, and we
+                //should be able to create a new session
+                setsid();
+            }
+            else if (Flags & PROC_NEWPGROUP) setpgid(0, 0);
         }
-        else if (Flags & PROC_NEWPGROUP) setpgid(0, 0);
-    }
 
 
 // This allows us to chroot into a whole different unix directory tree, with its own
 // password file etc
-    if (Flags & PROC_CHROOT)
-    {
-        if (chroot(".") == -1)
+        if (Flags & PROC_CHROOT)
         {
-            RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot");
-            Flags |= PROC_SETUP_FAIL;
-            if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "chroot failed. Strict mode requested. Aborting.");
+            if (chroot(".") == -1)
+            {
+                RaiseError(ERRFLAG_ERRNO, "ProcessApplyConfig", "failed to chroot");
+                Flags |= PROC_SETUP_FAIL;
+                if (Flags & PROC_SETUP_STRICT) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "chroot failed. Strict mode requested. Aborting.");
+            }
         }
+
+
+        //Apply config changes that are relevant AFTER chroot/daemonize
+        if (! (Flags & PROC_SETUP_FAIL)) Flags=ProcessApplyLateConfig(Flags, Config);
+        if ( (Flags & PROC_SETUP_FAIL) && (Flags & PROC_SETUP_STRICT) ) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "Late setup failed. Strict mode requested. Aborting.");
+
+
+        return(Flags);
     }
-
-
-    //Apply config changes that are relevant AFTER chroot/daemonize
-    if (! (Flags & PROC_SETUP_FAIL)) Flags=ProcessApplyLateConfig(Flags, Config);
-    if ( (Flags & PROC_SETUP_FAIL) && (Flags & PROC_SETUP_STRICT) ) RaiseError(ERRFLAG_ABORT, "ProcessApplyConfig", "Late setup failed. Strict mode requested. Aborting.");
-
-
-    return(Flags);
-}
 
 
 // This function turns our process into a demon
 // though this requires forks, we do not call CredsStoreOnFork as we want to take the Credentials Store with us.
-pid_t demonize()
-{
-    int result, i=0;
+    pid_t demonize()
+    {
+        int result, i=0;
 
-    LogFileFlushAll(TRUE);
+        LogFileFlushAll(TRUE);
 
 //Don't fork with context here, as a demonize involves two forks, so
 //it's wasted work here.
-    result=fork();
-    if (result != 0) exit(0);
+        result=fork();
+        if (result != 0) exit(0);
 
-    /*we can only get to here if result= 0 i.e. we are the child process*/
-    setsid();
+        /*we can only get to here if result= 0 i.e. we are the child process*/
+        setsid();
 
-    result=fork();
-    if (result !=0) exit(0);
-    umask(0);
+        result=fork();
+        if (result !=0) exit(0);
+        umask(0);
 
-    /* close stdin, stdout and std error, but only if they are a tty. In some  */
-    /* situations (like working out of cron) we may not have been given in/out/err */
-    /* and thus the first files we open will be 0,1,2. If we close them, we will have */
-    /* closed files that we need! Alternatively, the user may have used shell redirection */
-    /* to send output for a file, and I'm sure they don't want us to close that file */
+        /* close stdin, stdout and std error, but only if they are a tty. In some  */
+        /* situations (like working out of cron) we may not have been given in/out/err */
+        /* and thus the first files we open will be 0,1,2. If we close them, we will have */
+        /* closed files that we need! Alternatively, the user may have used shell redirection */
+        /* to send output for a file, and I'm sure they don't want us to close that file */
 
-    for (i=0; i < 3; i++)
-    {
-        if (isatty(i))
+        for (i=0; i < 3; i++)
         {
-            /* reopen to /dev/null so that any output gets thrown away */
-            /* but the program still has somewhere to write to         */
+            if (isatty(i))
+            {
+                /* reopen to /dev/null so that any output gets thrown away */
+                /* but the program still has somewhere to write to         */
 
-            fd_remap_path(i, "/dev/null", O_RDWR);
+                fd_remap_path(i, "/dev/null", O_RDWR);
+            }
         }
+
+
+        return(getpid());
     }
-
-
-    return(getpid());
-}

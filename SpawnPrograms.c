@@ -329,8 +329,8 @@ pid_t PseudoTTYSpawnFunction(int *ret_pty, BASIC_FUNC Func, void *Data, int TTYF
                 _exit(0);
             }
         }
-
-        close(tty);
+        //tty is independantly closed in child process
+        else close(tty);
     }
 
     *ret_pty=pty;

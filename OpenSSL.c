@@ -416,7 +416,7 @@ static void OpenSSLReseedRandom()
 
     len=GenerateRandomBytes(&Tempstr, len, ENCODE_NONE);
     RAND_seed(Tempstr,len);
-    memset(Tempstr,0,len); //extra paranoid step, don't keep those bytes in memory!
+    xmemset(Tempstr, 0, len); //extra paranoid step, don't keep those bytes in memory!
 
     DestroyString(Tempstr);
 }

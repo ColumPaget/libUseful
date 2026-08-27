@@ -280,11 +280,11 @@ STREAM *SMTPConnectServer(const char *ServerURL, const char *Sender, const char 
             if (Caps > 0)
             {
                 //try STARTTLS, the worst that will happen is the server will say no
-                if ((! (Flags & LU_SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S)) 
-		{
-			DoSSLClientNegotiation(S, 0);
-            		Caps=SMTPHelo(S);
-		}
+                if ((! (Flags & LU_SMTP_NOSSL)) && SSLAvailable() && SMTPInteract("STARTTLS\r\n", S))
+                {
+                    DoSSLClientNegotiation(S, 0);
+                    Caps=SMTPHelo(S);
+                }
 
                 if (
                     (Caps & (SMTP_CAP_AUTH_LOGIN | SMTP_CAP_AUTH_PLAIN)) &&
@@ -331,7 +331,7 @@ STREAM *SMTPConnectServer(const char *ServerURL, const char *Sender, const char 
 
 STREAM *SMTPConnect(const char *Sender, const char *Recipients, int Flags)
 {
-return(SMTPConnectServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Flags));
+    return(SMTPConnectServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Flags));
 }
 
 
@@ -371,7 +371,7 @@ int SMTPSendMailViaServer(const char *ServerURL, const char *Sender, const char 
 
 int SMTPSendMail(const char *Sender, const char *Recipients, const char *Subject, const char *Body, int Flags)
 {
-return(SMTPSendMailViaServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Subject, Body, Flags));
+    return(SMTPSendMailViaServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Subject, Body, Flags));
 }
 
 
@@ -410,7 +410,7 @@ int SMTPSendMailFileViaServer(const char *ServerURL, const char *Sender, const c
 
 int SMTPSendMailFile(const char *Sender, const char *Recipients, const char *Path, int Flags)
 {
-return(SMTPSendMailFileViaServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Path, Flags));
+    return(SMTPSendMailFileViaServer(LibUsefulGetValue("SMTP:Server"), Sender, Recipients, Path, Flags));
 }
 
 

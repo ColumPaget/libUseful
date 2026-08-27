@@ -40,6 +40,10 @@ void xmemset(volatile char *Str, char fill, off_t size);
 //setenv that returns TRUE or FALSE rather than returning 0 on success
 int xsetenv(const char *Name, const char *Value);
 
+
+//append to an environment variable
+int appendenv(const char *Name, const char *Value);
+
 //increment a char * by 'count' but DO NOT GO PAST A NULL CHARACTER. Returns number of bytes actually incremented
 int ptr_incr(const char **ptr, int count);
 

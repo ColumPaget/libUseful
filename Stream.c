@@ -1861,16 +1861,15 @@ int STREAMWriteBytes(STREAM *S, const char *Data, int DataLen)
 
 int STREAMWriteString(const char *Buffer, STREAM *S)
 {
-    int result;
+    int result=FALSE;
 
-    if (StrEnd(Buffer)) return(FALSE);
-    result=STREAMWriteBytes(S,Buffer,strlen(Buffer));
+    if (StrValid(Buffer)) result=STREAMWriteBytes(S,Buffer,strlen(Buffer));
     return(result);
 }
 
 int STREAMWriteLine(const char *Buffer, STREAM *S)
 {
-    int result;
+    int result=FALSE;
 
     if (! S)
     {
@@ -1879,10 +1878,13 @@ int STREAMWriteLine(const char *Buffer, STREAM *S)
     }
 
 
-    if (StrEnd(Buffer)) return(FALSE);
+    if (StrValid(Buffer)) 
+    {
     result=STREAMWriteBytes(S,Buffer,strlen(Buffer));
     if (result < 0) return(result);
+    }
     if (S->Flags & FLUSH_LINE) result=STREAMFlush(S);
+    
     return(result);
 }
 
@@ -2145,13 +2147,10 @@ char *STREAMReadToMultiTerminator(char *RetStr, STREAM *S, char *Terms)
 //no more data to read
         while (inchar > 0)
         {
-            if (inchar > 0)
-            {
                 RetStr=AddCharToBuffer(RetStr,len,(char) inchar);
                 len++;
 
                 if (strchr(Terms,inchar)) break;
-            }
             inchar=STREAMReadChar(S);
         }
 

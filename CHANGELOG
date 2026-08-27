@@ -1,3 +1,8 @@
+v5.80
+  * fix some lint found with cppcheck
+  * fix compile issue with --enable-capabilities
+  * add 'appendenv' function
+
 v5.79 (2026-08-26)
   * Smtp: do HELO/EHLO again after STARTTLS
   * Smtp: introduce 'ViaServer' functions that allow specifying ServerURL in function call

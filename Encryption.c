@@ -171,7 +171,7 @@ static libCryptoProcessorData *InitialiseEncryptionComponents(const char *Args)
 
 static EVP_CIPHER *libCryptoGetCipher(const char *CipherList)
 {
-    EVP_CIPHER *cipher;
+    EVP_CIPHER *cipher=NULL;
     char *Token=NULL, *CipherName=NULL;
     const char *ptr;
 
